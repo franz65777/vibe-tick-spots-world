@@ -407,7 +407,7 @@ const ExplorePage = memo(() => {
   const displayedHistory = showAllHistory ? localSearchHistory : localSearchHistory.slice(0, 10);
   
   return (
-    <div className="flex flex-col h-full pt-[env(safe-area-inset-top)]">
+    <div className="flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar

@@ -507,7 +507,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               <div className="flex items-center gap-1.5">
                 <div className="grid grid-cols-4 gap-1.5 flex-1">
                   <Button
-                    onClick={() => setDropdownOpen(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpen(true);
+                    }}
                     disabled={loading}
                     variant="secondary"
                     size="sm"
@@ -544,7 +547,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   </Button>
 
                   <Button
-                    onClick={handleDirections}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDirections();
+                    }}
                     size="sm"
                     variant="secondary"
                     className="flex-col h-auto py-3 gap-1 rounded-2xl"
@@ -554,7 +560,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   </Button>
 
                   <Button
-                    onClick={() => setShareOpen(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShareOpen(true);
+                    }}
                     size="sm"
                     variant="secondary"
                     className="flex-col h-auto py-3 gap-1 rounded-2xl"
