@@ -599,7 +599,7 @@ const ExplorePage = memo(() => {
 
       {/* Leaderboard Button */}
       {searchMode === 'users' && !isSearchActive && champions.length > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+        <div className="fixed bottom-28 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
           <div className="pointer-events-auto">
             <Suspense fallback={<div />}>
               <CommunityChampions 

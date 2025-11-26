@@ -23,7 +23,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 
-const TripsGrid = () => {
+interface TripsGridProps {
+  userId?: string; // Optional userId prop to view another user's lists
+}
+
+const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
@@ -36,22 +40,26 @@ const TripsGrid = () => {
   const [folders, setFolders] = useState<any[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
   const { t } = useTranslation('trips');
-  const { trips, isLoading, createTrip, updateTrip, deleteTrip } = useTrips();
   const { user } = useAuth();
+  const { trips, isLoading, createTrip, updateTrip, deleteTrip } = useTrips(propUserId || user?.id);
+
+  // Use propUserId if provided, otherwise use authenticated user's id
+  const targetUserId = propUserId || user?.id;
+  const isOwnProfile = !propUserId || propUserId === user?.id;
 
   useEffect(() => {
     loadFolders();
-  }, [user]);
+  }, [targetUserId]);
 
   const loadFolders = async () => {
-    if (!user) return;
+    if (!targetUserId) return;
 
     setFoldersLoading(true);
     try {
       const { data, error } = await supabase
         .from('saved_folders')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -144,18 +152,20 @@ const TripsGrid = () => {
   const allLists = [...folders, ...trips];
 
   return (
-    <div className="px-4 pt-[25px]">
+    <div className="px-4 pt-4">
       {allLists.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-4 text-center">
-          <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              <Plus className="w-5 h-5" />
-              {t('createButton')}
-            </button>
-          </div>
+          {isOwnProfile && (
+            <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <Plus className="w-5 h-5" />
+                {t('createButton')}
+              </button>
+            </div>
+          )}
           
           <div className="mb-6 relative w-full max-w-xs aspect-[4/3]">
             <img 
@@ -171,23 +181,25 @@ const TripsGrid = () => {
         </div>
       ) : (
         <>
-          <div className="mb-4 flex gap-2">
-            <Button
-              onClick={() => navigate('/create-list')}
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
-            >
-              <Folder className="w-4 h-4 mr-2" />
-              {t('newList')}
-            </Button>
-            <Button
-              onClick={() => navigate('/create-trip')}
-              variant="outline"
-              className="flex-1 rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('newTrip')}
-            </Button>
-          </div>
+          {isOwnProfile && (
+            <div className="mb-4 flex gap-2">
+              <Button
+                onClick={() => navigate('/create-list')}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
+              >
+                <Folder className="w-4 h-4 mr-2" />
+                {t('newList')}
+              </Button>
+              <Button
+                onClick={() => navigate('/create-trip')}
+                variant="outline"
+                className="flex-1 rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {t('newTrip')}
+              </Button>
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-3 pb-4">
             {/* Folders (main lists) */}

@@ -82,24 +82,25 @@ const SigninStart = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden pt-safe pb-safe">
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
-        <div className="flex items-center justify-between mb-4">
-          <div />
-          <div className="w-40">
-            <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
-              <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2" aria-label="Language selector">
-                <img src={languageIcon} alt="" className="w-4 h-4 flex-shrink-0" />
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
-                {languages.map((l) => (
-                  <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Header with language selector */}
+      <header className="p-4 flex items-center justify-end">
+        <div className="w-40">
+          <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
+            <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2" aria-label="Language selector">
+              <img src={languageIcon} alt="" className="w-5 h-5 flex-shrink-0" />
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
+              {languages.map((l) => (
+                <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+      </header>
+
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-4 overscroll-contain [-webkit-overflow-scrolling:touch]">
         {/* Logo */}
         <div className="text-center">
             <div className="flex items-center justify-center mb-8">

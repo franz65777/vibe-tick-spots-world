@@ -3,6 +3,7 @@ import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -20,6 +21,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   maxFiles = 5
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
@@ -84,21 +86,21 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <Button 
-                onClick={() => window.location.href = '/add-location'}
+                onClick={() => navigate('/add-location')}
                 size="lg"
                 className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
               >
                 <Map className="w-5 h-5 mr-2 text-primary" />
-                Aggiungi luogo
+                {t('addLocation', { ns: 'add' })}
               </Button>
 
               <Button 
-                onClick={() => window.location.href = '/create-list'}
+                onClick={() => navigate('/create-list')}
                 size="lg"
                 className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
               >
                 <FolderPlus className="w-5 h-5 mr-2 text-primary" />
-                Crea lista
+                {t('createList', { ns: 'add' })}
               </Button>
             </div>
           </div>

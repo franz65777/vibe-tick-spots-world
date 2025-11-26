@@ -22,13 +22,16 @@ export interface Trip {
   trip_locations?: any[];
 }
 
-export const useTrips = () => {
+export const useTrips = (userId?: string) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
+  // Use provided userId or fallback to authenticated user
+  const targetUserId = userId || user?.id;
+
   const fetchTrips = async () => {
-    if (!user) return;
+    if (!targetUserId) return;
 
     try {
       const { data, error } = await supabase
@@ -50,7 +53,7 @@ export const useTrips = () => {
             )
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -65,7 +68,7 @@ export const useTrips = () => {
 
   useEffect(() => {
     fetchTrips();
-  }, [user]);
+  }, [targetUserId]);
 
   const createTrip = async (tripData: {
     name: string;
