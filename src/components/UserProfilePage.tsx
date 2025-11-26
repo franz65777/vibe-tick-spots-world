@@ -153,7 +153,7 @@ const UserProfilePage = () => {
       case 'posts':
         return <PostsGrid userId={userId} />;
       case 'trips':
-        return <TripsGrid />;
+        return <TripsGrid userId={userId} />;
       case 'badges':
         return <Achievements userId={userId} />;
       case 'tagged':

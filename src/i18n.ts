@@ -421,6 +421,7 @@ const resources = {
       photosOrVideos: 'photos or videos',
       addMore: 'Add more',
       addLocation: 'Add Location',
+      createList: 'Create List',
       searchForPlace: 'Search for a place...',
       youMustTagLocation: 'You must tag a location to share your post. This helps others discover great places!',
       searchUsersToTag: 'Search users to tag...',

@@ -10,7 +10,7 @@ import { ChevronRight, ArrowLeft, Shield, LogOut } from 'lucide-react';
 import editProfileIcon from '@/assets/settings-edit-profile.png';
 import languageIcon from '@/assets/settings-language.png';
 import businessIcon from '@/assets/settings-business.png';
-import notificationsIcon from '@/assets/settings-notifications.png';
+import notificationsIcon from '@/assets/icon-notification-bell.png';
 import closeFriendsIcon from '@/assets/settings-close-friends.png';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';

@@ -156,7 +156,7 @@ const SignupStart: React.FC = () => {
         <div className="w-40">
             <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
               <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2" aria-label="Language selector">
-                <img src={languageIcon} alt="" className="w-4 h-4 flex-shrink-0" />
+                <img src={languageIcon} alt="" className="w-5 h-5 flex-shrink-0" />
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
             <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
