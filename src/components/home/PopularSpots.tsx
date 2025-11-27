@@ -385,7 +385,20 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 </div>
               )}
             </div>
-            {!dropdownOpen && hasResults && <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />}
+            <div className="flex items-center gap-2">
+              {!dropdownOpen && hasResults && (
+                <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />
+              )}
+              {onSwipeDiscoveryOpen && (
+                <button
+                  type="button"
+                  onClick={onSwipeDiscoveryOpen}
+                  className="text-[11px] font-semibold text-primary hover:text-primary/80 underline-offset-2"
+                >
+                  {t('discoverMore', { ns: 'home', defaultValue: 'Discover more' })}
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

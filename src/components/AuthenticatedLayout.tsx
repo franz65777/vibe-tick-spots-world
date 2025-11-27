@@ -11,7 +11,6 @@ const AuthenticatedLayout: React.FC = () => {
   const isEditProfileRoute = location.pathname === '/edit-profile';
   const isCreateTripRoute = location.pathname === '/create-trip';
   const isCreateListRoute = location.pathname === '/create-list';
-  const isAddRoute = location.pathname === '/add';
   const isHomePage = location.pathname === '/';
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [isPhotoSelection, setIsPhotoSelection] = useState(false);
@@ -105,7 +104,7 @@ const AuthenticatedLayout: React.FC = () => {
       <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
-      {!isDiscoverRoute && !isSettingsRoute && !isEditProfileRoute && !isCreateTripRoute && !isCreateListRoute && !isAddRoute && !isMapExpanded && !isPhotoSelection && !isFolderModalOpen && !isOnboardingOpen && (
+      {!isDiscoverRoute && !isSettingsRoute && !isEditProfileRoute && !isCreateTripRoute && !isCreateListRoute && !isMapExpanded && !isPhotoSelection && !isFolderModalOpen && !isOnboardingOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-[1500]">
           {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
         </div>
