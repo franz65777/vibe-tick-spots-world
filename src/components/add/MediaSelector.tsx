@@ -86,7 +86,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <Button 
-                onClick={() => navigate('/add')}
+                onClick={() => navigate('/save-location')}
                 size="lg"
                 className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
               >
