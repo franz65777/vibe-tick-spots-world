@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { cn } from '@/lib/utils';
+import { useAutoCroppedImage } from '@/hooks/useAutoCroppedImage';
 import fireIcon from '@/assets/fire-icon-3d.png';
 import trendingIcon from '@/assets/filter-trending.png';
 import discountIcon from '@/assets/filter-discount.png';
@@ -62,6 +63,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const [filterType, setFilterType] = useState<FilterType>('most_saved');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Auto-cropped icons so all filters visually fill their containers
+  const trendingIconSrc = useAutoCroppedImage(trendingIcon);
+  const discountIconSrc = useAutoCroppedImage(discountIcon);
+  const eventIconSrc = useAutoCroppedImage(eventIcon);
+  const promotionIconSrc = useAutoCroppedImage(promotionIcon);
+  const newIconSrc = useAutoCroppedImage(newIcon);
 
   useEffect(() => {
     fetchPopularSpots();
@@ -281,11 +289,11 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
   const getFilterIcon = () => {
     switch (filterType) {
-      case 'discount': return <img src={discountIcon} alt="Discount" className="w-full h-full object-contain" />;
-      case 'event': return <img src={eventIcon} alt="Event" className="w-full h-full object-contain" />;
-      case 'promotion': return <img src={promotionIcon} alt="Promotion" className="w-full h-full object-contain" />;
-      case 'new': return <img src={newIcon} alt="New" className="w-full h-full object-contain" />;
-      default: return <img src={trendingIcon} alt="Trending" className="w-full h-full object-contain" />;
+      case 'discount': return <img src={discountIconSrc} alt="Discount" className="w-full h-full object-contain" />;
+      case 'event': return <img src={eventIconSrc} alt="Event" className="w-full h-full object-contain" />;
+      case 'promotion': return <img src={promotionIconSrc} alt="Promotion" className="w-full h-full object-contain" />;
+      case 'new': return <img src={newIconSrc} alt="New" className="w-full h-full object-contain" />;
+      default: return <img src={trendingIconSrc} alt="Trending" className="w-full h-full object-contain" />;
     }
   };
 
@@ -300,11 +308,11 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   };
 
   const filterOptions = [
-    { value: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: trendingIcon },
-    { value: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: discountIcon },
-    { value: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: eventIcon },
-    { value: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: promotionIcon },
-    { value: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: newIcon },
+    { value: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: trendingIconSrc },
+    { value: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: discountIconSrc },
+    { value: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: eventIconSrc },
+    { value: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: promotionIconSrc },
+    { value: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: newIconSrc },
   ];
 
   useEffect(() => {
