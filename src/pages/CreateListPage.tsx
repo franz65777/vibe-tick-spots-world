@@ -346,7 +346,7 @@ const CreateListPage = () => {
           {isPrivate ? (
             <img src={lockIcon} alt="Private" className="h-5 w-5" />
           ) : (
-            <img src={eyeIcon} alt="Public" className="h-5 w-7" />
+            <img src={eyeIcon} alt="Public" className="h-5 w-8" />
           )}
         </button>
       </div>
@@ -434,7 +434,7 @@ const CreateListPage = () => {
 
               {/* Privacy Status Display */}
               <div className="flex items-center gap-2 p-3 bg-accent/50 rounded-xl">
-                {isPrivate ? <img src={lockIcon} alt="Private" className="h-4 w-4" /> : <img src={eyeIcon} alt="Public" className="h-4 w-6" />}
+                {isPrivate ? <img src={lockIcon} alt="Private" className="h-4 w-4" /> : <img src={eyeIcon} alt="Public" className="h-4 w-7" />}
                 <span className="text-sm">
                   {isPrivate
                     ? t('profile:folderPrivateDesc', { defaultValue: 'Solo tu puoi vedere questa lista' })
