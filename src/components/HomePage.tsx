@@ -544,7 +544,7 @@ const HomePage = memo(() => {
           />
         )}
       
-      <main className="flex-1 flex flex-col overflow-x-hidden relative">
+      <main className="flex-1 flex flex-col overflow-hidden relative">
         {/* Stories Section - HIDDEN FOR NOW - Keep logic intact for later implementation */}
         {/* {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
@@ -593,9 +593,9 @@ const HomePage = memo(() => {
           </Suspense>
         )}
         
-        {/* Map Section - absolute positioned to extend all the way to bottom behind bottom nav */}
+        {/* Map Section - extends behind bottom nav to fill screen */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
-          <div className="absolute top-[110px] left-0 right-0 bottom-0">
+          <div className="absolute inset-x-0 top-[110px] bottom-[calc(-1*env(safe-area-inset-bottom))]">
             <Suspense fallback={<div className="w-full h-full" />}>
               <HomeMapContainer
                 mapCenter={mapCenter}
