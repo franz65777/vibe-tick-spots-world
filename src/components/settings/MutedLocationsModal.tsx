@@ -75,7 +75,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <SheetTitle className="flex items-center gap-3">
-                <img src={notificationsIcon} alt="" className="w-10 h-10 object-contain" />
+                <img src={bellOffIcon} alt="" className="w-7 h-7 object-contain" />
                 {t('mutedLocations', { ns: 'settings' })}
               </SheetTitle>
             </div>
