@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +50,47 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const [userSavedIds, setUserSavedIds] = useState<Set<string>>(new Set());
   const [campaignLocationIds, setCampaignLocationIds] = useState<Set<string>>(new Set());
   const [saveTags, setSaveTags] = useState<Record<string, SaveTag>>({});
+
+  const visibleLocations = useMemo(() => {
+    if (!locations || locations.length === 0) return [] as LocationCard[];
+
+    // Normalize a string for comparison
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    let filtered = locations;
+
+    if (searchQuery && searchQuery.trim()) {
+      const q = normalize(searchQuery);
+      filtered = locations.filter((loc) => {
+        const nameNorm = normalize(loc.name || '');
+        return nameNorm.includes(q);
+      });
+    }
+
+    // Deduplicate by name + city (keep the one with more saves/posts)
+    const byKey = new Map<string, LocationCard>();
+    filtered.forEach((loc) => {
+      const key = `${(loc.name || '').toLowerCase().trim()}|${(loc.city || '').toLowerCase().trim()}`;
+      const existing = byKey.get(key);
+      if (!existing) {
+        byKey.set(key, loc);
+      } else {
+        const existingScore = (existing.savesCount || 0) + (existing.postsCount || 0);
+        const currentScore = (loc.savesCount || 0) + (loc.postsCount || 0);
+        if (currentScore > existingScore) {
+          byKey.set(key, loc);
+        }
+      }
+    });
+
+    return Array.from(byKey.values());
+  }, [locations, searchQuery]);
 
   useEffect(() => {
     fetchLocations();
