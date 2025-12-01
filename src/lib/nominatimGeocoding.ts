@@ -9,6 +9,8 @@ interface NominatimResult {
   lat: string;
   lon: string;
   display_name: string;
+  type?: string;
+  class?: string;
   address: {
     city?: string;
     town?: string;
@@ -26,6 +28,8 @@ interface GeocodeResult {
   city: string;
   address: string;
   displayName: string;
+  type?: string;
+  class?: string;
 }
 
 class NominatimGeocoding {
@@ -102,6 +106,8 @@ class NominatimGeocoding {
         city: result.address.city || result.address.town || result.address.village || '',
         address: result.display_name,
         displayName: result.display_name,
+        type: result.type,
+        class: result.class,
       }));
 
       // Sort by distance if user location provided
@@ -182,6 +188,8 @@ class NominatimGeocoding {
         city,
         address: result.display_name,
         displayName: result.display_name,
+        type: result.type,
+        class: result.class,
       };
     } catch (error) {
       console.error('Nominatim reverse geocoding error:', error);
