@@ -331,20 +331,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 className="flex items-center justify-start"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
-                {/* Main filter icon - with specific sizing per filter type */}
+                {/* Main filter icon - same size for all */}
                 <div className={cn(
                    "flex items-center justify-center transition-all",
-                   dropdownOpen 
-                     ? (filterType === 'promotion' ? "w-14 h-14" : 
-                        filterType === 'most_saved' ? "w-16 h-16" :
-                        filterType === 'discount' ? "w-16 h-16" :
-                        filterType === 'event' ? "w-18 h-18" :
-                        "w-16 h-16")
-                     : (filterType === 'promotion' ? "w-12 h-12" : 
-                        filterType === 'most_saved' ? "w-13 h-13" :
-                        filterType === 'discount' ? "w-13 h-13" :
-                        filterType === 'event' ? "w-14 h-14" :
-                        "w-13 h-13")
+                   dropdownOpen ? "w-14 h-14" : "w-12 h-12"
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -367,14 +357,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         <img 
                           src={option.icon} 
                           alt={option.label} 
-                          className={cn(
-                            "object-contain",
-                            option.value === 'promotion' ? "w-12 h-12" : 
-                            option.value === 'most_saved' ? "w-13 h-13" :
-                            option.value === 'discount' ? "w-13 h-13" :
-                            option.value === 'event' ? "w-14 h-14" :
-                            "w-13 h-13"
-                          )} 
+                          className="w-12 h-12 object-contain" 
                         />
                       </button>
                     ))}
