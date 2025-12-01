@@ -255,7 +255,10 @@ const ShareLocationPage = () => {
     
     setSearching(true);
     try {
-      // Fetch more locations without strict filtering (fuzzy match client-side)
+      const userLat = location?.latitude;
+      const userLng = location?.longitude;
+      
+      // Search existing locations with fuzzy matching
       const { data: appLocations, error } = await supabase
         .from('locations')
         .select('*')
@@ -265,13 +268,8 @@ const ShareLocationPage = () => {
 
       if (error) throw error;
 
-      // Calculate distance, similarity, and relevance score
-      let results: any[] = [];
-      
-      const userLat = location?.latitude;
-      const userLng = location?.longitude;
-      
-      results = appLocations?.map(loc => {
+      // Calculate relevance for existing locations
+      let existingResults: any[] = appLocations?.map(loc => {
         const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
         const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
         const distance = userLat && userLng 
@@ -296,45 +294,39 @@ const ShareLocationPage = () => {
           isExisting: true,
           relevance
         };
-      }) || [];
+      }).filter(r => r.relevance >= 0.35) // Lower threshold for better fuzzy match
+        .sort((a, b) => b.relevance - a.relevance)
+        .slice(0, 10) || [];
 
-      // Filter by minimum relevance threshold (0.4 = 40% match)
-      results = results.filter(r => r.relevance >= 0.4);
-
-      // Sort by relevance (higher is better)
-      results.sort((a, b) => b.relevance - a.relevance);
-
-      // Take top results
-      results = results.slice(0, 15);
-
-      // If not enough results, supplement with Nominatim
-      if (results.length < 5) {
-        const userLoc = userLat && userLng 
-          ? { lat: userLat, lng: userLng }
-          : undefined;
-          
-        const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
-        const externalResults = nominatimResults?.map(r => {
-          const distance = userLat && userLng 
-            ? calculateDistance(userLat, userLng, r.lat, r.lng)
-            : Infinity;
-          const relevance = calculateRelevanceScore(query, r.displayName, r.address, distance);
-          
-          return {
-            name: r.displayName,
-            address: r.address,
-            lat: r.lat,
-            lng: r.lng,
-            isExisting: false,
-            distance,
-            relevance
-          };
-        }).filter(r => !results.some(existing => 
-          Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
-        )) || [];
+      // Always search Nominatim for new locations
+      const userLoc = userLat && userLng 
+        ? { lat: userLat, lng: userLng }
+        : undefined;
         
-        results = [...results, ...externalResults].sort((a, b) => b.relevance - a.relevance);
-      }
+      const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
+      const newLocationResults = nominatimResults?.map(r => {
+        const distance = userLat && userLng 
+          ? calculateDistance(userLat, userLng, r.lat, r.lng)
+          : Infinity;
+        const relevance = calculateRelevanceScore(query, r.displayName, r.address, distance);
+        
+        return {
+          name: r.displayName,
+          address: r.address,
+          lat: r.lat,
+          lng: r.lng,
+          isExisting: false,
+          distance,
+          relevance
+        };
+      }).filter(r => !existingResults.some(existing => 
+        Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
+      )) || [];
+
+      // Combine and sort by relevance
+      let results = [...existingResults, ...newLocationResults]
+        .sort((a, b) => b.relevance - a.relevance)
+        .slice(0, 20);
 
       // Remove duplicates by coordinates
       const seen = new Set<string>();
