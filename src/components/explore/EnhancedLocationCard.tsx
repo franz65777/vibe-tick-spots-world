@@ -268,7 +268,8 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-2">
-          <div className="flex-col h-auto py-3 gap-1 rounded-2xl bg-secondary flex items-center justify-center">
+          <div className="relative flex-col h-auto py-3 gap-1 rounded-2xl bg-secondary flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
             <SaveLocationDropdown
               isSaved={isSaved}
               onSave={handleSaveToggle}
@@ -288,8 +289,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             }}
             size="sm"
             variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+            className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
           >
+            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
             <Star className="w-5 h-5" />
             <span className="text-xs">{t('review', { ns: 'explore' })}</span>
           </Button>
@@ -306,8 +308,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             }}
             size="sm"
             variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+            className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
           >
+            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
             <Navigation className="w-5 h-5" />
             <span className="text-xs">{t('directions', { ns: 'explore' })}</span>
           </Button>
@@ -319,8 +322,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             }}
             size="sm"
             variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+            className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
           >
+            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
             <Share2 className="w-5 h-5" />
             <span className="text-xs">{t('share', { ns: 'common' })}</span>
           </Button>
