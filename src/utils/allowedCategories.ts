@@ -37,7 +37,6 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
     
     // Bar - alcohol-serving establishments
     'bar': 'bar',
-    'night_club': 'bar',
     'pub': 'bar',
     'liquor_store': 'bar',
     
@@ -58,6 +57,11 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
     'casino': 'entertainment',
     'stadium': 'entertainment',
     'park': 'entertainment',
+    'leisure': 'entertainment',
+    'playground': 'entertainment',
+    'nightclub': 'entertainment',
+    'night_club': 'entertainment',
+    'music_venue': 'entertainment',
     'tourist_attraction': 'entertainment',
     
     // Hotel - accommodation
