@@ -394,7 +394,13 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       // Client-side relevance filtering when search query exists
       let uniqueLocations = Array.from(groups.values())
         .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest);
-      
+
+      console.log('LocationGrid raw groups', {
+        searchQuery,
+        totalGroups: groups.size,
+        names: Array.from(groups.values()).map((g) => g.name),
+      });
+
       if (searchQuery && searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const normalizedQuery = query.replace(/[^a-z0-9\s]/g, '').trim();
