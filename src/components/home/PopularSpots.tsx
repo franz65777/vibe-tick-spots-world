@@ -335,8 +335,8 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 <div className={cn(
                    "flex items-center justify-center transition-all",
                    dropdownOpen 
-                     ? (filterType === 'event' ? "w-15 h-15" : filterType === 'new' ? "w-16 h-16" : "w-14 h-14")
-                     : (filterType === 'event' ? "w-13 h-13" : filterType === 'new' ? "w-14 h-14" : "w-12 h-12")
+                     ? (filterType === 'event' ? "w-13 h-13" : filterType === 'new' ? "w-16 h-16" : "w-14 h-14")
+                     : (filterType === 'event' ? "w-12 h-12" : filterType === 'new' ? "w-14 h-14" : "w-12 h-12")
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -361,7 +361,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                           alt={option.label} 
                           className={cn(
                             "object-contain",
-                            option.value === 'event' ? "w-13 h-13" : option.value === 'new' ? "w-14 h-14" : "w-12 h-12"
+                            option.value === 'event' ? "w-12 h-12" : option.value === 'new' ? "w-14 h-14" : "w-12 h-12"
                           )}
                         />
                       </button>
@@ -397,7 +397,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                   className="flex items-center justify-center"
                   aria-label={t('discoverMore', { ns: 'home', defaultValue: 'Discover more' })}
                 >
-                  <img src={tinderIcon} alt="Discover" className="w-9 h-9 object-contain" />
+                  <img src={tinderIcon} alt="Discover" className="w-6 h-6 object-contain" />
                 </button>
               )}
             </div>
