@@ -121,15 +121,10 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           longitude
         `);
 
-      // Apply search filter - Search across name, city, and address
-      // Also normalize the search query to match against normalized city names
-      // Support reverse translation for searching (e.g., searching "Milano" finds "Milan")
+      // Apply search filter - Prioritize name matches
       if (searchQuery && searchQuery.trim()) {
-        const normalizedSearch = normalizeCity(searchQuery.trim());
-        const englishCityName = reverseTranslateCityName(searchQuery.trim());
-        
-        // Global city search: text-based with support for all city names
-        query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,city.ilike.%${englishCityName}%,address.ilike.%${searchQuery}%`);
+        // Don't filter yet - fetch all and score client-side for better relevance
+        // (filtering server-side with OR is too broad and shows irrelevant results)
       }
 
       // Apply category filter
@@ -147,8 +142,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .select('place_id, place_name, place_category, city, coordinates');
 
       if (searchQuery && searchQuery.trim()) {
-        const normalizedSearch = normalizeCity(searchQuery.trim());
-        savedPlacesQuery = savedPlacesQuery.or(`place_name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%`);
+        // Don't filter yet - will score client-side for relevance
       }
 
       if (selectedCategory) {
@@ -397,10 +391,71 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       });
       setUserSavedIds(finalUserSavedIds);
 
-      // Sort by saves count (most popular first) and strip internal fields
-      const uniqueLocations = Array.from(groups.values())
-        .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest)
-        .sort((a, b) => b.savesCount - a.savesCount);
+      // Client-side relevance filtering when search query exists
+      let uniqueLocations = Array.from(groups.values())
+        .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest);
+      
+      if (searchQuery && searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        const normalizedQuery = query.replace(/[^a-z0-9\s]/g, '').trim();
+        
+        // Calculate relevance score for each location
+        const scoredLocations = uniqueLocations.map(loc => {
+          const name = loc.name.toLowerCase();
+          const normalizedName = name.replace(/[^a-z0-9\s]/g, '');
+          const city = (loc.city || '').toLowerCase();
+          const address = (loc.address || '').toLowerCase();
+          
+          let score = 0;
+          
+          // Exact name match (highest priority)
+          if (name === query || normalizedName === normalizedQuery) {
+            score = 1000;
+          }
+          // Name starts with query (very high priority)
+          else if (name.startsWith(query) || normalizedName.startsWith(normalizedQuery)) {
+            score = 900;
+          }
+          // Name contains query (high priority)
+          else if (name.includes(query) || normalizedName.includes(normalizedQuery)) {
+            score = 500;
+          }
+          // City exact match (medium priority)
+          else if (city === query) {
+            score = 300;
+          }
+          // City starts with query (lower priority)
+          else if (city.startsWith(query)) {
+            score = 200;
+          }
+          // City contains query (low priority)
+          else if (city.includes(query)) {
+            score = 100;
+          }
+          // Address contains query (lowest priority)
+          else if (address.includes(query)) {
+            score = 50;
+          }
+          
+          return { ...loc, relevanceScore: score };
+        });
+        
+        // Filter out irrelevant results (score = 0) and sort by relevance
+        uniqueLocations = scoredLocations
+          .filter(loc => loc.relevanceScore > 0)
+          .sort((a, b) => {
+            // First sort by relevance score
+            if (b.relevanceScore !== a.relevanceScore) {
+              return b.relevanceScore - a.relevanceScore;
+            }
+            // Then by saves count for equal relevance
+            return b.savesCount - a.savesCount;
+          })
+          .map(({ relevanceScore, ...loc }) => loc);
+      } else {
+        // No search query - sort by popularity
+        uniqueLocations = uniqueLocations.sort((a, b) => b.savesCount - a.savesCount);
+      }
 
       return {
         locations: uniqueLocations,
