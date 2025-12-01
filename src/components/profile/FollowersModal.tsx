@@ -40,6 +40,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchFollowData = async () => {
@@ -198,6 +200,30 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe && activeTab === 'followers') {
+      setActiveTab('following');
+    }
+    if (isRightSwipe && activeTab === 'following') {
+      setActiveTab('followers');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -261,7 +287,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         
         {/* Content */}
         <ScrollArea className="flex-1">
-          <div className="p-4 space-y-4">
+          <div 
+            className="p-4 space-y-4"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>

@@ -252,14 +252,10 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     }}
                   />
                   {post.media_urls.length > 1 && (
-                    <div className="absolute top-1 right-1 w-12 h-12">
-                      <img
-                        src={post.media_urls[1]}
-                        alt=""
-                        className="absolute top-0 right-0 w-full h-full rounded-lg opacity-60 object-cover"
-                        style={{ transform: 'translate(4px, 4px)' }}
-                        loading="lazy"
-                      />
+                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
+                      <span className="text-xs text-white font-medium">
+                        +{post.media_urls.length - 1}
+                      </span>
                     </div>
                   )}
                   {isOwnProfile && (
