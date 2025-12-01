@@ -262,7 +262,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     <button
                       onClick={(e) => handleDeletePost(post.id, e)}
                       disabled={deleting}
-                      className="absolute top-2 left-2 w-6 h-6 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                      className="absolute top-2 left-2 w-6 h-6 bg-gray-500/90 hover:bg-gray-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
                       title="Delete post"
                     >
                       {deleting ? (
