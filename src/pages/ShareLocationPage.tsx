@@ -178,72 +178,162 @@ const ShareLocationPage = () => {
     }
   };
 
+  // Normalize string for fuzzy matching
+  const normalizeString = (str: string): string => {
+    return str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  // Calculate string similarity (Levenshtein-based)
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const s1 = normalizeString(str1);
+    const s2 = normalizeString(str2);
+    
+    // Exact match
+    if (s1 === s2) return 1.0;
+    
+    // Substring match (partial)
+    if (s2.includes(s1) || s1.includes(s2)) {
+      const longer = Math.max(s1.length, s2.length);
+      const shorter = Math.min(s1.length, s2.length);
+      return shorter / longer * 0.95; // High score for substring match
+    }
+    
+    // Levenshtein distance
+    const matrix: number[][] = [];
+    for (let i = 0; i <= s2.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= s1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= s2.length; i++) {
+      for (let j = 1; j <= s1.length; j++) {
+        if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    
+    const distance = matrix[s2.length][s1.length];
+    const maxLength = Math.max(s1.length, s2.length);
+    return maxLength === 0 ? 1.0 : 1.0 - (distance / maxLength);
+  };
+
+  // Calculate relevance score combining name similarity and geographic distance
+  const calculateRelevanceScore = (
+    query: string, 
+    name: string, 
+    address: string, 
+    distance: number
+  ): number => {
+    const nameSimilarity = calculateSimilarity(query, name);
+    const addressSimilarity = calculateSimilarity(query, address);
+    const bestSimilarity = Math.max(nameSimilarity, addressSimilarity * 0.7);
+    
+    // Distance factor (closer is better, but similarity is more important)
+    const distanceFactor = distance === Infinity ? 0.5 : Math.max(0, 1 - (distance / 500));
+    
+    // Weight: 70% similarity, 30% distance
+    return bestSimilarity * 0.7 + distanceFactor * 0.3;
+  };
+
   const searchLocations = async (query: string) => {
     if (!query.trim()) return;
     
     setSearching(true);
     try {
-      // First search in existing app locations
+      // Fetch more locations without strict filtering (fuzzy match client-side)
       const { data: appLocations, error } = await supabase
         .from('locations')
         .select('*')
-        .or(`name.ilike.%${query}%,address.ilike.%${query}%,city.ilike.%${query}%`)
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .limit(20);
+        .limit(100);
 
       if (error) throw error;
 
-      // Calculate distance and sort by proximity
+      // Calculate distance, similarity, and relevance score
       let results: any[] = [];
       
-      if (location?.latitude && location?.longitude) {
-        results = appLocations?.map(loc => {
-          const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
-          const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
-          const distance = calculateDistance(location.latitude!, location.longitude!, lat, lng);
-          
-          return {
-            id: loc.id,
-            name: loc.name,
-            address: loc.address || loc.city || '',
-            lat,
-            lng,
-            distance,
-            category: loc.category,
-            isExisting: true
-          };
-        }).sort((a, b) => a.distance - b.distance) || [];
-      } else {
-        results = appLocations?.map(loc => ({
+      const userLat = location?.latitude;
+      const userLng = location?.longitude;
+      
+      results = appLocations?.map(loc => {
+        const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
+        const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
+        const distance = userLat && userLng 
+          ? calculateDistance(userLat, userLng, lat, lng)
+          : Infinity;
+        
+        const relevance = calculateRelevanceScore(
+          query,
+          loc.name,
+          loc.address || loc.city || '',
+          distance
+        );
+        
+        return {
           id: loc.id,
           name: loc.name,
           address: loc.address || loc.city || '',
-          lat: typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude,
-          lng: typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude,
+          lat,
+          lng,
+          distance,
           category: loc.category,
-          isExisting: true
-        })) || [];
-      }
+          isExisting: true,
+          relevance
+        };
+      }) || [];
 
-      // If not enough results, supplement with Nominatim (with user location for proximity)
+      // Filter by minimum relevance threshold (0.4 = 40% match)
+      results = results.filter(r => r.relevance >= 0.4);
+
+      // Sort by relevance (higher is better)
+      results.sort((a, b) => b.relevance - a.relevance);
+
+      // Take top results
+      results = results.slice(0, 15);
+
+      // If not enough results, supplement with Nominatim
       if (results.length < 5) {
-        const userLoc = location?.latitude && location?.longitude 
-          ? { lat: location.latitude, lng: location.longitude }
+        const userLoc = userLat && userLng 
+          ? { lat: userLat, lng: userLng }
           : undefined;
           
         const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
-        const externalResults = nominatimResults?.map(r => ({
-          ...r,
-          isExisting: false,
-          distance: location?.latitude && location?.longitude 
-            ? calculateDistance(location.latitude, location.longitude, r.lat, r.lng)
-            : Infinity
-        })).filter(r => !results.some(existing => 
+        const externalResults = nominatimResults?.map(r => {
+          const distance = userLat && userLng 
+            ? calculateDistance(userLat, userLng, r.lat, r.lng)
+            : Infinity;
+          const relevance = calculateRelevanceScore(query, r.displayName, r.address, distance);
+          
+          return {
+            name: r.displayName,
+            address: r.address,
+            lat: r.lat,
+            lng: r.lng,
+            isExisting: false,
+            distance,
+            relevance
+          };
+        }).filter(r => !results.some(existing => 
           Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
         )) || [];
         
-        results = [...results, ...externalResults].sort((a, b) => a.distance - b.distance);
+        results = [...results, ...externalResults].sort((a, b) => b.relevance - a.relevance);
       }
 
       // Remove duplicates by coordinates
