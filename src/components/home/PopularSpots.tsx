@@ -339,12 +339,12 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         filterType === 'most_saved' ? "w-16 h-16" :
                         filterType === 'discount' ? "w-16 h-16" :
                         filterType === 'event' ? "w-18 h-18" :
-                        filterType === 'new' ? "w-16 h-16" : "w-20 h-20")
+                        "w-16 h-16")
                      : (filterType === 'promotion' ? "w-12 h-12" : 
                         filterType === 'most_saved' ? "w-13 h-13" :
                         filterType === 'discount' ? "w-13 h-13" :
                         filterType === 'event' ? "w-14 h-14" :
-                        filterType === 'new' ? "w-13 h-13" : "w-16 h-16")
+                        "w-13 h-13")
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -373,7 +373,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                             option.value === 'most_saved' ? "w-13 h-13" :
                             option.value === 'discount' ? "w-13 h-13" :
                             option.value === 'event' ? "w-14 h-14" :
-                            option.value === 'new' ? "w-13 h-13" : "w-16 h-16"
+                            "w-13 h-13"
                           )} 
                         />
                       </button>
@@ -399,7 +399,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               )}
             </div>
             <div className="flex items-center gap-2">
-              {!dropdownOpen && hasResults && (
+              {!dropdownOpen && hasResults && filterType !== 'most_saved' && (
                 <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />
               )}
               {onSwipeDiscoveryOpen && (
