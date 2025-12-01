@@ -277,18 +277,18 @@ const ShareLocationPage = () => {
       const { data: appLocations, error } = await supabase
         .from('locations')
         .select('*')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
         .limit(100);
 
       if (error) throw error;
 
       // Calculate relevance for existing locations
       let existingResults: any[] = appLocations?.map(loc => {
-        const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
-        const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
-        const distance = userLat && userLng 
-          ? calculateDistance(userLat, userLng, lat, lng)
+        const latRaw = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
+        const lngRaw = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
+        const hasCoords = typeof latRaw === 'number' && typeof lngRaw === 'number';
+
+        const distance = userLat && userLng && hasCoords
+          ? calculateDistance(userLat, userLng, latRaw, lngRaw)
           : Infinity;
         
         const relevance = calculateRelevanceScore(
@@ -302,8 +302,8 @@ const ShareLocationPage = () => {
           id: loc.id,
           name: loc.name,
           address: loc.address || loc.city || '',
-          lat,
-          lng,
+          lat: hasCoords ? latRaw : 0,
+          lng: hasCoords ? lngRaw : 0,
           distance,
           category: loc.category,
           isExisting: true,

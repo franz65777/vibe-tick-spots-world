@@ -399,12 +399,10 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         const query = searchQuery.toLowerCase().trim();
         const normalizedQuery = query.replace(/[^a-z0-9\s]/g, '').trim();
         
-        // Calculate relevance score for each location
+        // Calculate relevance score for each location (NAME-ONLY matching)
         const scoredLocations = uniqueLocations.map(loc => {
-          const name = loc.name.toLowerCase();
+          const name = (loc.name || '').toLowerCase();
           const normalizedName = name.replace(/[^a-z0-9\s]/g, '');
-          const city = (loc.city || '').toLowerCase();
-          const address = (loc.address || '').toLowerCase();
           
           let score = 0;
           
@@ -419,22 +417,6 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           // Name contains query (high priority)
           else if (name.includes(query) || normalizedName.includes(normalizedQuery)) {
             score = 500;
-          }
-          // City exact match (medium priority)
-          else if (city === query) {
-            score = 300;
-          }
-          // City starts with query (lower priority)
-          else if (city.startsWith(query)) {
-            score = 200;
-          }
-          // City contains query (low priority)
-          else if (city.includes(query)) {
-            score = 100;
-          }
-          // Address contains query (lowest priority)
-          else if (address.includes(query)) {
-            score = 50;
           }
           
           return { ...loc, relevanceScore: score };
