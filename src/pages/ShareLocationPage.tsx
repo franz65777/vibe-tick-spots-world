@@ -273,10 +273,11 @@ const ShareLocationPage = () => {
       const userLat = location?.latitude;
       const userLng = location?.longitude;
       
-      // Search existing locations with fuzzy matching
+      // Search existing locations with fuzzy matching (server-side name filter to ensure match exists)
       const { data: appLocations, error } = await supabase
         .from('locations')
         .select('*')
+        .ilike('name', `%${query}%`)
         .limit(100);
 
       if (error) throw error;
