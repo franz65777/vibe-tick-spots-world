@@ -252,23 +252,30 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     }}
                   />
                   {post.media_urls.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                      <span className="text-xs text-white font-medium">
-                        +{post.media_urls.length - 1}
-                      </span>
+                    <div className="absolute top-2 right-2 flex items-center">
+                      {post.media_urls.slice(1, 3).reverse().map((url, index) => (
+                        <img
+                          key={index}
+                          src={url}
+                          alt=""
+                          className="w-8 h-8 rounded-md border-2 border-white shadow-lg object-cover"
+                          style={{ marginLeft: index > 0 ? '-12px' : '0' }}
+                          loading="lazy"
+                        />
+                      ))}
                     </div>
                   )}
                   {isOwnProfile && (
                     <button
                       onClick={(e) => handleDeletePost(post.id, e)}
                       disabled={deleting}
-                      className="absolute top-2 left-2 w-6 h-6 bg-gray-500/90 hover:bg-gray-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                      className="absolute top-2 left-2 w-7 h-9 bg-gray-500/90 hover:bg-gray-600 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
                       title="Delete post"
                     >
                       {deleting ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        <img src={deleteIcon} alt="" className="w-3.5 h-3.5" />
+                        <img src={deleteIcon} alt="" className="w-5 h-5" />
                       )}
                     </button>
                   )}
