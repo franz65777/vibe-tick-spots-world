@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Search, Lock, Globe, Trash2, Plus } from 'lucide-react';
+import { X, Search, Trash2, Plus } from 'lucide-react';
+import lockIcon from '@/assets/lock-icon.png';
+import eyeIcon from '@/assets/eye-icon.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -325,7 +327,7 @@ const CreateListPage = () => {
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
-            onClick={() => navigate('/profile?tab=trips')}
+            onClick={() => navigate('/add')}
             className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
           >
             <X className="h-5 w-5" />
@@ -342,9 +344,9 @@ const CreateListPage = () => {
           title={isPrivate ? t('profile:private', { defaultValue: 'Privata' }) : t('profile:public', { defaultValue: 'Pubblica' })}
         >
           {isPrivate ? (
-            <Lock className="h-5 w-5 text-muted-foreground" />
+            <img src={lockIcon} alt="Private" className="h-5 w-5" />
           ) : (
-            <Globe className="h-5 w-5 text-muted-foreground" />
+            <img src={eyeIcon} alt="Public" className="h-5 w-5" />
           )}
         </button>
       </div>
@@ -432,7 +434,7 @@ const CreateListPage = () => {
 
               {/* Privacy Status Display */}
               <div className="flex items-center gap-2 p-3 bg-accent/50 rounded-xl">
-                {isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                {isPrivate ? <img src={lockIcon} alt="Private" className="h-4 w-4" /> : <img src={eyeIcon} alt="Public" className="h-4 w-4" />}
                 <span className="text-sm">
                   {isPrivate
                     ? t('profile:folderPrivateDesc', { defaultValue: 'Solo tu puoi vedere questa lista' })
