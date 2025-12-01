@@ -141,7 +141,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   <img 
                     src={bellOffIcon} 
                     alt="Enable notifications" 
-                    className="w-16 h-16 object-contain"
+                    className="w-7 h-7 object-contain"
                   />
                 </Button>
               </div>
