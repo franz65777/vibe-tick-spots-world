@@ -252,17 +252,14 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     }}
                   />
                   {post.media_urls.length > 1 && (
-                    <div className="absolute top-2 right-2 flex items-center">
-                      {post.media_urls.slice(1, 3).reverse().map((url, index) => (
-                        <img
-                          key={index}
-                          src={url}
-                          alt=""
-                          className="w-8 h-8 rounded-md border-2 border-white shadow-lg object-cover"
-                          style={{ marginLeft: index > 0 ? '-12px' : '0' }}
-                          loading="lazy"
-                        />
-                      ))}
+                    <div className="absolute top-1 right-1 w-12 h-12">
+                      <img
+                        src={post.media_urls[1]}
+                        alt=""
+                        className="absolute top-0 right-0 w-full h-full rounded-lg opacity-60 object-cover"
+                        style={{ transform: 'translate(4px, 4px)' }}
+                        loading="lazy"
+                      />
                     </div>
                   )}
                   {isOwnProfile && (
@@ -275,7 +272,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       {deleting ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        <img src={deleteIcon} alt="" className="w-5 h-5" />
+                        <img src={deleteIcon} alt="" className="w-4 h-5" />
                       )}
                     </button>
                   )}
