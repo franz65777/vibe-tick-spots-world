@@ -88,3 +88,61 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
   // Default fallback
   return 'restaurant';
 };
+
+// Nominatim-specific type filtering (whitelist approach)
+export const isAllowedNominatimType = (type?: string, osmClass?: string): boolean => {
+  if (!type && !osmClass) return false;
+  
+  // Whitelist of allowed Nominatim types that match our 7 categories
+  const allowedTypes = [
+    // Restaurant
+    'restaurant', 'fast_food', 'food_court', 'biergarten',
+    // Bar
+    'bar', 'pub', 'biergarten',
+    // Cafe
+    'cafe', 'coffee_shop',
+    // Bakery
+    'bakery',
+    // Hotel
+    'hotel', 'motel', 'guest_house', 'hostel', 'chalet', 'apartment',
+    // Museum
+    'museum', 'gallery', 'arts_centre', 'artwork', 'attraction',
+    // Entertainment
+    'cinema', 'theatre', 'nightclub', 'amusement_arcade', 'theme_park',
+    'zoo', 'aquarium', 'park', 'playground', 'sports_centre', 'stadium',
+    'music_venue', 'casino'
+  ];
+  
+  // Whitelist of allowed OSM classes
+  const allowedClasses = [
+    'amenity', 'tourism', 'leisure'
+  ];
+  
+  // Check type
+  if (type && allowedTypes.includes(type.toLowerCase())) {
+    return true;
+  }
+  
+  // For tourism/leisure classes, be more permissive
+  if (osmClass && allowedClasses.includes(osmClass.toLowerCase())) {
+    // But still exclude obvious non-matches
+    const blacklistedTypes = [
+      'police', 'post_office', 'townhall', 'embassy', 'courthouse',
+      'fire_station', 'hospital', 'clinic', 'dentist', 'pharmacy',
+      'bank', 'atm', 'bureau_de_change',
+      'fuel', 'charging_station', 'parking',
+      'shop', 'supermarket', 'mall', 'marketplace',
+      'school', 'university', 'college', 'library',
+      'place_of_worship', 'monastery', 'wayside_cross',
+      'airport', 'aerodrome', 'helipad', 'ferry_terminal'
+    ];
+    
+    if (type && blacklistedTypes.includes(type.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  return false;
+};

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
-import { mapGooglePlaceTypeToCategory, isAllowedCategory } from '@/utils/allowedCategories';
+import { mapGooglePlaceTypeToCategory, isAllowedCategory, isAllowedNominatimType } from '@/utils/allowedCategories';
 
 interface NearbyLocation {
   id: string;
@@ -320,11 +320,9 @@ const ShareLocationPage = () => {
         
       const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
       
-      // Filter Nominatim results to only include allowed categories
+      // Filter Nominatim results to only include allowed categories using Nominatim-specific types
       const filteredNominatim = nominatimResults?.filter(r => {
-        const placeTypes = r.type ? [r.type] : [];
-        const category = mapGooglePlaceTypeToCategory(placeTypes);
-        return isAllowedCategory(category);
+        return isAllowedNominatimType(r.type, r.class);
       }) || [];
       
       const newLocationResults = filteredNominatim.map(r => {
