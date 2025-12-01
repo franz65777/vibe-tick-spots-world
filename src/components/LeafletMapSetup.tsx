@@ -516,10 +516,10 @@ const LeafletMapSetup = ({
         className={
           fullScreen
             ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background'
-            : 'relative w-full min-h-[60vh] rounded-lg overflow-hidden'
+            : 'relative w-full h-full rounded-lg overflow-hidden'
         }
         style={{ 
-          minHeight: fullScreen ? '100%' : '60vh',
+          minHeight: '100%',
           visibility: selectedPostFromPin ? 'hidden' : 'visible',
           position: selectedPostFromPin ? 'absolute' : 'relative',
           pointerEvents: selectedPostFromPin ? 'none' : 'auto'
