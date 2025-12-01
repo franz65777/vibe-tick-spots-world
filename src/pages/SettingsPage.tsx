@@ -201,7 +201,7 @@ const SettingsPage: React.FC = () => {
             >
               <div className="flex items-center gap-3" style={{ paddingLeft: '7px', paddingRight: '15px' }}>
                 <img src={notificationsIcon} alt="" className="w-7 h-7 object-contain" />
-                <div className="text-left pl-[10px]">
+                <div className="text-left pl-[13px]">
                   <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
                     {t('manageMutedLocations', { ns: 'settings' })}
