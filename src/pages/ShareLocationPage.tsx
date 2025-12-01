@@ -246,14 +246,14 @@ const ShareLocationPage = () => {
         results = [...results, ...externalResults].sort((a, b) => a.distance - b.distance);
       }
 
-      // Remove duplicates by name (case-insensitive, normalize whitespace)
+      // Remove duplicates by coordinates
       const seen = new Set<string>();
       results = results.filter(result => {
-        const normalizedName = result.name.toLowerCase().replace(/\s+/g, ' ').trim();
-        if (seen.has(normalizedName)) {
+        const coordKey = `${result.lat.toFixed(6)},${result.lng.toFixed(6)}`;
+        if (seen.has(coordKey)) {
           return false;
         }
-        seen.add(normalizedName);
+        seen.add(coordKey);
         return true;
       });
 
