@@ -199,7 +199,7 @@ const SettingsPage: React.FC = () => {
               onClick={() => setMutedLocationsModalOpen(true)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
-              <div className="flex items-center gap-3" style={{ paddingLeft: '5px', paddingRight: '5px' }}>
+              <div className="flex items-center gap-3" style={{ paddingLeft: '10px', paddingRight: '15px' }}>
                 <img src={notificationsIcon} alt="" className="w-7 h-7 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
