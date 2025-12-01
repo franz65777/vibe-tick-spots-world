@@ -326,7 +326,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                     aria-label="Rimuovi avatar"
                     disabled={isLoading || isUploading}
                   >
-                    <img src={deleteIcon} alt="" className="w-7 h-7" />
+                    <img src={deleteIcon} alt="" className="w-9 h-9" />
                     <span className="text-sm">Rimuovi</span>
                   </button>
                 )}

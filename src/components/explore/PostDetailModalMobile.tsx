@@ -173,7 +173,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           setPosts(postsWithProfiles as any);
         }
       } else if (userId) {
-        // Load all posts for this user
+        // Load all photo/video posts for this user (exclude pure reviews)
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select('*')
@@ -182,15 +182,20 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
         if (postsError) throw postsError;
 
-        // If for some reason there are no posts for this user, fall back to single post load
-        if (!postsData || postsData.length === 0) {
-          console.warn('No posts found for user, falling back to single post load', { userId, postId });
+        // Keep only posts that have media (photos/videos)
+        const mediaPostsData = (postsData || []).filter((post: any) =>
+          Array.isArray(post.media_urls) && post.media_urls.length > 0
+        );
+
+        // If for some reason there are no media posts for this user, fall back to single post load
+        if (!mediaPostsData || mediaPostsData.length === 0) {
+          console.warn('No media posts found for user, falling back to single post load', { userId, postId });
           await loadSinglePost();
           return;
         }
 
         const postsWithProfiles = await Promise.all(
-          postsData.map(async (post) => {
+          mediaPostsData.map(async (post) => {
             const { data: profileData } = await supabase
               .from('profiles')
               .select('username, avatar_url')
