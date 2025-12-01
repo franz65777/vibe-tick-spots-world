@@ -429,8 +429,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                   disabled={loading}
                   variant="secondary"
                   size="sm"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
                 >
+                  <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none" />
                   {isSaved ? (
                     currentSaveTag === 'general' ? (
                       <Bookmark className="h-5 w-5 fill-current" />
@@ -455,8 +456,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                   }}
                   size="sm"
                   variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
                 >
+                  <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none" />
                   <Star className="w-5 h-5" />
                   <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
                 </Button>
@@ -472,8 +474,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                   }}
                   size="sm"
                   variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
                 >
+                  <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none" />
                   <Navigation className="w-5 h-5" />
                   <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
                 </Button>
@@ -482,8 +485,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                   onClick={() => setIsShareModalOpen(true)}
                   size="sm"
                   variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
                 >
+                  <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none" />
                   <Share2 className="w-5 h-5" />
                   <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
                 </Button>
