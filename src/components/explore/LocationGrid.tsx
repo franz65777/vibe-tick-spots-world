@@ -162,10 +162,9 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           longitude
         `);
 
-      // Apply search filter - Prioritize name matches
+      // Apply search filter server-side for name matching
       if (searchQuery && searchQuery.trim()) {
-        // Don't filter yet - fetch all and score client-side for better relevance
-        // (filtering server-side with OR is too broad and shows irrelevant results)
+        query = query.ilike('name', `%${searchQuery}%`);
       }
 
       // Apply category filter
@@ -183,7 +182,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .select('place_id, place_name, place_category, city, coordinates');
 
       if (searchQuery && searchQuery.trim()) {
-        // Don't filter yet - will score client-side for relevance
+        savedPlacesQuery = savedPlacesQuery.ilike('place_name', `%${searchQuery}%`);
       }
 
       if (selectedCategory) {
@@ -408,17 +407,6 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         }
       });
 
-      // Debug specific location stats
-      const debugLocation = Array.from(groups.values()).find(g => g.name === 'Nalu Restaurant & Lounge');
-      if (debugLocation) {
-        console.log('LocationGrid debug - Nalu Restaurant & Lounge', {
-          postsCount: debugLocation.postsCount,
-          savesCount: debugLocation.savesCount,
-          rankingScore: debugLocation.rankingScore,
-          allLocationIds: debugLocation.allLocationIds,
-        });
-      }
-
       // Check if user saved ANY of the location IDs or place_id for each unique place
       const finalUserSavedIds = new Set<string>();
       groups.forEach((g) => {
@@ -432,59 +420,10 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       });
       setUserSavedIds(finalUserSavedIds);
 
-      // Client-side relevance filtering when search query exists
-      let uniqueLocations = Array.from(groups.values())
-        .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest);
-
-      console.log('LocationGrid raw groups', {
-        searchQuery,
-        totalGroups: groups.size,
-        names: Array.from(groups.values()).map((g) => g.name),
-      });
-
-      if (searchQuery && searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const normalizedQuery = query.replace(/[^a-z0-9\s]/g, '').trim();
-        
-        // Calculate relevance score for each location (NAME-ONLY matching)
-        const scoredLocations = uniqueLocations.map(loc => {
-          const name = (loc.name || '').toLowerCase();
-          const normalizedName = name.replace(/[^a-z0-9\s]/g, '');
-          
-          let score = 0;
-          
-          // Exact name match (highest priority)
-          if (name === query || normalizedName === normalizedQuery) {
-            score = 1000;
-          }
-          // Name starts with query (very high priority)
-          else if (name.startsWith(query) || normalizedName.startsWith(normalizedQuery)) {
-            score = 900;
-          }
-          // Name contains query (high priority)
-          else if (name.includes(query) || normalizedName.includes(normalizedQuery)) {
-            score = 500;
-          }
-          
-          return { ...loc, relevanceScore: score };
-        });
-        
-        // Filter out irrelevant results (score = 0) and sort by relevance
-        uniqueLocations = scoredLocations
-          .filter(loc => loc.relevanceScore > 0)
-          .sort((a, b) => {
-            // First sort by relevance score
-            if (b.relevanceScore !== a.relevanceScore) {
-              return b.relevanceScore - a.relevanceScore;
-            }
-            // Then by saves count for equal relevance
-            return b.savesCount - a.savesCount;
-          })
-          .map(({ relevanceScore, ...loc }) => loc);
-      } else {
-        // No search query - sort by popularity
-        uniqueLocations = uniqueLocations.sort((a, b) => b.savesCount - a.savesCount);
-      }
+      // Convert groups to location cards
+      const uniqueLocations = Array.from(groups.values())
+        .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest)
+        .sort((a, b) => b.savesCount - a.savesCount);
 
       return {
         locations: uniqueLocations,
@@ -587,11 +526,23 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     );
   }
 
-  if (locations.length === 0) {
+  // Show "No locations found" when search query exists and no visible results
+  if (searchQuery && searchQuery.trim() && visibleLocations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-1">
         <div className="text-center">
-          <p className="text-gray-500">No locations found</p>
+          <p className="text-muted-foreground dark:text-gray-400">No locations found</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show anything if no locations at all (no search query)
+  if (!searchQuery && locations.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-1">
+        <div className="text-center">
+          <p className="text-muted-foreground dark:text-gray-400">No locations found</p>
         </div>
       </div>
     );
@@ -600,7 +551,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   return (
     <>
       <div className="grid grid-cols-2 gap-2 px-[10px] py-1 pb-16">
-        {locations.map((location) => {
+        {visibleLocations.map((location) => {
           const isSaved = userSavedIds.has(location.id);
           const isMuted = mutedLocations?.some((m: any) => m.location_id === location.id);
           const hasCampaign = campaignLocationIds.has(location.id);
