@@ -5,12 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { cn } from '@/lib/utils';
 import fireIcon from '@/assets/fire-icon-3d.png';
-import trendingIcon from '@/assets/filter-trending.png';
-import discountIcon from '@/assets/filter-discount.png';
-import eventIcon from '@/assets/filter-event.png';
+import trendingIcon from '@/assets/trending-icon.png';
+import discountIcon from '@/assets/discount-icon.png';
+import eventIcon from '@/assets/event-icon.png';
 import promotionIcon from '@/assets/filter-promotion.png';
-import newIcon from '@/assets/filter-new.png';
+import newIcon from '@/assets/new-icon.png';
 import cityIcon from '@/assets/city-icon.png';
+import tinderIcon from '@/assets/tinder-icon.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -393,9 +394,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 <button
                   type="button"
                   onClick={onSwipeDiscoveryOpen}
-                  className="text-[11px] font-semibold text-primary hover:text-primary/80 underline-offset-2"
+                  className="flex items-center justify-center"
+                  aria-label={t('discoverMore', { ns: 'home', defaultValue: 'Discover more' })}
                 >
-                  {t('discoverMore', { ns: 'home', defaultValue: 'Discover more' })}
+                  <img src={tinderIcon} alt="Discover" className="w-12 h-12 object-contain" />
                 </button>
               )}
             </div>
