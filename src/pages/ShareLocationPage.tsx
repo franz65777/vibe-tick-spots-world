@@ -246,6 +246,17 @@ const ShareLocationPage = () => {
         results = [...results, ...externalResults].sort((a, b) => a.distance - b.distance);
       }
 
+      // Remove duplicates by name (case-insensitive, normalize whitespace)
+      const seen = new Set<string>();
+      results = results.filter(result => {
+        const normalizedName = result.name.toLowerCase().replace(/\s+/g, ' ').trim();
+        if (seen.has(normalizedName)) {
+          return false;
+        }
+        seen.add(normalizedName);
+        return true;
+      });
+
       setSearchResults(results);
     } catch (error) {
       console.error('Error searching locations:', error);
@@ -403,7 +414,7 @@ const ShareLocationPage = () => {
         <div className="relative flex items-center gap-2">
           <div className="relative flex-1">
             <Input
-              placeholder="Cerca un luogo..."
+              placeholder={t('searchPlace', { ns: 'common', defaultValue: 'Search a place...' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
@@ -427,7 +438,7 @@ const ShareLocationPage = () => {
                 }
               }}
             >
-              Annulla
+              {t('cancel', { ns: 'common', defaultValue: 'Cancel' })}
             </Button>
           )}
         </div>
@@ -435,7 +446,7 @@ const ShareLocationPage = () => {
         {/* Search Results */}
         {searchResults.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Risultati ricerca</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{t('searchResults', { ns: 'common', defaultValue: 'Search results' })}</h3>
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
               {searchResults.map((result, index) => (
                 <button
@@ -473,7 +484,7 @@ const ShareLocationPage = () => {
                     )}
                   </div>
                   {!result.isExisting && (
-                    <p className="text-xs text-primary mt-1">Nuovo luogo - verrà aggiunto all'app</p>
+                    <p className="text-xs text-primary mt-1">{t('newLocationWillBeAdded', { ns: 'common', defaultValue: 'New location - will be added to the app' })}</p>
                   )}
                 </button>
               ))}
@@ -484,7 +495,7 @@ const ShareLocationPage = () => {
         {/* Nearby Locations - Only show if no location is selected */}
         {!searchQuery && !selectedLocation && nearbyLocations.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Luoghi nelle vicinanze</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{t('nearbyPlaces', { ns: 'common', defaultValue: 'Nearby places' })}</h3>
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
               {nearbyLocations.map((loc) => (
                   <button
