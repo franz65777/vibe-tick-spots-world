@@ -328,13 +328,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setDropdownOpen((open) => !open)}
-                className="flex items-center justify-start"
+                className="relative flex items-center justify-center rounded-lg overflow-hidden bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 transition-all"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
-                {/* Main filter icon - same size for all */}
+                <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                {/* Main filter icon - specific sizes */}
                 <div className={cn(
-                   "flex items-center justify-center transition-all",
-                   dropdownOpen ? "w-14 h-14" : "w-12 h-12"
+                   "flex items-center justify-center transition-all relative z-10",
+                   dropdownOpen 
+                     ? (filterType === 'event' ? "w-16 h-16" : filterType === 'new' ? "w-16 h-16" : "w-14 h-14")
+                     : (filterType === 'event' ? "w-14 h-14" : filterType === 'new' ? "w-14 h-14" : "w-12 h-12")
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -352,12 +355,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                           setFilterType(option.value);
                           setDropdownOpen(false);
                         }}
-                        className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
+                        className="relative flex-shrink-0 flex items-center justify-center rounded-lg overflow-hidden bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md opacity-70 hover:opacity-100 hover:bg-muted/20 transition-all"
                       >
+                        <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                         <img 
                           src={option.icon} 
                           alt={option.label} 
-                          className="w-12 h-12 object-contain" 
+                          className={cn(
+                            "object-contain relative z-10",
+                            option.value === 'event' ? "w-14 h-14" : option.value === 'new' ? "w-14 h-14" : "w-12 h-12"
+                          )}
                         />
                       </button>
                     ))}
@@ -389,10 +396,11 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 <button
                   type="button"
                   onClick={onSwipeDiscoveryOpen}
-                  className="flex items-center justify-center"
+                  className="relative flex items-center justify-center w-9 h-9 rounded-lg overflow-hidden bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 transition-all"
                   aria-label={t('discoverMore', { ns: 'home', defaultValue: 'Discover more' })}
                 >
-                  <img src={tinderIcon} alt="Discover" className="w-10 h-10 object-contain" />
+                  <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                  <img src={tinderIcon} alt="Discover" className="w-7 h-7 object-contain relative z-10" />
                 </button>
               )}
             </div>
