@@ -241,13 +241,27 @@ const ShareLocationPage = () => {
   ): number => {
     const nameSimilarity = calculateSimilarity(query, name);
     const addressSimilarity = calculateSimilarity(query, address);
-    const bestSimilarity = Math.max(nameSimilarity, addressSimilarity * 0.7);
     
-    // Distance factor (closer is better, but similarity is more important)
-    const distanceFactor = distance === Infinity ? 0.5 : Math.max(0, 1 - (distance / 500));
+    // Prioritize name matches heavily
+    let bestSimilarity = nameSimilarity;
     
-    // Weight: 70% similarity, 30% distance
-    return bestSimilarity * 0.7 + distanceFactor * 0.3;
+    // Bonus for exact or very close matches
+    const normalizedQuery = normalizeString(query);
+    const normalizedName = normalizeString(name);
+    if (normalizedName === normalizedQuery) {
+      bestSimilarity = 1.0; // Perfect match
+    } else if (normalizedName.includes(normalizedQuery) || normalizedQuery.includes(normalizedName)) {
+      bestSimilarity = Math.max(bestSimilarity, 0.95); // Substring match bonus
+    }
+    
+    // Address can help but is secondary
+    bestSimilarity = Math.max(bestSimilarity, addressSimilarity * 0.5);
+    
+    // Distance factor (closer is better, but name match is most important)
+    const distanceFactor = distance === Infinity ? 0.3 : Math.max(0, 1 - (distance / 500));
+    
+    // Weight: 85% similarity, 15% distance (prioritize correct name)
+    return bestSimilarity * 0.85 + distanceFactor * 0.15;
   };
 
   const searchLocations = async (query: string) => {
@@ -294,7 +308,7 @@ const ShareLocationPage = () => {
           isExisting: true,
           relevance
         };
-      }).filter(r => r.relevance >= 0.35) // Lower threshold for better fuzzy match
+      }).filter(r => r.relevance >= 0.5) // Higher threshold to hide irrelevant results
         .sort((a, b) => b.relevance - a.relevance)
         .slice(0, 10) || [];
 
@@ -319,9 +333,12 @@ const ShareLocationPage = () => {
           distance,
           relevance
         };
-      }).filter(r => !existingResults.some(existing => 
-        Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
-      )) || [];
+      }).filter(r => 
+        r.relevance >= 0.5 && // Same threshold to hide irrelevant
+        !existingResults.some(existing => 
+          Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
+        )
+      ) || [];
 
       // Combine and sort by relevance
       let results = [...existingResults, ...newLocationResults]
