@@ -360,19 +360,18 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
   
   const markerHtml = `
     <div style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
-      <!-- Direction cone (pointing direction user is facing) - overlaps with person icon -->
+      <!-- Direction cone with gradient fade effect -->
       <div class="direction-cone" style="
         position: absolute;
         top: 0;
         left: 50%;
         transform: translateX(-50%) rotate(${rotation}deg);
         transform-origin: center ${personCenterY}px;
-        width: 0;
-        height: 0;
-        border-left: ${baseConeWidth}px solid transparent;
-        border-right: ${baseConeWidth}px solid transparent;
-        border-top: ${baseConeHeight}px solid rgba(66, 133, 244, 0.45);
-        filter: blur(${1.5 * scale}px);
+        width: ${baseConeWidth * 2}px;
+        height: ${baseConeHeight}px;
+        background: linear-gradient(to bottom, rgba(66, 133, 244, 0.5) 0%, rgba(66, 133, 244, 0.3) 30%, rgba(66, 133, 244, 0.1) 70%, rgba(66, 133, 244, 0) 100%);
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        filter: blur(${1 * scale}px);
         z-index: 5;
       "></div>
       

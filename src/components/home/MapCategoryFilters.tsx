@@ -1,8 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Users,
-  TrendingUp,
-  Bookmark,
   Search,
   X
 } from 'lucide-react';
@@ -15,6 +12,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import SaveTagsFilter from './SaveTagsFilter';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import friendsIcon from '@/assets/filter-friends.png';
+import everyoneIcon from '@/assets/filter-everyone.png';
+import savedIcon from '@/assets/filter-saved.png';
 
 // Category config
 const categoryConfig = [
@@ -54,9 +54,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   type CategoryCounts = Record<string, number>;
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters:following'), icon: Users, description: t('mapFilters:followingDesc') },
-    { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, description: t('mapFilters:popularDesc') },
-    { id: 'saved' as const, name: t('mapFilters:saved'), icon: Bookmark, description: t('mapFilters:savedDesc') }
+    { id: 'following' as const, name: t('mapFilters:friends'), iconImg: friendsIcon, description: t('mapFilters:friendsDesc') },
+    { id: 'popular' as const, name: t('mapFilters:everyone'), iconImg: everyoneIcon, description: t('mapFilters:everyoneDesc') },
+    { id: 'saved' as const, name: t('mapFilters:saved'), iconImg: savedIcon, description: t('mapFilters:savedDesc') }
   ];
 
   const handleFollowingClick = () => {
@@ -216,9 +216,8 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       {/* Main Map Filters - Compact Style */}
       <div className="mb-2 pointer-events-auto flex justify-center">
         <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-2">
-          {mapFilters.map((filter) => {
+        {mapFilters.map((filter) => {
             const isActive = activeFilter === filter.id;
-            const Icon = filter.icon;
             
             return (
               <button
@@ -249,10 +248,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                     )}
                   </div>
                 ) : (
-                  <Icon className={cn(
-                    "w-4 h-4 transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )} />
+                  <img 
+                    src={filter.iconImg} 
+                    alt="" 
+                    className={cn(
+                      "w-5 h-5 object-contain transition-opacity",
+                      isActive ? "opacity-100" : "opacity-70"
+                    )} 
+                  />
                 )}
                 <span className={cn(
                   "text-[9px] font-medium whitespace-nowrap transition-colors",
