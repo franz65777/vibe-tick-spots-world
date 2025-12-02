@@ -342,78 +342,54 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
 };
 
 export const createCurrentLocationMarker = (heading?: number): L.DivIcon => {
-  // Default heading to 0 (north) if not provided
-  const rotation = heading ?? 0;
+  // Default heading to 0 (north) if not provided, add 180 to flip cone direction
+  const rotation = (heading ?? 0) + 180;
   
   const markerHtml = `
-    <div style="position: relative; width: 60px; height: 80px; transform: translate(-18px, -56px);">
-      <!-- Direction cone (pointing direction user is facing) -->
+    <div style="position: relative; width: 60px; height: 100px; transform: translate(-30px, -75px);">
+      <!-- Direction cone (pointing direction user is facing) - rotated 180° so it points forward -->
       <div class="direction-cone" style="
         position: absolute;
         top: 0;
         left: 50%;
         transform: translateX(-50%) rotate(${rotation}deg);
-        transform-origin: center 56px;
+        transform-origin: center 75px;
         width: 0;
         height: 0;
-        border-left: 20px solid transparent;
-        border-right: 20px solid transparent;
-        border-bottom: 50px solid rgba(66, 133, 244, 0.25);
-        filter: blur(2px);
+        border-left: 25px solid transparent;
+        border-right: 25px solid transparent;
+        border-bottom: 55px solid rgba(66, 133, 244, 0.3);
+        filter: blur(3px);
       "></div>
       
-      <!-- Pulsing outer circle -->
+      <!-- Person icon from top view -->
       <div style="
         position: absolute;
-        top: 44px;
+        top: 48px;
         left: 50%;
         transform: translateX(-50%);
-        width: 24px;
-        height: 24px;
-        background: rgba(66, 133, 244, 0.2);
-        border: 2px solid rgba(66, 133, 244, 0.5);
-        border-radius: 50%;
-        animation: pulse-location 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      "></div>
-      
-      <!-- Inner dot -->
-      <div style="
-        position: absolute;
-        top: 50px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 12px;
-        height: 12px;
-        background: #4285F4;
-        border: 3px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        width: 50px;
+        height: 50px;
         z-index: 10;
-      "></div>
+      ">
+        <img 
+          src="/images/location-person.png" 
+          alt="Your location" 
+          style="
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+          "
+        />
+      </div>
     </div>
-    
-    <style>
-      @keyframes pulse-location {
-        0% {
-          transform: translateX(-50%) scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: translateX(-50%) scale(1.5);
-          opacity: 0.5;
-        }
-        100% {
-          transform: translateX(-50%) scale(2);
-          opacity: 0;
-        }
-      }
-    </style>
   `;
   
   return L.divIcon({
     html: markerHtml,
     className: 'current-location-marker',
-    iconSize: [60, 80],
-    iconAnchor: [30, 56],
+    iconSize: [60, 100],
+    iconAnchor: [30, 75],
   });
 };
