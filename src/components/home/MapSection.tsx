@@ -4,6 +4,7 @@ import LeafletMapSetup from '@/components/LeafletMapSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
+import MapFilterDropdown from './MapFilterDropdown';
 import { cn } from '@/lib/utils';
 import { LocationShareModal } from '../explore/LocationShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
@@ -317,6 +318,17 @@ const MapSection = ({
             <div className="flex justify-center w-full">
               <MapCategoryFilters currentCity={currentCity} />
             </div>
+          </div>
+        )}
+
+        {/* Map Filter Dropdown - Bottom Left */}
+        {!isListViewOpen && (
+          <div className={cn(
+            "left-3 z-[1000] transition-opacity duration-300",
+            isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
+            filtersVisible ? "opacity-100" : "opacity-0"
+          )}>
+            <MapFilterDropdown />
           </div>
         )}
 
