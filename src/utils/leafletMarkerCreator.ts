@@ -341,35 +341,45 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   });
 };
 
-export const createCurrentLocationMarker = (heading?: number): L.DivIcon => {
+export const createCurrentLocationMarker = (heading?: number, scale: number = 1): L.DivIcon => {
   // Default heading to 0 (north) if not provided, add 180 to flip cone direction
   const rotation = (heading ?? 0) + 180;
   
+  // Scale sizes based on zoom level
+  const basePersonSize = 40 * scale;
+  const baseConeWidth = 20 * scale;
+  const baseConeHeight = 45 * scale;
+  const containerWidth = 60 * scale;
+  const containerHeight = (baseConeHeight + basePersonSize) * 1.1;
+  
+  // Person center should be the anchor point
+  const personCenterY = baseConeHeight + (basePersonSize / 2);
+  
   const markerHtml = `
-    <div style="position: relative; width: 60px; height: 100px; transform: translate(-30px, -75px);">
+    <div style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
       <!-- Direction cone (pointing direction user is facing) - rotated 180° so it points forward -->
       <div class="direction-cone" style="
         position: absolute;
         top: 0;
         left: 50%;
         transform: translateX(-50%) rotate(${rotation}deg);
-        transform-origin: center 75px;
+        transform-origin: center ${personCenterY}px;
         width: 0;
         height: 0;
-        border-left: 25px solid transparent;
-        border-right: 25px solid transparent;
-        border-bottom: 55px solid rgba(66, 133, 244, 0.3);
-        filter: blur(3px);
+        border-left: ${baseConeWidth}px solid transparent;
+        border-right: ${baseConeWidth}px solid transparent;
+        border-bottom: ${baseConeHeight}px solid rgba(66, 133, 244, 0.3);
+        filter: blur(${2 * scale}px);
       "></div>
       
       <!-- Person icon from top view -->
       <div style="
         position: absolute;
-        top: 48px;
+        top: ${baseConeHeight}px;
         left: 50%;
         transform: translateX(-50%);
-        width: 50px;
-        height: 50px;
+        width: ${basePersonSize}px;
+        height: ${basePersonSize}px;
         z-index: 10;
       ">
         <img 
@@ -389,7 +399,7 @@ export const createCurrentLocationMarker = (heading?: number): L.DivIcon => {
   return L.divIcon({
     html: markerHtml,
     className: 'current-location-marker',
-    iconSize: [60, 100],
-    iconAnchor: [30, 75],
+    iconSize: [containerWidth, containerHeight],
+    iconAnchor: [containerWidth / 2, personCenterY], // Anchor at person's center
   });
 };
