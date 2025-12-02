@@ -16,15 +16,15 @@ import { useTranslation } from 'react-i18next';
 import SaveTagsFilter from './SaveTagsFilter';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 
-// Category config
+// Category config - IDs only, labels come from translations
 const categoryConfig = [
-  { id: 'restaurant', label: 'Ristoranti' },
-  { id: 'bar', label: 'Bar' },
-  { id: 'cafe', label: 'Caffè' },
-  { id: 'bakery', label: 'Panetterie' },
-  { id: 'hotel', label: 'Hotel' },
-  { id: 'museum', label: 'Musei' },
-  { id: 'entertainment', label: 'Intrattenimento' }
+  { id: 'restaurant' },
+  { id: 'bar' },
+  { id: 'cafe' },
+  { id: 'bakery' },
+  { id: 'hotel' },
+  { id: 'museum' },
+  { id: 'entertainment' }
 ];
 
 interface MapCategoryFiltersProps {
@@ -34,6 +34,7 @@ interface MapCategoryFiltersProps {
 const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const { user: currentUser } = useAuth();
   const { t } = useTranslation('mapFilters');
+  const { t: tCat } = useTranslation('categories');
   const { 
     activeFilter, 
     setActiveFilter, 
@@ -409,7 +410,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                         "text-[8px] font-medium whitespace-nowrap transition-colors",
                         isSelected ? "text-primary" : "text-muted-foreground"
                       )}>
-                        {category.label}
+                        {tCat(category.id)}
                       </span>
                     </button>
                   );
