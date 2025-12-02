@@ -324,28 +324,51 @@ const LeafletMapSetup = ({
     };
   }, []);
 
-  // Current location marker - always visible
+  // Current location marker - always visible with zoom-based scaling
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    if (location?.latitude && location?.longitude) {
-      console.log('📍 Updating current location marker:', location);
-      const icon = createCurrentLocationMarker();
+    const getScaleForZoom = (zoom: number): number => {
+      // Scale marker based on zoom level: smaller when zoomed out, larger when zoomed in
+      if (zoom >= 16) return 1.2;
+      if (zoom >= 14) return 1;
+      if (zoom >= 12) return 0.8;
+      if (zoom >= 10) return 0.6;
+      return 0.5;
+    };
+
+    const updateMarker = () => {
+      if (!location?.latitude || !location?.longitude) return;
+      
+      const zoom = map.getZoom();
+      const scale = getScaleForZoom(zoom);
+      const icon = createCurrentLocationMarker(undefined, scale);
+      
       if (currentLocationMarkerRef.current) {
         currentLocationMarkerRef.current.setLatLng([location.latitude, location.longitude]);
         currentLocationMarkerRef.current.setIcon(icon);
       } else {
         currentLocationMarkerRef.current = L.marker([location.latitude, location.longitude], {
           icon,
-          zIndexOffset: 3000, // Increased to always be on top
-          pane: 'markerPane', // Ensure it's in the correct pane
+          zIndexOffset: 3000,
+          pane: 'markerPane',
         }).addTo(map);
-        
-        // Ensure marker stays on top
         currentLocationMarkerRef.current.setZIndexOffset(3000);
       }
+    };
+
+    if (location?.latitude && location?.longitude) {
+      console.log('📍 Updating current location marker:', location);
+      updateMarker();
+      
+      // Update marker on zoom changes
+      map.on('zoomend', updateMarker);
     }
+
+    return () => {
+      map.off('zoomend', updateMarker);
+    };
   }, [location?.latitude, location?.longitude]);
 
   // Places markers with campaign detection
