@@ -4,7 +4,8 @@ import {
   X,
   Users,
   Globe,
-  Bookmark
+  Bookmark,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
@@ -51,6 +52,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   type CategoryCounts = Record<string, number>;
 
@@ -59,6 +61,19 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     { id: 'popular' as const, name: t('everyone'), icon: Globe, description: t('everyoneDesc') },
     { id: 'saved' as const, name: t('saved'), icon: Bookmark, description: t('savedDesc') }
   ];
+
+  const activeFilterData = mapFilters.find(f => f.id === activeFilter) || mapFilters[1];
+
+  const handleFilterSelect = (filterId: 'following' | 'popular' | 'saved') => {
+    if (filterId === 'following') {
+      setActiveFilter('following');
+      setShowUserSearch(true);
+    } else {
+      setActiveFilter(filterId);
+      setShowUserSearch(false);
+    }
+    setIsFilterExpanded(false);
+  };
 
   const handleFollowingClick = () => {
     if (activeFilter === 'following') {
@@ -214,57 +229,69 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
   return (
     <div className="w-full max-w-full z-[1100] pointer-events-none">
-      {/* Main Map Filters - Compact Style */}
-      <div className="mb-2 pointer-events-auto flex justify-center">
-        <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-2">
-        {mapFilters.map((filter) => {
-            const isActive = activeFilter === filter.id;
-            
-            return (
+      {/* Main Map Filters - Horizontal Expandable Dropdown */}
+      <div className="mb-2 pointer-events-auto flex justify-start pl-3">
+        <div className="relative flex items-center">
+          {/* Active filter circle button */}
+          <button
+            onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+            className={cn(
+              "flex items-center gap-2 rounded-full backdrop-blur-md border transition-all duration-300",
+              "bg-background/80 border-border/30 shadow-sm",
+              isFilterExpanded ? "pr-2" : "pr-3"
+            )}
+          >
+            <div className={cn(
+              "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+              "bg-primary/10 border border-primary/20"
+            )}>
+              {activeFilter === 'following' && selectedUsers.length > 0 ? (
+                <div className="flex items-center -space-x-1">
+                  {selectedUsers.slice(0, 1).map(user => (
+                    <Avatar key={user.id} className="w-5 h-5 border border-background">
+                      <AvatarImage src={user.avatar_url || ''} />
+                      <AvatarFallback className="text-[8px]">
+                        {user.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              ) : (
+                <activeFilterData.icon className="w-4 h-4 text-primary" />
+              )}
+            </div>
+            {!isFilterExpanded && (
+              <span className="text-xs font-medium text-foreground whitespace-nowrap">
+                {activeFilterData.name}
+              </span>
+            )}
+            <ChevronRight className={cn(
+              "w-4 h-4 text-muted-foreground transition-transform duration-300",
+              isFilterExpanded && "rotate-180"
+            )} />
+          </button>
+
+          {/* Expanded filter options */}
+          <div className={cn(
+            "flex items-center gap-1 ml-1 overflow-hidden transition-all duration-300",
+            isFilterExpanded ? "max-w-[250px] opacity-100" : "max-w-0 opacity-0"
+          )}>
+            {mapFilters.filter(f => f.id !== activeFilter).map((filter) => (
               <button
                 key={filter.id}
-                onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
+                onClick={() => handleFilterSelect(filter.id)}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 px-6 py-1 rounded-xl transition-all duration-200 min-w-[95px]",
-                  isActive 
-                    ? "bg-primary/10 border border-primary/20 shadow-sm" 
-                    : "hover:bg-background/10 border border-transparent"
+                  "flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md border transition-all duration-200",
+                  "bg-background/80 border-border/30 hover:bg-background/90 hover:border-primary/30"
                 )}
-                title={filter.description}
               >
-                {filter.id === 'following' && selectedUsers.length > 0 ? (
-                  <div className="flex items-center -space-x-1">
-                    {selectedUsers.slice(0, 2).map(user => (
-                      <Avatar key={user.id} className="w-4 h-4 border border-background">
-                        <AvatarImage src={user.avatar_url || ''} />
-                        <AvatarFallback className="text-[7px]">
-                          {user.username?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {selectedUsers.length > 2 && (
-                      <div className="w-4 h-4 rounded-full bg-primary border border-background flex items-center justify-center text-[7px] text-primary-foreground font-bold">
-                        +{selectedUsers.length - 2}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <filter.icon 
-                    className={cn(
-                      "w-4 h-4 transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )} 
-                  />
-                )}
-                <span className={cn(
-                  "text-[9px] font-medium whitespace-nowrap transition-colors",
-                  isActive ? "text-foreground" : "text-muted-foreground"
-                )}>
+                <filter.icon className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">
                   {filter.name}
                 </span>
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 

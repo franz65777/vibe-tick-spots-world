@@ -64,6 +64,7 @@ const LeafletMapSetup = ({
   const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const cityMarkersRef = useRef<Map<string, L.Marker>>(new Map());
   const [showCityLabels, setShowCityLabels] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(15);
 
   const { location } = useGeolocation();
   const { trackEvent } = useAnalytics();
@@ -218,11 +219,23 @@ const LeafletMapSetup = ({
       const center = map.getCenter();
       const bounds = map.getBounds();
       const zoom = map.getZoom();
+      setCurrentZoom(zoom);
       onMapMove?.({ lat: center.lat, lng: center.lng }, bounds);
       
       // Show city labels when zoomed out (zoom < 9)
       const shouldShowCities = zoom < 9;
       setShowCityLabels(shouldShowCities);
+      
+      // Hide cluster group when zoomed out to prevent flickering
+      if (markerClusterGroupRef.current) {
+        if (shouldShowCities) {
+          map.removeLayer(markerClusterGroupRef.current);
+        } else {
+          if (!map.hasLayer(markerClusterGroupRef.current)) {
+            map.addLayer(markerClusterGroupRef.current);
+          }
+        }
+      }
       
       // Force refresh city markers on zoom change
       if (shouldShowCities) {
