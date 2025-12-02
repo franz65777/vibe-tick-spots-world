@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Search,
-  X
+  X,
+  Users,
+  Globe,
+  Bookmark
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
@@ -12,9 +15,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import SaveTagsFilter from './SaveTagsFilter';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import friendsIcon from '@/assets/filter-friends.png';
-import everyoneIcon from '@/assets/filter-everyone.png';
-import savedIcon from '@/assets/filter-saved.png';
 
 // Category config
 const categoryConfig = [
@@ -33,7 +33,7 @@ interface MapCategoryFiltersProps {
 
 const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const { user: currentUser } = useAuth();
-  const { t } = useTranslation();
+  const { t } = useTranslation('translation');
   const { 
     activeFilter, 
     setActiveFilter, 
@@ -54,9 +54,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   type CategoryCounts = Record<string, number>;
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters:friends'), iconImg: friendsIcon, description: t('mapFilters:friendsDesc') },
-    { id: 'popular' as const, name: t('mapFilters:everyone'), iconImg: everyoneIcon, description: t('mapFilters:everyoneDesc') },
-    { id: 'saved' as const, name: t('mapFilters:saved'), iconImg: savedIcon, description: t('mapFilters:savedDesc') }
+    { id: 'following' as const, name: t('mapFilters.friends', { defaultValue: 'Friends' }), icon: Users, description: t('mapFilters.friendsDesc', { defaultValue: 'Places from your friends' }) },
+    { id: 'popular' as const, name: t('mapFilters.everyone', { defaultValue: 'Everyone' }), icon: Globe, description: t('mapFilters.everyoneDesc', { defaultValue: 'All public locations' }) },
+    { id: 'saved' as const, name: t('mapFilters.saved', { defaultValue: 'Saved' }), icon: Bookmark, description: t('mapFilters.savedDesc', { defaultValue: 'Your saved places' }) }
   ];
 
   const handleFollowingClick = () => {
@@ -248,12 +248,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                     )}
                   </div>
                 ) : (
-                  <img 
-                    src={filter.iconImg} 
-                    alt="" 
+                  <filter.icon 
                     className={cn(
-                      "w-5 h-5 object-contain transition-opacity",
-                      isActive ? "opacity-100" : "opacity-70"
+                      "w-4 h-4 transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground"
                     )} 
                   />
                 )}

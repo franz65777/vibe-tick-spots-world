@@ -1,9 +1,6 @@
-import { Share2 } from 'lucide-react';
+import { Users, Globe, Bookmark, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import friendsIcon from '@/assets/filter-friends.png';
-import everyoneIcon from '@/assets/filter-everyone.png';
-import savedIcon from '@/assets/filter-saved.png';
 
 interface FilterButtonsProps {
   activeFilter: 'following' | 'popular' | 'saved' | 'shared';
@@ -13,7 +10,7 @@ interface FilterButtonsProps {
 }
 
 const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowedUsers }: FilterButtonsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('translation');
   // Calculate saved count (this would be dynamic in a real app)
   const savedCount = activeFilter === 'saved' ? 0 : 12;
 
@@ -29,8 +26,8 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
               : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
           )}
         >
-          <img src={friendsIcon} alt="" className="w-5 h-5 object-contain" />
-          {t('mapFilters:friends')}
+          <Users className="w-4 h-4" />
+          {t('mapFilters.friends', { defaultValue: 'Friends' })}
         </button>
         <button
           onClick={() => onFilterChange('popular')}
@@ -41,8 +38,8 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
               : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
           )}
         >
-          <img src={everyoneIcon} alt="" className="w-5 h-5 object-contain" />
-          {t('mapFilters:everyone')}
+          <Globe className="w-4 h-4" />
+          {t('mapFilters.everyone', { defaultValue: 'Everyone' })}
         </button>
         <button
           onClick={() => onFilterChange('saved')}
@@ -53,8 +50,8 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
               : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
           )}
         >
-          <img src={savedIcon} alt="" className="w-5 h-5 object-contain" />
-          {t('mapFilters:saved')}
+          <Bookmark className="w-4 h-4" />
+          {t('mapFilters.saved', { defaultValue: 'Saved' })}
           {savedCount > 0 && activeFilter !== 'saved' && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full animate-pulse"></div>
           )}
@@ -69,7 +66,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
           )}
         >
           <Share2 className="w-4 h-4" />
-          {t('mapFilters:shared')}
+          {t('mapFilters.shared', { defaultValue: 'Shared' })}
         </button>
       </div>
     </div>
