@@ -21,6 +21,27 @@ interface BusinessRequestEmail {
   documentUrls?: string[];
 }
 
+// HTML sanitization to prevent XSS/injection in emails
+const escapeHtml = (str: string | null | undefined): string => {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+// Validate URL to only allow http/https protocols
+const isValidUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,8 +52,22 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log("Processing business request email:", requestData);
 
-    const documentsList = requestData.documentUrls && requestData.documentUrls.length > 0
-      ? `<h3>Attached Documents:</h3><ul>${requestData.documentUrls.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}</ul>`
+    // Sanitize all user inputs before interpolating into HTML
+    const safeBusinessName = escapeHtml(requestData.businessName);
+    const safeBusinessType = escapeHtml(requestData.businessType);
+    const safeDescription = escapeHtml(requestData.description) || 'N/A';
+    const safeLocationName = escapeHtml(requestData.locationName);
+    const safeLocationAddress = escapeHtml(requestData.locationAddress);
+    const safeContactEmail = escapeHtml(requestData.contactEmail);
+    const safeContactPhone = escapeHtml(requestData.contactPhone) || 'N/A';
+
+    // Filter and sanitize document URLs - only allow http/https
+    const safeDocumentUrls = (requestData.documentUrls || [])
+      .filter(isValidUrl)
+      .map(url => escapeHtml(url));
+
+    const documentsList = safeDocumentUrls.length > 0
+      ? `<h3>Attached Documents:</h3><ul>${safeDocumentUrls.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}</ul>`
       : '<p><em>No documents attached</em></p>';
 
     // Send email to the user making the request (since external domains need verification)
@@ -40,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: "Spott Business <onboarding@resend.dev>",
       to: [requestData.userEmail],
       cc: [requestData.contactEmail],
-      subject: `Business Account Request Received - ${requestData.businessName}`,
+      subject: `Business Account Request Received - ${safeBusinessName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Business Account Request Received</h1>
@@ -49,17 +84,17 @@ const handler = async (req: Request): Promise<Response> => {
           <h2 style="color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Submitted Information</h2>
           
           <h3 style="color: #555; margin-top: 20px;">Business Information</h3>
-          <p><strong>Business Name:</strong> ${requestData.businessName}</p>
-          <p><strong>Business Type:</strong> ${requestData.businessType}</p>
-          <p><strong>Description:</strong> ${requestData.description || 'N/A'}</p>
+          <p><strong>Business Name:</strong> ${safeBusinessName}</p>
+          <p><strong>Business Type:</strong> ${safeBusinessType}</p>
+          <p><strong>Description:</strong> ${safeDescription}</p>
           
           <h3 style="color: #555; margin-top: 20px;">Location Details</h3>
-          <p><strong>Location Name:</strong> ${requestData.locationName}</p>
-          <p><strong>Address:</strong> ${requestData.locationAddress}</p>
+          <p><strong>Location Name:</strong> ${safeLocationName}</p>
+          <p><strong>Address:</strong> ${safeLocationAddress}</p>
           
           <h3 style="color: #555; margin-top: 20px;">Contact Information</h3>
-          <p><strong>Contact Email:</strong> ${requestData.contactEmail}</p>
-          <p><strong>Contact Phone:</strong> ${requestData.contactPhone || 'N/A'}</p>
+          <p><strong>Contact Email:</strong> ${safeContactEmail}</p>
+          <p><strong>Contact Phone:</strong> ${safeContactPhone}</p>
           
           <div style="margin-top: 30px; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
             ${documentsList}
