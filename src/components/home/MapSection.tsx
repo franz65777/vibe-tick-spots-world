@@ -31,6 +31,7 @@ interface MapSectionProps {
   initialSelectedPlace?: Place | null;
   onClearInitialPlace?: () => void;
   recenterToken?: number;
+  onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
 }
 
 const MapSection = ({ 
@@ -40,7 +41,8 @@ const MapSection = ({
   onToggleExpand,
   initialSelectedPlace,
   onClearInitialPlace,
-  recenterToken
+  recenterToken,
+  onCitySelect,
 }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
@@ -287,6 +289,7 @@ const MapSection = ({
           preventCenterUpdate={false}
           recenterToken={recenterToken}
           onMapMove={handleMapMove}
+          onCitySelect={onCitySelect}
           onSharingStateChange={(hasSharing) => {
             // Update button layout when sharing state changes
             const container = document.querySelector('[data-has-sharing]');

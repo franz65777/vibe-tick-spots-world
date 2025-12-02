@@ -295,6 +295,7 @@ const HomePage = memo(() => {
     console.log('🗺️ HomePage - handleCityChange called:', city, coords);
     setSelectedCity(city);
     setCurrentCity(city);
+    setSearchQuery(city);
 
     // Always update map center if coordinates are provided
     if (coords) {
@@ -606,6 +607,7 @@ const HomePage = memo(() => {
                 initialSelectedPlace={initialPinToShow}
                 onClearInitialPlace={() => setInitialPinToShow(null)}
                 recenterToken={recenterToken}
+                onCitySelect={handleCityChange}
               />
             </Suspense>
           </div>
