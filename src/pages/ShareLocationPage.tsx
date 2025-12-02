@@ -30,7 +30,8 @@ interface FollowerUser {
 
 const ShareLocationPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('sharePosition');
+  const { t: tCommon } = useTranslation('common');
   const { user } = useAuth();
   const { location, loading: geoLoading } = useGeolocation();
   
@@ -511,7 +512,7 @@ const ShareLocationPage = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">{t('sharePosition.title', 'Condividi Posizione')}</h1>
+          <h1 className="text-lg font-semibold">{t('title')}</h1>
           <div className="w-10" />
         </div>
       </div>
@@ -521,7 +522,7 @@ const ShareLocationPage = () => {
         <div className="relative flex items-center gap-2">
           <div className="relative flex-1">
             <Input
-              placeholder={t('searchPlace', { ns: 'common', defaultValue: 'Search a place...' })}
+              placeholder={tCommon('searchPlace')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
@@ -545,7 +546,7 @@ const ShareLocationPage = () => {
                 }
               }}
             >
-              {t('cancel', { ns: 'common', defaultValue: 'Cancel' })}
+              {tCommon('cancel')}
             </Button>
           )}
         </div>
@@ -553,7 +554,7 @@ const ShareLocationPage = () => {
         {/* Search Results */}
         {searchResults.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">{t('searchResults', { ns: 'common', defaultValue: 'Search results' })}</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{tCommon('searchResults')}</h3>
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
               {searchResults.map((result, index) => (
                 <button
@@ -591,7 +592,7 @@ const ShareLocationPage = () => {
                     )}
                   </div>
                   {!result.isExisting && (
-                    <p className="text-xs text-primary mt-1">{t('newLocationWillBeAdded', { ns: 'common', defaultValue: 'New location - will be added to the app' })}</p>
+                    <p className="text-xs text-primary mt-1">{tCommon('newLocationWillBeAdded')}</p>
                   )}
                 </button>
               ))}
@@ -602,7 +603,7 @@ const ShareLocationPage = () => {
         {/* Nearby Locations - Only show if no location is selected */}
         {!searchQuery && !selectedLocation && nearbyLocations.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">{t('nearbyPlaces', { ns: 'common', defaultValue: 'Nearby places' })}</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{tCommon('nearbyPlaces')}</h3>
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
               {nearbyLocations.map((loc) => (
                   <button
@@ -786,7 +787,7 @@ const ShareLocationPage = () => {
                         }
                       }}
                     >
-                      {t('cancel', { ns: 'common' })}
+                      {tCommon('cancel')}
                     </Button>
                   )}
                 </div>
