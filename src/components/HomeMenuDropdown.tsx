@@ -17,12 +17,12 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
     {
       id: 'map' as const,
       icon: mapIcon,
-      label: t('homeMenu.map', 'Mappa')
+      label: t('homeMenu.map', 'Map')
     },
     {
       id: 'share' as const,
       icon: shareLocationIcon,
-      label: t('homeMenu.sharePosition', 'Condividi posizione')
+      label: t('homeMenu.sharePosition', 'Share Position')
     }
   ];
 
