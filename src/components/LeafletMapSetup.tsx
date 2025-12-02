@@ -592,26 +592,28 @@ const LeafletMapSetup = ({
         const coords = cityCoords[city];
         if (!coords) return;
 
+        const capitalizedCity = city.charAt(0).toUpperCase() + city.slice(1);
         const cityIcon = L.divIcon({
           html: `
             <div class="city-label" style="
               background: white;
-              padding: 6px 12px;
-              border-radius: 20px;
-              font-weight: 600;
-              font-size: 14px;
+              padding: 8px 16px;
+              border-radius: 24px;
+              font-weight: 700;
+              font-size: 15px;
               color: #1a1a1a;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.2);
               white-space: nowrap;
               cursor: pointer;
-              transition: transform 0.2s;
-            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-              ${city}
+              transition: transform 0.2s, box-shadow 0.2s;
+              text-transform: capitalize;
+            " onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.25)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'">
+              ${capitalizedCity}
             </div>
           `,
           className: 'city-marker-icon',
-          iconSize: [0, 0],
-          iconAnchor: [0, 0],
+          iconSize: [100, 40],
+          iconAnchor: [50, 20],
         });
 
         const marker = L.marker([coords.lat, coords.lng], { icon: cityIcon });
