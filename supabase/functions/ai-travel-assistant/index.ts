@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, userLanguage } = await req.json();
+    const { messages, userLanguage, currentLocation, currentTime, timezone } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -343,12 +343,97 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
     const lastUserMessage = messages[messages.length - 1]?.content || "";
     const queryLower = lastUserMessage.toLowerCase();
     
+    // ===== INTENT DETECTION SYSTEM =====
+    const detectIntent = (query: string): { mode: string; context: string } => {
+      const q = query.toLowerCase();
+      
+      // Itinerary / Route planning
+      if (/\b(itinerary|percorso|giro|tour|route|day trip|giornata|weekend)\b/i.test(q)) {
+        return { mode: 'itinerary', context: 'User wants a multi-stop route or day plan' };
+      }
+      
+      // Romantic / Date
+      if (/\b(romantic|romantica?|date|appuntamento|cena romantica|anniversary|anniversario)\b/i.test(q)) {
+        return { mode: 'romantic', context: 'User is planning a romantic date' };
+      }
+      
+      // Family / Kids
+      if (/\b(family|famiglia|kids|bambini|children|kid-friendly|family-friendly)\b/i.test(q)) {
+        return { mode: 'family', context: 'User is looking for family-friendly options' };
+      }
+      
+      // Budget / Cheap
+      if (/\b(budget|cheap|economico|low cost|inexpensive|affordable|poco costoso)\b/i.test(q)) {
+        return { mode: 'budget', context: 'User wants budget-friendly options' };
+      }
+      
+      // What to do now / Spontaneous
+      if (/\b(now|adesso|ora|tonight|stasera|oggi|today|right now|nearby|vicino)\b/i.test(q)) {
+        return { mode: 'spontaneous', context: 'User wants immediate/nearby suggestions' };
+      }
+      
+      // Friends' spots
+      if (/\b(friends?|amici|what.*saved|dove.*salvato|consiglia|recommend)\b/i.test(q)) {
+        return { mode: 'social', context: 'User wants friend recommendations' };
+      }
+      
+      // Party / Night out (existing)
+      if (/\b(festa|serata fuori|party|serata|notte|night out|aperitivo|apericena|club|discoteca)\b/i.test(q)) {
+        return { mode: 'nightlife', context: 'User wants nightlife/party options' };
+      }
+      
+      // Default discovery
+      return { mode: 'discover', context: 'General place discovery' };
+    };
+    
+    const detectedIntent = detectIntent(queryLower);
+    console.log(`Detected intent: ${detectedIntent.mode} - ${detectedIntent.context}`);
+    
+    // ===== TIME/LOCATION CONTEXT =====
+    let timeLocationContext = "";
+    if (currentTime || currentLocation) {
+      const parts: string[] = [];
+      
+      if (currentTime) {
+        const hour = new Date(currentTime).getHours();
+        let timeOfDay = "daytime";
+        if (hour >= 5 && hour < 12) timeOfDay = "morning";
+        else if (hour >= 12 && hour < 17) timeOfDay = "afternoon";
+        else if (hour >= 17 && hour < 21) timeOfDay = "evening";
+        else timeOfDay = "night";
+        
+        parts.push(`Current time: ${new Date(currentTime).toLocaleTimeString()} (${timeOfDay})`);
+        
+        // Add time-based suggestions
+        if (timeOfDay === "morning") {
+          parts.push("Great for: cafes, breakfast spots, bakeries");
+        } else if (timeOfDay === "afternoon") {
+          parts.push("Great for: lunch spots, museums, sightseeing");
+        } else if (timeOfDay === "evening") {
+          parts.push("Great for: restaurants, aperitivo bars, dinner spots");
+        } else {
+          parts.push("Great for: bars, nightclubs, late-night food");
+        }
+      }
+      
+      if (currentLocation?.latitude && currentLocation?.longitude) {
+        parts.push(`User coordinates: ${currentLocation.latitude.toFixed(4)}, ${currentLocation.longitude.toFixed(4)}`);
+        parts.push("Can provide walking distances from user's position");
+      }
+      
+      if (timezone) {
+        parts.push(`Timezone: ${timezone}`);
+      }
+      
+      timeLocationContext = `\n\nREAL-TIME CONTEXT:\n${parts.join('\n')}`;
+    }
+    
     // Check if user is asking about specific food/cuisine
     const cuisineMatch = queryLower.match(/\b(italian|mexican|japanese|chinese|thai|indian|french|korean|vietnamese|greek|spanish|turkish|lebanese|brazilian|peruvian|messican[oa]|italiano|giapponese|cinese|taco|burrito|margarita|pizza|pasta|sushi|curry)\b/i);
     const cityMatch = queryLower.match(/\b(?:in|a|ad|at)\s+([a-z\s]+?)(?:\s|$|,|\?)/i);
     
     // Rileva contesti "party" / "festa" per usare esplicitamente i tuoi luoghi per uscire la sera
-    const isPartyContext = /\b(festa|serata fuori|party|serata|notte|night out|aperitivo|apericena)\b/i.test(queryLower);
+    const isPartyContext = detectedIntent.mode === 'nightlife';
     
     let smartSearchContext = "";
     
@@ -626,12 +711,71 @@ IMPORTANT: Focus your suggestions on places from this list. When mentioning a pl
       ? "1. START WITH GREETING (only this first time): Greet the user with their username in the user's language, then continue with your answer."
       : "1. NO GREETING THIS TIME: Do not greet again. Start immediately with the content of your answer without saying 'Ciao username' or similar.";
     
+    // ===== MODE-SPECIFIC INSTRUCTIONS =====
+    const getModeInstructions = (mode: string): string => {
+      const modes: Record<string, string> = {
+        itinerary: `MODE: ITINERARY PLANNING
+- Create a logical route with 3-5 stops
+- Order by proximity and flow (e.g., morning cafe → lunch → museum → dinner)
+- Include estimated walking times between stops
+- Suggest optimal timing for each stop`,
+        
+        romantic: `MODE: ROMANTIC DATE
+- Focus on atmosphere, ambiance, intimate settings
+- Prioritize places tagged as [romantic], [date], [intimate]
+- Consider candlelit, rooftop, garden, or waterfront venues
+- Suggest wine bars, fine dining, scenic walks`,
+        
+        family: `MODE: FAMILY-FRIENDLY
+- Focus on kid-friendly venues
+- Prioritize places tagged as [family], [kids]
+- Consider outdoor spaces, casual dining, attractions
+- Mention stroller accessibility, play areas`,
+        
+        budget: `MODE: BUDGET-FRIENDLY
+- Focus on affordable options
+- Prioritize places with good value
+- Mention happy hours, lunch specials, free attractions
+- Compare price ranges when possible`,
+        
+        spontaneous: `MODE: WHAT TO DO NOW
+- Prioritize OPEN NOW based on current time
+- Focus on NEARBY options (use coordinates if available)
+- Consider time-appropriate suggestions (cafes in morning, bars at night)
+- Keep suggestions immediate and actionable`,
+        
+        social: `MODE: FRIENDS' RECOMMENDATIONS
+- PRIORITIZE friends' saved places HEAVILY
+- Always mention which friend saved each place
+- Group by friends who share similar tastes
+- Highlight places multiple friends have saved`,
+        
+        nightlife: `MODE: NIGHTLIFE & PARTY
+- Focus on bars, clubs, cocktail lounges
+- Prioritize places tagged as [night_out], [party], [aperitivo]
+- Consider current time for venue suggestions
+- Mention vibe (chill, energetic, dancing)`,
+        
+        discover: `MODE: GENERAL DISCOVERY
+- Balance personal preferences with new discoveries
+- Mix familiar categories with new experiences
+- Highlight trending or popular spots
+- Consider friends' recent saves`
+      };
+      
+      return modes[mode] || modes.discover;
+    };
+    
+    const modeInstructions = getModeInstructions(detectedIntent.mode);
+    
     const systemPrompt = `You are a knowledgeable, friendly travel assistant AI integrated into Spott, a social travel discovery app. Your goal is to help users discover amazing places based on their preferences, past saves, and social connections.
 
 ${languageInstruction}
 
+${modeInstructions}
+
 CONTEXT:
-${userContext}${smartSearchContext}
+${userContext}${smartSearchContext}${timeLocationContext}
 
 CRITICAL FORMATTING RULES:
 ${greetingFormattingRule}
@@ -643,26 +787,26 @@ ${greetingFormattingRule}
 5. Write naturally, then wrap ONLY names in [PLACE:name|id] or [USER:username|id]
 6. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
 
+PERSONALIZED EXPLANATIONS (CRITICAL):
+- For EVERY suggestion, explain WHY it matches the user's taste
+- Reference specific data: "Based on your love for ${Object.keys(categoryPreferences).slice(0, 2).join(' and ')}"
+- Mention friends: "Your friend @username saved this" or "3 of your friends have been here"
+- Reference past behavior: "Similar to [saved place] which you rated highly"
+- If time context available, explain timing: "Perfect for evening drinks based on current time"
+
 RESPONSE GUIDELINES:
 ${greetingResponseGuideline}
-2. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
+2. KEEP IT CONCISE: 3-5 suggestions max, each with a brief WHY explanation
 3. Use "luoghi salvati" not "mi piace" when talking about user's saves
 4. CRITICAL - USE SAVE_TAGS FOR RECOMMENDATIONS (especially from friends):
-   - If user asks "dove andare con la famiglia" → FIRST check FRIENDS' SAVED PLACES with [family] tag, then user's own
-   - If user asks "dove per un appuntamento" → FIRST check FRIENDS' SAVED PLACES with [romantic] or [date] tag
-   - If user asks "dove per aperitivo" → FIRST check FRIENDS' SAVED PLACES with [aperitivo] or [night_out] tag
-   - If user asks "dove di sera" → FIRST check FRIENDS' SAVED PLACES with [night_out] tag
-   - ALWAYS prioritize friends' saves that match the query context (night_out, family, romantic, etc.)
-   - When recommending a friend's place, mention: "Il tuo amico [USER:username|user_id] ha salvato [PLACE:name|id]"
-5. ALWAYS cite users who posted/reviewed: "[USER:username|id] dice che..." or "Secondo [USER:username|id]..."
-6. Extract keywords from reviews/posts (margaritas, tacos autentici, etc.)
-7. PRIORITIZE locations with posts/content (media_url) to show better experiences
-8. Prioritize verified database locations over generic suggestions
-9. Recommend friends' saved places FIRST when relevant to query (night out, family, date, etc.)
-10. Use emojis sparingly (max 1-2 per response)
-11. Be warm, enthusiastic, but BRIEF and accurate
+   - Match query context to tags: family, romantic, night_out, aperitivo, etc.
+   - When recommending a friend's place: "Il tuo amico [USER:username|user_id] ha salvato [PLACE:name|id]"
+5. ALWAYS cite users who posted/reviewed
+6. PRIORITIZE verified database locations over generic suggestions
+7. Use emojis sparingly (max 1-2 per response)
+8. Be warm, enthusiastic, and PERSONALIZED
 
-Remember: You have access to the user's saves, friends' saves, and can search for specific cuisines/food types. Use [PLACE:name|id] format for ALL location mentions.`;
+Remember: Every suggestion should feel PERSONALIZED, not generic. Explain the connection to user's data.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
