@@ -324,13 +324,14 @@ const LeafletMapSetup = ({
     };
   }, []);
 
-  // Current location marker - always visible with zoom-based scaling
+  // Current location marker with device orientation support
+  const headingRef = useRef<number>(0);
+  
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const getScaleForZoom = (zoom: number): number => {
-      // Scale marker based on zoom level: smaller when zoomed out, larger when zoomed in
       if (zoom >= 16) return 1.2;
       if (zoom >= 14) return 1;
       if (zoom >= 12) return 0.8;
@@ -338,12 +339,12 @@ const LeafletMapSetup = ({
       return 0.5;
     };
 
-    const updateMarker = () => {
+    const updateMarker = (heading?: number) => {
       if (!location?.latitude || !location?.longitude) return;
       
       const zoom = map.getZoom();
       const scale = getScaleForZoom(zoom);
-      const icon = createCurrentLocationMarker(undefined, scale);
+      const icon = createCurrentLocationMarker(heading ?? headingRef.current, scale);
       
       if (currentLocationMarkerRef.current) {
         currentLocationMarkerRef.current.setLatLng([location.latitude, location.longitude]);
@@ -358,16 +359,46 @@ const LeafletMapSetup = ({
       }
     };
 
+    // Device orientation handler
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      // Alpha is the compass heading (0-360 degrees)
+      if (event.alpha !== null) {
+        headingRef.current = event.alpha;
+        updateMarker(event.alpha);
+      }
+    };
+
+    // Request permission for iOS 13+
+    const requestOrientationPermission = async () => {
+      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        try {
+          const permission = await (DeviceOrientationEvent as any).requestPermission();
+          if (permission === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+          }
+        } catch (e) {
+          console.log('Device orientation permission denied');
+        }
+      } else {
+        // Non-iOS or older iOS
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    };
+
     if (location?.latitude && location?.longitude) {
       console.log('📍 Updating current location marker:', location);
       updateMarker();
       
+      // Enable device orientation
+      requestOrientationPermission();
+      
       // Update marker on zoom changes
-      map.on('zoomend', updateMarker);
+      map.on('zoomend', () => updateMarker());
     }
 
     return () => {
-      map.off('zoomend', updateMarker);
+      map.off('zoomend');
+      window.removeEventListener('deviceorientation', handleOrientation);
     };
   }, [location?.latitude, location?.longitude]);
 
