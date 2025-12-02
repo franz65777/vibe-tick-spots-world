@@ -10,7 +10,7 @@ interface FilterButtonsProps {
 }
 
 const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowedUsers }: FilterButtonsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('mapFilters');
   // Calculate saved count (this would be dynamic in a real app)
   const savedCount = activeFilter === 'saved' ? 0 : 12;
 
@@ -27,7 +27,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
           )}
         >
           <Users className="w-4 h-4" />
-          {t('mapFilters.friends')}
+          {t('friends')}
         </button>
         <button
           onClick={() => onFilterChange('popular')}
@@ -39,7 +39,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
           )}
         >
           <Globe className="w-4 h-4" />
-          {t('mapFilters.everyone')}
+          {t('everyone')}
         </button>
         <button
           onClick={() => onFilterChange('saved')}
@@ -51,7 +51,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
           )}
         >
           <Bookmark className="w-4 h-4" />
-          {t('mapFilters.saved')}
+          {t('saved')}
           {savedCount > 0 && activeFilter !== 'saved' && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full animate-pulse"></div>
           )}
@@ -66,7 +66,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
           )}
         >
           <Share2 className="w-4 h-4" />
-          {t('mapFilters.shared')}
+          {t('shared')}
         </button>
       </div>
     </div>

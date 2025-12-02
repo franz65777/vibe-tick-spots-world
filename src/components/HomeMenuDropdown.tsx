@@ -11,18 +11,18 @@ interface HomeMenuDropdownProps {
 }
 
 export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDropdownProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('homeMenu');
 
   const options = [
     {
       id: 'map' as const,
       icon: mapIcon,
-      label: t('homeMenu.map')
+      label: t('map')
     },
     {
       id: 'share' as const,
       icon: shareLocationIcon,
-      label: t('homeMenu.sharePosition')
+      label: t('sharePosition')
     }
   ];
 

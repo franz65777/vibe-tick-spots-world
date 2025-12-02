@@ -33,7 +33,7 @@ interface MapCategoryFiltersProps {
 
 const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const { user: currentUser } = useAuth();
-  const { t } = useTranslation();
+  const { t } = useTranslation('mapFilters');
   const { 
     activeFilter, 
     setActiveFilter, 
@@ -54,9 +54,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   type CategoryCounts = Record<string, number>;
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters.friends'), icon: Users, description: t('mapFilters.friendsDesc') },
-    { id: 'popular' as const, name: t('mapFilters.everyone'), icon: Globe, description: t('mapFilters.everyoneDesc') },
-    { id: 'saved' as const, name: t('mapFilters.saved'), icon: Bookmark, description: t('mapFilters.savedDesc') }
+    { id: 'following' as const, name: t('friends'), icon: Users, description: t('friendsDesc') },
+    { id: 'popular' as const, name: t('everyone'), icon: Globe, description: t('everyoneDesc') },
+    { id: 'saved' as const, name: t('saved'), icon: Bookmark, description: t('savedDesc') }
   ];
 
   const handleFollowingClick = () => {
@@ -274,7 +274,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <Input
               type="text"
-              placeholder={t('mapFilters:searchPlaceholder')}
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="flex-1 border-0 focus-visible:ring-0 h-8 text-sm bg-transparent"
@@ -285,14 +285,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             <button
               onClick={handleShowAllFollowing}
               className="px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 font-medium text-xs"
-              title={t('mapFilters:showAllFollowing')}
+              title={t('showAllFollowing')}
             >
               {t('common:all')}
             </button>
             <button
               onClick={handleExitSearch}
               className="p-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
-              title={t('mapFilters:clearFilter')}
+              title={t('clearFilter')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -341,13 +341,13 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
           
           {users.length === 0 && !loading && (
             <p className="mt-3 text-xs text-muted-foreground text-center">
-              {t('mapFilters:noUsersInCity', { city: currentCity || t('common:thisCity') })}
+              {t('noUsersInCity', { city: currentCity || t('common:thisCity') })}
             </p>
           )}
 
           {selectedUsers.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/30">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">{t('showingPinsFrom')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {selectedUsers.map(user => (
                   <div

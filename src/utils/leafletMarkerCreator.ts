@@ -361,6 +361,7 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
   const markerHtml = `
     <div style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
       <!-- Direction cone - wide at top (near person), narrows to point at bottom (away) -->
+      <!-- Solid at top near person, fades to transparent at the tip -->
       <div class="direction-cone" style="
         position: absolute;
         top: 0;
@@ -369,9 +370,9 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
         transform-origin: center ${personCenterY}px;
         width: ${baseConeWidth * 2}px;
         height: ${baseConeHeight}px;
-        background: linear-gradient(to bottom, rgba(66, 133, 244, 0.5) 0%, rgba(66, 133, 244, 0.3) 40%, rgba(66, 133, 244, 0.1) 70%, rgba(66, 133, 244, 0) 100%);
+        background: linear-gradient(to bottom, rgba(66, 133, 244, 0.6) 0%, rgba(66, 133, 244, 0.4) 30%, rgba(66, 133, 244, 0.15) 70%, rgba(66, 133, 244, 0) 100%);
         clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
-        filter: blur(${1 * scale}px);
+        filter: blur(${0.5 * scale}px);
         z-index: 5;
       "></div>
       
