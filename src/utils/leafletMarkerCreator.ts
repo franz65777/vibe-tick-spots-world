@@ -342,8 +342,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
 };
 
 export const createCurrentLocationMarker = (heading?: number, scale: number = 1): L.DivIcon => {
-  // Default heading to 0 (north) if not provided, add 180 to flip cone direction
-  const rotation = (heading ?? 0) + 180;
+  // Default heading to 0 (north) if not provided
+  const rotation = heading ?? 0;
   
   // Scale sizes based on zoom level
   const basePersonSize = 40 * scale;
@@ -357,7 +357,7 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
   
   const markerHtml = `
     <div style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
-      <!-- Direction cone (pointing direction user is facing) - rotated 180° so it points forward -->
+      <!-- Direction cone (pointing direction user is facing) - uses border-top for correct direction -->
       <div class="direction-cone" style="
         position: absolute;
         top: 0;
@@ -368,7 +368,7 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
         height: 0;
         border-left: ${baseConeWidth}px solid transparent;
         border-right: ${baseConeWidth}px solid transparent;
-        border-bottom: ${baseConeHeight}px solid rgba(66, 133, 244, 0.3);
+        border-top: ${baseConeHeight}px solid rgba(66, 133, 244, 0.3);
         filter: blur(${2 * scale}px);
       "></div>
       
@@ -400,6 +400,6 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
     html: markerHtml,
     className: 'current-location-marker',
     iconSize: [containerWidth, containerHeight],
-    iconAnchor: [containerWidth / 2, personCenterY], // Anchor at person's center
+    iconAnchor: [containerWidth / 2, personCenterY],
   });
 };

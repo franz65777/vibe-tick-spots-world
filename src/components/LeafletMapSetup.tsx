@@ -361,12 +361,14 @@ const LeafletMapSetup = ({
 
     // Device orientation handler
     const handleOrientation = (event: DeviceOrientationEvent) => {
-      // Alpha is the compass heading (0-360 degrees)
       if (event.alpha !== null) {
         headingRef.current = event.alpha;
         updateMarker(event.alpha);
       }
     };
+
+    // Zoom handler for scaling
+    const handleZoom = () => updateMarker();
 
     // Request permission for iOS 13+
     const requestOrientationPermission = async () => {
@@ -380,7 +382,6 @@ const LeafletMapSetup = ({
           console.log('Device orientation permission denied');
         }
       } else {
-        // Non-iOS or older iOS
         window.addEventListener('deviceorientation', handleOrientation);
       }
     };
@@ -388,16 +389,12 @@ const LeafletMapSetup = ({
     if (location?.latitude && location?.longitude) {
       console.log('📍 Updating current location marker:', location);
       updateMarker();
-      
-      // Enable device orientation
       requestOrientationPermission();
-      
-      // Update marker on zoom changes
-      map.on('zoomend', () => updateMarker());
+      map.on('zoomend', handleZoom);
     }
 
     return () => {
-      map.off('zoomend');
+      map.off('zoomend', handleZoom);
       window.removeEventListener('deviceorientation', handleOrientation);
     };
   }, [location?.latitude, location?.longitude]);
