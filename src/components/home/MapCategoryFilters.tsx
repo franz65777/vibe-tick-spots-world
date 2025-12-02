@@ -291,10 +291,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
           </div>
         </div>
 
-        {/* Category Filters - Same row, compact */}
+        {/* Category Filters - Same row with background */}
         {!(showUserSearch && activeFilter === 'following') && (
-          <div className="flex-1 overflow-hidden">
-            <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+          <div className="flex-1 overflow-hidden rounded-full bg-background/20 backdrop-blur-md border border-border/5">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-2 py-0.5">
               {activeFilter === 'saved' && <SaveTagsFilter />}
               
               {categoryConfig
@@ -307,19 +307,19 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                       key={category.id}
                       onClick={() => toggleCategory(category.id)}
                       className={cn(
-                        "flex-shrink-0 flex flex-col items-center justify-center gap-0 px-1.5 py-0.5 rounded-lg transition-all duration-200",
+                        "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-200",
                         isSelected && "bg-primary/10"
                       )}
                     >
                       <CategoryIcon 
                         category={category.id} 
                         className={cn(
-                          "w-5 h-5 transition-all",
+                          "w-6 h-6 transition-all",
                           isSelected && "scale-110"
                         )}
                       />
                       <span className={cn(
-                        "text-[7px] font-medium whitespace-nowrap transition-colors",
+                        "text-[8px] font-medium whitespace-nowrap transition-colors",
                         isSelected ? "text-primary" : "text-muted-foreground"
                       )}>
                         {tCat(category.id)}
@@ -333,7 +333,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                   onClick={clearCategories}
                   className="flex-shrink-0 flex items-center justify-center p-1 rounded-lg hover:bg-secondary/50 transition-all duration-200"
                 >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
             </div>
