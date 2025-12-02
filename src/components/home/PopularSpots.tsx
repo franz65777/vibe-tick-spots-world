@@ -331,12 +331,14 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 className="flex items-center justify-start"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
-                {/* Main filter icon - specific sizes */}
+                {/* Main filter icon - specific sizes (reduced per spec) */}
                 <div className={cn(
                    "flex items-center justify-center transition-all",
-                   dropdownOpen 
-                     ? (filterType === 'event' ? "w-13 h-13" : filterType === 'new' ? "w-16 h-16" : "w-14 h-14")
-                     : (filterType === 'event' ? "w-12 h-12" : filterType === 'new' ? "w-14 h-14" : "w-12 h-12")
+                   filterType === 'most_saved' ? "w-8 h-8" :
+                   filterType === 'discount' ? "w-10 h-10" :
+                   filterType === 'promotion' ? "w-11 h-11" :
+                   filterType === 'event' ? "w-11 h-11" :
+                   filterType === 'new' ? "w-12 h-12" : "w-10 h-10"
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -361,7 +363,11 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                           alt={option.label} 
                           className={cn(
                             "object-contain",
-                            option.value === 'event' ? "w-12 h-12" : option.value === 'new' ? "w-14 h-14" : "w-12 h-12"
+                            option.value === 'most_saved' ? "w-8 h-8" :
+                            option.value === 'discount' ? "w-10 h-10" :
+                            option.value === 'promotion' ? "w-11 h-11" :
+                            option.value === 'event' ? "w-11 h-11" :
+                            option.value === 'new' ? "w-12 h-12" : "w-10 h-10"
                           )}
                         />
                       </button>
