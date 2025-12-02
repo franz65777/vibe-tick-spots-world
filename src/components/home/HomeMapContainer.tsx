@@ -11,10 +11,11 @@ interface HomeMapContainerProps {
   initialSelectedPlace: Place | null;
   onClearInitialPlace: () => void;
   recenterToken: number;
+  onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
 }
 
 const HomeMapContainer = memo((props: HomeMapContainerProps) => {
-  const { isExpanded, isSearchOverlayOpen, ...mapProps } = props;
+  const { isExpanded, isSearchOverlayOpen, onCitySelect, ...mapProps } = props;
   
   return (
     <div className={isExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "w-full h-full"}>
@@ -26,6 +27,7 @@ const HomeMapContainer = memo((props: HomeMapContainerProps) => {
         initialSelectedPlace={mapProps.initialSelectedPlace}
         onClearInitialPlace={mapProps.onClearInitialPlace}
         recenterToken={mapProps.recenterToken}
+        onCitySelect={onCitySelect}
       />
     </div>
   );
