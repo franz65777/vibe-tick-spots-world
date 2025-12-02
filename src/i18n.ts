@@ -211,7 +211,23 @@ const resources = {
       sharePosition: 'Share Position'
     },
     sharePosition: {
-      title: 'Share Position'
+      title: 'Share Position',
+      edit: 'Edit',
+      shareWith: 'Share with',
+      allFollowers: 'All followers',
+      visibleToAll: 'Visible to everyone',
+      closeFriends: 'Close friends',
+      onlyCloseFriends: 'Only close friends ({{count}})',
+      specificUsers: 'Specific users',
+      chooseManually: 'Choose manually',
+      selectUsers: 'Select users',
+      searchUsers: 'Search users...',
+      shareButton: 'Share Position',
+      sharedLocation: 'Shared location',
+      userAtLocation: '{{username}} is now at {{location}}',
+      sharedSuccess: 'Position shared successfully!',
+      shareError: 'Error sharing position',
+      aFriend: 'A friend'
     },
     mapFilters: {
       following: 'Following',
@@ -1076,7 +1092,23 @@ const resources = {
       sharePosition: 'Compartir ubicación'
     },
     sharePosition: {
-      title: 'Compartir Ubicación'
+      title: 'Compartir Ubicación',
+      edit: 'Editar',
+      shareWith: 'Compartir con',
+      allFollowers: 'Todos los seguidores',
+      visibleToAll: 'Visible para todos',
+      closeFriends: 'Amigos cercanos',
+      onlyCloseFriends: 'Solo amigos cercanos ({{count}})',
+      specificUsers: 'Usuarios específicos',
+      chooseManually: 'Elegir manualmente',
+      selectUsers: 'Seleccionar usuarios',
+      searchUsers: 'Buscar usuarios...',
+      shareButton: 'Compartir Ubicación',
+      sharedLocation: 'Ubicación compartida',
+      userAtLocation: '{{username}} está ahora en {{location}}',
+      sharedSuccess: '¡Ubicación compartida con éxito!',
+      shareError: 'Error al compartir',
+      aFriend: 'Un amigo'
     },
     mapFilters: {
       following: 'Siguiendo',
@@ -1896,7 +1928,23 @@ const resources = {
       sharePosition: 'Condividi Posizione'
     },
     sharePosition: {
-      title: 'Condividi Posizione'
+      title: 'Condividi Posizione',
+      edit: 'Modifica',
+      shareWith: 'Condividi con',
+      allFollowers: 'Tutti i follower',
+      visibleToAll: 'Visibile a tutti',
+      closeFriends: 'Amici stretti',
+      onlyCloseFriends: 'Solo amici stretti ({{count}})',
+      specificUsers: 'Utenti specifici',
+      chooseManually: 'Scegli manualmente',
+      selectUsers: 'Seleziona utenti',
+      searchUsers: 'Cerca utenti...',
+      shareButton: 'Condividi Posizione',
+      sharedLocation: 'Posizione condivisa',
+      userAtLocation: '{{username}} si trova ora presso {{location}}',
+      sharedSuccess: 'Posizione condivisa con successo!',
+      shareError: 'Errore durante la condivisione',
+      aFriend: 'Un amico'
     },
     mapFilters: {
       following: 'Seguiti',
@@ -2693,7 +2741,23 @@ const resources = {
       sharePosition: 'Partager la position'
     },
     sharePosition: {
-      title: 'Partager la Position'
+      title: 'Partager la Position',
+      edit: 'Modifier',
+      shareWith: 'Partager avec',
+      allFollowers: 'Tous les abonnés',
+      visibleToAll: 'Visible par tous',
+      closeFriends: 'Amis proches',
+      onlyCloseFriends: 'Amis proches uniquement ({{count}})',
+      specificUsers: 'Utilisateurs spécifiques',
+      chooseManually: 'Choisir manuellement',
+      selectUsers: 'Sélectionner utilisateurs',
+      searchUsers: 'Rechercher des utilisateurs...',
+      shareButton: 'Partager la Position',
+      sharedLocation: 'Position partagée',
+      userAtLocation: '{{username}} est maintenant à {{location}}',
+      sharedSuccess: 'Position partagée avec succès!',
+      shareError: 'Erreur lors du partage',
+      aFriend: 'Un ami'
     },
     mapFilters: {
       following: 'Abonnés',
@@ -3371,7 +3435,23 @@ const resources = {
       sharePosition: 'Position teilen'
     },
     sharePosition: {
-      title: 'Position Teilen'
+      title: 'Position Teilen',
+      edit: 'Bearbeiten',
+      shareWith: 'Teilen mit',
+      allFollowers: 'Alle Follower',
+      visibleToAll: 'Für alle sichtbar',
+      closeFriends: 'Enge Freunde',
+      onlyCloseFriends: 'Nur enge Freunde ({{count}})',
+      specificUsers: 'Bestimmte Benutzer',
+      chooseManually: 'Manuell auswählen',
+      selectUsers: 'Benutzer auswählen',
+      searchUsers: 'Benutzer suchen...',
+      shareButton: 'Position Teilen',
+      sharedLocation: 'Geteilte Position',
+      userAtLocation: '{{username}} ist jetzt bei {{location}}',
+      sharedSuccess: 'Position erfolgreich geteilt!',
+      shareError: 'Fehler beim Teilen',
+      aFriend: 'Ein Freund'
     },
     mapFilters: {
       following: 'Folge ich',
@@ -3987,7 +4067,23 @@ const resources = {
       sharePosition: 'Compartilhar localização'
     },
     sharePosition: {
-      title: 'Compartilhar Localização'
+      title: 'Compartilhar Localização',
+      edit: 'Editar',
+      shareWith: 'Compartilhar com',
+      allFollowers: 'Todos os seguidores',
+      visibleToAll: 'Visível para todos',
+      closeFriends: 'Amigos próximos',
+      onlyCloseFriends: 'Apenas amigos próximos ({{count}})',
+      specificUsers: 'Usuários específicos',
+      chooseManually: 'Escolher manualmente',
+      selectUsers: 'Selecionar usuários',
+      searchUsers: 'Buscar usuários...',
+      shareButton: 'Compartilhar Localização',
+      sharedLocation: 'Localização compartilhada',
+      userAtLocation: '{{username}} está agora em {{location}}',
+      sharedSuccess: 'Localização compartilhada com sucesso!',
+      shareError: 'Erro ao compartilhar',
+      aFriend: 'Um amigo'
     },
     mapFilters: {
       following: 'Seguindo',
@@ -4564,7 +4660,23 @@ const resources = {
       sharePosition: '分享位置'
     },
     sharePosition: {
-      title: '分享位置'
+      title: '分享位置',
+      edit: '编辑',
+      shareWith: '分享给',
+      allFollowers: '所有关注者',
+      visibleToAll: '对所有人可见',
+      closeFriends: '密友',
+      onlyCloseFriends: '仅密友 ({{count}})',
+      specificUsers: '特定用户',
+      chooseManually: '手动选择',
+      selectUsers: '选择用户',
+      searchUsers: '搜索用户...',
+      shareButton: '分享位置',
+      sharedLocation: '位置已分享',
+      userAtLocation: '{{username}}现在在{{location}}',
+      sharedSuccess: '位置分享成功！',
+      shareError: '分享时出错',
+      aFriend: '一位朋友'
     },
     mapFilters: {
       following: '关注',
@@ -5080,7 +5192,23 @@ const resources = {
       sharePosition: '位置を共有'
     },
     sharePosition: {
-      title: '位置を共有'
+      title: '位置を共有',
+      edit: '編集',
+      shareWith: '共有先',
+      allFollowers: '全てのフォロワー',
+      visibleToAll: '全員に表示',
+      closeFriends: '親しい友達',
+      onlyCloseFriends: '親しい友達のみ ({{count}})',
+      specificUsers: '特定のユーザー',
+      chooseManually: '手動で選択',
+      selectUsers: 'ユーザーを選択',
+      searchUsers: 'ユーザーを検索...',
+      shareButton: '位置を共有',
+      sharedLocation: '位置を共有しました',
+      userAtLocation: '{{username}}が{{location}}にいます',
+      sharedSuccess: '位置の共有に成功しました！',
+      shareError: '共有エラー',
+      aFriend: '友達'
     },
     mapFilters: {
       following: 'フォロー中',
@@ -5635,7 +5763,23 @@ const resources = {
       sharePosition: '위치 공유'
     },
     sharePosition: {
-      title: '위치 공유'
+      title: '위치 공유',
+      edit: '편집',
+      shareWith: '공유 대상',
+      allFollowers: '모든 팔로워',
+      visibleToAll: '모든 사람에게 표시',
+      closeFriends: '친한 친구',
+      onlyCloseFriends: '친한 친구만 ({{count}})',
+      specificUsers: '특정 사용자',
+      chooseManually: '수동으로 선택',
+      selectUsers: '사용자 선택',
+      searchUsers: '사용자 검색...',
+      shareButton: '위치 공유',
+      sharedLocation: '위치 공유됨',
+      userAtLocation: '{{username}}님이 {{location}}에 있습니다',
+      sharedSuccess: '위치가 성공적으로 공유되었습니다!',
+      shareError: '공유 중 오류',
+      aFriend: '친구'
     },
     mapFilters: {
       following: '팔로잉',
@@ -6173,7 +6317,23 @@ const resources = {
       sharePosition: 'مشاركة الموقع'
     },
     sharePosition: {
-      title: 'مشاركة الموقع'
+      title: 'مشاركة الموقع',
+      edit: 'تعديل',
+      shareWith: 'مشاركة مع',
+      allFollowers: 'جميع المتابعين',
+      visibleToAll: 'مرئي للجميع',
+      closeFriends: 'الأصدقاء المقربون',
+      onlyCloseFriends: 'الأصدقاء المقربون فقط ({{count}})',
+      specificUsers: 'مستخدمون محددون',
+      chooseManually: 'اختر يدوياً',
+      selectUsers: 'اختر المستخدمين',
+      searchUsers: 'بحث عن مستخدمين...',
+      shareButton: 'مشاركة الموقع',
+      sharedLocation: 'تم مشاركة الموقع',
+      userAtLocation: '{{username}} الآن في {{location}}',
+      sharedSuccess: 'تمت مشاركة الموقع بنجاح!',
+      shareError: 'خطأ في المشاركة',
+      aFriend: 'صديق'
     },
     mapFilters: {
       following: 'متابَع',
@@ -6710,7 +6870,23 @@ const resources = {
       sharePosition: 'स्थान साझा करें'
     },
     sharePosition: {
-      title: 'स्थान साझा करें'
+      title: 'स्थान साझा करें',
+      edit: 'संपादित करें',
+      shareWith: 'साझा करें',
+      allFollowers: 'सभी फॉलोअर्स',
+      visibleToAll: 'सभी के लिए दृश्यमान',
+      closeFriends: 'करीबी दोस्त',
+      onlyCloseFriends: 'केवल करीबी दोस्त ({{count}})',
+      specificUsers: 'विशिष्ट उपयोगकर्ता',
+      chooseManually: 'मैन्युअल रूप से चुनें',
+      selectUsers: 'उपयोगकर्ता चुनें',
+      searchUsers: 'उपयोगकर्ता खोजें...',
+      shareButton: 'स्थान साझा करें',
+      sharedLocation: 'स्थान साझा किया गया',
+      userAtLocation: '{{username}} अभी {{location}} पर है',
+      sharedSuccess: 'स्थान सफलतापूर्वक साझा किया गया!',
+      shareError: 'साझा करने में त्रुटि',
+      aFriend: 'एक दोस्त'
     },
     mapFilters: {
       following: 'फॉलो किया',
@@ -7264,7 +7440,23 @@ const resources = {
       sharePosition: 'Поделиться местоположением'
     },
     sharePosition: {
-      title: 'Поделиться Местоположением'
+      title: 'Поделиться Местоположением',
+      edit: 'Изменить',
+      shareWith: 'Поделиться с',
+      allFollowers: 'Все подписчики',
+      visibleToAll: 'Видно всем',
+      closeFriends: 'Близкие друзья',
+      onlyCloseFriends: 'Только близкие друзья ({{count}})',
+      specificUsers: 'Определённые пользователи',
+      chooseManually: 'Выбрать вручную',
+      selectUsers: 'Выберите пользователей',
+      searchUsers: 'Поиск пользователей...',
+      shareButton: 'Поделиться Местоположением',
+      sharedLocation: 'Местоположение передано',
+      userAtLocation: '{{username}} сейчас в {{location}}',
+      sharedSuccess: 'Местоположение успешно передано!',
+      shareError: 'Ошибка при передаче',
+      aFriend: 'Друг'
     },
     mapFilters: {
       following: 'Подписки',

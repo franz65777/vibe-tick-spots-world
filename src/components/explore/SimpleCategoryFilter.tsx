@@ -1,5 +1,6 @@
 import React from 'react';
-import { AllowedCategory, allowedCategories, categoryDisplayNames } from '@/utils/allowedCategories';
+import { useTranslation } from 'react-i18next';
+import { AllowedCategory, allowedCategories } from '@/utils/allowedCategories';
 import { CategoryIcon } from '../common/CategoryIcon';
 
 interface SimpleCategoryFilterProps {
@@ -8,16 +9,19 @@ interface SimpleCategoryFilterProps {
 }
 
 const SimpleCategoryFilter = ({ selectedCategory, onCategorySelect }: SimpleCategoryFilterProps) => {
+  const { t } = useTranslation('categories');
+  
   return (
     <div className="grid grid-cols-7 gap-2 px-[10px] py-2">
       {allowedCategories.map((category) => {
         const isSelected = selectedCategory === category;
+        const categoryKey = category.toLowerCase();
         return (
           <button
             key={category}
             onClick={() => onCategorySelect(isSelected ? null : category)}
             className={`flex items-center justify-center rounded-md transition-transform p-1 ${isSelected ? 'ring-2 ring-primary bg-primary/10' : ''}`}
-            aria-label={categoryDisplayNames[category]}
+            aria-label={t(categoryKey)}
           >
             <CategoryIcon
               category={category}
