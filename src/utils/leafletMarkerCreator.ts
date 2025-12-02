@@ -341,14 +341,33 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   });
 };
 
-export const createCurrentLocationMarker = (): L.DivIcon => {
+export const createCurrentLocationMarker = (heading?: number): L.DivIcon => {
+  // Default heading to 0 (north) if not provided
+  const rotation = heading ?? 0;
+  
   const markerHtml = `
-    <div style="position: relative; width: 24px; height: 24px;">
+    <div style="position: relative; width: 60px; height: 80px; transform: translate(-18px, -56px);">
+      <!-- Direction cone (pointing direction user is facing) -->
+      <div class="direction-cone" style="
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%) rotate(${rotation}deg);
+        transform-origin: center 56px;
+        width: 0;
+        height: 0;
+        border-left: 20px solid transparent;
+        border-right: 20px solid transparent;
+        border-bottom: 50px solid rgba(66, 133, 244, 0.25);
+        filter: blur(2px);
+      "></div>
+      
       <!-- Pulsing outer circle -->
       <div style="
         position: absolute;
-        top: 0;
-        left: 0;
+        top: 44px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 24px;
         height: 24px;
         background: rgba(66, 133, 244, 0.2);
@@ -360,29 +379,31 @@ export const createCurrentLocationMarker = (): L.DivIcon => {
       <!-- Inner dot -->
       <div style="
         position: absolute;
-        top: 6px;
-        left: 6px;
+        top: 50px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 12px;
         height: 12px;
         background: #4285F4;
         border: 3px solid white;
         border-radius: 50%;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        z-index: 10;
       "></div>
     </div>
     
     <style>
       @keyframes pulse-location {
         0% {
-          transform: scale(1);
+          transform: translateX(-50%) scale(1);
           opacity: 1;
         }
         50% {
-          transform: scale(1.5);
+          transform: translateX(-50%) scale(1.5);
           opacity: 0.5;
         }
         100% {
-          transform: scale(2);
+          transform: translateX(-50%) scale(2);
           opacity: 0;
         }
       }
@@ -392,7 +413,7 @@ export const createCurrentLocationMarker = (): L.DivIcon => {
   return L.divIcon({
     html: markerHtml,
     className: 'current-location-marker',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [60, 80],
+    iconAnchor: [30, 56],
   });
 };

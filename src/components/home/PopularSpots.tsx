@@ -335,9 +335,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 <div className={cn(
                    "flex items-center justify-center transition-all",
                    filterType === 'most_saved' ? "w-8 h-8" :
-                   filterType === 'discount' ? "w-10 h-10" :
-                   filterType === 'promotion' ? "w-11 h-11" :
-                   filterType === 'event' ? "w-11 h-11" :
+                   filterType === 'discount' ? "w-9 h-9" :
+                   filterType === 'promotion' ? "w-10 h-10" :
+                   filterType === 'event' ? "w-10 h-10" :
                    filterType === 'new' ? "w-12 h-12" : "w-10 h-10"
                  )}>
                   {getFilterIcon()}
@@ -364,9 +364,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                           className={cn(
                             "object-contain",
                             option.value === 'most_saved' ? "w-8 h-8" :
-                            option.value === 'discount' ? "w-10 h-10" :
-                            option.value === 'promotion' ? "w-11 h-11" :
-                            option.value === 'event' ? "w-11 h-11" :
+                            option.value === 'discount' ? "w-9 h-9" :
+                            option.value === 'promotion' ? "w-10 h-10" :
+                            option.value === 'event' ? "w-10 h-10" :
                             option.value === 'new' ? "w-12 h-12" : "w-10 h-10"
                           )}
                         />
