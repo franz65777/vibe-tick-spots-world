@@ -377,7 +377,7 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
         position: absolute;
         top: ${baseConeHeight}px;
         left: 50%;
-        transform: translateX(-50%);
+        transform: translateX(-50%) rotate(${rotation}deg);
         width: ${basePersonSize}px;
         height: ${basePersonSize}px;
         z-index: 10;
