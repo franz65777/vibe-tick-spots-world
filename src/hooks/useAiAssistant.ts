@@ -21,6 +21,25 @@ export const useAiAssistant = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Get current location if available
+      let currentLocation: { latitude: number; longitude: number } | undefined;
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 3000,
+            maximumAge: 60000, // Cache for 1 minute
+            enableHighAccuracy: false
+          });
+        });
+        currentLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+      } catch {
+        // Location not available, continue without it
+        console.log("Location not available for AI context");
+      }
+      
       const response = await fetch(
         `https://hrmklsvewmhpqixgyjmy.supabase.co/functions/v1/ai-travel-assistant`,
         {
@@ -31,7 +50,10 @@ export const useAiAssistant = () => {
           },
           body: JSON.stringify({ 
             messages: [...messages, newUserMessage],
-            userLanguage 
+            userLanguage,
+            currentLocation,
+            currentTime: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
           }),
         }
       );
