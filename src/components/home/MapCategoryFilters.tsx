@@ -33,7 +33,7 @@ interface MapCategoryFiltersProps {
 
 const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const { user: currentUser } = useAuth();
-  const { t } = useTranslation('translation');
+  const { t } = useTranslation();
   const { 
     activeFilter, 
     setActiveFilter, 
@@ -54,9 +54,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   type CategoryCounts = Record<string, number>;
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters.friends', { defaultValue: 'Friends' }), icon: Users, description: t('mapFilters.friendsDesc', { defaultValue: 'Places from your friends' }) },
-    { id: 'popular' as const, name: t('mapFilters.everyone', { defaultValue: 'Everyone' }), icon: Globe, description: t('mapFilters.everyoneDesc', { defaultValue: 'All public locations' }) },
-    { id: 'saved' as const, name: t('mapFilters.saved', { defaultValue: 'Saved' }), icon: Bookmark, description: t('mapFilters.savedDesc', { defaultValue: 'Your saved places' }) }
+    { id: 'following' as const, name: t('mapFilters.friends'), icon: Users, description: t('mapFilters.friendsDesc') },
+    { id: 'popular' as const, name: t('mapFilters.everyone'), icon: Globe, description: t('mapFilters.everyoneDesc') },
+    { id: 'saved' as const, name: t('mapFilters.saved'), icon: Bookmark, description: t('mapFilters.savedDesc') }
   ];
 
   const handleFollowingClick = () => {

@@ -7747,7 +7747,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,
