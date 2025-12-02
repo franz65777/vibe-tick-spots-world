@@ -214,14 +214,38 @@ const LeafletMapSetup = ({
     });
 
     // Map zoom event - check for city label display
-    map.on('zoomend', () => {
+    const handleZoomEnd = () => {
       const center = map.getCenter();
       const bounds = map.getBounds();
       const zoom = map.getZoom();
       onMapMove?.({ lat: center.lat, lng: center.lng }, bounds);
       
       // Show city labels when zoomed out (zoom < 9)
-      setShowCityLabels(zoom < 9);
+      const shouldShowCities = zoom < 9;
+      setShowCityLabels(shouldShowCities);
+      
+      // Force refresh city markers on zoom change
+      if (shouldShowCities) {
+        cityMarkersRef.current.forEach(marker => map.removeLayer(marker));
+        cityMarkersRef.current.clear();
+      }
+    };
+    
+    map.on('zoomend', handleZoomEnd);
+    
+    // Also refresh city labels on pan when zoomed out
+    map.on('moveend', () => {
+      const zoom = map.getZoom();
+      if (zoom < 9) {
+        // Clear existing to refresh visible cities in new bounds
+        cityMarkersRef.current.forEach(marker => map.removeLayer(marker));
+        cityMarkersRef.current.clear();
+        setShowCityLabels(prev => {
+          // Toggle to force re-render
+          setTimeout(() => setShowCityLabels(true), 10);
+          return false;
+        });
+      }
     });
 
     return () => {
@@ -533,51 +557,38 @@ const LeafletMapSetup = ({
     const clusterGroup = markerClusterGroupRef.current;
     if (!map || !clusterGroup) return;
 
-    // City coordinates database
-    const cityCoords: Record<string, { lat: number; lng: number }> = {
-      'dublin': { lat: 53.3498, lng: -6.2603 },
-      'london': { lat: 51.5074, lng: -0.1278 },
-      'paris': { lat: 48.8566, lng: 2.3522 },
-      'amsterdam': { lat: 52.3676, lng: 4.9041 },
-      'berlin': { lat: 52.5200, lng: 13.4050 },
-      'rome': { lat: 41.9028, lng: 12.4964 },
-      'milan': { lat: 45.4642, lng: 9.1900 },
-      'barcelona': { lat: 41.3851, lng: 2.1734 },
-      'madrid': { lat: 40.4168, lng: -3.7038 },
-      'lisbon': { lat: 38.7223, lng: -9.1393 },
-      'munich': { lat: 48.1351, lng: 11.5820 },
-      'vienna': { lat: 48.2082, lng: 16.3738 },
-      'prague': { lat: 50.0755, lng: 14.4378 },
-      'budapest': { lat: 47.4979, lng: 19.0402 },
-      'warsaw': { lat: 52.2297, lng: 21.0122 },
-      'stockholm': { lat: 59.3293, lng: 18.0686 },
-      'copenhagen': { lat: 55.6761, lng: 12.5683 },
-      'brussels': { lat: 50.8503, lng: 4.3517 },
-      'zurich': { lat: 47.3769, lng: 8.5417 },
-      'athens': { lat: 37.9838, lng: 23.7275 },
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'san francisco': { lat: 37.7749, lng: -122.4194 },
-      'los angeles': { lat: 34.0522, lng: -118.2437 },
-      'chicago': { lat: 41.8781, lng: -87.6298 },
-      'manchester': { lat: 53.4808, lng: -2.2426 },
-      'edinburgh': { lat: 55.9533, lng: -3.1883 },
-      'cork': { lat: 51.8985, lng: -8.4756 },
-      'york': { lat: 53.9591, lng: -1.0815 },
-      'cambridge': { lat: 52.2053, lng: 0.1218 },
-      'bordeaux': { lat: 44.8378, lng: -0.5792 },
-      'nantes': { lat: 47.2184, lng: -1.5536 },
-      'rennes': { lat: 48.1173, lng: -1.6778 },
-      'exeter': { lat: 50.7184, lng: -3.5339 },
-      'truro': { lat: 50.2632, lng: -5.0510 },
+    // City coordinates database - always show these major cities when zoomed out
+    const cityCoords: Record<string, { lat: number; lng: number; displayName: string }> = {
+      'dublin': { lat: 53.3498, lng: -6.2603, displayName: 'Dublin' },
+      'london': { lat: 51.5074, lng: -0.1278, displayName: 'London' },
+      'paris': { lat: 48.8566, lng: 2.3522, displayName: 'Paris' },
+      'amsterdam': { lat: 52.3676, lng: 4.9041, displayName: 'Amsterdam' },
+      'berlin': { lat: 52.5200, lng: 13.4050, displayName: 'Berlin' },
+      'rome': { lat: 41.9028, lng: 12.4964, displayName: 'Rome' },
+      'milan': { lat: 45.4642, lng: 9.1900, displayName: 'Milan' },
+      'barcelona': { lat: 41.3851, lng: 2.1734, displayName: 'Barcelona' },
+      'madrid': { lat: 40.4168, lng: -3.7038, displayName: 'Madrid' },
+      'lisbon': { lat: 38.7223, lng: -9.1393, displayName: 'Lisbon' },
+      'munich': { lat: 48.1351, lng: 11.5820, displayName: 'Munich' },
+      'vienna': { lat: 48.2082, lng: 16.3738, displayName: 'Vienna' },
+      'prague': { lat: 50.0755, lng: 14.4378, displayName: 'Prague' },
+      'budapest': { lat: 47.4979, lng: 19.0402, displayName: 'Budapest' },
+      'warsaw': { lat: 52.2297, lng: 21.0122, displayName: 'Warsaw' },
+      'stockholm': { lat: 59.3293, lng: 18.0686, displayName: 'Stockholm' },
+      'copenhagen': { lat: 55.6761, lng: 12.5683, displayName: 'Copenhagen' },
+      'brussels': { lat: 50.8503, lng: 4.3517, displayName: 'Brussels' },
+      'zurich': { lat: 47.3769, lng: 8.5417, displayName: 'Zurich' },
+      'athens': { lat: 37.9838, lng: 23.7275, displayName: 'Athens' },
+      'new york': { lat: 40.7128, lng: -74.0060, displayName: 'New York' },
+      'san francisco': { lat: 37.7749, lng: -122.4194, displayName: 'San Francisco' },
+      'los angeles': { lat: 34.0522, lng: -118.2437, displayName: 'Los Angeles' },
+      'chicago': { lat: 41.8781, lng: -87.6298, displayName: 'Chicago' },
+      'manchester': { lat: 53.4808, lng: -2.2426, displayName: 'Manchester' },
+      'edinburgh': { lat: 55.9533, lng: -3.1883, displayName: 'Edinburgh' },
+      'cork': { lat: 51.8985, lng: -8.4756, displayName: 'Cork' },
     };
 
-    // Get unique cities from places
-    const citiesInPlaces = new Set<string>();
-    places.forEach(place => {
-      if (place.city) {
-        citiesInPlaces.add(place.city.toLowerCase());
-      }
-    });
+    console.log('🏙️ City labels state:', { showCityLabels, placesCount: places.length });
 
     if (showCityLabels) {
       // Hide cluster group
@@ -585,14 +596,17 @@ const LeafletMapSetup = ({
         map.removeLayer(clusterGroup);
       }
 
-      // Create city markers
-      citiesInPlaces.forEach(city => {
-        if (cityMarkersRef.current.has(city)) return;
-        
-        const coords = cityCoords[city];
-        if (!coords) return;
+      // Get current map bounds to only show visible cities
+      const bounds = map.getBounds();
 
-        const capitalizedCity = city.charAt(0).toUpperCase() + city.slice(1);
+      // Create city markers for all cities in view
+      Object.entries(cityCoords).forEach(([cityKey, cityData]) => {
+        if (cityMarkersRef.current.has(cityKey)) return;
+        
+        // Check if city is within current view bounds
+        const cityLatLng = L.latLng(cityData.lat, cityData.lng);
+        if (!bounds.contains(cityLatLng)) return;
+
         const cityIcon = L.divIcon({
           html: `
             <div class="city-label" style="
@@ -606,9 +620,9 @@ const LeafletMapSetup = ({
               white-space: nowrap;
               cursor: pointer;
               transition: transform 0.2s, box-shadow 0.2s;
-              text-transform: capitalize;
+              z-index: 1000;
             " onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.25)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'">
-              ${capitalizedCity}
+              ${cityData.displayName}
             </div>
           `,
           className: 'city-marker-icon',
@@ -616,14 +630,15 @@ const LeafletMapSetup = ({
           iconAnchor: [50, 20],
         });
 
-        const marker = L.marker([coords.lat, coords.lng], { icon: cityIcon });
+        const marker = L.marker([cityData.lat, cityData.lng], { icon: cityIcon, zIndexOffset: 1000 });
         marker.on('click', () => {
           // Zoom to city and call callback
-          map.setView([coords.lat, coords.lng], 13, { animate: true });
-          onCitySelect?.(city.charAt(0).toUpperCase() + city.slice(1), coords);
+          map.setView([cityData.lat, cityData.lng], 13, { animate: true });
+          onCitySelect?.(cityData.displayName, { lat: cityData.lat, lng: cityData.lng });
         });
         marker.addTo(map);
-        cityMarkersRef.current.set(city, marker);
+        cityMarkersRef.current.set(cityKey, marker);
+        console.log('🏙️ Added city marker:', cityData.displayName);
       });
     } else {
       // Show cluster group
