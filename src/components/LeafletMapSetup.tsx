@@ -557,38 +557,85 @@ const LeafletMapSetup = ({
     const clusterGroup = markerClusterGroupRef.current;
     if (!map || !clusterGroup) return;
 
-    // City coordinates database - always show these major cities when zoomed out
-    const cityCoords: Record<string, { lat: number; lng: number; displayName: string }> = {
-      'dublin': { lat: 53.3498, lng: -6.2603, displayName: 'Dublin' },
-      'london': { lat: 51.5074, lng: -0.1278, displayName: 'London' },
-      'paris': { lat: 48.8566, lng: 2.3522, displayName: 'Paris' },
-      'amsterdam': { lat: 52.3676, lng: 4.9041, displayName: 'Amsterdam' },
-      'berlin': { lat: 52.5200, lng: 13.4050, displayName: 'Berlin' },
-      'rome': { lat: 41.9028, lng: 12.4964, displayName: 'Rome' },
-      'milan': { lat: 45.4642, lng: 9.1900, displayName: 'Milan' },
-      'barcelona': { lat: 41.3851, lng: 2.1734, displayName: 'Barcelona' },
-      'madrid': { lat: 40.4168, lng: -3.7038, displayName: 'Madrid' },
-      'lisbon': { lat: 38.7223, lng: -9.1393, displayName: 'Lisbon' },
-      'munich': { lat: 48.1351, lng: 11.5820, displayName: 'Munich' },
-      'vienna': { lat: 48.2082, lng: 16.3738, displayName: 'Vienna' },
-      'prague': { lat: 50.0755, lng: 14.4378, displayName: 'Prague' },
-      'budapest': { lat: 47.4979, lng: 19.0402, displayName: 'Budapest' },
-      'warsaw': { lat: 52.2297, lng: 21.0122, displayName: 'Warsaw' },
-      'stockholm': { lat: 59.3293, lng: 18.0686, displayName: 'Stockholm' },
-      'copenhagen': { lat: 55.6761, lng: 12.5683, displayName: 'Copenhagen' },
-      'brussels': { lat: 50.8503, lng: 4.3517, displayName: 'Brussels' },
-      'zurich': { lat: 47.3769, lng: 8.5417, displayName: 'Zurich' },
-      'athens': { lat: 37.9838, lng: 23.7275, displayName: 'Athens' },
-      'new york': { lat: 40.7128, lng: -74.0060, displayName: 'New York' },
-      'san francisco': { lat: 37.7749, lng: -122.4194, displayName: 'San Francisco' },
-      'los angeles': { lat: 34.0522, lng: -118.2437, displayName: 'Los Angeles' },
-      'chicago': { lat: 41.8781, lng: -87.6298, displayName: 'Chicago' },
-      'manchester': { lat: 53.4808, lng: -2.2426, displayName: 'Manchester' },
-      'edinburgh': { lat: 55.9533, lng: -3.1883, displayName: 'Edinburgh' },
-      'cork': { lat: 51.8985, lng: -8.4756, displayName: 'Cork' },
+    // City coordinates database - major cities worldwide
+    const cityCoords: Record<string, { lat: number; lng: number; displayName: string; priority: number }> = {
+      // Europe
+      'dublin': { lat: 53.3498, lng: -6.2603, displayName: 'Dublin', priority: 1 },
+      'london': { lat: 51.5074, lng: -0.1278, displayName: 'London', priority: 1 },
+      'paris': { lat: 48.8566, lng: 2.3522, displayName: 'Paris', priority: 1 },
+      'amsterdam': { lat: 52.3676, lng: 4.9041, displayName: 'Amsterdam', priority: 2 },
+      'berlin': { lat: 52.5200, lng: 13.4050, displayName: 'Berlin', priority: 1 },
+      'rome': { lat: 41.9028, lng: 12.4964, displayName: 'Rome', priority: 1 },
+      'milan': { lat: 45.4642, lng: 9.1900, displayName: 'Milan', priority: 2 },
+      'barcelona': { lat: 41.3851, lng: 2.1734, displayName: 'Barcelona', priority: 1 },
+      'madrid': { lat: 40.4168, lng: -3.7038, displayName: 'Madrid', priority: 1 },
+      'lisbon': { lat: 38.7223, lng: -9.1393, displayName: 'Lisbon', priority: 2 },
+      'munich': { lat: 48.1351, lng: 11.5820, displayName: 'Munich', priority: 3 },
+      'vienna': { lat: 48.2082, lng: 16.3738, displayName: 'Vienna', priority: 2 },
+      'prague': { lat: 50.0755, lng: 14.4378, displayName: 'Prague', priority: 2 },
+      'budapest': { lat: 47.4979, lng: 19.0402, displayName: 'Budapest', priority: 2 },
+      'warsaw': { lat: 52.2297, lng: 21.0122, displayName: 'Warsaw', priority: 2 },
+      'stockholm': { lat: 59.3293, lng: 18.0686, displayName: 'Stockholm', priority: 2 },
+      'copenhagen': { lat: 55.6761, lng: 12.5683, displayName: 'Copenhagen', priority: 2 },
+      'brussels': { lat: 50.8503, lng: 4.3517, displayName: 'Brussels', priority: 3 },
+      'zurich': { lat: 47.3769, lng: 8.5417, displayName: 'Zurich', priority: 3 },
+      'athens': { lat: 37.9838, lng: 23.7275, displayName: 'Athens', priority: 2 },
+      'edinburgh': { lat: 55.9533, lng: -3.1883, displayName: 'Edinburgh', priority: 3 },
+      'cork': { lat: 51.8985, lng: -8.4756, displayName: 'Cork', priority: 3 },
+      'manchester': { lat: 53.4808, lng: -2.2426, displayName: 'Manchester', priority: 3 },
+      'moscow': { lat: 55.7558, lng: 37.6173, displayName: 'Moscow', priority: 1 },
+      'istanbul': { lat: 41.0082, lng: 28.9784, displayName: 'Istanbul', priority: 1 },
+      // Americas
+      'new york': { lat: 40.7128, lng: -74.0060, displayName: 'New York', priority: 1 },
+      'san francisco': { lat: 37.7749, lng: -122.4194, displayName: 'San Francisco', priority: 1 },
+      'los angeles': { lat: 34.0522, lng: -118.2437, displayName: 'Los Angeles', priority: 1 },
+      'chicago': { lat: 41.8781, lng: -87.6298, displayName: 'Chicago', priority: 2 },
+      'miami': { lat: 25.7617, lng: -80.1918, displayName: 'Miami', priority: 2 },
+      'toronto': { lat: 43.6532, lng: -79.3832, displayName: 'Toronto', priority: 1 },
+      'vancouver': { lat: 49.2827, lng: -123.1207, displayName: 'Vancouver', priority: 2 },
+      'mexico city': { lat: 19.4326, lng: -99.1332, displayName: 'Mexico City', priority: 1 },
+      'sao paulo': { lat: -23.5505, lng: -46.6333, displayName: 'São Paulo', priority: 1 },
+      'buenos aires': { lat: -34.6037, lng: -58.3816, displayName: 'Buenos Aires', priority: 1 },
+      'rio de janeiro': { lat: -22.9068, lng: -43.1729, displayName: 'Rio de Janeiro', priority: 2 },
+      'bogota': { lat: 4.7110, lng: -74.0721, displayName: 'Bogotá', priority: 2 },
+      'lima': { lat: -12.0464, lng: -77.0428, displayName: 'Lima', priority: 2 },
+      // Asia
+      'tokyo': { lat: 35.6762, lng: 139.6503, displayName: 'Tokyo', priority: 1 },
+      'seoul': { lat: 37.5665, lng: 126.9780, displayName: 'Seoul', priority: 1 },
+      'beijing': { lat: 39.9042, lng: 116.4074, displayName: 'Beijing', priority: 1 },
+      'shanghai': { lat: 31.2304, lng: 121.4737, displayName: 'Shanghai', priority: 1 },
+      'hong kong': { lat: 22.3193, lng: 114.1694, displayName: 'Hong Kong', priority: 1 },
+      'singapore': { lat: 1.3521, lng: 103.8198, displayName: 'Singapore', priority: 1 },
+      'bangkok': { lat: 13.7563, lng: 100.5018, displayName: 'Bangkok', priority: 1 },
+      'dubai': { lat: 25.2048, lng: 55.2708, displayName: 'Dubai', priority: 1 },
+      'mumbai': { lat: 19.0760, lng: 72.8777, displayName: 'Mumbai', priority: 1 },
+      'delhi': { lat: 28.7041, lng: 77.1025, displayName: 'Delhi', priority: 2 },
+      'kuala lumpur': { lat: 3.1390, lng: 101.6869, displayName: 'Kuala Lumpur', priority: 2 },
+      'jakarta': { lat: -6.2088, lng: 106.8456, displayName: 'Jakarta', priority: 2 },
+      'taipei': { lat: 25.0330, lng: 121.5654, displayName: 'Taipei', priority: 2 },
+      'osaka': { lat: 34.6937, lng: 135.5023, displayName: 'Osaka', priority: 2 },
+      // Africa & Middle East
+      'cape town': { lat: -33.9249, lng: 18.4241, displayName: 'Cape Town', priority: 1 },
+      'cairo': { lat: 30.0444, lng: 31.2357, displayName: 'Cairo', priority: 1 },
+      'marrakech': { lat: 31.6295, lng: -7.9811, displayName: 'Marrakech', priority: 2 },
+      'johannesburg': { lat: -26.2041, lng: 28.0473, displayName: 'Johannesburg', priority: 2 },
+      'tel aviv': { lat: 32.0853, lng: 34.7818, displayName: 'Tel Aviv', priority: 2 },
+      // Oceania
+      'sydney': { lat: -33.8688, lng: 151.2093, displayName: 'Sydney', priority: 1 },
+      'melbourne': { lat: -37.8136, lng: 144.9631, displayName: 'Melbourne', priority: 2 },
+      'auckland': { lat: -36.8485, lng: 174.7633, displayName: 'Auckland', priority: 2 },
     };
 
-    console.log('🏙️ City labels state:', { showCityLabels, placesCount: places.length });
+    // Determine which cities to show based on zoom level
+    const currentZoom = map.getZoom();
+    let maxPriority = 1; // Only show priority 1 cities at very low zoom
+    if (currentZoom >= 4) maxPriority = 2;
+    if (currentZoom >= 5) maxPriority = 3;
+
+    // Get theme for styling
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    console.log('🏙️ City labels state:', { showCityLabels, zoom: currentZoom, maxPriority });
 
     if (showCityLabels) {
       // Hide cluster group
@@ -599,8 +646,18 @@ const LeafletMapSetup = ({
       // Get current map bounds to only show visible cities
       const bounds = map.getBounds();
 
-      // Create city markers for all cities in view
+      // Create city markers for cities in view based on priority
       Object.entries(cityCoords).forEach(([cityKey, cityData]) => {
+        // Skip cities with lower priority than current zoom allows
+        if (cityData.priority > maxPriority) {
+          // Remove existing marker if priority changed
+          if (cityMarkersRef.current.has(cityKey)) {
+            map.removeLayer(cityMarkersRef.current.get(cityKey)!);
+            cityMarkersRef.current.delete(cityKey);
+          }
+          return;
+        }
+
         if (cityMarkersRef.current.has(cityKey)) return;
         
         // Check if city is within current view bounds
@@ -610,24 +667,25 @@ const LeafletMapSetup = ({
         const cityIcon = L.divIcon({
           html: `
             <div class="city-label" style="
-              background: white;
-              padding: 8px 16px;
-              border-radius: 24px;
-              font-weight: 700;
-              font-size: 15px;
-              color: #1a1a1a;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+              background: ${isDarkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(156, 163, 175, 0.8)'};
+              padding: 5px 10px;
+              border-radius: 16px;
+              font-weight: 600;
+              font-size: 11px;
+              color: ${isDarkMode ? '#e2e8f0' : '#1f2937'};
+              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
               white-space: nowrap;
               cursor: pointer;
               transition: transform 0.2s, box-shadow 0.2s;
-              z-index: 1000;
-            " onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.25)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'">
+              backdrop-filter: blur(4px);
+              -webkit-backdrop-filter: blur(4px);
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
               ${cityData.displayName}
             </div>
           `,
           className: 'city-marker-icon',
-          iconSize: [100, 40],
-          iconAnchor: [50, 20],
+          iconSize: [80, 28],
+          iconAnchor: [40, 14],
         });
 
         const marker = L.marker([cityData.lat, cityData.lng], { icon: cityIcon, zIndexOffset: 1000 });
@@ -638,7 +696,6 @@ const LeafletMapSetup = ({
         });
         marker.addTo(map);
         cityMarkersRef.current.set(cityKey, marker);
-        console.log('🏙️ Added city marker:', cityData.displayName);
       });
     } else {
       // Show cluster group
