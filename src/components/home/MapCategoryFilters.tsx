@@ -229,44 +229,41 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
   return (
     <div className="w-full max-w-full z-[1100] pointer-events-none">
-      {/* Main Map Filters - Horizontal Expandable Dropdown */}
-      <div className="mb-2 pointer-events-auto flex justify-start pl-3">
-        <div className="relative flex items-center">
+      {/* Combined Filter Row - Dropdown + Categories */}
+      <div className="mb-2 pointer-events-auto flex items-center gap-2 px-2">
+        {/* Main Map Filters - Horizontal Expandable Dropdown */}
+        <div className="relative flex items-center flex-shrink-0">
           {/* Active filter circle button */}
           <button
             onClick={() => setIsFilterExpanded(!isFilterExpanded)}
             className={cn(
-              "flex items-center gap-2 rounded-full backdrop-blur-md border transition-all duration-300",
+              "flex items-center gap-1.5 rounded-full backdrop-blur-md border transition-all duration-300",
               "bg-background/80 border-border/30 shadow-sm",
-              isFilterExpanded ? "pr-2" : "pr-3"
+              isFilterExpanded ? "pr-1.5" : "pr-2.5"
             )}
           >
             <div className={cn(
-              "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+              "w-8 h-8 rounded-full flex items-center justify-center transition-all",
               "bg-primary/10 border border-primary/20"
             )}>
               {activeFilter === 'following' && selectedUsers.length > 0 ? (
-                <div className="flex items-center -space-x-1">
-                  {selectedUsers.slice(0, 1).map(user => (
-                    <Avatar key={user.id} className="w-5 h-5 border border-background">
-                      <AvatarImage src={user.avatar_url || ''} />
-                      <AvatarFallback className="text-[8px]">
-                        {user.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                </div>
+                <Avatar className="w-5 h-5 border border-background">
+                  <AvatarImage src={selectedUsers[0]?.avatar_url || ''} />
+                  <AvatarFallback className="text-[8px]">
+                    {selectedUsers[0]?.username?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
               ) : (
-                <activeFilterData.icon className="w-4 h-4 text-primary" />
+                <activeFilterData.icon className="w-3.5 h-3.5 text-primary" />
               )}
             </div>
             {!isFilterExpanded && (
-              <span className="text-xs font-medium text-foreground whitespace-nowrap">
+              <span className="text-[10px] font-medium text-foreground whitespace-nowrap">
                 {activeFilterData.name}
               </span>
             )}
             <ChevronRight className={cn(
-              "w-4 h-4 text-muted-foreground transition-transform duration-300",
+              "w-3.5 h-3.5 text-muted-foreground transition-transform duration-300",
               isFilterExpanded && "rotate-180"
             )} />
           </button>
@@ -274,25 +271,74 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
           {/* Expanded filter options */}
           <div className={cn(
             "flex items-center gap-1 ml-1 overflow-hidden transition-all duration-300",
-            isFilterExpanded ? "max-w-[250px] opacity-100" : "max-w-0 opacity-0"
+            isFilterExpanded ? "max-w-[200px] opacity-100" : "max-w-0 opacity-0"
           )}>
             {mapFilters.filter(f => f.id !== activeFilter).map((filter) => (
               <button
                 key={filter.id}
                 onClick={() => handleFilterSelect(filter.id)}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md border transition-all duration-200",
+                  "flex items-center gap-1.5 px-2 py-1.5 rounded-full backdrop-blur-md border transition-all duration-200",
                   "bg-background/80 border-border/30 hover:bg-background/90 hover:border-primary/30"
                 )}
               >
-                <filter.icon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs font-medium text-foreground whitespace-nowrap">
+                <filter.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-[10px] font-medium text-foreground whitespace-nowrap">
                   {filter.name}
                 </span>
               </button>
             ))}
           </div>
         </div>
+
+        {/* Category Filters - Same row, compact */}
+        {!(showUserSearch && activeFilter === 'following') && (
+          <div className="flex-1 overflow-hidden">
+            <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+              {activeFilter === 'saved' && <SaveTagsFilter />}
+              
+              {categoryConfig
+                .filter(category => availableCategories.includes(category.id))
+                .map((category) => {
+                  const isSelected = selectedCategories.includes(category.id);
+                  
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => toggleCategory(category.id)}
+                      className={cn(
+                        "flex-shrink-0 flex flex-col items-center justify-center gap-0 px-1.5 py-0.5 rounded-lg transition-all duration-200",
+                        isSelected && "bg-primary/10"
+                      )}
+                    >
+                      <CategoryIcon 
+                        category={category.id} 
+                        className={cn(
+                          "w-5 h-5 transition-all",
+                          isSelected && "scale-110"
+                        )}
+                      />
+                      <span className={cn(
+                        "text-[7px] font-medium whitespace-nowrap transition-colors",
+                        isSelected ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {tCat(category.id)}
+                      </span>
+                    </button>
+                  );
+                })}
+              
+              {selectedCategories.length > 0 && (
+                <button
+                  onClick={clearCategories}
+                  className="flex-shrink-0 flex items-center justify-center p-1 rounded-lg hover:bg-secondary/50 transition-all duration-200"
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* User Search Bar */}
@@ -400,62 +446,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Category Filters - Compact Icon Style with Continuous Background Bar */}
-      {!(showUserSearch && activeFilter === 'following') && (
-        <div className="flex justify-center pointer-events-auto">
-          {/* Continuous transparent background bar with fade edges */}
-          <div className="inline-flex max-w-full rounded-full bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 py-0.5">
-              {/* Save Tags Filter - Only shown when in 'saved' mode */}
-              {activeFilter === 'saved' && <SaveTagsFilter />}
-              
-              {categoryConfig
-                .filter(category => availableCategories.includes(category.id))
-                .map((category) => {
-                  const isSelected = selectedCategories.includes(category.id);
-                  
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => toggleCategory(category.id)}
-                      className={cn(
-                        "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all duration-200 min-w-[48px]",
-                        isSelected && "bg-primary/10"
-                      )}
-                    >
-                      <CategoryIcon 
-                        category={category.id} 
-                        className={cn(
-                          "w-6 h-6 transition-all",
-                          isSelected && "scale-110"
-                        )}
-                      />
-                      <span className={cn(
-                        "text-[8px] font-medium whitespace-nowrap transition-colors",
-                        isSelected ? "text-primary" : "text-muted-foreground"
-                      )}>
-                        {tCat(category.id)}
-                      </span>
-                    </button>
-                  );
-                })}
-              
-              {selectedCategories.length > 0 && (
-                <button
-                  onClick={clearCategories}
-                  className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg hover:bg-secondary/50 transition-all duration-200 min-w-[48px]"
-                >
-                  <X className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-[8px] font-medium text-muted-foreground whitespace-nowrap">
-                    {t('common:clearAll')}
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       )}
     </div>

@@ -452,6 +452,17 @@ const LeafletMapSetup = ({
     const clusterGroup = markerClusterGroupRef.current;
     if (!map || !clusterGroup) return;
 
+    // Don't render pins when zoomed out (city labels mode) to prevent flickering
+    const zoom = map.getZoom();
+    if (zoom < 9) {
+      // Clear all markers when zoomed out
+      markersRef.current.forEach((marker) => {
+        clusterGroup.removeLayer(marker);
+      });
+      markersRef.current.clear();
+      return;
+    }
+
     // Remove markers that no longer exist
     markersRef.current.forEach((marker, id) => {
       if (!places.find((p) => p.id === id)) {
