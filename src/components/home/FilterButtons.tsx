@@ -1,5 +1,9 @@
-import { Heart, Users, Bookmark, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import friendsIcon from '@/assets/filter-friends.png';
+import everyoneIcon from '@/assets/filter-everyone.png';
+import savedIcon from '@/assets/filter-saved.png';
 
 interface FilterButtonsProps {
   activeFilter: 'following' | 'popular' | 'saved' | 'shared';
@@ -9,6 +13,7 @@ interface FilterButtonsProps {
 }
 
 const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowedUsers }: FilterButtonsProps) => {
+  const { t } = useTranslation();
   // Calculate saved count (this would be dynamic in a real app)
   const savedCount = activeFilter === 'saved' ? 0 : 12;
 
@@ -24,8 +29,8 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
               : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
           )}
         >
-          <Users className="w-4 h-4" />
-          Following
+          <img src={friendsIcon} alt="" className="w-5 h-5 object-contain" />
+          {t('mapFilters:friends')}
         </button>
         <button
           onClick={() => onFilterChange('popular')}
@@ -36,8 +41,8 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
               : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
           )}
         >
-          <Heart className="w-4 h-4" />
-          Popular
+          <img src={everyoneIcon} alt="" className="w-5 h-5 object-contain" />
+          {t('mapFilters:everyone')}
         </button>
         <button
           onClick={() => onFilterChange('saved')}
@@ -48,8 +53,8 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
               : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
           )}
         >
-          <Bookmark className="w-4 h-4" />
-          Saved
+          <img src={savedIcon} alt="" className="w-5 h-5 object-contain" />
+          {t('mapFilters:saved')}
           {savedCount > 0 && activeFilter !== 'saved' && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full animate-pulse"></div>
           )}
@@ -64,7 +69,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowed
           )}
         >
           <Share2 className="w-4 h-4" />
-          Condivisi
+          {t('mapFilters:shared')}
         </button>
       </div>
     </div>
