@@ -325,15 +325,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       <div className="relative mb-1" ref={dropdownRef}>
         {!loading && (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            {/* Fixed height container to prevent icon movement */}
+            <div className="flex items-center gap-2 h-12">
               <button
                 onClick={() => setDropdownOpen((open) => !open)}
-                className="flex items-center justify-start"
+                className="flex items-center justify-start h-12"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
                 {/* Main filter icon - specific sizes (reduced per spec) */}
                 <div className={cn(
-                   "flex items-center justify-center transition-all",
+                   "flex items-center justify-center",
                    filterType === 'most_saved' ? "w-8 h-8" :
                    filterType === 'discount' ? "w-9 h-9" :
                    filterType === 'promotion' ? "w-10 h-10" :
