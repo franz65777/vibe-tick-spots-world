@@ -667,25 +667,26 @@ const LeafletMapSetup = ({
         const cityIcon = L.divIcon({
           html: `
             <div class="city-label" style="
-              background: ${isDarkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(156, 163, 175, 0.8)'};
-              padding: 5px 10px;
-              border-radius: 16px;
+              background: ${isDarkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(200, 200, 200, 0.7)'};
+              padding: 4px 12px;
+              border-radius: 14px;
               font-weight: 600;
-              font-size: 11px;
-              color: ${isDarkMode ? '#e2e8f0' : '#1f2937'};
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              font-size: 10px;
+              color: ${isDarkMode ? '#e2e8f0' : '#374151'};
+              box-shadow: 0 2px 6px rgba(0,0,0,0.12);
               white-space: nowrap;
               cursor: pointer;
               transition: transform 0.2s, box-shadow 0.2s;
               backdrop-filter: blur(4px);
               -webkit-backdrop-filter: blur(4px);
+              display: inline-block;
             " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
               ${cityData.displayName}
             </div>
           `,
           className: 'city-marker-icon',
-          iconSize: [80, 28],
-          iconAnchor: [40, 14],
+          iconSize: null as any,
+          iconAnchor: [0, 0],
         });
 
         const marker = L.marker([cityData.lat, cityData.lng], { icon: cityIcon, zIndexOffset: 1000 });

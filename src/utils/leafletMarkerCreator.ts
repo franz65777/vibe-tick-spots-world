@@ -347,17 +347,20 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
   
   // Scale sizes based on zoom level
   const basePersonSize = 40 * scale;
-  const baseConeWidth = 20 * scale;
-  const baseConeHeight = 45 * scale;
+  const baseConeWidth = 24 * scale;
+  const baseConeHeight = 50 * scale;
   const containerWidth = 60 * scale;
-  const containerHeight = (baseConeHeight + basePersonSize) * 1.1;
+  // Cone overlaps with person icon now
+  const coneOverlap = 12 * scale;
+  const containerHeight = baseConeHeight + basePersonSize - coneOverlap;
   
-  // Person center should be the anchor point
-  const personCenterY = baseConeHeight + (basePersonSize / 2);
+  // Person center should be the anchor point (adjusted for overlap)
+  const personTop = baseConeHeight - coneOverlap;
+  const personCenterY = personTop + (basePersonSize / 2);
   
   const markerHtml = `
     <div style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
-      <!-- Direction cone (pointing direction user is facing) - uses border-top for correct direction -->
+      <!-- Direction cone (pointing direction user is facing) - overlaps with person icon -->
       <div class="direction-cone" style="
         position: absolute;
         top: 0;
@@ -368,14 +371,15 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
         height: 0;
         border-left: ${baseConeWidth}px solid transparent;
         border-right: ${baseConeWidth}px solid transparent;
-        border-top: ${baseConeHeight}px solid rgba(66, 133, 244, 0.3);
-        filter: blur(${2 * scale}px);
+        border-top: ${baseConeHeight}px solid rgba(66, 133, 244, 0.45);
+        filter: blur(${1.5 * scale}px);
+        z-index: 5;
       "></div>
       
       <!-- Person icon from top view -->
       <div style="
         position: absolute;
-        top: ${baseConeHeight}px;
+        top: ${personTop}px;
         left: 50%;
         transform: translateX(-50%) rotate(${rotation}deg);
         width: ${basePersonSize}px;
