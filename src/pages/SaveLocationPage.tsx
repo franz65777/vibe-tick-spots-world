@@ -36,10 +36,16 @@ const SaveLocationPage = () => {
   const { user } = useAuth();
   const { location, loading: geoLoading } = useGeolocation();
   
-  // Restore search query from sessionStorage if returning from PinDetailCard
+  // Only restore search query if explicitly returning from a location card
   const [searchQuery, setSearchQuery] = useState(() => {
-    const saved = sessionStorage.getItem('saveLocationSearchQuery');
-    return saved || '';
+    const shouldRestore = sessionStorage.getItem('saveLocationShouldRestoreSearch') === 'true';
+    if (shouldRestore) {
+      sessionStorage.removeItem('saveLocationShouldRestoreSearch');
+      return sessionStorage.getItem('saveLocationSearchQuery') || '';
+    }
+    // Clear any stale search query
+    sessionStorage.removeItem('saveLocationSearchQuery');
+    return '';
   });
   const [searchResults, setSearchResults] = useState<NearbyLocation[]>([]);
   const [nearbyLocations, setNearbyLocations] = useState<NearbyLocation[]>([]);
@@ -47,11 +53,21 @@ const SaveLocationPage = () => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(() => {
-    const saved = sessionStorage.getItem('saveLocationSearchQuery');
-    return !!saved;
+    const shouldRestore = sessionStorage.getItem('saveLocationShouldRestoreSearch') === 'true';
+    return shouldRestore && !!sessionStorage.getItem('saveLocationSearchQuery');
   });
   const [initialLoading, setInitialLoading] = useState(true);
   const [keywordIndex, setKeywordIndex] = useState(0);
+  
+  // Cache for existing locations to avoid repeated fetches
+  const existingLocationsCache = React.useRef<{
+    byCoords: Set<string>;
+    byNameCity: Set<string>;
+    loaded: boolean;
+  }>({ byCoords: new Set(), byNameCity: new Set(), loaded: false });
+  
+  // Abort controller for search requests
+  const searchAbortRef = React.useRef<AbortController | null>(null);
 
   // Get current language loading translations
   const currentLang = i18n.language?.split('-')[0] || 'en';
@@ -70,15 +86,33 @@ const SaveLocationPage = () => {
     
     return () => clearInterval(interval);
   }, [initialLoading]);
-
-  // Save search query to sessionStorage when it changes
+  
+  // Load existing locations cache once
   useEffect(() => {
-    if (searchQuery) {
-      sessionStorage.setItem('saveLocationSearchQuery', searchQuery);
-    } else {
-      sessionStorage.removeItem('saveLocationSearchQuery');
-    }
-  }, [searchQuery]);
+    const loadExistingLocations = async () => {
+      if (existingLocationsCache.current.loaded) return;
+      
+      const { data: existingLocations } = await supabase
+        .from('locations')
+        .select('name, latitude, longitude, city');
+      
+      existingLocationsCache.current.byCoords = new Set(
+        existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
+          `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
+        ) || []
+      );
+      
+      existingLocationsCache.current.byNameCity = new Set(
+        existingLocations?.map(loc => 
+          `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
+        ) || []
+      );
+      
+      existingLocationsCache.current.loaded = true;
+    };
+    
+    loadExistingLocations();
+  }, []);
 
   // Fetch nearby locations
   useEffect(() => {
@@ -95,22 +129,9 @@ const SaveLocationPage = () => {
       const lat = location.latitude!;
       const lng = location.longitude!;
       
-      // Get ALL existing locations to filter them out
-      const { data: existingLocations } = await supabase
-        .from('locations')
-        .select('name, latitude, longitude, city');
-      
-      const existingByCoords = new Set(
-        existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
-          `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
-        ) || []
-      );
-      
-      const existingByNameCity = new Set(
-        existingLocations?.map(loc => 
-          `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
-        ) || []
-      );
+      // Use cached existing locations
+      const existingByCoords = existingLocationsCache.current.byCoords;
+      const existingByNameCity = existingLocationsCache.current.byNameCity;
       
       // Search for POIs by category types around user location using q= parameter
       const searchTerms = ['restaurant', 'bar', 'cafe', 'pizza'];
@@ -160,7 +181,7 @@ const SaveLocationPage = () => {
           
           return {
             id: `osm-${result.osm_id || result.place_id}`,
-            name: result.name, // Use the actual POI name
+            name: result.name,
             address: result.display_name || '',
             city: result.address?.city || result.address?.town || result.address?.village || '',
             streetName: result.address?.road || result.address?.street,
@@ -389,6 +410,12 @@ const SaveLocationPage = () => {
   };
 
   const searchLocations = async (query: string) => {
+    // Cancel any pending search
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+    }
+    searchAbortRef.current = new AbortController();
+    
     // Start searching with just 2 characters for better partial matching
     if (!query.trim() || query.trim().length < 2) {
       setSearchResults([]);
@@ -400,27 +427,16 @@ const SaveLocationPage = () => {
       const userLat = location?.latitude;
       const userLng = location?.longitude;
       
-      // Get ALL existing locations to filter them out
-      const { data: existingLocations } = await supabase
-        .from('locations')
-        .select('name, latitude, longitude, city');
-      
-      // Create sets for checking existing locations
-      const existingByCoords = new Set(
-        existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
-          `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
-        ) || []
-      );
-      
-      const existingByNameCity = new Set(
-        existingLocations?.map(loc => 
-          `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
-        ) || []
-      );
+      // Use cached existing locations instead of fetching every time
+      const existingByCoords = existingLocationsCache.current.byCoords;
+      const existingByNameCity = existingLocationsCache.current.byNameCity;
       
       // Use Photon API for fast search-as-you-type with partial matching
       const userLoc = userLat && userLng ? { lat: userLat, lng: userLng } : undefined;
       const photonResults = await searchPhoton(query, userLoc, 30);
+      
+      // Check if request was aborted
+      if (searchAbortRef.current?.signal.aborted) return;
       
       // Filter out existing locations
       let results = photonResults
@@ -465,20 +481,10 @@ const SaveLocationPage = () => {
         return true;
       });
 
-      // Enrich top 5 results with street addresses if missing
-      const enrichedResults = await Promise.all(
-        results.slice(0, 10).map(async (result, index) => {
-          if (index < 5 && !result.streetName && result.coordinates?.lat && result.coordinates?.lng) {
-            return enrichAddressIfMissing(result);
-          }
-          return result;
-        })
-      );
-      
-      results = [...enrichedResults, ...results.slice(10)];
-
+      // Skip address enrichment for speed - Photon already provides addresses
       setSearchResults(results);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return;
       console.error('Error searching locations:', error);
       toast.error(t('searchError', { defaultValue: 'Search error' }));
     } finally {
@@ -499,6 +505,12 @@ const SaveLocationPage = () => {
   }, [searchQuery]);
 
   const handleSelectLocation = async (loc: NearbyLocation) => {
+    // Save search query and mark for restoration when returning
+    if (searchQuery) {
+      sessionStorage.setItem('saveLocationSearchQuery', searchQuery);
+      sessionStorage.setItem('saveLocationShouldRestoreSearch', 'true');
+    }
+    
     // DON'T create in database yet - only pass temporary data
     // Location will only be created when user clicks "Save" in PinDetailCard
     navigate('/', { 
