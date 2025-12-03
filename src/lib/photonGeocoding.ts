@@ -141,9 +141,9 @@ export async function searchPhoton(
       params.append('lon', String(userLocation.lng));
     }
 
-    // Use AbortController with timeout for faster failure
+    // Use AbortController with timeout - extended for reliability
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     const response = await fetch(`https://photon.komoot.io/api/?${params}`, {
       signal: controller.signal
