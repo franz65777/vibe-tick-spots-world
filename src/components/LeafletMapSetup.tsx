@@ -178,7 +178,7 @@ const LeafletMapSetup = ({
       zoomToBoundsOnClick: true,
       spiderfyOnMaxZoom: true,
       removeOutsideVisibleBounds: true,
-      maxClusterRadius: 80,
+      maxClusterRadius: 50,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
         let size = 'small';
