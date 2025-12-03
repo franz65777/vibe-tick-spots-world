@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Trophy } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import { useLeaderboardMetrics, LeaderboardMetric, LeaderboardFilter } from '@/h
 import CitySelectionModal from '@/components/explore/CitySelectionModal';
 import { translateCityName } from '@/utils/cityTranslations';
 import { useAuth } from '@/contexts/AuthContext';
+import leaderboardTrophy from '@/assets/leaderboard-trophy.png';
 
 const LeaderboardPage = () => {
   const { t, i18n } = useTranslation();
@@ -53,6 +54,7 @@ const LeaderboardPage = () => {
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
+              <img src={leaderboardTrophy} alt="" className="w-8 h-8" />
               <h1 className="text-2xl font-bold text-foreground">{t('leaderboard', { ns: 'common' })}</h1>
             </div>
 
@@ -122,7 +124,7 @@ const LeaderboardPage = () => {
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-12">
-            <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <img src={leaderboardTrophy} alt="" className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground text-sm mb-2">
               {t('noResultsTryDifferentFilter', { ns: 'leaderboard' })}
             </p>
