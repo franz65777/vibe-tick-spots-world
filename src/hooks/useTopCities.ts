@@ -11,6 +11,7 @@ export function useTopCities() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log('🏙️ useTopCities: mounting, fetching cities...');
     fetchTopCities();
   }, []);
 
@@ -18,27 +19,32 @@ export function useTopCities() {
     setLoading(true);
     try {
       // Try edge function first for efficiency
+      console.log('🏙️ Calling trending-cities edge function...');
       const { data, error } = await supabase.functions.invoke('trending-cities');
+      console.log('🏙️ Edge function response:', { data, error });
       
       if (!error && data?.cities) {
-        setTopCities(data.cities.slice(0, 5).map((c: any) => ({
+        const cities = data.cities.slice(0, 5).map((c: any) => ({
           city: c.city,
           count: c.total
-        })));
+        }));
+        console.log('🏙️ Setting topCities from edge function:', cities);
+        setTopCities(cities);
         return;
       }
 
-      // Fallback: query locations table directly
-      const { data: locations } = await supabase
-        .from('locations')
+      // Fallback: query saved_places table directly  
+      console.log('🏙️ Fallback: querying saved_places directly...');
+      const { data: saves } = await supabase
+        .from('saved_places')
         .select('city')
         .not('city', 'is', null);
 
-      if (locations) {
+      if (saves) {
         const cityCounts = new Map<string, number>();
-        for (const loc of locations) {
-          if (loc.city) {
-            cityCounts.set(loc.city, (cityCounts.get(loc.city) || 0) + 1);
+        for (const save of saves) {
+          if (save.city) {
+            cityCounts.set(save.city, (cityCounts.get(save.city) || 0) + 1);
           }
         }
 
@@ -47,10 +53,11 @@ export function useTopCities() {
           .slice(0, 5)
           .map(([city, count]) => ({ city, count }));
 
+        console.log('🏙️ Setting topCities from fallback:', sorted);
         setTopCities(sorted);
       }
     } catch (error) {
-      console.error('Failed to fetch top cities:', error);
+      console.error('🏙️ Failed to fetch top cities:', error);
     } finally {
       setLoading(false);
     }

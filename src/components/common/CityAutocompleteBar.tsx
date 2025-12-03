@@ -280,8 +280,10 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
           onFocus={() => {
+            console.log('🔍 Search bar focused, searchQuery:', searchQuery, 'topCities:', topCities);
             onFocusOpen?.();
             if (!searchQuery) {
+              console.log('🔍 Setting showTopCities to true');
               setShowTopCities(true);
             }
           }}
