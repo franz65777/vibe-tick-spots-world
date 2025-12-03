@@ -54,41 +54,13 @@ export const useOptimizedSavedPlaces = () => {
       console.log('Saved places loaded:', savedPlacesData.length, 'saved_places,', userSavedLocations.length, 'user_saved_locations');
 
       // 2) Group by city with enhanced deduplication
+      // Process in same order as UnifiedLocationService: user_saved_locations first, then saved_places
       const groupedByCity: SavedPlacesData = {};
       const seenPlaceIds = new Set<string>();
       const seenGooglePlaceIds = new Set<string>();
       const seenLocationIds = new Set<string>();
 
-      // Add saved_places data
-      savedPlacesData.forEach((place: any) => {
-        if (!place.place_name) return;
-
-        const city = normalizeCity(place.city);
-        const coords = place.coordinates as any;
-        const placeId = place.place_id;
-
-        // Skip if we've seen this place_id, google_place_id, or internal location_id
-        if (seenPlaceIds.has(placeId)) return;
-        seenPlaceIds.add(placeId);
-        // Also track as potential google_place_id
-        seenGooglePlaceIds.add(placeId);
-
-        if (!groupedByCity[city]) groupedByCity[city] = [];
-
-        groupedByCity[city].push({
-          id: placeId,
-          name: place.place_name,
-          category: place.place_category || 'place',
-          city,
-          coordinates: coords || { lat: 0, lng: 0 },
-          savedAt: place.created_at || new Date().toISOString(),
-          google_place_id: placeId,
-          latitude: coords?.lat,
-          longitude: coords?.lng
-        });
-      });
-
-      // Add user_saved_locations data
+      // Add user_saved_locations data FIRST (same order as UnifiedLocationService)
       userSavedLocations.forEach((item: any) => {
         const location = item.locations;
         if (!location || !location.name) return;
@@ -96,16 +68,15 @@ export const useOptimizedSavedPlaces = () => {
         const city = normalizeCity(location.city);
         const placeId = location.google_place_id || location.id;
 
-        // Enhanced deduplication - check all possible ID matches
-        // saved_places may have stored either google_place_id OR internal location_id as place_id
-        if (location.google_place_id && seenGooglePlaceIds.has(location.google_place_id)) return;
-        if (seenGooglePlaceIds.has(location.id)) return; // Check if internal ID was in saved_places
+        // Track both google_place_id and internal id to prevent duplicates
+        if (location.google_place_id) {
+          if (seenGooglePlaceIds.has(location.google_place_id)) return;
+          seenGooglePlaceIds.add(location.google_place_id);
+        }
         if (seenLocationIds.has(location.id)) return;
-        if (seenPlaceIds.has(placeId)) return;
-        
-        // Track all IDs
-        if (location.google_place_id) seenGooglePlaceIds.add(location.google_place_id);
         seenLocationIds.add(location.id);
+        
+        if (seenPlaceIds.has(placeId)) return;
         seenPlaceIds.add(placeId);
 
         if (!groupedByCity[city]) groupedByCity[city] = [];
@@ -121,6 +92,36 @@ export const useOptimizedSavedPlaces = () => {
           latitude: location.latitude,
           longitude: location.longitude,
           address: location.address || undefined
+        });
+      });
+
+      // Add saved_places data SECOND
+      savedPlacesData.forEach((place: any) => {
+        if (!place.place_name) return;
+
+        const city = normalizeCity(place.city);
+        const coords = place.coordinates as any;
+        const placeId = place.place_id;
+
+        // Check if this place_id matches a google_place_id or location_id we've already seen
+        if (seenPlaceIds.has(placeId)) return;
+        if (seenGooglePlaceIds.has(placeId)) return;
+        if (seenLocationIds.has(placeId)) return;
+        
+        seenPlaceIds.add(placeId);
+
+        if (!groupedByCity[city]) groupedByCity[city] = [];
+
+        groupedByCity[city].push({
+          id: placeId,
+          name: place.place_name,
+          category: place.place_category || 'place',
+          city,
+          coordinates: coords || { lat: 0, lng: 0 },
+          savedAt: place.created_at || new Date().toISOString(),
+          google_place_id: placeId,
+          latitude: coords?.lat,
+          longitude: coords?.lng
         });
       });
 
