@@ -12,6 +12,7 @@ import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
 import { Geolocation } from "@capacitor/geolocation";
+import type { PhotonResult } from '@/lib/photonGeocoding';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -377,6 +378,40 @@ const HomePage = memo(() => {
     }
   };
 
+  // Handle location selection from unified search (city search bar)
+  const handleLocationSelect = (location: PhotonResult) => {
+    console.log('📍 Location selected from search:', location.name);
+    
+    // Create a temporary place object from the Photon result
+    const placeToShow: Place = {
+      id: `photon-${location.lat}-${location.lng}`,
+      name: location.name,
+      category: location.category,
+      coordinates: { lat: location.lat, lng: location.lng },
+      address: location.displayAddress || '',
+      city: location.city,
+      streetName: location.streetName,
+      streetNumber: location.streetNumber,
+      isFollowing: false,
+      isNew: true,
+      isTemporary: true, // Mark as temporary until saved
+      likes: 0,
+      visitors: []
+    };
+    
+    // Update map center to the location
+    setMapCenter({ lat: location.lat, lng: location.lng });
+    setRecenterToken((v) => v + 1);
+    
+    // Show the location card
+    setInitialPinToShow(placeToShow);
+    
+    // Update city if available
+    if (location.city) {
+      setCurrentCity(location.city);
+    }
+  };
+
   const handlePinClick = (place: Place) => {
     console.log('HomePage - Pin clicked:', place.name);
     setSelectedPlace(place);
@@ -569,6 +604,7 @@ const HomePage = memo(() => {
             onSearchKeyPress={() => {}}
             onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
             onCitySelect={handleCityChange}
+            onLocationSelect={handleLocationSelect}
             onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
           />
         )}
