@@ -3368,6 +3368,7 @@ export type Database = {
         Args: { business_user_id: string }
         Returns: boolean
       }
+      normalize_coordinate: { Args: { coord: number }; Returns: number }
       refresh_trending_locations: { Args: never; Returns: undefined }
       search_users_safely: {
         Args: { requesting_user_id: string; search_query: string }

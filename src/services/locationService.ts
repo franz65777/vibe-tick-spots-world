@@ -60,7 +60,7 @@ export const locationService = {
           .maybeSingle();
 
         if (existingLocation) {
-          console.log('✅ Location already exists, using existing:', existingLocation.name);
+          console.log('✅ Location already exists by Google Place ID, using existing:', existingLocation.name);
           
           // Save location for current user if not already saved
           const { error: saveError } = await supabase
@@ -78,7 +78,45 @@ export const locationService = {
         }
       }
 
-      // Only check by name/address as fallback if no Google Place ID match
+      // CRITICAL: Check for existing location by COORDINATES (within ~11m precision)
+      // This prevents duplicate locations with different names at the same physical location
+      if (locationData.latitude && locationData.longitude) {
+        console.log('🔍 Checking for existing location by coordinates:', locationData.latitude, locationData.longitude);
+        
+        // Round to 4 decimal places (~11m precision) to match the database constraint
+        const roundedLat = Math.round(locationData.latitude * 10000) / 10000;
+        const roundedLng = Math.round(locationData.longitude * 10000) / 10000;
+        
+        const { data: existingLocations } = await supabase
+          .from('locations')
+          .select('*')
+          .gte('latitude', roundedLat - 0.00015)
+          .lte('latitude', roundedLat + 0.00015)
+          .gte('longitude', roundedLng - 0.00015)
+          .lte('longitude', roundedLng + 0.00015)
+          .limit(1);
+
+        if (existingLocations && existingLocations.length > 0) {
+          const existingLocation = existingLocations[0];
+          console.log('✅ Location already exists at coordinates, using existing:', existingLocation.name, 'instead of:', locationData.name);
+          
+          // Save location for current user if not already saved
+          const { error: saveError } = await supabase
+            .from('user_saved_locations')
+            .insert({
+              user_id: user.user.id,
+              location_id: existingLocation.id,
+            });
+
+          if (saveError && !saveError.message.includes('duplicate')) {
+            throw saveError;
+          }
+
+          return existingLocation;
+        }
+      }
+
+      // Only check by name/address as fallback if no coordinate or Google Place ID match
       const { data: existingLocationByNameAddress } = await supabase
         .from('locations')
         .select('*')
@@ -112,7 +150,54 @@ export const locationService = {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          // Handle duplicate coordinate error from database trigger
+          if (error.message?.includes('DUPLICATE_LOCATION:') || error.message?.includes('unique constraint')) {
+            console.log('⚠️ Duplicate detected by database, fetching existing location...');
+            
+            // Extract the existing location ID from the error if available
+            const match = error.message?.match(/DUPLICATE_LOCATION:([a-f0-9-]+)/);
+            if (match) {
+              const { data: existingLoc } = await supabase
+                .from('locations')
+                .select('*')
+                .eq('id', match[1])
+                .single();
+              
+              if (existingLoc) {
+                // Save for current user
+                await supabase
+                  .from('user_saved_locations')
+                  .insert({ user_id: user.user.id, location_id: existingLoc.id });
+                return existingLoc;
+              }
+            }
+            
+            // Fallback: search by coordinates again
+            if (locationData.latitude && locationData.longitude) {
+              const roundedLat = Math.round(locationData.latitude * 10000) / 10000;
+              const roundedLng = Math.round(locationData.longitude * 10000) / 10000;
+              
+              const { data: fallbackLocations } = await supabase
+                .from('locations')
+                .select('*')
+                .gte('latitude', roundedLat - 0.0002)
+                .lte('latitude', roundedLat + 0.0002)
+                .gte('longitude', roundedLng - 0.0002)
+                .lte('longitude', roundedLng + 0.0002)
+                .limit(1);
+              
+              if (fallbackLocations?.[0]) {
+                await supabase
+                  .from('user_saved_locations')
+                  .insert({ user_id: user.user.id, location_id: fallbackLocations[0].id });
+                return fallbackLocations[0];
+              }
+            }
+          }
+          throw error;
+        }
+        
         location = newLocation;
         console.log('✅ Created new location hub with category:', location.category);
       }
