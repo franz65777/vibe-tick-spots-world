@@ -16,7 +16,7 @@ const SignupProfile: React.FC = () => {
   const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState<boolean | null>(null);
 
-  useEffect(() => { document.title = 'Profilo - Spott'; }, []);
+  useEffect(() => { document.title = 'Profile - Spott'; }, []);
   
   useEffect(() => {
     const session = sessionStorage.getItem('signup_session');
@@ -47,7 +47,7 @@ const SignupProfile: React.FC = () => {
           body: { type: 'username', value: trimmed }
         });
         if (error) throw error;
-        setAvailable(!data?.exists); // se esiste -> not available
+        setAvailable(!data?.exists);
       } catch (e) {
         console.error('Username check error:', e);
         setAvailable(null);
@@ -71,12 +71,12 @@ const SignupProfile: React.FC = () => {
       });
       if (error) throw error;
       if (data?.exists) {
-        toast.error('Nome utente non disponibile');
+        toast.error(t('signup:usernameUnavailable'));
         setAvailable(false);
         return;
       }
     } catch (e: any) {
-      toast.error(e?.message || 'Errore verifica username');
+      toast.error(e?.message || t('signup:errorCreating'));
       return;
     }
     
@@ -92,30 +92,30 @@ const SignupProfile: React.FC = () => {
           sessionStorage.setItem('signup_nav_back', 'true');
           navigate(-1);
         }}>
-          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
+          <ArrowLeft className="mr-2" /> {t('auth:back')}
         </Button>
       </header>
 
       <main className="flex-1 px-6 py-10">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold">Il tuo profilo</h1>
-            <p className="text-sm text-muted-foreground mt-1">Inserisci nome completo e scegli un username</p>
+            <h1 className="text-2xl font-semibold">{t('signup:yourProfile')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('signup:enterNameUsername')}</p>
           </div>
 
           <div>
-            <Label htmlFor="fullName">Nome completo</Label>
-            <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Mario Rossi" />
+            <Label htmlFor="fullName">{t('signup:fullName')}</Label>
+            <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('signup:fullNamePlaceholder')} />
           </div>
 
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t('signup:username')}</Label>
             <div className="relative">
               <Input
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                placeholder="mariorossi"
+                placeholder={t('signup:usernamePlaceholder')}
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
@@ -131,24 +131,24 @@ const SignupProfile: React.FC = () => {
             {available === false && (
               <p className="mt-2 text-sm font-medium text-destructive flex items-center gap-1">
                 <X className="w-4 h-4" />
-                Nome utente già in uso. Scegline un altro.
+                {t('signup:usernameUnavailable')}
               </p>
             )}
             {available === true && (
               <p className="mt-2 text-sm font-medium text-green-600 flex items-center gap-1">
                 <Check className="w-4 h-4" />
-                Username disponibile!
+                {t('signup:usernameAvailable')}
               </p>
             )}
           </div>
 
           <Button disabled={!canContinue || checking} onClick={onNext} className="w-full h-12 rounded-xl">
-            Continua
+            {t('signup:continue')}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
-            Hai già un account?
-            <Link to="/auth?mode=login" className="ml-1 text-primary underline">Accedi</Link>
+            {t('signup:alreadyHaveAccount')}
+            <Link to="/auth?mode=login" className="ml-1 text-primary underline">{t('signup:login')}</Link>
           </div>
         </div>
       </main>
