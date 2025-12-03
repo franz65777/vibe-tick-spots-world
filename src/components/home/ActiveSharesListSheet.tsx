@@ -108,10 +108,10 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
               const match = places.find(p => p.id === locKey || p.google_place_id === locKey);
               const name = match?.name || info.name;
               return (
-                <button
+              <div
                   key={locKey}
                   onClick={() => handleSelect(locKey, info.shareData)}
-                  className="w-full flex items-center gap-3 p-4 bg-card border-2 border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all text-left"
+                  className="w-full flex items-center gap-3 p-4 bg-card border-2 border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
                 >
                   <div className="flex -space-x-1 shrink-0">
                     {info.shareUsers.slice(0, 3).map((u) => (
@@ -130,7 +130,7 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
                     <h4 className="font-semibold text-base text-foreground line-clamp-1">{name}</h4>
                   </div>
                   <Button size="sm" variant="secondary">{t('view', { ns: 'common' })}</Button>
-                </button>
+                </div>
               );
             })}
             {grouped.size === 0 && (
