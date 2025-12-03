@@ -637,6 +637,7 @@ const resources = {
     notifications: {
       title: 'Notifications',
       likedYourPost: 'liked your post',
+      likedYourReview: 'liked your review',
       likedYourStory: 'liked your story',
       repliedToYourStory: 'replied to your story',
       startedFollowing: 'started following you',
@@ -1458,6 +1459,7 @@ const resources = {
     notifications: {
       title: 'Notificaciones',
       likedYourPost: 'le gustó tu publicación',
+      likedYourReview: 'le gustó tu reseña',
       likedYourStory: 'le gustó tu historia',
       repliedToYourStory: 'respondió a tu historia',
       startedFollowing: 'empezó a seguirte',
@@ -2318,6 +2320,7 @@ const resources = {
     notifications: {
       title: 'Notifiche',
       likedYourPost: 'ha messo mi piace al tuo post',
+      likedYourReview: 'ha messo mi piace alla tua recensione',
       likedYourStory: 'ha messo mi piace alla tua storia',
       repliedToYourStory: 'ha risposto alla tua storia',
       startedFollowing: 'ha iniziato a seguirti',
@@ -3076,6 +3079,7 @@ const resources = {
     notifications: {
       title: 'Notifications',
       likedYourPost: 'a aimé votre publication',
+      likedYourReview: 'a aimé votre avis',
       likedYourStory: 'a aimé votre histoire',
       repliedToYourStory: 'a répondu à votre histoire',
       startedFollowing: 'a commencé à vous suivre',
@@ -3778,6 +3782,7 @@ const resources = {
     notifications: {
       title: 'Benachrichtigungen',
       likedYourPost: 'gefällt dein Beitrag',
+      likedYourReview: 'gefällt deine Bewertung',
       likedYourStory: 'gefällt deine Story',
       repliedToYourStory: 'hat auf deine Story geantwortet',
       startedFollowing: 'folgt dir jetzt',
@@ -4435,6 +4440,7 @@ const resources = {
     notifications: {
       title: 'Notificações',
       likedYourPost: 'curtiu sua publicação',
+      likedYourReview: 'curtiu sua avaliação',
       likedYourStory: 'curtiu sua história',
       repliedToYourStory: 'respondeu à sua história',
       startedFollowing: 'começou a te seguir',
@@ -4991,6 +4997,7 @@ const resources = {
     notifications: {
       title: '通知',
       likedYourPost: '赞了你的帖子',
+      likedYourReview: '赞了你的评价',
       likedYourStory: '赞了你的故事',
       repliedToYourStory: '回复了你的故事',
       startedFollowing: '开始关注你',
@@ -5552,6 +5559,7 @@ const resources = {
     notifications: {
       title: '通知',
       likedYourPost: 'があなたの投稿にいいねしました',
+      likedYourReview: 'があなたのレビューにいいねしました',
       likedYourStory: 'があなたのストーリーにいいねしました',
       repliedToYourStory: 'があなたのストーリーに返信しました',
       startedFollowing: 'があなたをフォローし始めました',
@@ -6117,6 +6125,7 @@ const resources = {
     notifications: {
       title: '알림',
       likedYourPost: '님이 게시물을 좋아합니다',
+      likedYourReview: '님이 리뷰를 좋아합니다',
       likedYourStory: '님이 스토리를 좋아합니다',
       repliedToYourStory: '님이 스토리에 답장했습니다',
       startedFollowing: '님이 팔로우하기 시작했습니다',
@@ -6682,6 +6691,7 @@ const resources = {
     notifications: {
       title: 'الإشعارات',
       likedYourPost: 'أعجب بمنشورك',
+      likedYourReview: 'أعجب بتقييمك',
       likedYourStory: 'أعجب بقصتك',
       repliedToYourStory: 'رد على قصتك',
       startedFollowing: 'بدأ في متابعتك',
@@ -7262,6 +7272,7 @@ const resources = {
     notifications: {
       title: 'सूचनाएं',
       likedYourPost: 'ने आपकी पोस्ट पसंद की',
+      likedYourReview: 'ने आपकी समीक्षा पसंद की',
       likedYourStory: 'ने आपकी कहानी पसंद की',
       repliedToYourStory: 'ने आपकी कहानी का जवाब दिया',
       startedFollowing: 'ने आपको फॉलो करना शुरू किया',
@@ -7823,6 +7834,7 @@ const resources = {
     notifications: {
       title: 'Уведомления',
       likedYourPost: 'понравился ваш пост',
+      likedYourReview: 'понравился ваш отзыв',
       likedYourStory: 'понравилась ваша история',
       repliedToYourStory: 'ответил(а) на вашу историю',
       startedFollowing: 'начал(а) подписываться на вас',

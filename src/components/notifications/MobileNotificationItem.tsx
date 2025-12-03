@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2 } from 'lucide-react';
+import reviewIcon from '@/assets/review-icon.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ interface MobileNotificationItemProps {
       location_id?: string;
       location_name?: string;
       location_address?: string;
+      content_type?: string;
       grouped_users?: Array<{
         id: string;
         name: string;
@@ -536,6 +538,10 @@ const MobileNotificationItem = ({
           </span>
         );
       case 'like':
+        // Check if this is a review like
+        const isReview = notification.data?.content_type === 'review';
+        const likeTranslationKey = isReview ? 'likedYourReview' : 'likedYourPost';
+        
         // Check if this is a grouped notification
         if (notification.data?.grouped_users && notification.data.grouped_users.length > 0) {
           const groupedUsers = notification.data.grouped_users;
@@ -550,7 +556,7 @@ const MobileNotificationItem = ({
                 >
                   {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
                 </span>
-                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
+                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(likeTranslationKey, { ns: 'notifications' })}</span>
               </span>
             );
           } else if (groupedUsers.length === 2) {
@@ -564,7 +570,7 @@ const MobileNotificationItem = ({
                 </span>
                 {' '}{t('and', { ns: 'common' })}{' '}
                 <span className="font-semibold">{groupedUserOverrides[groupedUsers[1].id]?.name || groupedUsers[1].name}</span>
-                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
+                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(likeTranslationKey, { ns: 'notifications' })}</span>
               </span>
             );
           } else {
@@ -581,7 +587,7 @@ const MobileNotificationItem = ({
                 <span className="font-semibold">
                   {t('others', { ns: 'common', count: othersCount })}
                 </span>
-                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
+                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(likeTranslationKey, { ns: 'notifications' })}</span>
               </span>
             );
           }
@@ -596,7 +602,7 @@ const MobileNotificationItem = ({
             >
               {displayUsername}
             </span>
-            {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
+            {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(likeTranslationKey, { ns: 'notifications' })}</span>
           </span>
         );
       case 'story_like':
@@ -674,7 +680,7 @@ const MobileNotificationItem = ({
           {groupedUsers.map((user, index) => (
             <Avatar 
               key={user.id}
-              className="w-11 h-11 border-2 border-background cursor-pointer relative"
+              className="w-9 h-9 border-2 border-background cursor-pointer relative"
               style={{ zIndex: groupedUsers.length - index }}
               onClick={handleAvatarClick}
             >
@@ -682,7 +688,7 @@ const MobileNotificationItem = ({
                 src={groupedUserOverrides[user.id]?.avatar || user.avatar || undefined} 
                 alt={groupedUserOverrides[user.id]?.name || user.name} 
               />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                 {(groupedUserOverrides[user.id]?.name || user.name)[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -707,6 +713,9 @@ const MobileNotificationItem = ({
       </Avatar>
     );
   };
+
+  // Check if this is a review like notification
+  const isReviewLike = notification.type === 'like' && notification.data?.content_type === 'review';
 
   return (
     <>
@@ -857,7 +866,7 @@ const MobileNotificationItem = ({
                       className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
                     />
                   </Button>
-                ) : notification.data?.post_image ? (
+                ) : notification.data?.post_image && notification.data?.content_type !== 'review' ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
                     onClick={handlePostClick}
@@ -866,6 +875,17 @@ const MobileNotificationItem = ({
                       src={notification.data.post_image}
                       alt="Post"
                       className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : notification.data?.content_type === 'review' ? (
+                  <div 
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
+                    onClick={handlePostClick}
+                  >
+                    <img
+                      src={reviewIcon}
+                      alt="Review"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 ) : null}
