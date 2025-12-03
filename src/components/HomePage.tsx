@@ -697,6 +697,7 @@ const HomePage = memo(() => {
           setSearchQuery(city);
           setIsSearchOverlayOpen(false);
         }}
+        onLocationSelect={handleLocationSelect}
       />
 
       <ModalsManager 
