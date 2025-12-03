@@ -1,25 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
-import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
-import { searchPhoton, PhotonResult } from '@/lib/photonGeocoding';
+import { supabase } from '@/integrations/supabase/client';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import type { AllowedCategory } from '@/utils/allowedCategories';
 
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   onCitySelect?: (city: string, coordinates: { lat: number; lng: number }) => void;
-  onLocationSelect?: (location: PhotonResult) => void;
+  onLocationSelect?: (location: LocationResult) => void;
 }
 
 interface CityResult {
   name: string;
+  lat: number;
+  lng: number;
+}
+
+interface LocationResult {
+  id: string;
+  name: string;
+  city: string;
   address: string;
   lat: number;
   lng: number;
+  category: AllowedCategory;
 }
 
 const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect }: UnifiedSearchOverlayProps) => {
@@ -27,12 +36,12 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
   const { location: userLocation } = useGeolocation();
   const [query, setQuery] = useState('');
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
-  const [locationResults, setLocationResults] = useState<PhotonResult[]>([]);
+  const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number }[]>([]);
-  const searchCacheRef = useRef<Map<string, { cities: CityResult[]; locations: PhotonResult[] }>>(new Map());
+  const searchCacheRef = useRef<Map<string, { cities: CityResult[]; locations: LocationResult[] }>>(new Map());
 
   const popularCities = [
     { name: 'Dublin', lat: 53.3498053, lng: -6.2603097 },
@@ -105,7 +114,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     setLoading(true);
     const timer = setTimeout(() => {
       searchAll();
-    }, 350); // Longer debounce to let Photon requests complete
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -114,6 +123,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     if (!query.trim()) return;
 
     const cacheKey = `${query.toLowerCase()}-${i18n.language}`;
+    const queryLower = query.toLowerCase().trim();
     
     // Check cache first
     if (searchCacheRef.current.has(cacheKey)) {
@@ -126,45 +136,71 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
 
     setLoading(true);
     try {
-      const userCoords = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : undefined;
-      const queryLower = query.toLowerCase().trim();
-      
-      // Search both cities and locations in parallel
-      const [nominatimResults, photonResults] = await Promise.all([
-        nominatimGeocoding.searchPlace(query, i18n.language),
-        searchPhoton(query, userCoords, 20)
-      ]);
-      
-      console.log('Photon results:', photonResults.length, photonResults);
-      console.log('Nominatim results:', nominatimResults.length);
-      
-      // Only show cities that actually match the query
-      const mappedCities = nominatimResults
-        .map(result => ({
-          name: result.city || result.displayName.split(',')[0],
-          address: result.displayName,
-          lat: result.lat,
-          lng: result.lng,
-        }))
-        .filter(city => city.name.toLowerCase().includes(queryLower));
+      // Search saved locations from database
+      const { data: locations, error } = await supabase
+        .from('locations')
+        .select('id, name, city, address, latitude, longitude, category')
+        .ilike('name', `%${queryLower}%`)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .limit(20);
 
-      // Filter locations by proximity (within 500km if user location available)
-      let filteredLocations = photonResults;
-      if (userCoords && photonResults.length > 0) {
-        filteredLocations = photonResults.filter(loc => {
-          const distance = calculateDistance(userCoords.lat, userCoords.lng, loc.lat, loc.lng);
-          return distance <= 500;
-        });
-        // If no nearby results, show all but sorted by distance
-        if (filteredLocations.length === 0) {
-          filteredLocations = photonResults;
-        }
+      if (error) {
+        console.error('Location search error:', error);
       }
-      
+
+      // Map to LocationResult format
+      const mappedLocations: LocationResult[] = (locations || []).map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        city: loc.city || '',
+        address: loc.address || '',
+        lat: loc.latitude!,
+        lng: loc.longitude!,
+        category: (loc.category || 'restaurant') as AllowedCategory,
+      }));
+
+      // Sort by proximity if user location available
+      if (userLocation && mappedLocations.length > 0) {
+        mappedLocations.sort((a, b) => {
+          const distA = calculateDistance(userLocation.latitude, userLocation.longitude, a.lat, a.lng);
+          const distB = calculateDistance(userLocation.latitude, userLocation.longitude, b.lat, b.lng);
+          return distA - distB;
+        });
+      }
+
+      // Extract unique cities from locations that match query
+      const citiesFromLocations = new Map<string, CityResult>();
+      (locations || []).forEach(loc => {
+        if (loc.city && loc.city.toLowerCase().includes(queryLower) && loc.latitude && loc.longitude) {
+          const cityKey = loc.city.toLowerCase();
+          if (!citiesFromLocations.has(cityKey)) {
+            citiesFromLocations.set(cityKey, {
+              name: loc.city,
+              lat: loc.latitude,
+              lng: loc.longitude,
+            });
+          }
+        }
+      });
+
+      // Also check popular cities that match the query
+      const matchingPopularCities = popularCities.filter(city => 
+        city.name.toLowerCase().includes(queryLower)
+      );
+
+      // Combine unique cities
+      const allCities = [...citiesFromLocations.values()];
+      matchingPopularCities.forEach(pc => {
+        if (!citiesFromLocations.has(pc.name.toLowerCase())) {
+          allCities.push(pc);
+        }
+      });
+
       // Cache results
-      searchCacheRef.current.set(cacheKey, { cities: mappedCities, locations: filteredLocations });
-      setCityResults(mappedCities);
-      setLocationResults(filteredLocations.slice(0, 8));
+      searchCacheRef.current.set(cacheKey, { cities: allCities, locations: mappedLocations });
+      setCityResults(allCities);
+      setLocationResults(mappedLocations.slice(0, 8));
     } catch (error) {
       console.error('Search error:', error);
       setCityResults([]);
@@ -184,7 +220,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     onClose();
   };
 
-  const handleLocationSelect = (location: PhotonResult) => {
+  const handleLocationSelect = (location: LocationResult) => {
     if (onLocationSelect) {
       onLocationSelect(location);
     }
@@ -302,7 +338,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
                         {location.name}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        {location.displayAddress || location.city}
+                        {location.address || location.city}
                       </div>
                     </div>
                   </button>
