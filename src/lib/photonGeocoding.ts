@@ -23,6 +23,9 @@ interface PhotonFeature {
     housenumber?: string;
     postcode?: string;
     city?: string;
+    town?: string;
+    village?: string;
+    county?: string;
     district?: string;
     locality?: string;
     state?: string;
@@ -168,9 +171,10 @@ export async function searchPhoton(
       const normalizedName = props.name.toLowerCase();
       if (!normalizedName.includes(normalizedQuery)) continue;
       
-      // Better city extraction - prioritize actual city over neighborhoods/districts
-      // props.city is the actual city, props.district/locality are often neighborhoods
-      const city = props.city || props.state || '';
+      // Better city extraction - prioritize actual city/town/village over neighborhoods/districts
+      // props.district and props.locality are often neighborhoods (e.g., "Ranelagh", "Dundrum")
+      // props.city, props.town, props.village are actual place names
+      const city = props.city || props.town || props.village || props.county || props.state || '';
       const streetName = props.street || '';
       const streetNumber = props.housenumber || '';
       

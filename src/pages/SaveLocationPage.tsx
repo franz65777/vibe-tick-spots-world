@@ -34,13 +34,30 @@ const SaveLocationPage = () => {
   const { user } = useAuth();
   const { location, loading: geoLoading } = useGeolocation();
   
-  const [searchQuery, setSearchQuery] = useState('');
+  // Restore search query from sessionStorage if returning from PinDetailCard
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const saved = sessionStorage.getItem('saveLocationSearchQuery');
+    return saved || '';
+  });
   const [searchResults, setSearchResults] = useState<NearbyLocation[]>([]);
   const [nearbyLocations, setNearbyLocations] = useState<NearbyLocation[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(() => {
+    const saved = sessionStorage.getItem('saveLocationSearchQuery');
+    return !!saved;
+  });
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Save search query to sessionStorage when it changes
+  useEffect(() => {
+    if (searchQuery) {
+      sessionStorage.setItem('saveLocationSearchQuery', searchQuery);
+    } else {
+      sessionStorage.removeItem('saveLocationSearchQuery');
+    }
+  }, [searchQuery]);
 
   // Fetch nearby locations
   useEffect(() => {
@@ -52,6 +69,7 @@ const SaveLocationPage = () => {
   const fetchNearbyLocations = async () => {
     if (!location) return;
     
+    setInitialLoading(true);
     try {
       const lat = location.latitude!;
       const lng = location.longitude!;
@@ -147,6 +165,8 @@ const SaveLocationPage = () => {
       setNearbyLocations(uniqueLocations);
     } catch (error) {
       console.error('Error fetching nearby locations:', error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -524,6 +544,7 @@ const SaveLocationPage = () => {
                   setSearchQuery('');
                   setSearchResults([]);
                   setIsSearchFocused(false);
+                  sessionStorage.removeItem('saveLocationSearchQuery');
                   if (document.activeElement instanceof HTMLElement) {
                     document.activeElement.blur();
                   }
@@ -574,8 +595,17 @@ const SaveLocationPage = () => {
             </div>
           )}
 
-          {/* Nearby Locations - Only show if no search query */}
-          {!searchQuery && nearbyLocations.length > 0 && (
+          {/* Loading State */}
+          {!searchQuery && initialLoading && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+              <p className="text-lg font-medium">🔍 {t('findingNearbyPlaces', { defaultValue: 'Cercando luoghi vicini...' })}</p>
+              <p className="text-sm text-muted-foreground mt-1">📍 {t('pleaseWait', { defaultValue: 'Un momento...' })}</p>
+            </div>
+          )}
+
+          {/* Nearby Locations - Only show if no search query and not loading */}
+          {!searchQuery && !initialLoading && nearbyLocations.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">{t('nearbyPlaces')}</h3>
               <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
@@ -609,6 +639,14 @@ const SaveLocationPage = () => {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Empty State - No nearby locations found */}
+          {!searchQuery && !initialLoading && nearbyLocations.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-lg font-medium">🗺️ {t('noNearbyPlaces', { defaultValue: 'Nessun nuovo luogo vicino' })}</p>
+              <p className="text-sm text-muted-foreground mt-1">✨ {t('trySearching', { defaultValue: 'Prova a cercare un luogo' })}</p>
             </div>
           )}
         </div>
