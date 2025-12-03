@@ -5,6 +5,8 @@
  * No API key required, fast response times
  */
 
+import type { AllowedCategory } from '@/utils/allowedCategories';
+
 interface PhotonFeature {
   type: 'Feature';
   geometry: {
@@ -21,6 +23,8 @@ interface PhotonFeature {
     housenumber?: string;
     postcode?: string;
     city?: string;
+    district?: string;
+    locality?: string;
     state?: string;
     country?: string;
     countrycode?: string;
@@ -41,34 +45,75 @@ export interface PhotonResult {
   streetNumber: string;
   lat: number;
   lng: number;
-  type: string;
+  category: AllowedCategory;
   osmKey: string;
   osmValue: string;
   displayAddress: string;
 }
 
-// Allowed OSM keys/values for our app categories
-const ALLOWED_OSM_TYPES: Record<string, string[]> = {
-  amenity: ['restaurant', 'bar', 'cafe', 'pub', 'fast_food', 'nightclub', 'bakery', 'ice_cream', 'biergarten', 'food_court'],
-  tourism: ['hotel', 'hostel', 'guest_house', 'motel', 'museum', 'gallery', 'attraction', 'viewpoint', 'theme_park', 'zoo', 'aquarium'],
-  leisure: ['park', 'playground', 'garden', 'sports_centre', 'stadium', 'water_park', 'amusement_arcade', 'bowling_alley', 'miniature_golf'],
-  shop: ['bakery', 'pastry'],
-};
-
-function isAllowedType(osmKey?: string, osmValue?: string): boolean {
-  if (!osmKey || !osmValue) return true; // Allow if type unknown
+// Map OSM key+value combinations to our app categories
+function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory | null {
+  if (!osmKey || !osmValue) return null;
+  
   const key = osmKey.toLowerCase();
   const value = osmValue.toLowerCase();
   
-  const allowedValues = ALLOWED_OSM_TYPES[key];
-  if (allowedValues) {
-    return allowedValues.includes(value);
+  // Restaurant mappings
+  if (value === 'restaurant' || value === 'fast_food' || value === 'food_court' || value === 'biergarten') {
+    return 'restaurant';
   }
   
-  // Allow places that are commonly POIs
-  if (key === 'place' || key === 'building') return true;
+  // Bar mappings
+  if (value === 'bar' || value === 'pub') {
+    return 'bar';
+  }
   
-  return false;
+  // Cafe mappings
+  if (value === 'cafe' || value === 'coffee_shop' || value === 'ice_cream') {
+    return 'cafe';
+  }
+  
+  // Bakery mappings
+  if (value === 'bakery' || value === 'pastry') {
+    return 'bakery';
+  }
+  
+  // Hotel mappings
+  if (value === 'hotel' || value === 'hostel' || value === 'guest_house' || value === 'motel' || value === 'chalet' || value === 'apartment') {
+    return 'hotel';
+  }
+  
+  // Museum mappings
+  if (value === 'museum' || value === 'gallery' || value === 'artwork' || value === 'arts_centre') {
+    return 'museum';
+  }
+  
+  // Entertainment mappings
+  if (value === 'nightclub' || value === 'theatre' || value === 'cinema' || 
+      value === 'park' || value === 'playground' || value === 'garden' ||
+      value === 'sports_centre' || value === 'stadium' || value === 'water_park' ||
+      value === 'amusement_arcade' || value === 'bowling_alley' || value === 'theme_park' ||
+      value === 'zoo' || value === 'aquarium' || value === 'attraction' ||
+      value === 'miniature_golf' || value === 'dance' || value === 'music_venue') {
+    return 'entertainment';
+  }
+  
+  // Tourism attractions default to entertainment
+  if (key === 'tourism' && (value === 'attraction' || value === 'viewpoint' || value === 'theme_park')) {
+    return 'entertainment';
+  }
+  
+  // Leisure venues default to entertainment
+  if (key === 'leisure') {
+    return 'entertainment';
+  }
+  
+  return null;
+}
+
+// Check if OSM type is allowed for our app
+function isAllowedType(osmKey?: string, osmValue?: string): boolean {
+  return mapOsmToCategory(osmKey, osmValue) !== null;
 }
 
 export async function searchPhoton(
@@ -123,7 +168,8 @@ export async function searchPhoton(
       const normalizedName = props.name.toLowerCase();
       if (!normalizedName.includes(normalizedQuery)) continue;
       
-      const city = props.city || props.state || '';
+      // Better city extraction with multiple fallbacks
+      const city = props.city || props.district || props.locality || props.state || '';
       const streetName = props.street || '';
       const streetNumber = props.housenumber || '';
       
@@ -131,6 +177,9 @@ export async function searchPhoton(
       const addressParts = [city, streetName, streetNumber].filter(Boolean);
       const displayAddress = addressParts.join(', ');
 
+      // Get properly mapped category
+      const category = mapOsmToCategory(props.osm_key, props.osm_value) || 'restaurant';
+      
       results.push({
         id: `photon-${props.osm_id || `${lat}-${lng}`}`,
         name: props.name,
@@ -139,7 +188,7 @@ export async function searchPhoton(
         streetNumber,
         lat,
         lng,
-        type: props.osm_value || props.type || 'place',
+        category,
         osmKey: props.osm_key || '',
         osmValue: props.osm_value || '',
         displayAddress,
