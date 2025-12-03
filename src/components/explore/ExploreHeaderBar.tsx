@@ -1,15 +1,13 @@
 import { memo, RefObject } from 'react';
-import { Search, MapPin, Users, Sparkles } from 'lucide-react';
+import { Search, Users, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
 interface ExploreHeaderBarProps {
-  searchMode: 'locations' | 'users';
   searchQuery: string;
   inputFocused: boolean;
   searchInputRef: RefObject<HTMLInputElement>;
-  onSearchModeChange: (mode: 'locations' | 'users') => void;
   onSearchChange: (query: string) => void;
   onInputFocus: (focused: boolean) => void;
   onClearSearch: () => void;
@@ -19,11 +17,9 @@ interface ExploreHeaderBarProps {
 const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
   const { t } = useTranslation();
   const {
-    searchMode,
     searchQuery,
     inputFocused,
     searchInputRef,
-    onSearchModeChange,
     onSearchChange,
     onInputFocus,
     onClearSearch,
@@ -33,31 +29,10 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
   return (
     <div className="bg-background pt-safe">
       <div className="px-2.5 py-4 pt-2">
-        {/* Search Mode Toggle */}
-        <div className="relative flex bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl p-1 mb-4">
-          <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-          <button
-            onClick={() => onSearchModeChange('locations')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
-              searchMode === 'locations'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <MapPin className="w-4 h-4" />
-            {t('places', { ns: 'explore' })}
-          </button>
-          <button
-            onClick={() => onSearchModeChange('users')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
-              searchMode === 'users'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            {t('people', { ns: 'explore' })}
-          </button>
+        {/* Page Title */}
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="w-5 h-5 text-primary" />
+          <h1 className="text-lg font-semibold">{t('people', { ns: 'explore' })}</h1>
         </div>
 
         {/* Search Bar */}
@@ -79,11 +54,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
             <Input
               ref={searchInputRef}
               type="text"
-              placeholder={
-                searchMode === 'locations'
-                  ? t('searchPlaces', { ns: 'explore' })
-                  : t('searchPeople', { ns: 'explore' })
-              }
+              placeholder={t('searchPeople', { ns: 'explore' })}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onFocus={() => onInputFocus(true)}

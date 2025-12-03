@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
-import { Search, MapPin, Users, UserPlus, X } from 'lucide-react';
+import { Search, Users, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
-import { AllowedCategory } from '@/utils/allowedCategories';
 import { useUserSearchHistory } from '@/hooks/useUserSearchHistory';
 import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
 import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
@@ -47,10 +45,6 @@ const ExplorePage = memo(() => {
     const state = location.state as { searchQuery?: string } | null;
     return state?.searchQuery || '';
   });
-  const [searchMode, setSearchMode] = useState<'locations' | 'users'>(() => {
-    const state = location.state as { searchMode?: 'locations' | 'users' } | null;
-    return state?.searchMode || 'locations';
-  });
   const [isSearching, setIsSearching] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
@@ -59,7 +53,6 @@ const ExplorePage = memo(() => {
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [currentCity, setCurrentCity] = useState<string>('Unknown City');
-  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const { champions } = useCommunityChampions(currentCity);
   const { searchHistory, deleteSearchHistoryItem, fetchSearchHistory } = useUserSearchHistory();
   const { suggestions, fetchSuggestions } = useFollowSuggestions();
@@ -139,10 +132,10 @@ const ExplorePage = memo(() => {
       navigate(-1);
     }
   };
-  // Load user recommendations only
+  // Load user recommendations
   useEffect(() => {
     const loadUserRecommendations = async () => {
-      if (!user || searchMode !== 'users') return;
+      if (!user) return;
       setLoading(true);
       try {
         const users = await searchService.getUserRecommendations(user.id);
@@ -155,20 +148,19 @@ const ExplorePage = memo(() => {
       }
     };
     loadUserRecommendations();
-  }, [user, searchMode]);
+  }, [user]);
 
-  // Execute search if there's a query from navigation state and sync mode on state changes
+  // Execute search if there's a query from navigation state
   useEffect(() => {
-    const state = location.state as { searchMode?: 'locations' | 'users'; searchQuery?: string } | null;
-    if (state?.searchMode) setSearchMode(state.searchMode);
-    if (searchQuery.trim() && (state?.searchMode || searchMode) === 'users' && user) {
+    const state = location.state as { searchQuery?: string } | null;
+    if (searchQuery.trim() && user) {
       handleSearch(searchQuery);
     }
   }, [location.state]);
 
   // Search for users only
   const performSearch = async (query: string) => {
-    if (!user || !query.trim() || searchMode !== 'users') return {
+    if (!user || !query.trim()) return {
       users: []
     };
     try {
@@ -195,7 +187,7 @@ const ExplorePage = memo(() => {
   };
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    if (query.trim() && searchMode === 'users') {
+    if (query.trim()) {
       setIsSearching(true);
       const results = await performSearch(query);
       setFilteredUsers(results.users);
@@ -411,11 +403,9 @@ const ExplorePage = memo(() => {
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
-          searchMode={searchMode}
           searchQuery={searchQuery}
           inputFocused={inputFocused}
           searchInputRef={searchInputRef}
-          onSearchModeChange={setSearchMode}
           onSearchChange={handleSearch}
           onInputFocus={setInputFocused}
           onClearSearch={clearSearch}
@@ -427,12 +417,8 @@ const ExplorePage = memo(() => {
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-16">
         <Suspense fallback={<div className="py-12 flex justify-center"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
           <ExploreResults
-            searchMode={searchMode}
             loading={loading}
             isSearching={isSearching}
-            searchQuery={searchQuery}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
           >
             {/* User Results - passed as children */}
             <>
@@ -560,7 +546,6 @@ const ExplorePage = memo(() => {
                           onFollowUser={handleFollowUser}
                           onMessageUser={handleMessageUser}
                           searchQuery={searchQuery}
-                          searchMode={searchMode}
                         />
                       </Suspense>
                     ))}
@@ -568,7 +553,7 @@ const ExplorePage = memo(() => {
                 ) : (
                   <div className="px-1 py-8">
                     <Suspense fallback={<div />}>
-                      <NoResults searchMode="users" searchQuery={searchQuery} />
+                      <NoResults searchQuery={searchQuery} />
                     </Suspense>
                   </div>
                 )
@@ -598,7 +583,7 @@ const ExplorePage = memo(() => {
       </Suspense>
 
       {/* Leaderboard Button */}
-      {searchMode === 'users' && !isSearchActive && champions.length > 0 && (
+      {!isSearchActive && champions.length > 0 && (
         <div className="fixed bottom-28 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
           <div className="pointer-events-auto">
             <Suspense fallback={<div />}>
