@@ -131,17 +131,25 @@ export async function searchPhoton(
   try {
     const params = new URLSearchParams({
       q: query.trim(),
-      limit: String(limit),
+      limit: String(Math.min(limit, 50)), // Request more to filter
       lang: 'en',
     });
 
-    // Bias results towards user location
+    // Bias results towards user location for faster, more relevant results
     if (userLocation) {
       params.append('lat', String(userLocation.lat));
       params.append('lon', String(userLocation.lng));
     }
 
-    const response = await fetch(`https://photon.komoot.io/api/?${params}`);
+    // Use AbortController with timeout for faster failure
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    const response = await fetch(`https://photon.komoot.io/api/?${params}`, {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       console.error('Photon API error:', response.status);
@@ -155,7 +163,6 @@ export async function searchPhoton(
     }
 
     const results: PhotonResult[] = [];
-    const normalizedQuery = query.toLowerCase().trim();
 
     for (const feature of data.features) {
       const props = feature.properties;
@@ -164,16 +171,10 @@ export async function searchPhoton(
       // Skip if no name
       if (!props.name) continue;
       
-      // Filter by allowed types
+      // Filter by allowed types only
       if (!isAllowedType(props.osm_key, props.osm_value)) continue;
       
-      // Check if name contains query (case insensitive)
-      const normalizedName = props.name.toLowerCase();
-      if (!normalizedName.includes(normalizedQuery)) continue;
-      
-      // Better city extraction - prioritize actual city/town/village over neighborhoods/districts
-      // props.district and props.locality are often neighborhoods (e.g., "Ranelagh", "Dundrum")
-      // props.city, props.town, props.village are actual place names
+      // Better city extraction - prioritize actual city/town/village
       const city = props.city || props.town || props.village || props.county || props.state || '';
       const streetName = props.street || '';
       const streetNumber = props.housenumber || '';
@@ -198,10 +199,13 @@ export async function searchPhoton(
         osmValue: props.osm_value || '',
         displayAddress,
       });
+      
+      // Stop early if we have enough results
+      if (results.length >= limit) break;
     }
 
     // Sort by distance if user location provided
-    if (userLocation) {
+    if (userLocation && results.length > 0) {
       results.sort((a, b) => {
         const distA = calculateDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
         const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
@@ -210,7 +214,11 @@ export async function searchPhoton(
     }
 
     return results;
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      console.log('Photon search timed out');
+      return [];
+    }
     console.error('Photon search error:', error);
     return [];
   }
