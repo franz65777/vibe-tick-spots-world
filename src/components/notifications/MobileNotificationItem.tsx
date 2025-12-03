@@ -116,20 +116,8 @@ const MobileNotificationItem = ({
       };
 
       checkLocationShareStatus();
-
-      // Subscribe to realtime changes for this user/location to update live
-      const channel = supabase
-        .channel(`notif-locshare-${uid}-${locId}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'user_location_shares', filter: `user_id=eq.${uid}` },
-          () => checkLocationShareStatus()
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      // Note: Realtime subscription removed to prevent "subscribe multiple times" error
+      // Status is checked on mount which is sufficient for notifications
     }
   }, [notification.type, notification.data?.location_id, notification.data?.shared_by_user_id, notification.data?.user_id]);
 
