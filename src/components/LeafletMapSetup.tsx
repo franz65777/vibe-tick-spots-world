@@ -19,6 +19,7 @@ import { MapPin, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { LocationSharersModal } from './explore/LocationSharersModal';
 import { useTranslation } from 'react-i18next';
+import { useMapFilter } from '@/contexts/MapFilterContext';
 
 interface LeafletMapSetupProps {
   places: Place[];
@@ -796,29 +797,14 @@ const LeafletMapSetup = ({
         }}
       />
 
-      {/* Location sharing controls - positioned at same height as filter dropdown */}
-      {userActiveShare && (
-        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} right-14 z-[1000] flex gap-2`}>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={handleEndSharing}
-            className="shadow-lg rounded-full h-9"
-          >
-            <X className="h-4 w-4 mr-1" />
-            {t('endSharing', { ns: 'common', defaultValue: 'End' })}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={handleUpdateLocation}
-            className="shadow-lg rounded-full h-9"
-          >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            {t('updateLocation', { ns: 'common', defaultValue: 'Update' })}
-          </Button>
-        </div>
-      )}
+      {/* Location sharing controls - positioned at same height as filter dropdown, hidden when filter dropdown is open */}
+      <SharingControls 
+        userActiveShare={userActiveShare}
+        fullScreen={fullScreen}
+        handleEndSharing={handleEndSharing}
+        handleUpdateLocation={handleUpdateLocation}
+        t={t}
+      />
 
       <style>{`
         @keyframes bounce {
@@ -945,6 +931,46 @@ const LeafletMapSetup = ({
         }
       `}</style>
     </>
+  );
+};
+
+// Separate component that can use the MapFilter context
+const SharingControls = ({ 
+  userActiveShare, 
+  fullScreen, 
+  handleEndSharing, 
+  handleUpdateLocation,
+  t 
+}: { 
+  userActiveShare: any; 
+  fullScreen?: boolean; 
+  handleEndSharing: () => void; 
+  handleUpdateLocation: () => void;
+  t: any;
+}) => {
+  const { isFilterExpanded, isFriendsDropdownOpen } = useMapFilter();
+  
+  if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
+  
+  return (
+    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} right-14 z-[1000] flex gap-2`}>
+      <Button
+        size="sm"
+        variant="destructive"
+        onClick={handleEndSharing}
+        className="shadow-lg rounded-full h-9 px-3"
+      >
+        {t('endSharing', { ns: 'common', defaultValue: 'End' })}
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={handleUpdateLocation}
+        className="shadow-lg rounded-full h-9 px-3"
+      >
+        {t('updateLocation', { ns: 'common', defaultValue: 'Update' })}
+      </Button>
+    </div>
   );
 };
 

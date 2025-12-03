@@ -571,7 +571,7 @@ const ShareLocationPage = () => {
                     setSearchResults([]);
                     setIsSearchFocused(false);
                   }}
-                  className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                  className="w-full text-left p-4 rounded-xl border border-border hover:bg-accent transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -609,7 +609,7 @@ const ShareLocationPage = () => {
                   <button
                     key={loc.id}
                     onClick={() => setSelectedLocation(loc)}
-                    className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                    className="w-full text-left p-4 rounded-xl border border-border hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -636,7 +636,7 @@ const ShareLocationPage = () => {
         {/* Selected Location */}
         {selectedLocation && (
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary">
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary">
               <div className="flex items-center gap-3">
                 {selectedLocation.category && (
                   <img 
@@ -675,7 +675,7 @@ const ShareLocationPage = () => {
                       setShowCloseFriendsAvatars(false);
                       setShowSpecificUsersSearch(false);
                     }}
-                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                    className="w-full flex items-center gap-3 p-4 rounded-xl border border-border hover:bg-accent transition-colors"
                   >
                     <Users className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
@@ -691,7 +691,7 @@ const ShareLocationPage = () => {
                       setShowCloseFriendsAvatars(true);
                       setShowSpecificUsersSearch(false);
                     }}
-                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                    className="w-full flex items-center gap-3 p-4 rounded-xl border border-border hover:bg-accent transition-colors"
                   >
                     <UserCheck className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
@@ -707,7 +707,7 @@ const ShareLocationPage = () => {
                       setShowCloseFriendsAvatars(false);
                       setShowSpecificUsersSearch(true);
                     }}
-                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                    className="w-full flex items-center gap-3 p-4 rounded-xl border border-border hover:bg-accent transition-colors"
                   >
                     <User className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
@@ -723,7 +723,7 @@ const ShareLocationPage = () => {
                     setShowCloseFriendsAvatars(false);
                     setShowSpecificUsersSearch(false);
                   }}
-                  className="w-full p-4 rounded-lg border border-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                  className="w-full p-4 rounded-xl border border-primary bg-primary/5 hover:bg-primary/10 transition-colors"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1">
@@ -826,7 +826,7 @@ const ShareLocationPage = () => {
                       <button
                         key={follower.id}
                         onClick={() => toggleUserSelection(follower.id)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
                           selectedUsers.includes(follower.id) 
                             ? 'border-primary bg-primary/5' 
                             : 'border-border hover:bg-accent'
@@ -847,7 +847,7 @@ const ShareLocationPage = () => {
             <Button
               onClick={handleShareLocation}
               disabled={loading || isEditingShareType || (shareType === 'specific_users' && selectedUsers.length === 0)}
-              className="w-full"
+              className="w-full rounded-xl"
               size="lg"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
