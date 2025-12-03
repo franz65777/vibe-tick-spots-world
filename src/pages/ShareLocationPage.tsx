@@ -347,7 +347,7 @@ const ShareLocationPage = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke('reverse-geocode', {
-        body: { lat: result.lat, lng: result.lng, language: 'en' }
+        body: { latitude: result.lat, longitude: result.lng, language: 'en' }
       });
       
       if (!error && data?.formatted_address) {

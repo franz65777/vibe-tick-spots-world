@@ -253,7 +253,7 @@ const SaveLocationPage = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke('reverse-geocode', {
-        body: { lat: result.coordinates.lat, lng: result.coordinates.lng, language: 'en' }
+        body: { latitude: result.coordinates.lat, longitude: result.coordinates.lng, language: 'en' }
       });
       
       if (!error && data?.formatted_address) {
