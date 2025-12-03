@@ -384,7 +384,11 @@ const ShareLocationPage = () => {
   };
 
   const searchLocations = async (query: string) => {
-    if (!query.trim()) return;
+    // Start searching with just 2 characters for better partial matching
+    if (!query.trim() || query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
     
     setSearching(true);
     try {
@@ -434,13 +438,6 @@ const ShareLocationPage = () => {
           ? calculateDistance(userLat, userLng, latRaw, lngRaw)
           : Infinity;
         
-        const relevance = calculateRelevanceScore(
-          query,
-          loc.name,
-          loc.address || loc.city || '',
-          distance
-        );
-        
         return {
           id: loc.id,
           name: loc.name,
@@ -450,16 +447,16 @@ const ShareLocationPage = () => {
           lng: hasCoords ? lngRaw : 0,
           distance,
           category: loc.category,
-          isExisting: true,
-          relevance
+          isExisting: true
         };
       }).filter(r => {
         // Must contain the search query in name
         const normalizedName = r.name.toLowerCase();
-        return normalizedName.includes(queryLower) && r.relevance >= 0.3;
+        return normalizedName.includes(queryLower);
       })
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 10) || [];
+        // Sort by distance (proximity) - closest first
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 15) || [];
 
       // Always search Nominatim for new locations
       const userLoc = userLat && userLng 
@@ -488,7 +485,6 @@ const ShareLocationPage = () => {
           
           // Use proper name from Nominatim (the name field, not split displayName)
           const poiName = r.name || r.displayName.split(',')[0].trim();
-          const relevance = calculateRelevanceScore(query, poiName, r.address, distance);
           
           return {
             name: poiName,
@@ -499,20 +495,18 @@ const ShareLocationPage = () => {
             lat: r.lat,
             lng: r.lng,
             isExisting: false,
-            distance,
-            relevance
+            distance
           };
         }).filter(r =>
-          r.relevance >= 0.3 && // Lower threshold since we already filtered by name
           !existingResults.some(existing => 
             Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
           )
         ) || [];
 
-      // Combine and sort by relevance
+      // Combine and sort by distance (proximity) - closest first
       let results = [...existingResults, ...newLocationResults]
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 20);
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 25);
 
       // Remove duplicates by normalized name + rounded coordinates (4 decimal places = ~11m precision)
       const seen = new Map<string, any>();

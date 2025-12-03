@@ -74,11 +74,14 @@ class NominatimGeocoding {
     await this.rateLimit();
 
     try {
+      // Use wildcard suffix for partial matching - Nominatim supports this
+      const searchQuery = query.endsWith('*') ? query : `${query}*`;
+      
       const params = new URLSearchParams({
-        q: query,
+        q: searchQuery,
         format: 'json',
         addressdetails: '1',
-        limit: '20', // Increased to get more results for better proximity sorting
+        limit: '50', // Increased significantly for better partial matching
         'accept-language': language || 'en',
       });
 
