@@ -62,11 +62,7 @@ const MapFilterDropdown = () => {
 
   const handleFilterSelect = (filterId: MapFilter) => {
     setActiveFilter(filterId);
-    if (filterId === 'following') {
-      setIsUserDropdownOpen(true);
-    } else {
-      setIsUserDropdownOpen(false);
-    }
+    setIsUserDropdownOpen(false);
     setIsFilterExpanded(false);
   };
 
@@ -86,91 +82,88 @@ const MapFilterDropdown = () => {
     }
   };
 
+  const handleMainButtonClick = () => {
+    if (activeFilter === 'following' && isUserDropdownOpen) {
+      // If user dropdown is open, close it and open filter selection
+      setIsUserDropdownOpen(false);
+      setIsFilterExpanded(!isFilterExpanded);
+    } else if (activeFilter === 'following') {
+      // If on friends filter but dropdown closed, open user dropdown
+      setIsUserDropdownOpen(true);
+      setIsFilterExpanded(false);
+    } else {
+      // For other filters, toggle the horizontal expansion
+      setIsFilterExpanded(!isFilterExpanded);
+    }
+  };
+
   return (
     <div className="relative flex items-center">
-      {/* User selection dropdown - opens upward */}
+      {/* User selection dropdown - opens upward, only when friends filter is active */}
       {isUserDropdownOpen && activeFilter === 'following' && (
-        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border-[1.5px] border-transparent shadow-lg p-2 min-w-[200px] max-h-[250px] overflow-y-auto z-50"
-          style={{
-            background: 'linear-gradient(var(--tw-gradient-stops))',
-            backgroundImage: 'none',
-          }}
-        >
-          <div className="relative bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl">
-            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-            
-            {/* Select All option */}
+        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg p-2 min-w-[200px] max-h-[250px] overflow-y-auto z-50">
+          {/* Select All option */}
+          <button
+            onClick={handleSelectAll}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/10 rounded-xl transition-colors"
+          >
+            <div className={cn(
+              "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+              selectedFollowedUserIds.length === followedUsers.length 
+                ? "bg-primary border-primary" 
+                : "border-muted-foreground"
+            )}>
+              {selectedFollowedUserIds.length === followedUsers.length && (
+                <div className="w-2 h-2 bg-white rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium text-foreground">{t('allFriends')}</span>
+          </button>
+          
+          <div className="h-px bg-border/30 my-1" />
+          
+          {/* Individual users */}
+          {followedUsers.map((followedUser) => (
             <button
-              onClick={handleSelectAll}
+              key={followedUser.id}
+              onClick={() => handleUserSelect(followedUser.id)}
               className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/10 rounded-xl transition-colors"
             >
               <div className={cn(
-                "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                selectedFollowedUserIds.length === followedUsers.length 
+                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                selectedFollowedUserIds.includes(followedUser.id) 
                   ? "bg-primary border-primary" 
                   : "border-muted-foreground"
               )}>
-                {selectedFollowedUserIds.length === followedUsers.length && (
+                {selectedFollowedUserIds.includes(followedUser.id) && (
                   <div className="w-2 h-2 bg-white rounded-full" />
                 )}
               </div>
-              <span className="text-sm font-medium text-foreground">{t('allFriends')}</span>
+              <Avatar className="w-6 h-6">
+                <AvatarImage src={followedUser.avatar_url || ''} />
+                <AvatarFallback className="text-[10px]">
+                  {followedUser.username?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-foreground truncate">{followedUser.username}</span>
             </button>
-            
-            <div className="h-px bg-border/30 my-1" />
-            
-            {/* Individual users */}
-            {followedUsers.map((followedUser) => (
-              <button
-                key={followedUser.id}
-                onClick={() => handleUserSelect(followedUser.id)}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/10 rounded-xl transition-colors"
-              >
-                <div className={cn(
-                  "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                  selectedFollowedUserIds.includes(followedUser.id) 
-                    ? "bg-primary border-primary" 
-                    : "border-muted-foreground"
-                )}>
-                  {selectedFollowedUserIds.includes(followedUser.id) && (
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  )}
-                </div>
-                <Avatar className="w-6 h-6">
-                  <AvatarImage src={followedUser.avatar_url || ''} />
-                  <AvatarFallback className="text-[10px]">
-                    {followedUser.username?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-foreground truncate">{followedUser.username}</span>
-              </button>
-            ))}
-            
-            {followedUsers.length === 0 && (
-              <p className="text-sm text-muted-foreground px-3 py-2">{t('noFriends')}</p>
-            )}
-          </div>
+          ))}
+          
+          {followedUsers.length === 0 && (
+            <p className="text-sm text-muted-foreground px-3 py-2">{t('noFriends')}</p>
+          )}
         </div>
       )}
 
       {/* Active filter circle button */}
       <button
-        onClick={() => {
-          if (activeFilter === 'following') {
-            setIsUserDropdownOpen(!isUserDropdownOpen);
-          } else {
-            setIsFilterExpanded(!isFilterExpanded);
-          }
-        }}
+        onClick={handleMainButtonClick}
         className={cn(
           "flex items-center gap-1.5 rounded-full backdrop-blur-md transition-all duration-300 relative",
-          "bg-gray-200/40 dark:bg-slate-800/65 shadow-lg",
+          "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 shadow-lg",
           isFilterExpanded ? "pr-1.5" : "pr-2.5"
         )}
       >
-        {/* Glass border effect */}
-        <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-        
         <div className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center overflow-hidden transition-all",
           "bg-primary/10 border border-primary/20"
@@ -195,7 +188,7 @@ const MapFilterDropdown = () => {
             {activeFilterData.name}
           </span>
         )}
-        {activeFilter === 'following' ? (
+        {activeFilter === 'following' && !isFilterExpanded ? (
           <ChevronUp className={cn(
             "w-4 h-4 text-muted-foreground transition-transform duration-300",
             isUserDropdownOpen && "rotate-180"
@@ -208,7 +201,7 @@ const MapFilterDropdown = () => {
         )}
       </button>
 
-      {/* Expanded filter options */}
+      {/* Expanded filter options - horizontal */}
       <div className={cn(
         "flex items-center gap-1.5 ml-1.5 overflow-hidden transition-all duration-300",
         isFilterExpanded ? "max-w-[250px] opacity-100" : "max-w-0 opacity-0"
@@ -218,13 +211,10 @@ const MapFilterDropdown = () => {
             key={filter.id}
             onClick={() => handleFilterSelect(filter.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-md transition-all duration-200 relative",
-              "bg-gray-200/40 dark:bg-slate-800/65 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-md transition-all duration-200",
+              "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
             )}
           >
-            {/* Glass border effect */}
-            <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-            
             <img 
               src={filter.icon} 
               alt={filter.name}
