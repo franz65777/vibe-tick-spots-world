@@ -316,8 +316,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     }
   }, [dropdownOpen]);
 
-  const showingCities = filterType !== 'most_saved';
-  const hasResults = showingCities ? citySpots.length > 0 : popularSpots.length > 0;
+  // Show cities only when there are city cards AND no location cards
+  const showingCities = citySpots.length > 0 && popularSpots.length === 0;
+  const hasResults = popularSpots.length > 0 || citySpots.length > 0;
 
   return (
     <div className="h-full px-[10px] pt-0 pb-1 bg-background/50">
@@ -380,7 +381,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               {!dropdownOpen && (
                 <div>
                   <h3 className="text-[13px] font-semibold text-foreground leading-tight">
-                    {getFilterLabel()} {showingCities ? t('globally', { ns: 'common', defaultValue: 'Globally' }) : `${t('in', { ns: 'common' })} ${currentCity}`}
+                    {getFilterLabel()} {showingCities ? t('globally', { ns: 'common', defaultValue: 'Globally' }) : (currentCity ? `${t('in', { ns: 'common' })} ${currentCity}` : '')}
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
                     {hasResults 
