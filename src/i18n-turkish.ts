@@ -92,7 +92,10 @@ export const turkishTranslations = {
       locationsTitle: 'Konumlar',
       activeShares: 'Paylaşımlar',
       noLocations: 'Konum bulunamadı',
-      tapToAdd: 'İlk konumunuzu eklemek için haritaya dokunun'
+      tapToAdd: 'İlk konumunuzu eklemek için haritaya dokunun',
+      all: 'Tümü',
+      none: 'Hiçbiri',
+      noFriends: 'Kayıtlı yeri olan arkadaş yok'
     },
     navigation: {
       explore: 'Keşfet',

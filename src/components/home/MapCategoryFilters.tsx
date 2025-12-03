@@ -47,7 +47,8 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     selectedFollowedUserIds,
     addFollowedUser,
     removeFollowedUser,
-    clearFollowedUsers
+    clearFollowedUsers,
+    isFriendsDropdownOpen
   } = useMapFilter();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -233,7 +234,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     <div className="w-full max-w-full z-[1100] pointer-events-none">
       {/* Category Filters Row */}
       <div className="mb-2 pointer-events-auto px-2">
-        {!(showUserSearch && activeFilter === 'following') && (
+        {!(showUserSearch && activeFilter === 'following') && !isFriendsDropdownOpen && (
           <div className="overflow-hidden rounded-full bg-background/20 backdrop-blur-md border border-border/5">
             <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-2 py-0.5">
               {activeFilter === 'saved' && <SaveTagsFilter />}

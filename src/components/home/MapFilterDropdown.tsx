@@ -29,9 +29,8 @@ interface UserSavedStats {
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
   const { user } = useAuth();
-  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds } = useMapFilter();
+  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen } = useMapFilter();
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-  const [isFriendsDropdownOpen, setIsFriendsDropdownOpen] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,7 +171,7 @@ const MapFilterDropdown = () => {
               onClick={handleSelectAll}
               className="px-3 py-1 text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary rounded-full transition-colors"
             >
-              {allSelected ? t('none') || 'None' : t('all') || 'All'}
+              {allSelected ? t('none') : t('all')}
             </button>
             <button
               onClick={handleCloseFriendsDropdown}
@@ -233,7 +232,7 @@ const MapFilterDropdown = () => {
             
             {filteredUsers.length === 0 && (
               <p className="text-sm text-muted-foreground px-3 py-4 text-center">
-                {searchQuery ? t('noResults') || 'No results found' : t('noFriends') || 'No friends to show'}
+                {searchQuery ? t('noResults', { ns: 'common' }) : t('noFriends')}
               </p>
             )}
           </div>
@@ -306,7 +305,7 @@ const MapFilterDropdown = () => {
             key={filter.id}
             onClick={() => handleFilterSelect(filter.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md transition-all duration-200",
+              "flex items-center gap-1.5 px-2 h-9 rounded-full backdrop-blur-md transition-all duration-200",
               "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
             )}
           >

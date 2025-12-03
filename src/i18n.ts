@@ -256,6 +256,9 @@ const resources = {
       activeShares: 'Shares',
       noLocations: 'No locations found',
       tapToAdd: 'Tap on the map to add your first location',
+      all: 'All',
+      none: 'None',
+      noFriends: 'No friends with saved locations',
     },
     categories: {
       restaurant: 'Restaurant',
@@ -1121,6 +1124,9 @@ const resources = {
     mapFilters: {
       following: 'Siguiendo',
       followingDesc: 'Lugares de la gente que sigues',
+      all: 'Todos',
+      none: 'Ninguno',
+      noFriends: 'No hay amigos con lugares guardados',
       friends: 'Amigos',
       friendsDesc: 'Lugares de tus amigos',
       popular: 'Popular',
@@ -1961,6 +1967,9 @@ const resources = {
     mapFilters: {
       following: 'Seguiti',
       followingDesc: 'Luoghi delle persone che segui',
+      all: 'Tutti',
+      none: 'Nessuno',
+      noFriends: 'Nessun amico con luoghi salvati',
       friends: 'Amici',
       friendsDesc: 'Luoghi dei tuoi amici',
       popular: 'Popolari',
@@ -2778,6 +2787,9 @@ const resources = {
     mapFilters: {
       following: 'Abonnés',
       followingDesc: 'Lieux des personnes que vous suivez',
+      all: 'Tous',
+      none: 'Aucun',
+      noFriends: 'Aucun ami avec des lieux enregistrés',
       friends: 'Amis',
       friendsDesc: 'Lieux de vos amis',
       popular: 'Populaire',
@@ -3476,6 +3488,9 @@ const resources = {
     mapFilters: {
       following: 'Folge ich',
       followingDesc: 'Orte von Personen denen du folgst',
+      all: 'Alle',
+      none: 'Keine',
+      noFriends: 'Keine Freunde mit gespeicherten Orten',
       friends: 'Freunde',
       friendsDesc: 'Orte deiner Freunde',
       popular: 'Beliebt',
@@ -4112,6 +4127,9 @@ const resources = {
     mapFilters: {
       following: 'Seguindo',
       followingDesc: 'Locais de pessoas que você segue',
+      all: 'Todos',
+      none: 'Nenhum',
+      noFriends: 'Nenhum amigo com locais salvos',
       friends: 'Amigos',
       friendsDesc: 'Locais dos seus amigos',
       popular: 'Popular',
@@ -4705,6 +4723,9 @@ const resources = {
     mapFilters: {
       following: '关注',
       followingDesc: '你关注的人的地点',
+      all: '全部',
+      none: '无',
+      noFriends: '没有好友保存了地点',
       friends: '朋友',
       friendsDesc: '你朋友的地点',
       popular: '热门',
@@ -5241,6 +5262,9 @@ const resources = {
     mapFilters: {
       following: 'フォロー中',
       followingDesc: 'フォローしている人の場所',
+      all: 'すべて',
+      none: 'なし',
+      noFriends: '保存した場所のある友達がいません',
       friends: '友達',
       friendsDesc: '友達の場所',
       popular: '人気',
@@ -5816,6 +5840,9 @@ const resources = {
     mapFilters: {
       following: '팔로잉',
       followingDesc: '팔로우하는 사람들의 장소',
+      all: '전체',
+      none: '없음',
+      noFriends: '저장된 장소가 있는 친구가 없습니다',
       friends: '친구',
       friendsDesc: '친구들의 장소',
       popular: '인기',
@@ -6374,6 +6401,9 @@ const resources = {
     mapFilters: {
       following: 'متابَع',
       followingDesc: 'أماكن من الأشخاص الذين تتابعهم',
+      all: 'الكل',
+      none: 'لا شيء',
+      noFriends: 'لا يوجد أصدقاء لديهم أماكن محفوظة',
       friends: 'أصدقاء',
       friendsDesc: 'أماكن من أصدقائك',
       popular: 'شائع',
@@ -6931,6 +6961,9 @@ const resources = {
     mapFilters: {
       following: 'फॉलो किया',
       followingDesc: 'आपके द्वारा फॉलो किए गए लोगों के स्थान',
+      all: 'सभी',
+      none: 'कोई नहीं',
+      noFriends: 'सहेजे गए स्थानों वाले कोई मित्र नहीं',
       friends: 'दोस्त',
       friendsDesc: 'आपके दोस्तों के स्थान',
       popular: 'लोकप्रिय',
@@ -7505,6 +7538,9 @@ const resources = {
     mapFilters: {
       following: 'Подписки',
       followingDesc: 'Места от людей, на которых вы подписаны',
+      all: 'Все',
+      none: 'Ничего',
+      noFriends: 'Нет друзей с сохранёнными местами',
       friends: 'Друзья',
       friendsDesc: 'Места от ваших друзей',
       popular: 'Популярное',
