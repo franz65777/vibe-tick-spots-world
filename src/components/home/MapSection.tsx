@@ -470,12 +470,31 @@ const MapSection = ({
         open={isActiveSharesOpen}
         onOpenChange={setIsActiveSharesOpen}
         places={places}
-        onSelectLocation={(placeId) => {
+        onSelectLocation={(placeId, shareData) => {
           // Always close both sheets first
           setIsActiveSharesOpen(false);
           setIsListViewOpen(false);
           
-          const p = places.find(pl => pl.id === placeId) || null;
+          // Try to find in places by id, google_place_id, or location_id
+          let p = places.find(pl => 
+            pl.id === placeId || 
+            pl.google_place_id === placeId ||
+            (shareData?.location_id && pl.id === shareData.location_id)
+          ) || null;
+          
+          // If not found but we have share data, create a temporary place object
+          if (!p && shareData) {
+            p = {
+              id: shareData.location_id || placeId,
+              name: shareData.location_name,
+              address: shareData.location_address || '',
+              category: 'place',
+              latitude: shareData.latitude,
+              longitude: shareData.longitude,
+              google_place_id: shareData.location_id ? undefined : placeId,
+            } as any;
+          }
+          
           if (p) {
             // Small delay to ensure sheets are closed before showing location card
             setTimeout(() => {

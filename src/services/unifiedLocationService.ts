@@ -68,6 +68,8 @@ export class UnifiedLocationService {
 
       const locations: UnifiedLocation[] = [];
       const seenPlaceIds = new Set<string>();
+      const seenGooglePlaceIds = new Set<string>();
+      const seenLocationIds = new Set<string>();
 
       if (locationsResult.data) {
         for (const item of locationsResult.data) {
@@ -75,6 +77,15 @@ export class UnifiedLocationService {
           if (!loc) continue;
 
           const placeId = loc.google_place_id || loc.id;
+          
+          // Track both google_place_id and internal id to prevent duplicates
+          if (loc.google_place_id) {
+            if (seenGooglePlaceIds.has(loc.google_place_id)) continue;
+            seenGooglePlaceIds.add(loc.google_place_id);
+          }
+          if (seenLocationIds.has(loc.id)) continue;
+          seenLocationIds.add(loc.id);
+          
           if (seenPlaceIds.has(placeId)) continue;
           seenPlaceIds.add(placeId);
 
@@ -139,7 +150,13 @@ export class UnifiedLocationService {
       if (savedPlacesResult.data) {
         for (const place of savedPlacesResult.data) {
           const placeId = place.place_id;
+          
+          // Check if this place_id matches a google_place_id or location_id we've already seen
+          // This handles the case where a location was saved with both google_place_id and internal id
           if (seenPlaceIds.has(placeId)) continue;
+          if (seenGooglePlaceIds.has(placeId)) continue;
+          if (seenLocationIds.has(placeId)) continue;
+          
           seenPlaceIds.add(placeId);
 
           const coords = place.coordinates as any;

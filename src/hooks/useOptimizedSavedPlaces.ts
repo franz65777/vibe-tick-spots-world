@@ -53,8 +53,11 @@ export const useOptimizedSavedPlaces = () => {
 
       console.log('Saved places loaded:', savedPlacesData.length, 'saved_places,', userSavedLocations.length, 'user_saved_locations');
 
-      // 2) Group by city
+      // 2) Group by city with enhanced deduplication
       const groupedByCity: SavedPlacesData = {};
+      const seenPlaceIds = new Set<string>();
+      const seenGooglePlaceIds = new Set<string>();
+      const seenLocationIds = new Set<string>();
 
       // Add saved_places data
       savedPlacesData.forEach((place: any) => {
@@ -62,17 +65,24 @@ export const useOptimizedSavedPlaces = () => {
 
         const city = normalizeCity(place.city);
         const coords = place.coordinates as any;
+        const placeId = place.place_id;
+
+        // Skip if we've seen this place_id, google_place_id, or internal location_id
+        if (seenPlaceIds.has(placeId)) return;
+        seenPlaceIds.add(placeId);
+        // Also track as potential google_place_id
+        seenGooglePlaceIds.add(placeId);
 
         if (!groupedByCity[city]) groupedByCity[city] = [];
 
         groupedByCity[city].push({
-          id: place.place_id,
+          id: placeId,
           name: place.place_name,
           category: place.place_category || 'place',
           city,
           coordinates: coords || { lat: 0, lng: 0 },
           savedAt: place.created_at || new Date().toISOString(),
-          google_place_id: place.place_id,
+          google_place_id: placeId,
           latitude: coords?.lat,
           longitude: coords?.lng
         });
@@ -86,24 +96,31 @@ export const useOptimizedSavedPlaces = () => {
         const city = normalizeCity(location.city);
         const placeId = location.google_place_id || location.id;
 
+        // Enhanced deduplication - check google_place_id and internal id separately
+        if (location.google_place_id) {
+          if (seenGooglePlaceIds.has(location.google_place_id)) return;
+          seenGooglePlaceIds.add(location.google_place_id);
+        }
+        if (seenLocationIds.has(location.id)) return;
+        seenLocationIds.add(location.id);
+        
+        if (seenPlaceIds.has(placeId)) return;
+        seenPlaceIds.add(placeId);
+
         if (!groupedByCity[city]) groupedByCity[city] = [];
 
-        // Avoid duplicates
-        const alreadyExists = groupedByCity[city].some(p => p.id === placeId);
-        if (!alreadyExists) {
-          groupedByCity[city].push({
-            id: placeId,
-            name: location.name,
-            category: location.category || 'place',
-            city,
-            coordinates: { lat: location.latitude || 0, lng: location.longitude || 0 },
-            savedAt: item.created_at || new Date().toISOString(),
-            google_place_id: location.google_place_id,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            address: location.address || undefined
-          });
-        }
+        groupedByCity[city].push({
+          id: placeId,
+          name: location.name,
+          category: location.category || 'place',
+          city,
+          coordinates: { lat: location.latitude || 0, lng: location.longitude || 0 },
+          savedAt: item.created_at || new Date().toISOString(),
+          google_place_id: location.google_place_id,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: location.address || undefined
+        });
       });
 
       console.log('Grouped into', Object.keys(groupedByCity).length, 'cities');
