@@ -105,6 +105,7 @@ const SaveLocationPage = () => {
     return R * c;
   };
 
+  // Normalize string for fuzzy matching - handles typos like "diceys" vs "dicey's" or "dizeys"
   const normalizeString = (str: string): string => {
     return str
       .toLowerCase()
@@ -115,17 +116,36 @@ const SaveLocationPage = () => {
       .trim();
   };
 
+  // Simple phonetic normalization for common letter substitutions
+  const phoneticNormalize = (str: string): string => {
+    return normalizeString(str)
+      .replace(/z/g, 's')
+      .replace(/ph/g, 'f')
+      .replace(/ck/g, 'k')
+      .replace(/ee/g, 'i')
+      .replace(/ie/g, 'i')
+      .replace(/ey/g, 'i')
+      .replace(/y$/g, 'i');
+  };
+
   const calculateSimilarity = (str1: string, str2: string): number => {
     const s1 = normalizeString(str1);
     const s2 = normalizeString(str2);
     
     if (s1 === s2) return 1.0;
+    
+    // Phonetic match
+    const p1 = phoneticNormalize(str1);
+    const p2 = phoneticNormalize(str2);
+    if (p1 === p2) return 0.98;
+    
     if (s2.includes(s1) || s1.includes(s2)) {
       const longer = Math.max(s1.length, s2.length);
       const shorter = Math.min(s1.length, s2.length);
       return shorter / longer * 0.95;
     }
     
+    // Levenshtein distance
     const matrix: number[][] = [];
     for (let i = 0; i <= s2.length; i++) {
       matrix[i] = [i];
@@ -150,7 +170,36 @@ const SaveLocationPage = () => {
     
     const distance = matrix[s2.length][s1.length];
     const maxLength = Math.max(s1.length, s2.length);
-    return maxLength === 0 ? 1.0 : 1.0 - (distance / maxLength);
+    const levenshteinScore = maxLength === 0 ? 1.0 : 1.0 - (distance / maxLength);
+    
+    // Also check phonetic Levenshtein
+    const pMatrix: number[][] = [];
+    for (let i = 0; i <= p2.length; i++) {
+      pMatrix[i] = [i];
+    }
+    for (let j = 0; j <= p1.length; j++) {
+      pMatrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= p2.length; i++) {
+      for (let j = 1; j <= p1.length; j++) {
+        if (p2.charAt(i - 1) === p1.charAt(j - 1)) {
+          pMatrix[i][j] = pMatrix[i - 1][j - 1];
+        } else {
+          pMatrix[i][j] = Math.min(
+            pMatrix[i - 1][j - 1] + 1,
+            pMatrix[i][j - 1] + 1,
+            pMatrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    
+    const pDistance = pMatrix[p2.length][p1.length];
+    const pMaxLength = Math.max(p1.length, p2.length);
+    const phoneticScore = pMaxLength === 0 ? 1.0 : 1.0 - (pDistance / pMaxLength);
+    
+    return Math.max(levenshteinScore, phoneticScore * 0.95);
   };
 
   const calculateRelevanceScore = (
@@ -174,9 +223,67 @@ const SaveLocationPage = () => {
     
     bestSimilarity = Math.max(bestSimilarity, addressSimilarity * 0.5);
     
-    const distanceFactor = distance === Infinity ? 0.3 : Math.max(0, 1 - (distance / 500));
+    // Distance factor - strongly favor nearby locations
+    let distanceFactor = 0.2;
+    if (distance !== Infinity) {
+      if (distance <= 5) {
+        distanceFactor = 1.0;
+      } else if (distance <= 50) {
+        distanceFactor = 1.0 - ((distance - 5) / 45) * 0.6;
+      } else if (distance <= 200) {
+        distanceFactor = 0.4 - ((distance - 50) / 150) * 0.3;
+      } else {
+        distanceFactor = 0.1;
+      }
+    }
     
-    return bestSimilarity * 0.85 + distanceFactor * 0.15;
+    // For high similarity, name is primary. For lower similarity, distance matters more
+    if (bestSimilarity >= 0.8) {
+      return bestSimilarity * 0.7 + distanceFactor * 0.3;
+    } else {
+      return bestSimilarity * 0.5 + distanceFactor * 0.5;
+    }
+  };
+
+  // Enrich location with street address via reverse geocoding if missing
+  const enrichAddressIfMissing = async (result: any): Promise<any> => {
+    if (result.streetName || !result.coordinates?.lat || !result.coordinates?.lng) {
+      return result;
+    }
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('reverse-geocode', {
+        body: { lat: result.coordinates.lat, lng: result.coordinates.lng, language: 'en' }
+      });
+      
+      if (!error && data?.formatted_address) {
+        const parts = data.formatted_address.split(',').map((p: string) => p.trim());
+        if (parts.length > 0) {
+          const streetPart = parts[0];
+          const numberMatch = streetPart.match(/^(.+?)\s+(\d+[-–]?\d*)$/) || 
+                             streetPart.match(/^(\d+[-–]?\d*)\s+(.+)$/);
+          
+          if (numberMatch) {
+            if (/^\d/.test(numberMatch[1])) {
+              result.streetNumber = numberMatch[1];
+              result.streetName = numberMatch[2];
+            } else {
+              result.streetName = numberMatch[1];
+              result.streetNumber = numberMatch[2];
+            }
+          } else {
+            result.streetName = streetPart;
+          }
+        }
+        if (data.city && !result.city) {
+          result.city = data.city;
+        }
+      }
+    } catch (e) {
+      console.log('Address enrichment failed:', e);
+    }
+    
+    return result;
   };
 
   // Format address wrapper using shared utility
@@ -192,13 +299,34 @@ const SaveLocationPage = () => {
       const userLat = location?.latitude;
       const userLng = location?.longitude;
       
-      const { data: appLocations, error } = await supabase
+      // Normalize query for fuzzy search
+      const normalizedQuery = query.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+      
+      // Search with both original and normalized query
+      let appLocations: any[] = [];
+      
+      const { data: data1, error: error1 } = await supabase
         .from('locations')
         .select('*')
         .ilike('name', `%${query}%`)
-        .limit(100);
-
-      if (error) throw error;
+        .limit(50);
+      
+      if (!error1 && data1) {
+        appLocations = [...data1];
+      }
+      
+      if (normalizedQuery !== query && normalizedQuery.length >= 2) {
+        const { data: data2, error: error2 } = await supabase
+          .from('locations')
+          .select('*')
+          .ilike('name', `%${normalizedQuery}%`)
+          .limit(50);
+        
+        if (!error2 && data2) {
+          const existingIds = new Set(appLocations.map(l => l.id));
+          appLocations = [...appLocations, ...data2.filter(l => !existingIds.has(l.id))];
+        }
+      }
 
       let existingResults: NearbyLocation[] = appLocations?.map(loc => {
         const latRaw = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
@@ -295,6 +423,18 @@ const SaveLocationPage = () => {
         seen.set(looseCoordKey, result);
         return true;
       });
+
+      // Enrich top 5 results with street addresses if missing
+      const enrichedResults = await Promise.all(
+        results.slice(0, 10).map(async (result, index) => {
+          if (index < 5 && !result.streetName && result.coordinates?.lat && result.coordinates?.lng) {
+            return enrichAddressIfMissing(result);
+          }
+          return result;
+        })
+      );
+      
+      results = [...enrichedResults, ...results.slice(10)];
 
       setSearchResults(results);
     } catch (error) {
