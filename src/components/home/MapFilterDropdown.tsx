@@ -86,18 +86,26 @@ const MapFilterDropdown = () => {
   const mapFilters = [
     { id: 'following' as const, name: t('friends'), icon: filterFriendsIcon, iconSize: 'w-7 h-7' },
     { id: 'popular' as const, name: t('everyone'), icon: filterEveryoneIcon, iconSize: 'w-6 h-6' },
-    { id: 'saved' as const, name: t('saved'), icon: filterSavedIcon, iconSize: 'w-6 h-6' }
+    { id: 'saved' as const, name: t('saved'), icon: filterSavedIcon, iconSize: 'w-5 h-5' }
   ];
 
-  const allSelected = selectedFollowedUserIds.length === followedUsers.length && followedUsers.length > 0;
+  // Only show friends that have at least one saved location
+  const friendsWithSavedLocations = followedUsers.filter(u => {
+    const stats = userStats.get(u.id);
+    return stats && (stats.restaurantCount > 0 || stats.barCount > 0 || stats.cafeCount > 0);
+  });
+
+  const allSelected = selectedFollowedUserIds.length === friendsWithSavedLocations.length && friendsWithSavedLocations.length > 0;
 
   const activeFilterData = mapFilters.find(f => f.id === activeFilter) || mapFilters[1];
   
   const selectedUser = selectedFollowedUserIds.length > 0 
     ? followedUsers.find(u => u.id === selectedFollowedUserIds[0])
     : null;
+  
+  const hasMultipleSelected = selectedFollowedUserIds.length > 1;
 
-  const filteredUsers = followedUsers.filter(u => 
+  const filteredUsers = friendsWithSavedLocations.filter(u => 
     u.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -125,7 +133,7 @@ const MapFilterDropdown = () => {
     if (allSelected) {
       setSelectedFollowedUserIds([]);
     } else {
-      setSelectedFollowedUserIds(followedUsers.map(u => u.id));
+      setSelectedFollowedUserIds(friendsWithSavedLocations.map(u => u.id));
       setIsFriendsDropdownOpen(false);
     }
   };
@@ -247,13 +255,20 @@ const MapFilterDropdown = () => {
             "bg-primary/10 border border-primary/20"
           )}
         >
-          {activeFilter === 'following' && selectedUser ? (
-            <Avatar className="w-6 h-6 border border-background">
-              <AvatarImage src={selectedUser.avatar_url || ''} />
-              <AvatarFallback className="text-[8px]">
-                {selectedUser.username?.[0]?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+        {activeFilter === 'following' && selectedUser ? (
+            <div className="relative">
+              <Avatar className="w-6 h-6 border border-background">
+                <AvatarImage src={selectedUser.avatar_url || ''} />
+                <AvatarFallback className="text-[8px]">
+                  {selectedUser.username?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {hasMultipleSelected && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full flex items-center justify-center border border-background">
+                  <span className="text-[8px] font-bold text-primary-foreground">+</span>
+                </div>
+              )}
+            </div>
           ) : (
             <img 
               src={activeFilterData.icon} 
