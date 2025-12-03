@@ -18,7 +18,7 @@ export const categoryDisplayNames: Record<AllowedCategory, string> = {
   bakery: 'Bakery',
   hotel: 'Hotel',
   museum: 'Museum',
-  entertainment: 'Entertainment'
+  entertainment: 'Fun'
 };
 
 export const isAllowedCategory = (category: string): category is AllowedCategory => {
