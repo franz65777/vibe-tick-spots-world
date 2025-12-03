@@ -354,14 +354,24 @@ const ShareLocationPage = () => {
         .sort((a, b) => b.relevance - a.relevance)
         .slice(0, 20);
 
-      // Remove duplicates by coordinates
-      const seen = new Set<string>();
+      // Remove duplicates by normalized name + rounded coordinates (4 decimal places = ~11m precision)
+      const seen = new Map<string, any>();
       results = results.filter(result => {
-        const coordKey = `${result.lat.toFixed(6)},${result.lng.toFixed(6)}`;
-        if (seen.has(coordKey)) {
+        // Create key from normalized name + rounded coordinates
+        const normalizedName = normalizeString(result.name.split(',')[0]);
+        const roundedLat = result.lat.toFixed(4);
+        const roundedLng = result.lng.toFixed(4);
+        const coordKey = `${normalizedName}|${roundedLat},${roundedLng}`;
+        
+        // Also check just coordinates with less precision for same location different names
+        const looseCoordKey = `${result.lat.toFixed(3)},${result.lng.toFixed(3)}`;
+        
+        if (seen.has(coordKey) || seen.has(looseCoordKey)) {
+          // Keep the one with higher relevance (already sorted)
           return false;
         }
-        seen.add(coordKey);
+        seen.set(coordKey, result);
+        seen.set(looseCoordKey, result);
         return true;
       });
 
@@ -502,13 +512,43 @@ const ShareLocationPage = () => {
     
     // Remove the name from the address if it appears at the beginning
     let cleanAddress = address;
-    if (cleanAddress.toLowerCase().startsWith(name.toLowerCase())) {
+    const normalizedName = name.toLowerCase().trim();
+    const normalizedAddress = cleanAddress.toLowerCase().trim();
+    
+    // Remove name if it starts the address
+    if (normalizedAddress.startsWith(normalizedName)) {
       cleanAddress = cleanAddress.substring(name.length).replace(/^[,\s]+/, '');
     }
     
-    // Parse address components and return first 2-3 parts
+    // Parse address components
     const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
-    return parts.slice(0, 3).join(', ');
+    
+    // Try to identify city (usually longer text without numbers at start)
+    // and street+number (usually has numbers)
+    const cityParts: string[] = [];
+    const streetParts: string[] = [];
+    
+    for (const part of parts) {
+      // Skip if it's just a country or postal code
+      if (/^\d{4,}/.test(part) || part.length < 3) continue;
+      // Skip if it matches the name
+      if (part.toLowerCase() === normalizedName) continue;
+      
+      // If has house number pattern, it's likely street
+      if (/\d+[-–]?\d*$/.test(part) || /^\d+/.test(part)) {
+        streetParts.push(part);
+      } else {
+        cityParts.push(part);
+      }
+    }
+    
+    // Build result: city first, then street with number
+    const result: string[] = [];
+    if (cityParts.length > 0) result.push(cityParts[0]);
+    if (streetParts.length > 0) result.push(streetParts[0]);
+    else if (cityParts.length > 1) result.push(cityParts[1]);
+    
+    return result.join(', ') || parts.slice(0, 2).join(', ');
   };
 
   const toggleUserSelection = (userId: string) => {
@@ -523,12 +563,11 @@ const ShareLocationPage = () => {
     <div className="min-h-screen bg-background overflow-y-auto scrollbar-hide">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background pt-safe">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3 p-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold">{t('title')}</h1>
-          <div className="w-10" />
         </div>
       </div>
 

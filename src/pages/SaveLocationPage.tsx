@@ -178,33 +178,47 @@ const SaveLocationPage = () => {
 
   // Format address to avoid repetition: Row 1 = Name, Row 2 = city, street, number
   const formatDisplayAddress = (name: string, address: string, city: string): string => {
-    if (!address) return city || '';
+    if (!address && !city) return '';
     
     // Remove the name from the address if it appears at the beginning
-    let cleanAddress = address;
-    if (cleanAddress.toLowerCase().startsWith(name.toLowerCase())) {
+    let cleanAddress = address || '';
+    const normalizedName = name.toLowerCase().trim();
+    
+    if (cleanAddress.toLowerCase().startsWith(normalizedName)) {
       cleanAddress = cleanAddress.substring(name.length).replace(/^[,\s]+/, '');
     }
     
     // Parse address components
     const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
     
-    // If city is provided separately, build: city, remaining address parts
-    if (city && parts.length > 0) {
-      // Remove city from parts if it's already there
-      const filteredParts = parts.filter(p => 
-        p.toLowerCase() !== city.toLowerCase() && 
-        !p.toLowerCase().includes(city.toLowerCase())
-      );
+    // Try to identify street+number (usually has numbers)
+    const streetParts: string[] = [];
+    const otherParts: string[] = [];
+    
+    for (const part of parts) {
+      // Skip if it's just a postal code or very short
+      if (/^\d{4,}/.test(part) || part.length < 3) continue;
+      // Skip if it matches the name or city
+      if (part.toLowerCase() === normalizedName) continue;
+      if (city && part.toLowerCase() === city.toLowerCase()) continue;
       
-      if (filteredParts.length > 0) {
-        return `${city}, ${filteredParts.slice(0, 2).join(', ')}`;
+      // If has house number pattern, it's likely street
+      if (/\d+[-–]?\d*$/.test(part) || /^\d+/.test(part)) {
+        streetParts.push(part);
+      } else {
+        otherParts.push(part);
       }
-      return city;
     }
     
-    // If no city, just return first 2-3 parts of address
-    return parts.slice(0, 3).join(', ');
+    // Build result: city first, then street with number
+    const result: string[] = [];
+    if (city) result.push(city);
+    else if (otherParts.length > 0) result.push(otherParts[0]);
+    
+    if (streetParts.length > 0) result.push(streetParts[0]);
+    else if (otherParts.length > (city ? 0 : 1)) result.push(otherParts[city ? 0 : 1]);
+    
+    return result.join(', ') || parts.slice(0, 2).join(', ');
   };
 
   const searchLocations = async (query: string) => {
@@ -297,14 +311,23 @@ const SaveLocationPage = () => {
         .sort((a: any, b: any) => (b as any).relevance - (a as any).relevance)
         .slice(0, 20);
 
-      // Remove duplicates by coordinates
-      const seen = new Set<string>();
+      // Remove duplicates by normalized name + rounded coordinates (4 decimal places = ~11m precision)
+      const seen = new Map<string, any>();
       results = results.filter(result => {
-        const coordKey = `${result.coordinates.lat.toFixed(6)},${result.coordinates.lng.toFixed(6)}`;
-        if (seen.has(coordKey)) {
+        // Create key from normalized name + rounded coordinates
+        const normalizedName = normalizeString(result.name.split(',')[0]);
+        const roundedLat = result.coordinates.lat.toFixed(4);
+        const roundedLng = result.coordinates.lng.toFixed(4);
+        const coordKey = `${normalizedName}|${roundedLat},${roundedLng}`;
+        
+        // Also check just coordinates with less precision for same location different names
+        const looseCoordKey = `${result.coordinates.lat.toFixed(3)},${result.coordinates.lng.toFixed(3)}`;
+        
+        if (seen.has(coordKey) || seen.has(looseCoordKey)) {
           return false;
         }
-        seen.add(coordKey);
+        seen.set(coordKey, result);
+        seen.set(looseCoordKey, result);
         return true;
       });
 
@@ -389,12 +412,11 @@ const SaveLocationPage = () => {
       <div className="min-h-screen bg-background overflow-y-auto scrollbar-hide">
         {/* Header */}
         <div className="sticky top-0 z-50 bg-background pt-safe">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3 p-4">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-lg font-semibold">{tNav('addLocation', { defaultValue: 'Aggiungi luogo' })}</h1>
-            <div className="w-10" />
           </div>
         </div>
 
