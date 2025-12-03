@@ -96,15 +96,16 @@ export const useOptimizedSavedPlaces = () => {
         const city = normalizeCity(location.city);
         const placeId = location.google_place_id || location.id;
 
-        // Enhanced deduplication - check google_place_id and internal id separately
-        if (location.google_place_id) {
-          if (seenGooglePlaceIds.has(location.google_place_id)) return;
-          seenGooglePlaceIds.add(location.google_place_id);
-        }
+        // Enhanced deduplication - check all possible ID matches
+        // saved_places may have stored either google_place_id OR internal location_id as place_id
+        if (location.google_place_id && seenGooglePlaceIds.has(location.google_place_id)) return;
+        if (seenGooglePlaceIds.has(location.id)) return; // Check if internal ID was in saved_places
         if (seenLocationIds.has(location.id)) return;
-        seenLocationIds.add(location.id);
-        
         if (seenPlaceIds.has(placeId)) return;
+        
+        // Track all IDs
+        if (location.google_place_id) seenGooglePlaceIds.add(location.google_place_id);
+        seenLocationIds.add(location.id);
         seenPlaceIds.add(placeId);
 
         if (!groupedByCity[city]) groupedByCity[city] = [];
