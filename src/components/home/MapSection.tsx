@@ -49,6 +49,7 @@ const MapSection = ({
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   const [activeSharesCount, setActiveSharesCount] = useState(0);
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
+  const [shouldRestoreListView, setShouldRestoreListView] = useState(false);
   
   const { t } = useTranslation();
   
@@ -247,7 +248,12 @@ const MapSection = ({
               onClearInitialPlace?.();
             }
             setSelectedPlace(null); 
-            setSourcePostId(undefined); 
+            setSourcePostId(undefined);
+            // Restore list view if it was open before selecting a place
+            if (shouldRestoreListView) {
+              setIsListViewOpen(true);
+              setShouldRestoreListView(false);
+            }
           }}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
@@ -352,7 +358,7 @@ const MapSection = ({
                   onClick={() => setActiveFilter('following')}
                   className="rounded-full whitespace-nowrap flex-shrink-0"
                 >
-                  {t('following', { ns: 'mapFilters' })}
+                  {t('friends', { ns: 'mapFilters' })}
                 </Button>
                 <Button
                   size="sm"
@@ -360,7 +366,7 @@ const MapSection = ({
                   onClick={() => setActiveFilter('popular')}
                   className="rounded-full whitespace-nowrap flex-shrink-0"
                 >
-                  {t('popular', { ns: 'mapFilters' })}
+                  {t('everyone', { ns: 'mapFilters' })}
                 </Button>
                 <Button
                   size="sm"
@@ -393,6 +399,7 @@ const MapSection = ({
                       className="p-4 rounded-lg border border-border bg-card cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => {
                         handlePinClick(place);
+                        setShouldRestoreListView(true);
                         setIsListViewOpen(false);
                       }}
                     >
