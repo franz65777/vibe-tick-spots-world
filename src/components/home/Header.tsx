@@ -34,10 +34,10 @@ const Header = ({
 
   return (
     <>
-      <header className="bg-background sticky top-0 z-40">
+      <header className="bg-background sticky top-0 z-50 overflow-visible">
         <div className="flex items-center justify-between pl-[10px] pr-0 py-3 gap-1">
           {/* Left: City Selection - Now with more space */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative">
             <CityAutocompleteBar 
               currentCity={currentCity}
               onCitySelect={onCitySelect}
