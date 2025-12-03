@@ -9,6 +9,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import saveTagDate from '@/assets/save-tag-date.png';
+import saveTagBirthday from '@/assets/save-tag-birthday.png';
+import saveTagNightOut from '@/assets/save-tag-night-out.png';
+import saveTagFamily from '@/assets/save-tag-family.png';
+
+// Map tag values to imported icons
+const TAG_ICONS: Record<string, string> = {
+  date_night: saveTagDate,
+  birthday: saveTagBirthday,
+  night_out: saveTagNightOut,
+  family: saveTagFamily,
+};
 
 interface SaveLocationDropdownProps {
   isSaved: boolean;
@@ -25,8 +37,9 @@ interface SaveLocationDropdownProps {
 
 // Helper to render tag icon (image or emoji fallback)
 const TagIcon = ({ option, className = "w-5 h-5" }: { option: typeof SAVE_TAG_OPTIONS[0], className?: string }) => {
-  if (option.icon) {
-    return <img src={option.icon} alt="" className={`${className} object-contain`} />;
+  const iconSrc = TAG_ICONS[option.value];
+  if (iconSrc) {
+    return <img src={iconSrc} alt="" className={`${className} object-contain`} />;
   }
   return <span className="text-xl">{option.emoji}</span>;
 };
