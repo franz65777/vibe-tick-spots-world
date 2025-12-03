@@ -19,7 +19,7 @@ import ActiveSharesListSheet from './ActiveSharesListSheet';
 
 import { useTranslation } from 'react-i18next';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { formatDetailedAddress } from '@/utils/addressFormatter';
+import { formatDetailedAddress, formatSearchResultAddress } from '@/utils/addressFormatter';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -96,13 +96,14 @@ const MapSection = ({
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   
   // Fetch locations based on current filters and map bounds
+  // When list view is open, show ALL locations in the city (no mapBounds filter)
   const { locations, loading, error, refetch } = useMapLocations({
     mapFilter: activeFilter,
     selectedCategories,
     currentCity,
     selectedFollowedUserIds,
     selectedSaveTags,
-    mapBounds: mapBounds || undefined,
+    mapBounds: isListViewOpen ? undefined : (mapBounds || undefined),
   });
 
   // Track sourcePostId separately to preserve it
@@ -127,6 +128,7 @@ const MapSection = ({
     name: location.name,
     category: location.category as any,
     address: location.address || '',
+    city: location.city,
     coordinates: location.coordinates,
     isFollowing: location.isFollowing || false,
     isNew: location.isNew || false,
@@ -408,7 +410,16 @@ const MapSection = ({
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
                           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {place.address || enrichedAddresses[place.id] || t('addressNotAvailable', { ns: 'common' })}
+                            {(() => {
+                              const rawAddress = place.address || enrichedAddresses[place.id] || '';
+                              if (!rawAddress) return t('addressNotAvailable', { ns: 'common' });
+                              // Format as: City, Street Name, Number
+                              return formatSearchResultAddress({
+                                name: place.name,
+                                address: rawAddress,
+                                city: place.city,
+                              });
+                            })()}
                           </p>
                         </div>
                       </div>
