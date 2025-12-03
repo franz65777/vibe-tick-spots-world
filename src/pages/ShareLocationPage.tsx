@@ -823,7 +823,7 @@ const ShareLocationPage = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{selectedLocation.name}</p>
                   {!shareType || isEditingShareType ? (
-                    <p className="text-sm text-muted-foreground truncate">{selectedLocation.address}</p>
+                    <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(selectedLocation.name, selectedLocation.address, selectedLocation.city, selectedLocation.streetName, selectedLocation.streetNumber)}</p>
                   ) : null}
                 </div>
                 <Button
