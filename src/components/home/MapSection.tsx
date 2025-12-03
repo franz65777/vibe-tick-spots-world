@@ -343,7 +343,7 @@ const MapSection = ({
           {onToggleExpand && (
             <button
               onClick={onToggleExpand}
-              className="rounded-full bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 shadow-lg hover:bg-background/30 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
+              className="rounded-full bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border border-primary/30 shadow-lg hover:bg-gray-300/50 dark:hover:bg-slate-700/70 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
             >
               {isExpanded ? (
                 <Minimize2 className="w-4 h-4 text-foreground" />
@@ -357,7 +357,7 @@ const MapSection = ({
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
             <SheetTrigger asChild>
               <button
-                className="rounded-full bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 shadow-lg hover:bg-background/30 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
+                className="rounded-full bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border border-primary/30 shadow-lg hover:bg-gray-300/50 dark:hover:bg-slate-700/70 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
               >
                 <List className="w-4 h-4 text-foreground" />
               </button>

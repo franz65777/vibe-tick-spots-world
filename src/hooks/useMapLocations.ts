@@ -157,7 +157,16 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             profiles?.map(p => [p.id, p] as [string, { id: string; username: string; avatar_url: string | null }]) || []
           );
 
-          finalLocations = (shares || []).map(share => ({
+          // Keep only the most recent share per user (query is ordered by created_at DESC)
+          const uniqueSharesByUser = new Map<string, typeof shares[0]>();
+          for (const share of (shares || [])) {
+            if (!uniqueSharesByUser.has(share.user_id)) {
+              uniqueSharesByUser.set(share.user_id, share);
+            }
+          }
+          const dedupedShares = Array.from(uniqueSharesByUser.values());
+
+          finalLocations = dedupedShares.map(share => ({
             id: share.location_id || `share-${share.id}`,
             name: share.location?.name || 'Shared Location',
             category: share.location?.category || 'Unknown',
