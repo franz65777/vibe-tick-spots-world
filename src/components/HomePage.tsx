@@ -141,6 +141,9 @@ const HomePage = memo(() => {
     checkOnboardingStatus();
   }, [user?.id]);
 
+  // State for return navigation from save-location page
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
     const handleNavState = async () => {
@@ -165,6 +168,28 @@ const HomePage = memo(() => {
           sourcePostId: pin.sourcePostId // Pass sourcePostId if exists
         };
         setInitialPinToShow(placeToShow);
+        usedState = true;
+      }
+      // Handle location card from SaveLocationPage
+      if (state?.showLocationCard && state?.locationData) {
+        const locData = state.locationData;
+        const placeToShow: Place = {
+          id: locData.id,
+          name: locData.name,
+          category: locData.category,
+          coordinates: locData.coordinates,
+          address: locData.address || '',
+          city: locData.city,
+          isFollowing: false,
+          isNew: true,
+          likes: 0,
+          visitors: []
+        };
+        setMapCenter(locData.coordinates);
+        setInitialPinToShow(placeToShow);
+        if (state.returnTo) {
+          setReturnTo(state.returnTo);
+        }
         usedState = true;
       }
       // Open a specific location by id from notifications
@@ -605,7 +630,13 @@ const HomePage = memo(() => {
                 isSearchOverlayOpen={isSearchOverlayOpen}
                 onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
                 initialSelectedPlace={initialPinToShow}
-                onClearInitialPlace={() => setInitialPinToShow(null)}
+                onClearInitialPlace={() => {
+                  setInitialPinToShow(null);
+                  if (returnTo) {
+                    navigate(returnTo);
+                    setReturnTo(null);
+                  }
+                }}
                 recenterToken={recenterToken}
                 onCitySelect={handleCityChange}
               />
