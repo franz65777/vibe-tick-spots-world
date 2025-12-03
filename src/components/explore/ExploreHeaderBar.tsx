@@ -1,5 +1,5 @@
 import { memo, RefObject } from 'react';
-import { Search, Users, Sparkles } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -28,13 +28,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
 
   return (
     <div className="bg-background pt-safe">
-      <div className="px-2.5 py-4 pt-2">
-        {/* Page Title */}
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-semibold">{t('people', { ns: 'explore' })}</h1>
-        </div>
-
+      <div className="px-4 py-4 pt-2">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
           {/* AI Assistant Button - Hidden when search is active */}
