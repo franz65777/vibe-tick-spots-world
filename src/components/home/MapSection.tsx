@@ -489,10 +489,12 @@ const MapSection = ({
               name: shareData.location_name,
               address: shareData.location_address || '',
               category: 'place',
-              latitude: shareData.latitude,
-              longitude: shareData.longitude,
+              coordinates: { lat: shareData.latitude, lng: shareData.longitude },
+              likes: 0,
+              visitors: [],
+              isNew: false,
               google_place_id: shareData.location_id ? undefined : placeId,
-            } as any;
+            } as Place;
           }
           
           if (p) {
