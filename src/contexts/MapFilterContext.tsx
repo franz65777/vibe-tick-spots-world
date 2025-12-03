@@ -23,6 +23,8 @@ interface MapFilterContextType {
   setFiltersVisible: (visible: boolean) => void;
   isFriendsDropdownOpen: boolean;
   setIsFriendsDropdownOpen: (open: boolean) => void;
+  isFilterExpanded: boolean;
+  setIsFilterExpanded: (expanded: boolean) => void;
 }
 
 const MapFilterContext = createContext<MapFilterContextType | undefined>(undefined);
@@ -34,6 +36,7 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedSaveTags, setSelectedSaveTags] = useState<SaveTagFilter[]>([]);
   const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
   const [isFriendsDropdownOpen, setIsFriendsDropdownOpen] = useState<boolean>(false);
+  const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -105,6 +108,8 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
         setFiltersVisible,
         isFriendsDropdownOpen,
         setIsFriendsDropdownOpen,
+        isFilterExpanded,
+        setIsFilterExpanded,
       }}
     >
       {children}

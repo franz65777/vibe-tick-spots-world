@@ -59,7 +59,7 @@ const MapSection = ({
   const { t } = useTranslation();
   
   // Use global filter context - single source of truth
-  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, setFiltersVisible } = useMapFilter();
+  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded } = useMapFilter();
 
   // Hide filters when map is moving
   const moveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -332,8 +332,8 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Controls - List View and Expand Toggle - Inside map - Hide when list is open */}
-        {!isListViewOpen && (
+        {/* Map Controls - List View and Expand Toggle - Inside map - Hide when list is open or dropdowns are open */}
+        {!isListViewOpen && !isFriendsDropdownOpen && !isFilterExpanded && (
         <div className={cn(
           "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-opacity duration-300",
           isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
