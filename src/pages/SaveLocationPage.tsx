@@ -348,7 +348,11 @@ const SaveLocationPage = () => {
   };
 
   const searchLocations = async (query: string) => {
-    if (!query.trim()) return;
+    // Start searching with just 2 characters for better partial matching
+    if (!query.trim() || query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
     
     setSearching(true);
     try {
@@ -410,7 +414,6 @@ const SaveLocationPage = () => {
         
         // Use proper name from Nominatim (the name field, not split displayName)
         const poiName = r.name || r.displayName.split(',')[0].trim();
-        const relevance = calculateRelevanceScore(query, poiName, r.address, distance);
         
         return {
           id: `osm-${r.lat}-${r.lng}`,
@@ -422,12 +425,12 @@ const SaveLocationPage = () => {
           coordinates: { lat: r.lat, lng: r.lng },
           distance,
           category: r.type || 'restaurant',
-          isExisting: false,
-          relevance
+          isExisting: false
         };
-      }).filter((r: any) => r.relevance >= 0.3) // Lower threshold since we already filtered by name
-        .sort((a: any, b: any) => b.relevance - a.relevance)
-        .slice(0, 20);
+      })
+        // Sort by distance (proximity) - closest first
+        .sort((a: any, b: any) => a.distance - b.distance)
+        .slice(0, 30);
 
       // Remove duplicates by normalized name + rounded coordinates
       const seen = new Map<string, any>();
