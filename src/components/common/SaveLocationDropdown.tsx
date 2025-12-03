@@ -23,6 +23,14 @@ interface SaveLocationDropdownProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+// Helper to render tag icon (image or emoji fallback)
+const TagIcon = ({ option, className = "w-5 h-5" }: { option: typeof SAVE_TAG_OPTIONS[0], className?: string }) => {
+  if (option.icon) {
+    return <img src={option.icon} alt="" className={`${className} object-contain`} />;
+  }
+  return <span className="text-xl">{option.emoji}</span>;
+};
+
 export const SaveLocationDropdown = ({
   isSaved,
   onSave,
@@ -47,9 +55,8 @@ export const SaveLocationDropdown = ({
     setOpen(false);
   };
 
-  // Get the emoji for the current save tag
+  // Get the current tag option
   const currentTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag);
-  const currentEmoji = currentTagOption?.emoji || '📍';
   
   // Function to get the display label for a save tag
   const getTagLabel = (tag: SaveTag) => {
@@ -78,8 +85,10 @@ export const SaveLocationDropdown = ({
           >
             {currentSaveTag === 'general' ? (
               <Bookmark className="h-5 w-5 fill-current" />
+            ) : currentTagOption ? (
+              <TagIcon option={currentTagOption} />
             ) : (
-              <span className="text-xl">{currentEmoji}</span>
+              <Bookmark className="h-5 w-5 fill-current" />
             )}
             {showLabel && <span className="text-xs">{getTagLabel(currentSaveTag)}</span>}
           </Button>
@@ -99,7 +108,7 @@ export const SaveLocationDropdown = ({
               {option.value === 'general' ? (
                 <Bookmark className="h-5 w-5" />
               ) : (
-                <span className="text-xl">{option.emoji}</span>
+                <TagIcon option={option} />
               )}
               <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
             </DropdownMenuItem>
@@ -137,7 +146,7 @@ export const SaveLocationDropdown = ({
             {option.value === 'general' ? (
               <Bookmark className="h-5 w-5" />
             ) : (
-              <span className="text-xl">{option.emoji}</span>
+              <TagIcon option={option} />
             )}
             <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
           </DropdownMenuItem>

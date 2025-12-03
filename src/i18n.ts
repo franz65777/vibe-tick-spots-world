@@ -267,7 +267,7 @@ const resources = {
       bakery: 'Bakery',
       hotel: 'Hotel',
       museum: 'Museum',
-      entertainment: 'Entertainment',
+      entertainment: 'Fun',
     },
     profile: {
       posts: 'Posts',
@@ -1155,7 +1155,7 @@ const resources = {
       bakery: 'Panadería',
       hotel: 'Hotel',
       museum: 'Museo',
-      entertainment: 'Entretenimiento',
+      entertainment: 'Diversión',
     },
     profile: {
       posts: 'Publicaciones',
@@ -1998,7 +1998,7 @@ const resources = {
       bakery: 'Panificio',
       hotel: 'Hotel',
       museum: 'Museo',
-      entertainment: 'Intrattenimento',
+      entertainment: 'Divertimento',
     },
     profile: {
       posts: 'Post',
@@ -2818,7 +2818,7 @@ const resources = {
       bakery: 'Boulangeries',
       hotel: 'Hôtels',
       museum: 'Musées',
-      entertainment: 'Divertissement',
+      entertainment: 'Amusement',
     },
     profile: {
       posts: 'Publications',
@@ -3519,7 +3519,7 @@ const resources = {
       bakery: 'Bäckereien',
       hotel: 'Hotels',
       museum: 'Museen',
-      entertainment: 'Unterhaltung',
+      entertainment: 'Spaß',
     },
     profile: {
       posts: 'Beiträge',
@@ -4158,7 +4158,7 @@ const resources = {
       bakery: 'Padarias',
       hotel: 'Hotéis',
       museum: 'Museus',
-      entertainment: 'Entretenimento',
+      entertainment: 'Diversão',
     },
     profile: {
       posts: 'Publicações',
@@ -4753,7 +4753,7 @@ const resources = {
       bakery: '面包店',
       hotel: '酒店',
       museum: '博物馆',
-      entertainment: '娱乐',
+      entertainment: '玩乐',
     },
     profile: {
       posts: '帖子',
@@ -5293,7 +5293,7 @@ const resources = {
       bakery: 'ベーカリー',
       hotel: 'ホテル',
       museum: '博物館',
-      entertainment: 'エンターテイメント',
+      entertainment: '楽しみ',
     },
     profile: {
       posts: '投稿',
@@ -5871,7 +5871,7 @@ const resources = {
       bakery: '베이커리',
       hotel: '호텔',
       museum: '박물관',
-      entertainment: '엔터테인먼트',
+      entertainment: '재미',
     },
     profile: {
       posts: '게시물',
@@ -6432,7 +6432,7 @@ const resources = {
       bakery: 'المخابز',
       hotel: 'فنادق',
       museum: 'متاحف',
-      entertainment: 'ترفيه',
+      entertainment: 'مرح',
     },
     profile: {
       posts: 'منشورات',
@@ -6992,7 +6992,7 @@ const resources = {
       bakery: 'बेकरी',
       hotel: 'होटल',
       museum: 'संग्रहालय',
-      entertainment: 'मनोरंजन',
+      entertainment: 'मज़ा',
     },
     profile: {
       posts: 'पोस्ट',
@@ -7569,7 +7569,7 @@ const resources = {
       bakery: 'Пекарни',
       hotel: 'Отели',
       museum: 'Музеи',
-      entertainment: 'Развлечения',
+      entertainment: 'Веселье',
     },
     profile: {
       posts: 'Посты',
