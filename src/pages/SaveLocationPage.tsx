@@ -358,6 +358,7 @@ const SaveLocationPage = () => {
     try {
       const userLat = location?.latitude;
       const userLng = location?.longitude;
+      const normalizedQuery = query.toLowerCase().trim();
       
       // Get ALL existing locations to filter them out
       const { data: existingLocations } = await supabase
@@ -377,52 +378,101 @@ const SaveLocationPage = () => {
         ) || []
       );
       
-      // Search Nominatim for new locations ONLY
-      const userLoc = userLat && userLng 
-        ? { lat: userLat, lng: userLng }
-        : undefined;
-        
-      const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
+      // Strategy: Search Nominatim for category-based POIs, then filter by name client-side
+      // This works because Nominatim is better at finding POIs by category than partial name matching
+      const allNominatimResults: any[] = [];
       
-      const filteredNominatim = nominatimResults?.filter(r => {
-        if (!isAllowedNominatimType(r.type, r.class)) return false;
+      // Search multiple relevant categories to find POIs, then filter by query
+      const categorySearches = ['restaurant', 'bar', 'cafe', 'pizza', 'hotel', 'museum', 'nightclub', 'bakery'];
+      
+      if (userLat && userLng) {
+        // Search for each category in parallel around user location
+        const searchPromises = categorySearches.map(async (category) => {
+          const viewbox = `${userLng - 0.1},${userLat + 0.1},${userLng + 0.1},${userLat - 0.1}`;
+          const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(category)}&format=json&limit=30&viewbox=${viewbox}&addressdetails=1`;
+          
+          try {
+            const response = await fetch(searchUrl, {
+              headers: { 
+                'Accept-Language': 'en',
+                'User-Agent': 'SpottApp/1.0'
+              }
+            });
+            const results = await response.json();
+            return Array.isArray(results) ? results : [];
+          } catch (e) {
+            return [];
+          }
+        });
+        
+        const results = await Promise.all(searchPromises);
+        results.forEach(r => allNominatimResults.push(...r));
+      }
+      
+      // Also do a direct search with the query itself
+      const userLoc = userLat && userLng ? { lat: userLat, lng: userLng } : undefined;
+      const directResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
+      if (directResults) {
+        allNominatimResults.push(...directResults.map(r => ({
+          lat: String(r.lat),
+          lon: String(r.lng),
+          name: r.name,
+          display_name: r.displayName,
+          type: r.type,
+          class: r.class,
+          address: { city: r.city, road: r.streetName, house_number: r.streetNumber }
+        })));
+      }
+      
+      // Filter and deduplicate
+      const filteredNominatim = allNominatimResults.filter(r => {
+        const type = r.type?.toLowerCase() || '';
+        const osmClass = r.class?.toLowerCase() || '';
+        if (!isAllowedNominatimType(type, osmClass)) return false;
         
         // Use the proper name field from Nominatim
-        const poiName = r.name || r.displayName.split(',')[0].trim();
+        const poiName = r.name || r.display_name?.split(',')[0].trim() || '';
+        if (!poiName) return false;
         
         // Check if this location already exists by coordinates
-        const coordKey = `${Number(r.lat).toFixed(4)}-${Number(r.lng).toFixed(4)}`;
+        const lat = parseFloat(r.lat);
+        const lng = parseFloat(r.lon);
+        const coordKey = `${lat.toFixed(4)}-${lng.toFixed(4)}`;
         if (existingByCoords.has(coordKey)) return false;
         
         // Check if this location already exists by name + city
-        const city = r.city || '';
+        const city = r.address?.city || r.address?.town || r.address?.village || '';
         const nameCityKey = `${poiName.toLowerCase().trim()}-${city.toLowerCase().trim()}`;
         if (existingByNameCity.has(nameCityKey)) return false;
         
         // Filter by query - name must contain search term
-        const normalizedQuery = query.toLowerCase().trim();
         const normalizedName = poiName.toLowerCase();
         if (!normalizedName.includes(normalizedQuery)) return false;
         
         return true;
-      }) || [];
+      });
       
       let results = filteredNominatim.map(r => {
+        const lat = parseFloat(r.lat);
+        const lng = parseFloat(r.lon);
         const distance = userLat && userLng 
-          ? calculateDistance(userLat, userLng, r.lat, r.lng)
+          ? calculateDistance(userLat, userLng, lat, lng)
           : Infinity;
         
-        // Use proper name from Nominatim (the name field, not split displayName)
-        const poiName = r.name || r.displayName.split(',')[0].trim();
+        // Use proper name from Nominatim
+        const poiName = r.name || r.display_name?.split(',')[0].trim() || '';
+        const city = r.address?.city || r.address?.town || r.address?.village || '';
+        const streetName = r.address?.road || r.address?.street || r.address?.pedestrian || '';
+        const streetNumber = r.address?.house_number || '';
         
         return {
-          id: `osm-${r.lat}-${r.lng}`,
+          id: `osm-${lat}-${lng}`,
           name: poiName,
-          address: r.address || r.displayName,
-          city: r.city || '',
-          streetName: r.streetName || '',
-          streetNumber: r.streetNumber || '',
-          coordinates: { lat: r.lat, lng: r.lng },
+          address: r.display_name || '',
+          city,
+          streetName,
+          streetNumber,
+          coordinates: { lat, lng },
           distance,
           category: r.type || 'restaurant',
           isExisting: false
