@@ -33,7 +33,7 @@ const CommunityChampions = ({
     <Button
       onClick={() => navigate('/leaderboard')}
       variant="outline"
-      className="w-full rounded-xl border-border bg-background hover:bg-muted/50 h-12 font-semibold text-base"
+      className="w-fit px-4 rounded-xl border-border bg-background hover:bg-muted/50 h-12 font-semibold text-base"
     >
       <img src={leaderboardTrophy} alt="" className="w-9 h-9 mr-2" />
       {t('leaderboard', { ns: 'common' })}
