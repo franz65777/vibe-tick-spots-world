@@ -436,7 +436,7 @@ const ShareLocationPage = () => {
         .eq('id', user.id)
         .single();
 
-      const username = userProfile?.username || t('sharePosition.aFriend');
+      const username = userProfile?.username || t('aFriend');
       const avatarUrl = userProfile?.avatar_url || null;
 
       // Send notifications for close_friends and specific_users shares
@@ -445,8 +445,8 @@ const ShareLocationPage = () => {
         const notifications = closeFriends.map(friendId => ({
           user_id: friendId,
           type: 'location_share',
-          title: t('sharePosition.sharedLocation'),
-          message: t('sharePosition.userAtLocation', { username, location: selectedLocation.name }),
+          title: t('sharedLocation'),
+          message: t('userAtLocation', { username, location: selectedLocation.name }),
           data: {
             location_id: locationId,
             location_name: selectedLocation.name,
@@ -467,8 +467,8 @@ const ShareLocationPage = () => {
         const notifications = selectedUsers.map(userId => ({
           user_id: userId,
           type: 'location_share',
-          title: t('sharePosition.sharedLocation'),
-          message: t('sharePosition.userAtLocation', { username, location: selectedLocation.name }),
+          title: t('sharedLocation'),
+          message: t('userAtLocation', { username, location: selectedLocation.name }),
           data: {
             location_id: locationId,
             location_name: selectedLocation.name,
@@ -486,11 +486,11 @@ const ShareLocationPage = () => {
         if (notifError) console.error('Error creating notifications:', notifError);
       }
 
-      toast.success(t('sharePosition.sharedSuccess'));
+      toast.success(t('sharedSuccess'));
       navigate('/');
     } catch (error) {
       console.error('Error sharing location:', error);
-      toast.error(t('sharePosition.shareError'));
+      toast.error(t('shareError'));
     } finally {
       setLoading(false);
     }
@@ -657,14 +657,14 @@ const ShareLocationPage = () => {
                   onClick={() => setSelectedLocation(null)}
                   className="shrink-0"
                 >
-                  {t('sharePosition.edit')}
+                  {t('edit')}
                 </Button>
               </div>
             </div>
 
             {/* Share Type Selection */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">{t('sharePosition.shareWith')}</h3>
+              <h3 className="text-sm font-medium">{t('shareWith')}</h3>
               
               {isEditingShareType ? (
                 <>
@@ -679,8 +679,8 @@ const ShareLocationPage = () => {
                   >
                     <Users className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
-                      <p className="font-medium">{t('sharePosition.allFollowers')}</p>
-                      <p className="text-sm text-muted-foreground">{t('sharePosition.visibleToAll')}</p>
+                      <p className="font-medium">{t('allFollowers')}</p>
+                      <p className="text-sm text-muted-foreground">{t('visibleToAll')}</p>
                     </div>
                   </button>
 
@@ -695,8 +695,8 @@ const ShareLocationPage = () => {
                   >
                     <UserCheck className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
-                      <p className="font-medium">{t('sharePosition.closeFriends')}</p>
-                      <p className="text-sm text-muted-foreground">{t('sharePosition.onlyCloseFriends', { count: closeFriends.length })}</p>
+                      <p className="font-medium">{t('closeFriends')}</p>
+                      <p className="text-sm text-muted-foreground">{t('onlyCloseFriends', { count: closeFriends.length })}</p>
                     </div>
                   </button>
 
@@ -711,8 +711,8 @@ const ShareLocationPage = () => {
                   >
                     <User className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
-                      <p className="font-medium">{t('sharePosition.specificUsers')}</p>
-                      <p className="text-sm text-muted-foreground">{t('sharePosition.chooseManually')}</p>
+                      <p className="font-medium">{t('specificUsers')}</p>
+                      <p className="text-sm text-muted-foreground">{t('chooseManually')}</p>
                     </div>
                   </button>
                 </>
@@ -731,12 +731,12 @@ const ShareLocationPage = () => {
                       {shareType === 'close_friends' && <UserCheck className="h-5 w-5 shrink-0" />}
                       {shareType === 'specific_users' && <User className="h-5 w-5 shrink-0" />}
                       <p className="font-medium text-left">
-                        {shareType === 'all_followers' && t('sharePosition.allFollowers')}
-                        {shareType === 'close_friends' && t('sharePosition.closeFriends')}
-                        {shareType === 'specific_users' && t('sharePosition.specificUsers')}
+                        {shareType === 'all_followers' && t('allFollowers')}
+                        {shareType === 'close_friends' && t('closeFriends')}
+                        {shareType === 'specific_users' && t('specificUsers')}
                       </p>
                     </div>
-                    <span className="text-sm text-primary shrink-0">{t('sharePosition.edit')}</span>
+                    <span className="text-sm text-primary shrink-0">{t('edit')}</span>
                   </div>
                 </button>
               )}
@@ -745,7 +745,7 @@ const ShareLocationPage = () => {
             {/* Close Friends Avatars */}
             {shareType === 'close_friends' && showCloseFriendsAvatars && closeFriendsProfiles.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-sm font-medium">{t('sharePosition.closeFriends')} ({closeFriendsProfiles.length})</h3>
+                <h3 className="text-sm font-medium">{t('closeFriends')} ({closeFriendsProfiles.length})</h3>
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
                   {closeFriendsProfiles.map((friend) => (
                     <div key={friend.id} className="flex flex-col items-center gap-1 min-w-fit">
@@ -763,13 +763,13 @@ const ShareLocationPage = () => {
             {/* User Selection for specific users */}
             {shareType === 'specific_users' && showSpecificUsersSearch && (
               <div className="space-y-2">
-                <h3 className="text-sm font-medium">{t('sharePosition.selectUsers')}</h3>
+                <h3 className="text-sm font-medium">{t('selectUsers')}</h3>
                 
                 {/* User Search Bar */}
                 <div className="relative flex items-center gap-2">
                   <div className="relative flex-1">
                     <Input
-                      placeholder={t('sharePosition.searchUsers')}
+                      placeholder={t('searchUsers')}
                       value={userSearchQuery}
                       onChange={(e) => setUserSearchQuery(e.target.value)}
                       onFocus={() => setIsUserSearchFocused(true)}
@@ -851,7 +851,7 @@ const ShareLocationPage = () => {
               size="lg"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('sharePosition.shareButton')}
+              {t('shareButton')}
             </Button>
           </div>
         )}
