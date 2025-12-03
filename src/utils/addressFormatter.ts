@@ -95,8 +95,8 @@ export const formatSearchResultAddress = (params: {
   
   if (!address && !city && !streetName) return '';
   
-  // If we have structured address components, use them directly (most accurate)
-  if (streetName || city) {
+  // If we have structured address components with street info, use them directly (most accurate)
+  if (streetName) {
     const result: string[] = [];
     
     if (city) result.push(city);
@@ -109,6 +109,9 @@ export const formatSearchResultAddress = (params: {
     
     return result.join(', ');
   }
+  
+  // If only city is available, try to extract street info from address string first
+  // Only return city alone as absolute last fallback
   
   // Fallback: Parse from display_name string
   // Clean address - remove the name if it appears at the beginning

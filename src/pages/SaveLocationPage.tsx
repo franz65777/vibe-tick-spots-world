@@ -76,6 +76,8 @@ const SaveLocationPage = () => {
           name: loc.name,
           address: loc.address || '',
           city: loc.city || '',
+          streetName: undefined as string | undefined,
+          streetNumber: undefined as string | undefined,
           distance,
           coordinates: { lat, lng },
           category: loc.category,
@@ -88,7 +90,48 @@ const SaveLocationPage = () => {
         .sort((a, b) => a.distance - b.distance)
         .slice(0, 5);
 
-      setNearbyLocations(nearby);
+      // Enrich nearby locations with street addresses
+      const enrichedNearby = await Promise.all(
+        nearby.map(async (loc) => {
+          if (!loc.coordinates?.lat || !loc.coordinates?.lng) return loc;
+          
+          try {
+            const { data: geoData, error: geoError } = await supabase.functions.invoke('reverse-geocode', {
+              body: { latitude: loc.coordinates.lat, longitude: loc.coordinates.lng, language: 'en' }
+            });
+            
+            if (!geoError && geoData?.formatted_address) {
+              const parts = geoData.formatted_address.split(',').map((p: string) => p.trim());
+              if (parts.length > 0) {
+                const streetPart = parts[0];
+                const numberMatch = streetPart.match(/^(.+?)\s+(\d+[-–]?\d*)$/) || 
+                                   streetPart.match(/^(\d+[-–]?\d*)\s+(.+)$/);
+                
+                if (numberMatch) {
+                  if (/^\d/.test(numberMatch[1])) {
+                    loc.streetNumber = numberMatch[1];
+                    loc.streetName = numberMatch[2];
+                  } else {
+                    loc.streetName = numberMatch[1];
+                    loc.streetNumber = numberMatch[2];
+                  }
+                } else {
+                  loc.streetName = streetPart;
+                }
+              }
+              if (geoData.city && !loc.city) {
+                loc.city = geoData.city;
+              }
+            }
+          } catch (e) {
+            console.log('Address enrichment failed for nearby location:', e);
+          }
+          
+          return loc;
+        })
+      );
+
+      setNearbyLocations(enrichedNearby);
     } catch (error) {
       console.error('Error fetching nearby locations:', error);
     }
