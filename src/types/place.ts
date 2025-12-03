@@ -40,4 +40,8 @@ export interface Place {
     username: string;
     avatar_url: string | null;
   };
+  // For temporary locations from SaveLocationPage
+  isTemporary?: boolean;
+  streetName?: string;
+  streetNumber?: string;
 }

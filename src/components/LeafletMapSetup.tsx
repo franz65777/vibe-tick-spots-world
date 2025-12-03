@@ -857,6 +857,7 @@ const LeafletMapSetup = ({
             google_place_id: selectedPlace.google_place_id,
             coordinates: selectedPlace.coordinates,
             sourcePostId: (selectedPlace as any).sourcePostId,
+            isTemporary: (selectedPlace as any).isTemporary,
           }}
           onClose={() => onCloseSelectedPlace?.()}
           onPostSelected={(postId) => setSelectedPostFromPin(postId)}

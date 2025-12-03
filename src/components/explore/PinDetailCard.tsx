@@ -283,7 +283,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const handleSaveWithTag = async (tag: SaveTag) => {
     setLoading(true);
     try {
-      await locationInteractionService.saveLocation(place.id, {
+      let locationId = place.id;
+      let locationData = {
         google_place_id: place.google_place_id,
         name: place.name,
         address: place.address,
@@ -291,14 +292,58 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         longitude: place.coordinates?.lng || 0,
         category: place.category,
         types: place.types || []
-      }, tag);
+      };
+
+      // If this is a temporary location (from SaveLocationPage), create it first
+      if (place.isTemporary) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) {
+          toast.error(t('auth_required'));
+          setLoading(false);
+          return;
+        }
+
+        const { data: newLocation, error: createError } = await supabase
+          .from('locations')
+          .insert({
+            name: place.name,
+            address: place.address,
+            latitude: place.coordinates?.lat,
+            longitude: place.coordinates?.lng,
+            category: place.category || 'restaurant',
+            city: place.city,
+            created_by: currentUser.id,
+            pioneer_user_id: currentUser.id,
+          })
+          .select()
+          .single();
+
+        if (createError || !newLocation) {
+          console.error('Error creating location:', createError);
+          toast.error(t('save_failed'));
+          setLoading(false);
+          return;
+        }
+
+        locationId = newLocation.id;
+        locationData = {
+          ...locationData,
+          google_place_id: newLocation.google_place_id,
+        };
+        
+        // Update the place object with real ID
+        place.id = newLocation.id;
+        place.isTemporary = false;
+      }
+
+      await locationInteractionService.saveLocation(locationId, locationData, tag);
       setIsSaved(true);
       setCurrentSaveTag(tag);
       toast.success(t('location_saved'));
       
       // Dispatch global event to sync other components (map, lists, etc.)
       window.dispatchEvent(new CustomEvent('location-save-changed', {
-        detail: { locationId: place.id, isSaved: true, saveTag: tag }
+        detail: { locationId: locationId, isSaved: true, saveTag: tag }
       }));
       if (place.google_place_id) {
         window.dispatchEvent(new CustomEvent('location-save-changed', {
