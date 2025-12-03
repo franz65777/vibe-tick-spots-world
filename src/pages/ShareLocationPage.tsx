@@ -496,6 +496,21 @@ const ShareLocationPage = () => {
     }
   };
 
+  // Format address to avoid repetition: Row 1 = Name, Row 2 = city, street, number
+  const formatDisplayAddress = (name: string, address: string): string => {
+    if (!address) return '';
+    
+    // Remove the name from the address if it appears at the beginning
+    let cleanAddress = address;
+    if (cleanAddress.toLowerCase().startsWith(name.toLowerCase())) {
+      cleanAddress = cleanAddress.substring(name.length).replace(/^[,\s]+/, '');
+    }
+    
+    // Parse address components and return first 2-3 parts
+    const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
+    return parts.slice(0, 3).join(', ');
+  };
+
   const toggleUserSelection = (userId: string) => {
     setSelectedUsers(prev => 
       prev.includes(userId) 
@@ -584,7 +599,7 @@ const ShareLocationPage = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{result.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{result.address}</p>
+                        <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(result.name, result.address)}</p>
                       </div>
                     </div>
                     {result.distance !== undefined && result.distance !== Infinity && (
@@ -622,7 +637,7 @@ const ShareLocationPage = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{loc.name}</p>
-                          <p className="text-sm text-muted-foreground truncate">{loc.address}</p>
+                          <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(loc.name, loc.address)}</p>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>
