@@ -5,7 +5,6 @@ import { Bell, Send } from 'lucide-react';
 import CityAutocompleteBar from '../common/CityAutocompleteBar';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
-import { PhotonResult } from '@/lib/photonGeocoding';
 
 interface HeaderProps {
   searchQuery: string;
@@ -14,7 +13,6 @@ interface HeaderProps {
   onSearchKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onCreateStoryClick: () => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
-  onLocationSelect?: (location: PhotonResult) => void;
   onOpenSearchOverlay: () => void;
 }
 
@@ -25,7 +23,6 @@ const Header = ({
   onSearchKeyPress,
   onCreateStoryClick,
   onCitySelect,
-  onLocationSelect,
   onOpenSearchOverlay
 }: HeaderProps) => {
   const navigate = useNavigate();
@@ -34,14 +31,13 @@ const Header = ({
 
   return (
     <>
-      <header className="bg-background sticky top-0 z-50 overflow-visible">
+      <header className="bg-background sticky top-0 z-40">
         <div className="flex items-center justify-between pl-[10px] pr-0 py-3 gap-1">
           {/* Left: City Selection - Now with more space */}
-          <div className="flex-1 min-w-0 relative">
+          <div className="flex-1 min-w-0">
             <CityAutocompleteBar 
               currentCity={currentCity}
               onCitySelect={onCitySelect}
-              onLocationSelect={onLocationSelect}
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
               onSearchKeyPress={onSearchKeyPress}

@@ -12,7 +12,6 @@ import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
 import { Geolocation } from "@capacitor/geolocation";
-import { PhotonResult } from '@/lib/photonGeocoding';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -378,34 +377,6 @@ const HomePage = memo(() => {
     }
   };
 
-  // Handle location selection from search bar
-  const handleLocationSelect = (location: PhotonResult) => {
-    console.log('📍 Location selected from search:', location.name);
-    
-    // Create a Place object from the PhotonResult
-    const placeToShow: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      coordinates: { lat: location.lat, lng: location.lng },
-      address: location.displayAddress || '',
-      city: location.city,
-      streetName: location.streetName,
-      streetNumber: location.streetNumber,
-      isFollowing: false,
-      isNew: true,
-      isTemporary: true, // Mark as temporary until saved
-      likes: 0,
-      visitors: []
-    };
-    
-    // Center map on location
-    setMapCenter({ lat: location.lat, lng: location.lng });
-    
-    // Show the location card
-    setInitialPinToShow(placeToShow);
-  };
-
   const handlePinClick = (place: Place) => {
     console.log('HomePage - Pin clicked:', place.name);
     setSelectedPlace(place);
@@ -598,7 +569,6 @@ const HomePage = memo(() => {
             onSearchKeyPress={() => {}}
             onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
             onCitySelect={handleCityChange}
-            onLocationSelect={handleLocationSelect}
             onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
           />
         )}
@@ -689,9 +659,6 @@ const HomePage = memo(() => {
         onCitySelect={(city, coords) => {
           handleCityChange(city, coords);
           setSearchQuery(city);
-        }}
-        onLocationSelect={(location) => {
-          handleLocationSelect(location);
           setIsSearchOverlayOpen(false);
         }}
       />
