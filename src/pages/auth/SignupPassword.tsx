@@ -17,7 +17,7 @@ const SignupPassword: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { document.title = 'Crea password - Spott'; }, []);
+  useEffect(() => { document.title = 'Create Password - Spott'; }, []);
   
   useEffect(() => {
     const session = sessionStorage.getItem('signup_session');
@@ -50,7 +50,7 @@ const SignupPassword: React.FC = () => {
       const contact = sessionStorage.getItem('signup_contact');
 
       if (!sessionToken || !fullName || !username || !dob || !gender || !method || !contact) {
-        throw new Error('Dati incompleti');
+        throw new Error(t('signup:incompleteData'));
       }
 
       // Store password temporarily for back navigation
@@ -76,16 +76,14 @@ const SignupPassword: React.FC = () => {
       });
 
       if (error) {
-        let msg = error.message || 'Errore nella creazione account';
+        let msg = error.message || t('signup:errorCreating');
         try {
-          // Prova a estrarre l'errore dal body JSON se disponibile
           // @ts-ignore
           if (error.context?.json) {
             // @ts-ignore
             const body = await error.context.json();
             if (body?.error) msg = body.error;
           } else {
-            // Talvolta il messaggio contiene un JSON serializzato
             const parsed = JSON.parse(msg);
             if (parsed?.error) msg = parsed.error;
           }
@@ -116,17 +114,17 @@ const SignupPassword: React.FC = () => {
           sessionStorage.setItem('signup_nav_back', 'true');
           navigate('/signup/profile');
         }
-        return; // Ferma il flusso per evitare schermate bianche
+        return;
       }
 
       if (!data?.success) {
-        toast.error(data?.error || 'Creazione account fallita');
+        toast.error(data?.error || t('signup:errorCreating'));
         return;
       }
 
       // CRITICAL: Set the new user's session to prevent logging into wrong account
       if (!data.session) {
-        toast.error('Sessione non valida. Riprova ad accedere.');
+        toast.error(t('signup:invalidSession'));
         return;
       }
 
@@ -137,7 +135,7 @@ const SignupPassword: React.FC = () => {
 
       if (sessionError) {
         console.error('Session set error:', sessionError);
-        toast.error('Errore nel login automatico. Riprova ad accedere.');
+        toast.error(t('signup:autoLoginError'));
         return;
       }
 
@@ -153,10 +151,10 @@ const SignupPassword: React.FC = () => {
       sessionStorage.removeItem('signup_contact');
       sessionStorage.removeItem('signup_password');
 
-      toast.success('Account creato con successo!');
+      toast.success(t('signup:accountCreated'));
       navigate('/');
     } catch (e: any) {
-      const errorMsg = e?.message || 'Errore nella creazione account';
+      const errorMsg = e?.message || t('signup:errorCreating');
       toast.error(errorMsg);
       
       // Session expired or invalid - clear and restart signup
@@ -183,21 +181,21 @@ const SignupPassword: React.FC = () => {
           sessionStorage.setItem('signup_nav_back', 'true');
           navigate(-1);
         }}>
-          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
+          <ArrowLeft className="mr-2" /> {t('auth:back')}
         </Button>
       </header>
 
       <main className="flex-1 px-6 py-10">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold">Crea password</h1>
-            <p className="text-sm text-muted-foreground mt-1">Imposta una password per accedere più velocemente</p>
+            <h1 className="text-2xl font-semibold">{t('signup:createPassword')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('signup:setPasswordDesc')}</p>
           </div>
 
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('signup:password')}</Label>
             <div className="relative mt-1">
-              <Input id="password" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Almeno 6 caratteri" className="pr-10" />
+              <Input id="password" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('signup:passwordPlaceholder')} className="pr-10" />
               <button type="button" onClick={() => setShowPw((s) => !s)} className="absolute inset-y-0 right-2 flex items-center">
                 {showPw ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
               </button>
@@ -205,9 +203,9 @@ const SignupPassword: React.FC = () => {
           </div>
 
           <div>
-            <Label htmlFor="confirm">Conferma password</Label>
+            <Label htmlFor="confirm">{t('signup:confirmPassword')}</Label>
             <div className="relative mt-1">
-              <Input id="confirm" type={showConfirm ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Ripeti la password" className="pr-10 bg-background text-foreground" />
+              <Input id="confirm" type={showConfirm ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={t('signup:confirmPlaceholder')} className="pr-10 bg-background text-foreground" />
               <button type="button" onClick={() => setShowConfirm((s) => !s)} className="absolute inset-y-0 right-2 flex items-center">
                 {showConfirm ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
               </button>
@@ -215,12 +213,12 @@ const SignupPassword: React.FC = () => {
           </div>
 
           <Button disabled={!canCreate || loading} onClick={createAccount} className="w-full h-12 rounded-xl">
-            {loading ? 'Creazione...' : 'Crea account'}
+            {loading ? t('signup:creating') : t('signup:createAccount')}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
-            Hai già un account?
-            <Link to="/auth?mode=login" className="ml-1 text-primary underline">Accedi</Link>
+            {t('signup:alreadyHaveAccount')}
+            <Link to="/auth?mode=login" className="ml-1 text-primary underline">{t('signup:login')}</Link>
           </div>
         </div>
       </main>

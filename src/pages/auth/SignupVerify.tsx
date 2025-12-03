@@ -19,7 +19,7 @@ const SignupVerify: React.FC = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
-    document.title = 'Verifica codice - Spott';
+    document.title = 'Verify - Spott';
   }, []);
 
   useEffect(() => {
@@ -43,17 +43,17 @@ const SignupVerify: React.FC = () => {
       });
 
       if (error) throw error;
-      if (!data?.success || !data?.sessionToken) throw new Error('Verifica fallita');
+      if (!data?.success || !data?.sessionToken) throw new Error(t('signup:verificationFailed'));
 
       // Store session token and contact info in sessionStorage
       sessionStorage.setItem('signup_session', data.sessionToken);
       sessionStorage.setItem('signup_contact', method === 'email' ? email : phone);
       sessionStorage.setItem('signup_method', method);
 
-      toast.success('Codice verificato');
+      toast.success(t('signup:codeVerified'));
       navigate('/signup/profile');
     } catch (e: any) {
-      toast.error(e?.message || 'Codice non valido');
+      toast.error(e?.message || t('signup:invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -72,10 +72,10 @@ const SignupVerify: React.FC = () => {
       });
 
       if (error) throw error;
-      toast.success('Nuovo codice inviato');
+      toast.success(t('signup:newCodeSent'));
       setResendCooldown(60);
     } catch (e: any) {
-      toast.error(e?.message || 'Errore nell\'invio');
+      toast.error(e?.message || t('signup:sendError'));
     } finally {
       setLoading(false);
     }
@@ -85,16 +85,16 @@ const SignupVerify: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground flex flex-col pt-safe pb-safe">
       <header className="p-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
+          <ArrowLeft className="mr-2" /> {t('auth:back')}
         </Button>
       </header>
 
       <main className="flex-1 px-6 py-10">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold">Inserisci il codice</h1>
+            <h1 className="text-2xl font-semibold">{t('signup:enterCode')}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Abbiamo inviato un codice a {method === 'email' ? email : phone}
+              {t('signup:codeSentTo')} {method === 'email' ? email : phone}
             </p>
           </div>
 
@@ -109,7 +109,7 @@ const SignupVerify: React.FC = () => {
           </div>
 
           <Button disabled={code.length < 6 || loading} onClick={verify} className="w-full h-12">
-            {loading ? 'Verifico...' : 'Verifica'}
+            {loading ? t('signup:verifying') : t('signup:verify')}
           </Button>
 
           <Button 
@@ -119,12 +119,12 @@ const SignupVerify: React.FC = () => {
             className="w-full"
           >
             <RefreshCw className="mr-2 w-4 h-4" />
-            {resendCooldown > 0 ? `Reinvia tra ${resendCooldown}s` : 'Reinvia codice'}
+            {resendCooldown > 0 ? t('signup:resendIn', { seconds: resendCooldown }) : t('signup:resendCode')}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
-            Hai già un account?
-            <Link to="/auth?mode=login" className="ml-1 text-primary underline">Accedi</Link>
+            {t('signup:alreadyHaveAccount')}
+            <Link to="/auth?mode=login" className="ml-1 text-primary underline">{t('signup:login')}</Link>
           </div>
         </div>
       </main>

@@ -13,7 +13,7 @@ const SignupDetails: React.FC = () => {
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [gender, setGender] = useState('');
 
-  useEffect(() => { document.title = 'Dettagli - Spott'; }, []);
+  useEffect(() => { document.title = 'Details - Spott'; }, []);
   
   useEffect(() => {
     const session = sessionStorage.getItem('signup_session');
@@ -51,44 +51,44 @@ const SignupDetails: React.FC = () => {
           sessionStorage.setItem('signup_nav_back', 'true');
           navigate(-1);
         }}>
-          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
+          <ArrowLeft className="mr-2" /> {t('auth:back')}
         </Button>
       </header>
 
       <main className="flex-1 px-6 py-10">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold">Altri dettagli</h1>
-            <p className="text-sm text-muted-foreground mt-1">Data di nascita e sesso</p>
+            <h1 className="text-2xl font-semibold">{t('signup:otherDetails')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('signup:dobAndGender')}</p>
           </div>
 
           <div>
-            <Label htmlFor="dob">Data di nascita</Label>
+            <Label htmlFor="dob">{t('signup:dateOfBirth')}</Label>
             <DatePicker value={dob} onChange={setDob} minYear={1900} maxYear={new Date().getFullYear()} />
           </div>
 
           <div>
-            <Label htmlFor="gender">Sesso</Label>
+            <Label htmlFor="gender">{t('signup:gender')}</Label>
             <Select value={gender} onValueChange={setGender}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleziona" />
+                <SelectValue placeholder={t('signup:selectGender')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="female">Donna</SelectItem>
-                <SelectItem value="male">Uomo</SelectItem>
-                <SelectItem value="nonbinary">Non binario</SelectItem>
-                <SelectItem value="prefer_not">Preferisco non dirlo</SelectItem>
+                <SelectItem value="female">{t('signup:female')}</SelectItem>
+                <SelectItem value="male">{t('signup:male')}</SelectItem>
+                <SelectItem value="nonbinary">{t('signup:nonbinary')}</SelectItem>
+                <SelectItem value="prefer_not">{t('signup:preferNotToSay')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button disabled={!canContinue} onClick={onNext} className="w-full h-12 rounded-xl">
-            Continua
+            {t('signup:continue')}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
-            Hai già un account?
-            <Link to="/auth?mode=login" className="ml-1 text-primary underline">Accedi</Link>
+            {t('signup:alreadyHaveAccount')}
+            <Link to="/auth?mode=login" className="ml-1 text-primary underline">{t('signup:login')}</Link>
           </div>
         </div>
       </main>
