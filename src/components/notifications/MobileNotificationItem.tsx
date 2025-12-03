@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2 } from 'lucide-react';
 import reviewIcon from '@/assets/review-icon.png';
@@ -538,9 +537,8 @@ const MobileNotificationItem = ({
           </span>
         );
       case 'like':
-        // Check if this is a review like - check content_type OR if message contains 'review'
-        const isReview = notification.data?.content_type === 'review' || 
-          notification.message?.toLowerCase().includes('review');
+        // Check if this is a review like - reviews have no post_image
+        const isReview = !notification.data?.post_image;
         const likeTranslationKey = isReview ? 'likedYourReview' : 'likedYourPost';
         
         // Check if this is a grouped notification
@@ -679,52 +677,54 @@ const MobileNotificationItem = ({
       return (
         <div className="flex -space-x-2 flex-shrink-0">
           {groupedUsers.map((user, index) => {
-            const hasImage = !!(groupedUserOverrides[user.id]?.avatar || user.avatar);
             return (
-              <Avatar 
+              <div 
                 key={user.id}
-                className="w-8 h-8 border-2 border-background cursor-pointer relative"
+                className="w-8 h-8 rounded-full border-2 border-background cursor-pointer relative overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0"
                 style={{ zIndex: groupedUsers.length - index }}
                 onClick={handleAvatarClick}
               >
-                <AvatarImage 
-                  src={groupedUserOverrides[user.id]?.avatar || user.avatar || undefined} 
-                  alt={groupedUserOverrides[user.id]?.name || user.name}
-                  className="w-full h-full object-cover"
-                />
-                <AvatarFallback className="w-full h-full bg-primary/10 text-primary font-semibold text-xs flex items-center justify-center">
-                  {(groupedUserOverrides[user.id]?.name || user.name)[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+                {(groupedUserOverrides[user.id]?.avatar || user.avatar) ? (
+                  <img 
+                    src={groupedUserOverrides[user.id]?.avatar || user.avatar} 
+                    alt={groupedUserOverrides[user.id]?.name || user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-primary font-semibold text-xs">
+                    {(groupedUserOverrides[user.id]?.name || user.name)[0].toUpperCase()}
+                  </span>
+                )}
+              </div>
             );
           })}
         </div>
       );
     }
 
-    // Single avatar
+    // Single avatar - use consistent div approach for equal sizing
     return (
-      <Avatar 
-        className={`w-11 h-11 border-2 ${hasActiveStory ? 'border-primary' : 'border-background'} cursor-pointer flex-shrink-0`}
+      <div 
+        className={`w-11 h-11 rounded-full border-2 ${hasActiveStory ? 'border-primary' : 'border-background'} cursor-pointer flex-shrink-0 overflow-hidden bg-primary/10 flex items-center justify-center`}
         onClick={handleAvatarClick}
       >
-        <AvatarImage 
-          src={computedAvatar || undefined} 
-          alt={displayUsername}
-          className="w-full h-full object-cover"
-        />
-        <AvatarFallback className="w-full h-full bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center">
-          {(displayUsername?.[0] || '?').toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+        {computedAvatar ? (
+          <img 
+            src={computedAvatar} 
+            alt={displayUsername}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-primary font-semibold text-sm">
+            {(displayUsername?.[0] || '?').toUpperCase()}
+          </span>
+        )}
+      </div>
     );
   };
 
-  // Check if this is a review like notification - check content_type OR if message contains 'review'
-  const isReviewLike = notification.type === 'like' && (
-    notification.data?.content_type === 'review' || 
-    notification.message?.toLowerCase().includes('review')
-  );
+  // Check if this is a review like notification - reviews have no post_image
+  const isReviewLike = notification.type === 'like' && !notification.data?.post_image;
 
   return (
     <>
