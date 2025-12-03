@@ -265,7 +265,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   };
 
   return (
-    <div className="group relative" id="city-search-bar">
+    <div className="group relative overflow-visible" id="city-search-bar">
       <div className="relative">
         {isLoading || geoLoading ? (
           <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
