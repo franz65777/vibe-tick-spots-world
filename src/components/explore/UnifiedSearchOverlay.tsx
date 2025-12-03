@@ -105,7 +105,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     setLoading(true);
     const timer = setTimeout(() => {
       searchAll();
-    }, 100);
+    }, 350); // Longer debounce to let Photon requests complete
 
     return () => clearTimeout(timer);
   }, [query]);
