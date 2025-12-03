@@ -538,8 +538,9 @@ const MobileNotificationItem = ({
           </span>
         );
       case 'like':
-        // Check if this is a review like
-        const isReview = notification.data?.content_type === 'review';
+        // Check if this is a review like - check content_type OR if message contains 'review'
+        const isReview = notification.data?.content_type === 'review' || 
+          notification.message?.toLowerCase().includes('review');
         const likeTranslationKey = isReview ? 'likedYourReview' : 'likedYourPost';
         
         // Check if this is a grouped notification
@@ -677,22 +678,26 @@ const MobileNotificationItem = ({
       const groupedUsers = notification.data.grouped_users.slice(0, 3); // Show max 3 avatars
       return (
         <div className="flex -space-x-2 flex-shrink-0">
-          {groupedUsers.map((user, index) => (
-            <Avatar 
-              key={user.id}
-              className="w-9 h-9 border-2 border-background cursor-pointer relative"
-              style={{ zIndex: groupedUsers.length - index }}
-              onClick={handleAvatarClick}
-            >
-              <AvatarImage 
-                src={groupedUserOverrides[user.id]?.avatar || user.avatar || undefined} 
-                alt={groupedUserOverrides[user.id]?.name || user.name} 
-              />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                {(groupedUserOverrides[user.id]?.name || user.name)[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          ))}
+          {groupedUsers.map((user, index) => {
+            const hasImage = !!(groupedUserOverrides[user.id]?.avatar || user.avatar);
+            return (
+              <Avatar 
+                key={user.id}
+                className="w-8 h-8 border-2 border-background cursor-pointer relative"
+                style={{ zIndex: groupedUsers.length - index }}
+                onClick={handleAvatarClick}
+              >
+                <AvatarImage 
+                  src={groupedUserOverrides[user.id]?.avatar || user.avatar || undefined} 
+                  alt={groupedUserOverrides[user.id]?.name || user.name}
+                  className="w-full h-full object-cover"
+                />
+                <AvatarFallback className="w-full h-full bg-primary/10 text-primary font-semibold text-xs flex items-center justify-center">
+                  {(groupedUserOverrides[user.id]?.name || user.name)[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            );
+          })}
         </div>
       );
     }
@@ -705,17 +710,21 @@ const MobileNotificationItem = ({
       >
         <AvatarImage 
           src={computedAvatar || undefined} 
-          alt={displayUsername} 
+          alt={displayUsername}
+          className="w-full h-full object-cover"
         />
-        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+        <AvatarFallback className="w-full h-full bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center">
           {(displayUsername?.[0] || '?').toUpperCase()}
         </AvatarFallback>
       </Avatar>
     );
   };
 
-  // Check if this is a review like notification
-  const isReviewLike = notification.type === 'like' && notification.data?.content_type === 'review';
+  // Check if this is a review like notification - check content_type OR if message contains 'review'
+  const isReviewLike = notification.type === 'like' && (
+    notification.data?.content_type === 'review' || 
+    notification.message?.toLowerCase().includes('review')
+  );
 
   return (
     <>
@@ -866,7 +875,7 @@ const MobileNotificationItem = ({
                       className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
                     />
                   </Button>
-                ) : notification.data?.post_image && notification.data?.content_type !== 'review' ? (
+                ) : notification.data?.post_image && !isReviewLike ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
                     onClick={handlePostClick}
@@ -877,7 +886,7 @@ const MobileNotificationItem = ({
                       className="w-full h-full object-cover"
                     />
                   </div>
-                ) : notification.data?.content_type === 'review' ? (
+                ) : isReviewLike ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
                     onClick={handlePostClick}
