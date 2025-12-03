@@ -57,25 +57,36 @@ const SaveLocationPage = () => {
       const lat = location.latitude!;
       const lng = location.longitude!;
       
-      // Search for nearby places using Nominatim
-      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=20&bounded=1&viewbox=${lng - 0.005},${lat + 0.005},${lng + 0.005},${lat - 0.005}&addressdetails=1`;
+      // Larger bounding box (~2km radius) to find more nearby places
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=50&bounded=1&viewbox=${lng - 0.02},${lat + 0.02},${lng + 0.02},${lat - 0.02}&addressdetails=1`;
       
       const response = await fetch(searchUrl, {
         headers: { 'Accept-Language': 'en' }
       });
       const nominatimResults = await response.json();
       
-      // Get existing locations to filter them out
+      // Ensure nominatimResults is an array
+      if (!Array.isArray(nominatimResults)) {
+        console.warn('Nominatim returned non-array:', nominatimResults);
+        setNearbyLocations([]);
+        return;
+      }
+      
+      // Get ALL existing locations to filter them out (both by coords and by name+city)
       const { data: existingLocations } = await supabase
         .from('locations')
-        .select('name, latitude, longitude')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+        .select('name, latitude, longitude, city');
       
-      // Create a set of normalized names + coords for existing locations
-      const existingSet = new Set(
+      // Create sets for checking existing locations - by coords AND by name+city
+      const existingByCoords = new Set(
+        existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
+          `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
+        ) || []
+      );
+      
+      const existingByNameCity = new Set(
         existingLocations?.map(loc => 
-          `${loc.name?.toLowerCase().trim()}-${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
+          `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
         ) || []
       );
       
@@ -85,10 +96,18 @@ const SaveLocationPage = () => {
         .filter((result: any) => {
           const type = result.type || result.class;
           if (!allowedTypes.includes(type)) return false;
+          if (!result.name) return false;
           
-          // Check if this location already exists
-          const key = `${result.name?.toLowerCase().trim()}-${Number(result.lat).toFixed(4)}-${Number(result.lon).toFixed(4)}`;
-          return !existingSet.has(key);
+          // Check if this location already exists by coordinates
+          const coordKey = `${Number(result.lat).toFixed(4)}-${Number(result.lon).toFixed(4)}`;
+          if (existingByCoords.has(coordKey)) return false;
+          
+          // Check if this location already exists by name + city
+          const city = result.address?.city || result.address?.town || result.address?.village || '';
+          const nameCityKey = `${result.name?.toLowerCase().trim()}-${city.toLowerCase().trim()}`;
+          if (existingByNameCity.has(nameCityKey)) return false;
+          
+          return true;
         })
         .map((result: any) => {
           const resultLat = parseFloat(result.lat);
@@ -108,9 +127,9 @@ const SaveLocationPage = () => {
             isExisting: false
           };
         })
-        .filter((loc: any) => loc.distance <= 500 && loc.name)
+        .filter((loc: any) => loc.distance <= 2 && loc.name) // 2km radius
         .sort((a: any, b: any) => a.distance - b.distance)
-        .slice(0, 5);
+        .slice(0, 10); // Get up to 10 nearby
 
       const nearby = newLocations;
 
@@ -366,67 +385,25 @@ const SaveLocationPage = () => {
       const userLat = location?.latitude;
       const userLng = location?.longitude;
       
-      // Normalize query for fuzzy search
-      const normalizedQuery = query.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-      
-      // Search with both original and normalized query
-      let appLocations: any[] = [];
-      
-      const { data: data1, error: error1 } = await supabase
+      // Get ALL existing locations to filter them out
+      const { data: existingLocations } = await supabase
         .from('locations')
-        .select('*')
-        .ilike('name', `%${query}%`)
-        .limit(50);
+        .select('name, latitude, longitude, city');
       
-      if (!error1 && data1) {
-        appLocations = [...data1];
-      }
+      // Create sets for checking existing locations
+      const existingByCoords = new Set(
+        existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
+          `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
+        ) || []
+      );
       
-      if (normalizedQuery !== query && normalizedQuery.length >= 2) {
-        const { data: data2, error: error2 } = await supabase
-          .from('locations')
-          .select('*')
-          .ilike('name', `%${normalizedQuery}%`)
-          .limit(50);
-        
-        if (!error2 && data2) {
-          const existingIds = new Set(appLocations.map(l => l.id));
-          appLocations = [...appLocations, ...data2.filter(l => !existingIds.has(l.id))];
-        }
-      }
-
-      let existingResults: NearbyLocation[] = appLocations?.map(loc => {
-        const latRaw = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
-        const lngRaw = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
-        const hasCoords = typeof latRaw === 'number' && typeof lngRaw === 'number';
-
-        const distance = userLat && userLng && hasCoords
-          ? calculateDistance(userLat, userLng, latRaw, lngRaw)
-          : Infinity;
-        
-        const relevance = calculateRelevanceScore(
-          query,
-          loc.name,
-          loc.address || loc.city || '',
-          distance
-        );
-        
-        return {
-          id: loc.id,
-          name: loc.name,
-          address: loc.address || '',
-          city: loc.city || '',
-          coordinates: { lat: hasCoords ? latRaw : 0, lng: hasCoords ? lngRaw : 0 },
-          distance,
-          category: loc.category,
-          isExisting: true,
-          relevance
-        };
-      }).filter((r: any) => r.relevance >= 0.5)
-        .sort((a: any, b: any) => b.relevance - a.relevance)
-        .slice(0, 10) || [];
-
-      // Search Nominatim for new locations
+      const existingByNameCity = new Set(
+        existingLocations?.map(loc => 
+          `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
+        ) || []
+      );
+      
+      // Search Nominatim for new locations ONLY
       const userLoc = userLat && userLng 
         ? { lat: userLat, lng: userLng }
         : undefined;
@@ -434,10 +411,22 @@ const SaveLocationPage = () => {
       const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en', userLoc);
       
       const filteredNominatim = nominatimResults?.filter(r => {
-        return isAllowedNominatimType(r.type, r.class);
+        if (!isAllowedNominatimType(r.type, r.class)) return false;
+        
+        // Check if this location already exists by coordinates
+        const coordKey = `${Number(r.lat).toFixed(4)}-${Number(r.lng).toFixed(4)}`;
+        if (existingByCoords.has(coordKey)) return false;
+        
+        // Check if this location already exists by name + city
+        const namePart = r.displayName.split(',')[0].trim();
+        const city = r.city || '';
+        const nameCityKey = `${namePart.toLowerCase().trim()}-${city.toLowerCase().trim()}`;
+        if (existingByNameCity.has(nameCityKey)) return false;
+        
+        return true;
       }) || [];
       
-      const newLocationResults = filteredNominatim.map(r => {
+      let results = filteredNominatim.map(r => {
         const distance = userLat && userLng 
           ? calculateDistance(userLat, userLng, r.lat, r.lng)
           : Infinity;
@@ -459,28 +448,17 @@ const SaveLocationPage = () => {
           isExisting: false,
           relevance
         };
-      }).filter((r: any) =>
-        r.relevance >= 0.5 && 
-        !existingResults.some(existing => 
-          Math.abs(existing.coordinates.lat - r.coordinates.lat) < 0.001 && 
-          Math.abs(existing.coordinates.lng - r.coordinates.lng) < 0.001
-        )
-      ) || [];
-
-      let results = [...existingResults, ...newLocationResults]
-        .sort((a: any, b: any) => (b as any).relevance - (a as any).relevance)
+      }).filter((r: any) => r.relevance >= 0.4) // Slightly lower threshold for better results
+        .sort((a: any, b: any) => b.relevance - a.relevance)
         .slice(0, 20);
 
-      // Remove duplicates by normalized name + rounded coordinates (4 decimal places = ~11m precision)
+      // Remove duplicates by normalized name + rounded coordinates
       const seen = new Map<string, any>();
       results = results.filter(result => {
-        // Create key from normalized name + rounded coordinates
         const normalizedName = normalizeString(result.name.split(',')[0]);
         const roundedLat = result.coordinates.lat.toFixed(4);
         const roundedLng = result.coordinates.lng.toFixed(4);
         const coordKey = `${normalizedName}|${roundedLat},${roundedLng}`;
-        
-        // Also check just coordinates with less precision for same location different names
         const looseCoordKey = `${result.coordinates.lat.toFixed(3)},${result.coordinates.lng.toFixed(3)}`;
         
         if (seen.has(coordKey) || seen.has(looseCoordKey)) {
@@ -525,41 +503,23 @@ const SaveLocationPage = () => {
   }, [searchQuery]);
 
   const handleSelectLocation = async (loc: NearbyLocation) => {
-    // Create the new location in database
-    const { data: newLocation, error } = await supabase
-      .from('locations')
-      .insert({
-        name: loc.name,
-        address: loc.address,
-        latitude: loc.coordinates.lat,
-        longitude: loc.coordinates.lng,
-        category: loc.category || 'restaurant',
-        city: loc.city,
-        created_by: user?.id,
-        pioneer_user_id: user?.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating location:', error);
-      return;
-    }
-
-    // Navigate to home page with the location to show in PinDetailCard
+    // DON'T create in database yet - only pass temporary data
+    // Location will only be created when user clicks "Save" in PinDetailCard
     navigate('/', { 
       state: { 
         showLocationCard: true,
         locationData: {
-          id: newLocation.id,
-          google_place_id: newLocation.google_place_id,
-          name: newLocation.name,
-          address: newLocation.address,
-          category: newLocation.category,
-          city: newLocation.city,
+          id: `temp-${Date.now()}`, // Temporary ID
+          isTemporary: true, // Flag to indicate this needs to be created on save
+          name: loc.name,
+          address: loc.address,
+          category: loc.category || 'restaurant',
+          city: loc.city,
+          streetName: loc.streetName,
+          streetNumber: loc.streetNumber,
           coordinates: {
-            lat: newLocation.latitude,
-            lng: newLocation.longitude,
+            lat: loc.coordinates.lat,
+            lng: loc.coordinates.lng,
           },
         },
         returnTo: '/save-location'
@@ -644,9 +604,7 @@ const SaveLocationPage = () => {
                         <p className="text-xs text-muted-foreground shrink-0">{result.distance.toFixed(1)} km</p>
                       )}
                     </div>
-                    {!result.isExisting && (
-                      <p className="text-xs text-primary mt-1">{t('newLocationWillBeAdded')}</p>
-                    )}
+                    <p className="text-xs text-primary mt-1">{t('newLocationWillBeAdded')}</p>
                   </button>
                 ))}
               </div>

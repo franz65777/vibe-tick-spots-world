@@ -122,9 +122,10 @@ const MapSection = ({
         setSourcePostId(initialSelectedPlace.sourcePostId);
       }
       setSelectedPlace(initialSelectedPlace);
-      onClearInitialPlace?.();
+      // Don't call onClearInitialPlace here - only clear the prop reference
+      // Navigation back should happen when user explicitly closes the card
     }
-  }, [initialSelectedPlace, onClearInitialPlace]);
+  }, [initialSelectedPlace]);
 
   // Convert locations to Place format for LeafletMapSetup with creator info
   const places: Place[] = locations.map(location => ({
@@ -282,7 +283,14 @@ const MapSection = ({
           onPinShare={handlePinShare}
           mapCenter={mapCenter}
           selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
-          onCloseSelectedPlace={() => { setSelectedPlace(null); setSourcePostId(undefined); }}
+          onCloseSelectedPlace={() => { 
+            // If it was a temporary location from SaveLocationPage, navigate back
+            if (selectedPlace?.isTemporary) {
+              onClearInitialPlace?.();
+            }
+            setSelectedPlace(null); 
+            setSourcePostId(undefined); 
+          }}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
           activeFilter={activeFilter}

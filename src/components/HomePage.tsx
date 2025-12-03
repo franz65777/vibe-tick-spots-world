@@ -180,8 +180,11 @@ const HomePage = memo(() => {
           coordinates: locData.coordinates,
           address: locData.address || '',
           city: locData.city,
+          streetName: locData.streetName,
+          streetNumber: locData.streetNumber,
           isFollowing: false,
           isNew: true,
+          isTemporary: locData.isTemporary || false, // Flag for unsaved locations
           likes: 0,
           visitors: []
         };
