@@ -89,6 +89,8 @@ const MapFilterDropdown = () => {
     { id: 'saved' as const, name: t('saved'), icon: filterSavedIcon, iconSize: 'w-6 h-6' }
   ];
 
+  const allSelected = selectedFollowedUserIds.length === followedUsers.length && followedUsers.length > 0;
+
   const activeFilterData = mapFilters.find(f => f.id === activeFilter) || mapFilters[1];
   
   const selectedUser = selectedFollowedUserIds.length > 0 
@@ -116,10 +118,16 @@ const MapFilterDropdown = () => {
     } else {
       setSelectedFollowedUserIds([...selectedFollowedUserIds, userId]);
     }
+    setIsFriendsDropdownOpen(false);
   };
 
   const handleSelectAll = () => {
-    setSelectedFollowedUserIds(followedUsers.map(u => u.id));
+    if (allSelected) {
+      setSelectedFollowedUserIds([]);
+    } else {
+      setSelectedFollowedUserIds(followedUsers.map(u => u.id));
+      setIsFriendsDropdownOpen(false);
+    }
   };
 
   const handleCloseFriendsDropdown = () => {
@@ -127,9 +135,13 @@ const MapFilterDropdown = () => {
   };
 
   const handleMainButtonClick = () => {
-    if (activeFilter === 'following') {
-      setIsFriendsDropdownOpen(!isFriendsDropdownOpen);
-      setIsFilterExpanded(false);
+    if (activeFilter === 'following' && !isFriendsDropdownOpen) {
+      // If friends filter is active and dropdown is closed, open horizontal filter selection
+      setIsFilterExpanded(!isFilterExpanded);
+    } else if (activeFilter === 'following' && isFriendsDropdownOpen) {
+      // If dropdown is open, close it and allow filter switching
+      setIsFriendsDropdownOpen(false);
+      setIsFilterExpanded(!isFilterExpanded);
     } else {
       setIsFilterExpanded(!isFilterExpanded);
       setIsFriendsDropdownOpen(false);
@@ -155,7 +167,7 @@ const MapFilterDropdown = () => {
               onClick={handleSelectAll}
               className="px-3 py-1 text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary rounded-full transition-colors"
             >
-              {t('all') || 'All'}
+              {allSelected ? t('none') || 'None' : t('all') || 'All'}
             </button>
             <button
               onClick={handleCloseFriendsDropdown}
