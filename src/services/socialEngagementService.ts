@@ -33,7 +33,7 @@ export async function togglePostLike(postId: string, userId: string): Promise<bo
       // Get post owner for notification
       const { data: post } = await supabase
         .from('posts')
-        .select('user_id, caption, media_urls')
+        .select('user_id, caption, media_urls, content_type')
         .eq('id', postId)
         .single();
 
@@ -49,13 +49,14 @@ export async function togglePostLike(postId: string, userId: string): Promise<bo
           user_id: post.user_id,
           type: 'like',
           title: 'New like',
-          message: `${liker?.username || 'Someone'} liked your post`,
+          message: `${liker?.username || 'Someone'} liked your ${post.content_type === 'review' ? 'review' : 'post'}`,
           data: {
             post_id: postId,
             user_id: userId,
             user_name: liker?.username,
             user_avatar: liker?.avatar_url,
             post_image: post.media_urls?.[0],
+            content_type: post.content_type,
           },
         });
       }
