@@ -581,7 +581,6 @@ const SaveLocationPage = () => {
                         <p className="text-xs text-muted-foreground shrink-0">{result.distance.toFixed(1)} km</p>
                       )}
                     </div>
-                    <p className="text-xs text-primary mt-1">{t('newLocationWillBeAdded')}</p>
                   </button>
                 ))}
               </div>

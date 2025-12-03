@@ -779,9 +779,6 @@ const ShareLocationPage = () => {
                       <p className="text-xs text-muted-foreground shrink-0">{result.distance.toFixed(1)} km</p>
                     )}
                   </div>
-                  {!result.isExisting && (
-                    <p className="text-xs text-primary mt-1">{tCommon('newLocationWillBeAdded')}</p>
-                  )}
                 </button>
               ))}
             </div>
