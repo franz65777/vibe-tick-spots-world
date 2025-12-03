@@ -127,19 +127,26 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     setLoading(true);
     try {
       const userCoords = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : undefined;
+      const queryLower = query.toLowerCase().trim();
       
       // Search both cities and locations in parallel
       const [nominatimResults, photonResults] = await Promise.all([
         nominatimGeocoding.searchPlace(query, i18n.language),
-        searchPhoton(query, userCoords, 10)
+        searchPhoton(query, userCoords, 20)
       ]);
       
-      const mappedCities = nominatimResults.map(result => ({
-        name: result.city || result.displayName.split(',')[0],
-        address: result.displayName,
-        lat: result.lat,
-        lng: result.lng,
-      }));
+      console.log('Photon results:', photonResults.length, photonResults);
+      console.log('Nominatim results:', nominatimResults.length);
+      
+      // Only show cities that actually match the query
+      const mappedCities = nominatimResults
+        .map(result => ({
+          name: result.city || result.displayName.split(',')[0],
+          address: result.displayName,
+          lat: result.lat,
+          lng: result.lng,
+        }))
+        .filter(city => city.name.toLowerCase().includes(queryLower));
 
       // Filter locations by proximity (within 500km if user location available)
       let filteredLocations = photonResults;
@@ -148,6 +155,10 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
           const distance = calculateDistance(userCoords.lat, userCoords.lng, loc.lat, loc.lng);
           return distance <= 500;
         });
+        // If no nearby results, show all but sorted by distance
+        if (filteredLocations.length === 0) {
+          filteredLocations = photonResults;
+        }
       }
       
       // Cache results
