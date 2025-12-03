@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
-import AddLocationModal from './AddLocationModal';
-import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
 import MapFilterDropdown from './MapFilterDropdown';
 import { cn } from '@/lib/utils';
@@ -11,7 +9,6 @@ import { useMapLocations } from '@/hooks/useMapLocations';
 import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
-import { toast } from 'sonner';
 import { List, Maximize2, Minimize2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -45,12 +42,9 @@ const MapSection = ({
   recenterToken,
   onCitySelect,
 }: MapSectionProps) => {
-  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
-  const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
   const [isActiveSharesOpen, setIsActiveSharesOpen] = useState(false);
-  const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   const [activeSharesCount, setActiveSharesCount] = useState(0);
@@ -179,43 +173,14 @@ const MapSection = ({
   }, [isListViewOpen, places, enrichedAddresses]);
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
-    // If a place is open, close it and continue
+    // If a place is open, close it
     if (selectedPlace) setSelectedPlace(null);
-    
-    // Only allow quick add when in saved filter
-    if (activeFilter !== 'saved') {
-      toast.info(t('mapFilters:switchToSavedToAdd'), { duration: 2000 });
-      return;
-    }
-    
-    setNewLocationCoords(coords);
-    setIsQuickAddModalOpen(true);
   };
 
-  // Mobile-friendly tap to add a pin
+  // Mobile-friendly tap - just close any open place
   const handleMapClick = (coords: { lat: number; lng: number }) => {
-    // If a place is open, close it and continue
+    // If a place is open, close it
     if (selectedPlace) setSelectedPlace(null);
-    
-    // Only allow quick add when in saved filter
-    if (activeFilter !== 'saved') {
-      toast.info(t('mapFilters:switchToSavedToAdd'), { duration: 2000 });
-      return;
-    }
-    
-    setNewLocationCoords(coords);
-    setIsQuickAddModalOpen(true);
-  };
-  const handleSaveLocation = async (locationData: any) => {
-    try {
-      console.log('Saving new location:', locationData);
-      setIsAddLocationModalOpen(false);
-      setNewLocationCoords(null);
-      alert('Location saved successfully!');
-    } catch (error) {
-      console.error('Error saving location:', error);
-      alert('Failed to save location. Please try again.');
-    }
   };
 
   const handlePinClick = (place: Place) => {
@@ -236,15 +201,6 @@ const MapSection = ({
     };
     setPinToShare(shareData);
     setIsPinShareModalOpen(true);
-  };
-
-  const handlePinAdded = () => {
-    // Switch to saved filter and close modal - this will trigger useMapLocations to refetch
-    setActiveFilter('saved');
-    setIsQuickAddModalOpen(false);
-    setNewLocationCoords(null);
-    // Force refetch to show newly saved location
-    try { refetch?.(); } catch {}
   };
 
   const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
@@ -481,27 +437,6 @@ const MapSection = ({
         )}
         
       </div>
-
-      <AddLocationModal
-        isOpen={isAddLocationModalOpen}
-        onClose={() => {
-          setIsAddLocationModalOpen(false);
-          setNewLocationCoords(null);
-        }}
-        coordinates={newLocationCoords}
-        onSaveLocation={handleSaveLocation}
-      />
-
-      <QuickAddPinModal
-        isOpen={isQuickAddModalOpen}
-        onClose={() => {
-          setIsQuickAddModalOpen(false);
-          setNewLocationCoords(null);
-        }}
-        coordinates={newLocationCoords}
-        onPinAdded={handlePinAdded}
-        allowedCategoriesFilter={selectedCategories}
-      />
 
       <LocationShareModal
         isOpen={isPinShareModalOpen}

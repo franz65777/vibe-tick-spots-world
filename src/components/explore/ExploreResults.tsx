@@ -1,28 +1,17 @@
 import { memo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import SimpleCategoryFilter from './SimpleCategoryFilter';
-import LocationGrid from './LocationGrid';
-import { AllowedCategory } from '@/utils/allowedCategories';
 
 interface ExploreResultsProps {
-  searchMode: 'locations' | 'users';
   loading: boolean;
   isSearching: boolean;
-  searchQuery: string;
-  selectedCategory: AllowedCategory | null;
-  onCategorySelect: (category: AllowedCategory | null) => void;
   children?: ReactNode; // For user results
 }
 
 const ExploreResults = memo((props: ExploreResultsProps) => {
   const { t } = useTranslation();
   const {
-    searchMode,
     loading,
     isSearching,
-    searchQuery,
-    selectedCategory,
-    onCategorySelect,
     children
   } = props;
 
@@ -39,24 +28,7 @@ const ExploreResults = memo((props: ExploreResultsProps) => {
     );
   }
 
-  return (
-    <>
-      {searchMode === 'locations' ? (
-        <>
-          {/* Category Filter */}
-          <SimpleCategoryFilter
-            selectedCategory={selectedCategory}
-            onCategorySelect={onCategorySelect}
-          />
-
-          {/* Location Grid */}
-          <LocationGrid searchQuery={searchQuery} selectedCategory={selectedCategory} />
-        </>
-      ) : (
-        children
-      )}
-    </>
-  );
+  return <>{children}</>;
 });
 
 ExploreResults.displayName = 'ExploreResults';
