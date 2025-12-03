@@ -53,31 +53,14 @@ const SaveLocationPage = () => {
     if (!location) return;
     
     try {
-      // Fetch locations that are NOT already in our database - using Nominatim for nearby POIs
       const lat = location.latitude!;
       const lng = location.longitude!;
       
-      // Larger bounding box (~2km radius) to find more nearby places
-      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=50&bounded=1&viewbox=${lng - 0.02},${lat + 0.02},${lng + 0.02},${lat - 0.02}&addressdetails=1`;
-      
-      const response = await fetch(searchUrl, {
-        headers: { 'Accept-Language': 'en' }
-      });
-      const nominatimResults = await response.json();
-      
-      // Ensure nominatimResults is an array
-      if (!Array.isArray(nominatimResults)) {
-        console.warn('Nominatim returned non-array:', nominatimResults);
-        setNearbyLocations([]);
-        return;
-      }
-      
-      // Get ALL existing locations to filter them out (both by coords and by name+city)
+      // Get ALL existing locations to filter them out
       const { data: existingLocations } = await supabase
         .from('locations')
         .select('name, latitude, longitude, city');
       
-      // Create sets for checking existing locations - by coords AND by name+city
       const existingByCoords = new Set(
         existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
           `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
@@ -90,19 +73,41 @@ const SaveLocationPage = () => {
         ) || []
       );
       
-      const allowedTypes = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'cinema', 'nightclub', 'pub', 'fast_food', 'theatre', 'arts_centre'];
+      // Search for POIs by category types around user location using q= parameter
+      const searchTerms = ['restaurant', 'bar', 'cafe', 'pizza'];
+      const allResults: any[] = [];
       
-      const newLocations = nominatimResults
+      // Fetch POIs for each search term (parallel)
+      const searchPromises = searchTerms.map(async (term) => {
+        const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(term)}&format=json&limit=15&bounded=1&viewbox=${lng - 0.03},${lat + 0.03},${lng + 0.03},${lat - 0.03}&addressdetails=1`;
+        
+        try {
+          const response = await fetch(searchUrl, {
+            headers: { 
+              'Accept-Language': 'en',
+              'User-Agent': 'SpottApp/1.0'
+            }
+          });
+          const results = await response.json();
+          return Array.isArray(results) ? results : [];
+        } catch (e) {
+          console.log(`Failed to fetch ${term}:`, e);
+          return [];
+        }
+      });
+      
+      const searchResults = await Promise.all(searchPromises);
+      searchResults.forEach(results => allResults.push(...results));
+      
+      const newLocations = allResults
         .filter((result: any) => {
-          const type = result.type || result.class;
-          if (!allowedTypes.includes(type)) return false;
           if (!result.name) return false;
           
-          // Check if this location already exists by coordinates
+          // Check if already exists by coordinates
           const coordKey = `${Number(result.lat).toFixed(4)}-${Number(result.lon).toFixed(4)}`;
           if (existingByCoords.has(coordKey)) return false;
           
-          // Check if this location already exists by name + city
+          // Check if already exists by name + city
           const city = result.address?.city || result.address?.town || result.address?.village || '';
           const nameCityKey = `${result.name?.toLowerCase().trim()}-${city.toLowerCase().trim()}`;
           if (existingByNameCity.has(nameCityKey)) return false;
@@ -115,11 +120,11 @@ const SaveLocationPage = () => {
           const distance = calculateDistance(lat, lng, resultLat, resultLng);
           
           return {
-            id: `osm-${result.osm_id}`,
-            name: result.name || result.display_name?.split(',')[0] || '',
+            id: `osm-${result.osm_id || result.place_id}`,
+            name: result.name, // Use the actual POI name
             address: result.display_name || '',
             city: result.address?.city || result.address?.town || result.address?.village || '',
-            streetName: result.address?.road,
+            streetName: result.address?.road || result.address?.street,
             streetNumber: result.address?.house_number,
             distance,
             coordinates: { lat: resultLat, lng: resultLng },
@@ -127,54 +132,19 @@ const SaveLocationPage = () => {
             isExisting: false
           };
         })
-        .filter((loc: any) => loc.distance <= 2 && loc.name) // 2km radius
-        .sort((a: any, b: any) => a.distance - b.distance)
-        .slice(0, 10); // Get up to 10 nearby
+        .filter((loc: any) => loc.distance <= 3 && loc.name) // 3km radius
+        .sort((a: any, b: any) => a.distance - b.distance);
 
-      const nearby = newLocations;
+      // Remove duplicates by name
+      const seen = new Set<string>();
+      const uniqueLocations = newLocations.filter(loc => {
+        const key = loc.name.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 10);
 
-      // Enrich nearby locations with street addresses
-      const enrichedNearby = await Promise.all(
-        nearby.map(async (loc) => {
-          if (!loc.coordinates?.lat || !loc.coordinates?.lng) return loc;
-          
-          try {
-            const { data: geoData, error: geoError } = await supabase.functions.invoke('reverse-geocode', {
-              body: { latitude: loc.coordinates.lat, longitude: loc.coordinates.lng, language: 'en' }
-            });
-            
-            if (!geoError && geoData?.formatted_address) {
-              const parts = geoData.formatted_address.split(',').map((p: string) => p.trim());
-              if (parts.length > 0) {
-                const streetPart = parts[0];
-                const numberMatch = streetPart.match(/^(.+?)\s+(\d+[-–]?\d*)$/) || 
-                                   streetPart.match(/^(\d+[-–]?\d*)\s+(.+)$/);
-                
-                if (numberMatch) {
-                  if (/^\d/.test(numberMatch[1])) {
-                    loc.streetNumber = numberMatch[1];
-                    loc.streetName = numberMatch[2];
-                  } else {
-                    loc.streetName = numberMatch[1];
-                    loc.streetNumber = numberMatch[2];
-                  }
-                } else {
-                  loc.streetName = streetPart;
-                }
-              }
-              if (geoData.city && !loc.city) {
-                loc.city = geoData.city;
-              }
-            }
-          } catch (e) {
-            console.log('Address enrichment failed for nearby location:', e);
-          }
-          
-          return loc;
-        })
-      );
-
-      setNearbyLocations(enrichedNearby);
+      setNearbyLocations(uniqueLocations);
     } catch (error) {
       console.error('Error fetching nearby locations:', error);
     }
@@ -413,15 +383,22 @@ const SaveLocationPage = () => {
       const filteredNominatim = nominatimResults?.filter(r => {
         if (!isAllowedNominatimType(r.type, r.class)) return false;
         
+        // Use the proper name field from Nominatim
+        const poiName = r.name || r.displayName.split(',')[0].trim();
+        
         // Check if this location already exists by coordinates
         const coordKey = `${Number(r.lat).toFixed(4)}-${Number(r.lng).toFixed(4)}`;
         if (existingByCoords.has(coordKey)) return false;
         
         // Check if this location already exists by name + city
-        const namePart = r.displayName.split(',')[0].trim();
         const city = r.city || '';
-        const nameCityKey = `${namePart.toLowerCase().trim()}-${city.toLowerCase().trim()}`;
+        const nameCityKey = `${poiName.toLowerCase().trim()}-${city.toLowerCase().trim()}`;
         if (existingByNameCity.has(nameCityKey)) return false;
+        
+        // Filter by query - name must contain search term
+        const normalizedQuery = query.toLowerCase().trim();
+        const normalizedName = poiName.toLowerCase();
+        if (!normalizedName.includes(normalizedQuery)) return false;
         
         return true;
       }) || [];
@@ -430,14 +407,14 @@ const SaveLocationPage = () => {
         const distance = userLat && userLng 
           ? calculateDistance(userLat, userLng, r.lat, r.lng)
           : Infinity;
-        const relevance = calculateRelevanceScore(query, r.displayName, r.address, distance);
         
-        // Extract name from displayName (first part before comma)
-        const namePart = r.displayName.split(',')[0].trim();
+        // Use proper name from Nominatim (the name field, not split displayName)
+        const poiName = r.name || r.displayName.split(',')[0].trim();
+        const relevance = calculateRelevanceScore(query, poiName, r.address, distance);
         
         return {
           id: `osm-${r.lat}-${r.lng}`,
-          name: namePart,
+          name: poiName,
           address: r.address || r.displayName,
           city: r.city || '',
           streetName: r.streetName || '',
@@ -448,7 +425,7 @@ const SaveLocationPage = () => {
           isExisting: false,
           relevance
         };
-      }).filter((r: any) => r.relevance >= 0.4) // Slightly lower threshold for better results
+      }).filter((r: any) => r.relevance >= 0.3) // Lower threshold since we already filtered by name
         .sort((a: any, b: any) => b.relevance - a.relevance)
         .slice(0, 20);
 
