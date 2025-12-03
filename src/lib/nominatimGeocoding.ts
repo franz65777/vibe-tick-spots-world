@@ -83,10 +83,11 @@ class NominatimGeocoding {
       });
 
       // Add viewbox parameter if user location is provided (prioritizes nearby results)
+      // DO NOT use bounded=1 as it restricts results too much
       if (userLocation) {
-        // Create a bounding box around user location (~50km radius)
-        const latDelta = 0.5; // ~50km
-        const lngDelta = 0.5;
+        // Create a bounding box around user location (~100km radius for bias, not restriction)
+        const latDelta = 1.0; // ~100km
+        const lngDelta = 1.0;
         const viewbox = [
           userLocation.lng - lngDelta,
           userLocation.lat + latDelta,
@@ -94,7 +95,7 @@ class NominatimGeocoding {
           userLocation.lat - latDelta
         ].join(',');
         params.append('viewbox', viewbox);
-        params.append('bounded', '1'); // Restrict results to viewbox
+        // Don't use bounded=1 - allow results outside viewbox but prefer nearby
       }
 
       const response = await fetch(`${this.baseUrl}/search?${params}`, {
