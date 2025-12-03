@@ -953,7 +953,7 @@ const SharingControls = ({
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
   return (
-    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} right-14 z-[1000] flex gap-2`}>
+    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} left-14 z-[1000] flex gap-2`}>
       <Button
         size="sm"
         variant="destructive"
