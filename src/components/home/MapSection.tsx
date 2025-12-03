@@ -471,10 +471,16 @@ const MapSection = ({
         onOpenChange={setIsActiveSharesOpen}
         places={places}
         onSelectLocation={(placeId) => {
+          // Always close both sheets first
+          setIsActiveSharesOpen(false);
+          setIsListViewOpen(false);
+          
           const p = places.find(pl => pl.id === placeId) || null;
           if (p) {
-            setIsListViewOpen(false);
-            handlePinClick(p);
+            // Small delay to ensure sheets are closed before showing location card
+            setTimeout(() => {
+              handlePinClick(p);
+            }, 100);
           }
         }}
         onCountChange={setActiveSharesCount}
