@@ -60,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
       let devMode = false;
       try {
         const { data: emailData, error: emailError } = await resend.emails.send({
-          from: "Spott <onboarding@resend.dev>",
+          from: "Spott <noreply@spott.cloud>",
           to: [email],
           subject: "Il tuo codice di verifica Spott",
           html: `
