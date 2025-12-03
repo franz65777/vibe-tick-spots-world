@@ -43,7 +43,7 @@ const LeaderboardPage = () => {
 
       <div className="min-h-screen bg-background pb-safe">
         {/* Minimal Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border py-4 pt-safe">
+        <div className="sticky top-0 z-10 bg-background py-4 pt-safe">
           <div className="px-4">
             <div className="flex items-center gap-3 mb-4">
               <Button
@@ -54,8 +54,8 @@ const LeaderboardPage = () => {
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <img src={leaderboardTrophy} alt="" className="w-8 h-8" />
               <h1 className="text-2xl font-bold text-foreground">{t('leaderboard', { ns: 'common' })}</h1>
+              <img src={leaderboardTrophy} alt="" className="w-10 h-10" />
             </div>
 
             {/* Top Filters */}
