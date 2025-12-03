@@ -427,7 +427,11 @@ const ExplorePage = memo(() => {
                   {/* Search History */}
                   {localSearchHistory.length > 0 && (
                     <div>
-                      <div className="flex items-center justify-end mb-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <Search className="w-4 h-4" />
+                          {t('recent', { ns: 'explore' })}
+                        </h3>
                         <Button
                           variant="ghost"
                           size="sm"
