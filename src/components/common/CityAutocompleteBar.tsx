@@ -308,7 +308,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 
       {/* Top cities dropdown (when focused, no query) */}
       {showTopCities && !searchQuery && topCities.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-[100] w-full mt-2 bg-background border border-border rounded-xl shadow-lg overflow-hidden">
           <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50 flex items-center gap-2">
             <TrendingUp className="w-3 h-3" />
             {t('topCities', { ns: 'common', defaultValue: 'Top Cities' })}
@@ -329,7 +329,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-xl shadow-lg max-h-[350px] overflow-y-auto">
+        <div className="absolute z-[100] w-full mt-2 bg-background border border-border rounded-xl shadow-lg max-h-[350px] overflow-y-auto">
           {/* Cities section */}
           {results.filter(r => r.type === 'city').length > 0 && (
             <div>
