@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
+import { loadingKeywordsTranslations, loadingKeywordKeys } from '@/i18n-loading-keywords';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +51,25 @@ const SaveLocationPage = () => {
     return !!saved;
   });
   const [initialLoading, setInitialLoading] = useState(true);
+  const [keywordIndex, setKeywordIndex] = useState(0);
+
+  // Get current language loading translations
+  const currentLang = i18n.language?.split('-')[0] || 'en';
+  const loadingTranslations = useMemo(() => {
+    const lang = (loadingKeywordsTranslations as any)[currentLang] || loadingKeywordsTranslations.en;
+    return lang.loading;
+  }, [currentLang]);
+
+  // Cycle through keywords for loading animation
+  useEffect(() => {
+    if (!initialLoading) return;
+    
+    const interval = setInterval(() => {
+      setKeywordIndex((prev) => (prev + 1) % loadingKeywordKeys.length);
+    }, 800);
+    
+    return () => clearInterval(interval);
+  }, [initialLoading]);
 
   // Save search query to sessionStorage when it changes
   useEffect(() => {
@@ -599,8 +620,10 @@ const SaveLocationPage = () => {
           {!searchQuery && initialLoading && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="text-lg font-medium">🔍 {t('findingNearbyPlaces', { defaultValue: 'Cercando luoghi vicini...' })}</p>
-              <p className="text-sm text-muted-foreground mt-1">📍 {t('pleaseWait', { defaultValue: 'Un momento...' })}</p>
+              <p className="text-lg font-medium">🔍 {loadingTranslations.findingNearbyPlaces}</p>
+              <p className="text-xl font-semibold text-primary mt-3 transition-all duration-300">
+                {loadingTranslations.keywords[loadingKeywordKeys[keywordIndex]]}
+              </p>
             </div>
           )}
 
