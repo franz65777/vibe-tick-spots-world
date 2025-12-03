@@ -7,11 +7,19 @@ import { useLocationShares } from '@/hooks/useLocationShares';
 import { useTranslation } from 'react-i18next';
 import { Place } from '@/types/place';
 
+interface ShareData {
+  location_id: string | null;
+  location_name: string;
+  location_address: string | null;
+  latitude: number;
+  longitude: number;
+}
+
 interface ActiveSharesListSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   places: Place[];
-  onSelectLocation: (placeId: string) => void;
+  onSelectLocation: (placeId: string, shareData?: ShareData) => void;
   onCountChange?: (count: number) => void;
   parentOverlayOpen?: boolean;
 }
@@ -20,10 +28,14 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
   const { t } = useTranslation();
   const { shares } = useLocationShares();
 
-  // Group active shares by location_id
+  // Group active shares by location_id and keep share data for fallback
   const grouped = useMemo(() => {
     const now = new Date();
-    const groups = new Map<string, { name: string; shareUsers: { id: string; username: string; avatar_url: string | null }[] }>();
+    const groups = new Map<string, { 
+      name: string; 
+      shareUsers: { id: string; username: string; avatar_url: string | null }[];
+      shareData: ShareData;
+    }>();
 
     shares.forEach((s) => {
       try {
@@ -31,7 +43,17 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
       } catch { return; }
       const locId = s.location_id ?? `__geo__:${s.latitude.toFixed(5)},${s.longitude.toFixed(5)}`;
       const name = s.location_name || `${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}`;
-      const entry = groups.get(locId) || { name, shareUsers: [] };
+      const entry = groups.get(locId) || { 
+        name, 
+        shareUsers: [],
+        shareData: {
+          location_id: s.location_id,
+          location_name: s.location_name,
+          location_address: s.location_address,
+          latitude: s.latitude,
+          longitude: s.longitude
+        }
+      };
       // Avoid duplicates by user id
       if (!entry.shareUsers.find(u => u.id === s.user.id)) {
         entry.shareUsers.push({ id: s.user.id, username: s.user.username, avatar_url: s.user.avatar_url });
@@ -60,9 +82,9 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
     }
   }, [open, parentOverlayOpen]);
 
-  const handleSelect = (locKey: string) => {
-    // If locKey is a real place id, use it; if geo fallback, try to find nearest place
-    onSelectLocation(locKey);
+  const handleSelect = (locKey: string, shareData: ShareData) => {
+    // Pass both locKey and shareData so parent can construct place if not found
+    onSelectLocation(locKey, shareData);
     onOpenChange(false);
   };
 
@@ -83,12 +105,12 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
           <div className="space-y-3 pr-4 py-2">
             {Array.from(grouped.entries()).map(([locKey, info]) => {
               // Resolve place name from places by id if possible
-              const match = places.find(p => p.id === locKey);
+              const match = places.find(p => p.id === locKey || p.google_place_id === locKey);
               const name = match?.name || info.name;
               return (
                 <button
                   key={locKey}
-                  onClick={() => handleSelect(locKey)}
+                  onClick={() => handleSelect(locKey, info.shareData)}
                   className="w-full flex items-center gap-3 p-4 bg-card border-2 border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all text-left"
                 >
                   <div className="flex -space-x-1 shrink-0">
