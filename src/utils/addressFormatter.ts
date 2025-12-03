@@ -110,9 +110,6 @@ export const formatSearchResultAddress = (params: {
     return result.join(', ');
   }
   
-  // If only city is available, try to extract street info from address string first
-  // Only return city alone as absolute last fallback
-  
   // Fallback: Parse from display_name string
   // Clean address - remove the name if it appears at the beginning
   let cleanAddress = address || '';
@@ -125,7 +122,7 @@ export const formatSearchResultAddress = (params: {
   // Split into parts
   const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
   
-  // Patterns to EXCLUDE (country, county, postal codes, etc.)
+  // Patterns to EXCLUDE (country, county, postal codes, district numbers, etc.)
   const excludePatterns = [
     /^ireland$/i,
     /^éire$/i,
@@ -138,6 +135,8 @@ export const formatSearchResultAddress = (params: {
     /^spain$/i,
     /county\s/i,
     /^co\.\s/i,
+    /^\d{1,2}$/i, // Single or double digit numbers (district numbers like "4")
+    /^dublin\s*\d+$/i, // "Dublin 4", "Dublin 2" etc - district codes
     /^\d{2,}\s*[A-Z]{0,2}\d*$/i, // Postal codes like "D04", "12345", "D04 ABC"
     /^[A-Z]\d{2}\s/i, // Eircodes like "D04 ..."
     /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i, // UK postcodes
@@ -149,22 +148,27 @@ export const formatSearchResultAddress = (params: {
   let parsedStreetName = '';
   let parsedStreetNumber = '';
   
+  // Track parts we've used to avoid duplication
+  const usedParts = new Set<string>();
+  if (foundCity) usedParts.add(foundCity.toLowerCase());
+  
   for (const part of parts) {
     const trimmed = part.trim();
+    const lowerTrimmed = trimmed.toLowerCase();
     
     // Skip excluded patterns
     if (excludePatterns.some(pattern => pattern.test(trimmed))) continue;
     
     // Skip if it matches the name
-    if (trimmed.toLowerCase() === normalizedName) continue;
+    if (lowerTrimmed === normalizedName) continue;
     
-    // Skip if it matches the city we already have
-    if (foundCity && trimmed.toLowerCase() === foundCity.toLowerCase()) continue;
+    // Skip if already used (duplicate city)
+    if (usedParts.has(lowerTrimmed)) continue;
     
     // Skip very short parts (likely abbreviations or codes)
     if (trimmed.length < 3) continue;
     
-    // Check if this part has a street number pattern
+    // Check if this part has a street number pattern (street + number together)
     const numberMatch = trimmed.match(/^(\d+[-–]?\d*)\s+(.+)$/) || // "21-25 Harcourt Street"
                         trimmed.match(/^(.+?)\s+(\d+[-–]?\d*)$/);    // "Harcourt Street 21-25"
     
@@ -177,13 +181,7 @@ export const formatSearchResultAddress = (params: {
         parsedStreetName = numberMatch[1];
         parsedStreetNumber = numberMatch[2];
       }
-    } else if (/\d+/.test(trimmed) && !parsedStreetNumber) {
-      // Has a number somewhere - could be street number
-      const numOnly = trimmed.match(/\d+[-–]?\d*/);
-      if (numOnly) {
-        parsedStreetNumber = numOnly[0];
-        parsedStreetName = trimmed.replace(numOnly[0], '').trim();
-      }
+      usedParts.add(lowerTrimmed);
     } else if (!foundCity && !parsedStreetName) {
       // First non-number part without city could be city or street
       // If it looks like a street name (contains "street", "road", "avenue", etc.)
@@ -192,8 +190,10 @@ export const formatSearchResultAddress = (params: {
       } else if (!foundCity) {
         foundCity = trimmed;
       }
-    } else if (!parsedStreetName) {
+      usedParts.add(lowerTrimmed);
+    } else if (!parsedStreetName && trimmed.length > 2) {
       parsedStreetName = trimmed;
+      usedParts.add(lowerTrimmed);
     }
   }
   
@@ -206,8 +206,6 @@ export const formatSearchResultAddress = (params: {
     result.push(`${parsedStreetName}, ${parsedStreetNumber}`);
   } else if (parsedStreetName) {
     result.push(parsedStreetName);
-  } else if (parsedStreetNumber) {
-    result.push(parsedStreetNumber);
   }
   
   return result.join(', ');
