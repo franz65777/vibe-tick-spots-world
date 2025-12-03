@@ -618,6 +618,10 @@ const HomePage = memo(() => {
                   visitors: [],
                 });
               }}
+              onCitySelect={(city: string) => {
+                setCurrentCity(city);
+                setSearchQuery(city);
+              }}
             />
           </Suspense>
         )}

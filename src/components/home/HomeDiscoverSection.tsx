@@ -9,6 +9,7 @@ interface HomeDiscoverSectionProps {
   onMapLocationClick: (coords: { lat: number; lng: number }) => void;
   onSwipeDiscoveryOpen: () => void;
   onSpotSelect: (spot: any) => void;
+  onCitySelect?: (city: string) => void;
 }
 
 const HomeDiscoverSection = memo((props: HomeDiscoverSectionProps) => {

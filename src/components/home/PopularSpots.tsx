@@ -10,7 +10,7 @@ import discountIcon from '@/assets/discount-icon.png';
 import eventIcon from '@/assets/event-icon.png';
 import promotionIcon from '@/assets/filter-promotion.png';
 import newIcon from '@/assets/new-icon.png';
-import cityIcon from '@/assets/city-icon.png';
+import cityIcon from '@/assets/city-icon-new.png';
 import tinderIcon from '@/assets/tinder-icon.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -51,12 +51,14 @@ interface PopularSpotsProps {
   }) => void;
   onSwipeDiscoveryOpen?: () => void;
   onSpotSelect?: (spot: PopularSpot) => void;
+  onCitySelect?: (city: string) => void;
 }
 const PopularSpots = ({
   currentCity,
   onLocationClick,
   onSwipeDiscoveryOpen,
-  onSpotSelect
+  onSpotSelect,
+  onCitySelect
 }: PopularSpotsProps) => {
   const {
     t
@@ -255,6 +257,7 @@ const PopularSpots = ({
   };
   const handleCityClick = (city: CitySpot) => {
     onLocationClick?.(city.coordinates);
+    onCitySelect?.(city.city);
   };
   const getFilterIcon = () => {
     switch (filterType) {
@@ -407,7 +410,7 @@ const PopularSpots = ({
       citySpots.map(city => <div key={city.city} className="flex-shrink-0">
                 <button onClick={() => handleCityClick(city)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${city.city}`}>
                   <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                  <img src={cityIcon} alt="City" className="w-7 h-7 object-contain" />
+                  <img src={cityIcon} alt="City" className="w-5 h-5 object-contain" />
                   <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
                     {city.city} ({city.locationCount})
                   </span>
