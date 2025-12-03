@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import addPageHero from '@/assets/add-page-hero.png';
 
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -61,9 +62,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               );
             })}
             
-            {/* Center Photo Icon */}
-            <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center shadow-lg relative z-10">
-              <ImageIcon className="w-14 h-14 text-primary" />
+            {/* Center Hero Image */}
+            <div className="w-36 h-36 flex items-center justify-center relative z-10">
+              <img src={addPageHero} alt="Share experience" className="w-full h-full object-contain" />
             </div>
           </div>
           
@@ -84,23 +85,23 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               {t('chooseFromLibrary', { ns: 'add' })}
             </Button>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex gap-3">
               <Button 
                 onClick={() => navigate('/save-location')}
                 size="lg"
-                className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
+                className="flex-1 min-w-0 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3"
               >
-                <Map className="w-5 h-5 mr-2 text-primary" />
-                {t('addLocation', { ns: 'add' })}
+                <Map className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                <span className="truncate">{t('addLocation', { ns: 'add' })}</span>
               </Button>
 
               <Button 
                 onClick={() => navigate('/create-list')}
                 size="lg"
-                className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
+                className="flex-shrink-0 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3"
               >
-                <FolderPlus className="w-5 h-5 mr-2 text-primary" />
-                {t('createList', { ns: 'add' })}
+                <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                <span className="truncate">{t('createList', { ns: 'add' })}</span>
               </Button>
             </div>
           </div>
