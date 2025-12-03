@@ -62,14 +62,26 @@ const LeaderboardPage = () => {
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => setFilter(filter === 'all' ? 'following' : 'all')}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left"
+                className="flex-1 px-4 py-2.5 rounded-xl text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left backdrop-blur-md bg-gray-200/40 dark:bg-slate-800/65"
+                style={{
+                  border: '1.5px solid transparent',
+                  backgroundImage: 'linear-gradient(var(--background), var(--background)), linear-gradient(135deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.2))',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box'
+                }}
               >
                 {filter === 'all' ? t('allMembers', { ns: 'leaderboard' }) : t('following', { ns: 'common' })}
               </button>
 
               <button
                 onClick={() => setIsCityModalOpen(true)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left"
+                className="flex-1 px-4 py-2.5 rounded-xl text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left backdrop-blur-md bg-gray-200/40 dark:bg-slate-800/65"
+                style={{
+                  border: '1.5px solid transparent',
+                  backgroundImage: 'linear-gradient(var(--background), var(--background)), linear-gradient(135deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.2))',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box'
+                }}
               >
                 {getCityDisplayName()}
               </button>
