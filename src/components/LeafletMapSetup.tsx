@@ -37,6 +37,7 @@ interface LeafletMapSetupProps {
   onSharingStateChange?: (hasSharing: boolean) => void;
   onMapMove?: (center: { lat: number; lng: number }, bounds: L.LatLngBounds) => void;
   onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
+  filtersVisible?: boolean;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -56,6 +57,7 @@ const LeafletMapSetup = ({
   onSharingStateChange,
   onMapMove,
   onCitySelect,
+  filtersVisible = true,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -812,6 +814,7 @@ const LeafletMapSetup = ({
         handleEndSharing={handleEndSharing}
         handleUpdateLocation={handleUpdateLocation}
         t={t}
+        filtersVisible={filtersVisible}
       />
 
       <style>{`
@@ -948,20 +951,22 @@ const SharingControls = ({
   fullScreen, 
   handleEndSharing, 
   handleUpdateLocation,
-  t 
+  t,
+  filtersVisible = true
 }: { 
   userActiveShare: any; 
   fullScreen?: boolean; 
   handleEndSharing: () => void; 
   handleUpdateLocation: () => void;
   t: any;
+  filtersVisible?: boolean;
 }) => {
   const { isFilterExpanded, isFriendsDropdownOpen } = useMapFilter();
   
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
   return (
-    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} left-[180px] z-[1000] flex gap-2`}>
+    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} left-32 z-[1000] flex gap-2 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <button
         onClick={handleEndSharing}
         className="h-9 px-4 rounded-full bg-red-500/80 dark:bg-red-600/80 backdrop-blur-md border border-red-400/30 shadow-lg text-white text-sm font-medium hover:bg-red-600/90 dark:hover:bg-red-700/90 transition-colors"
