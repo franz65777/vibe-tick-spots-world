@@ -291,6 +291,7 @@ const MapSection = ({
           recenterToken={recenterToken}
           onMapMove={handleMapMove}
           onCitySelect={onCitySelect}
+          filtersVisible={filtersVisible}
           onSharingStateChange={(hasSharing) => {
             // Update button layout when sharing state changes
             const container = document.querySelector('[data-has-sharing]');
