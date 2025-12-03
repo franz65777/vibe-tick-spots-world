@@ -321,10 +321,10 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Filter Dropdown - Bottom Left */}
+        {/* Map Filter Dropdown and Sharing Controls - Bottom Left */}
         {!isListViewOpen && (
           <div className={cn(
-            "left-3 z-[1000] transition-opacity duration-300",
+            "left-3 z-[1000] transition-opacity duration-300 flex items-center gap-2",
             isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
             filtersVisible ? "opacity-100" : "opacity-0"
           )}>

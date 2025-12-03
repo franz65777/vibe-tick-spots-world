@@ -498,6 +498,7 @@ const LeafletMapSetup = ({
           const hasCampaign = campaignLocationIds.has(place.id);
 
           // Find all users sharing location at this place (only active shares, excluding current user)
+          // Each share should only appear on ONE pin (exact match preferred, then closest)
           const now = new Date();
           const activeShares = shares.filter(s => {
             // Exclude current user's share
@@ -505,13 +506,20 @@ const LeafletMapSetup = ({
             // Only active non-expired shares
             try { return new Date(s.expires_at) > now; } catch { return false; }
           });
+          
+          // Only match shares that haven't been used yet
           const usersHere = activeShares.filter(share => {
-            // Prefer exact location_id match when present
-            if (share.location_id && place.id && share.location_id === place.id) return true;
-            // Fallback to proximity check (~350m)
-            const latDiff = Math.abs(parseFloat(share.latitude.toString()) - place.coordinates.lat);
-            const lngDiff = Math.abs(parseFloat(share.longitude.toString()) - place.coordinates.lng);
-            return latDiff < 0.003 && lngDiff < 0.003;
+            // Skip if already used on another pin
+            if (usedFallbackShareIds.has(share.id)) return false;
+            
+            // Exact location_id match - this is definitive
+            if (share.location_id && place.id && share.location_id === place.id) {
+              usedFallbackShareIds.add(share.id);
+              return true;
+            }
+            
+            // No exact match - don't use proximity fallback to prevent duplicates
+            return false;
           });
 
           const sharedByUsers = usersHere.map(share => ({
@@ -953,23 +961,19 @@ const SharingControls = ({
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
   return (
-    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} left-14 z-[1000] flex gap-2`}>
-      <Button
-        size="sm"
-        variant="destructive"
+    <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} left-[180px] z-[1000] flex gap-2`}>
+      <button
         onClick={handleEndSharing}
-        className="shadow-lg rounded-full h-9 px-3"
+        className="h-9 px-4 rounded-full bg-red-500/80 dark:bg-red-600/80 backdrop-blur-md border border-red-400/30 shadow-lg text-white text-sm font-medium hover:bg-red-600/90 dark:hover:bg-red-700/90 transition-colors"
       >
-        {t('endSharing', { ns: 'common', defaultValue: 'End' })}
-      </Button>
-      <Button
-        size="sm"
-        variant="secondary"
+        {t('endSharing', { ns: 'common', defaultValue: 'Termina' })}
+      </button>
+      <button
         onClick={handleUpdateLocation}
-        className="shadow-lg rounded-full h-9 px-3"
+        className="h-9 px-4 rounded-full bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border border-border/30 shadow-lg text-foreground text-sm font-medium hover:bg-gray-300/50 dark:hover:bg-slate-700/70 transition-colors"
       >
-        {t('updateLocation', { ns: 'common', defaultValue: 'Update' })}
-      </Button>
+        {t('updateLocation', { ns: 'common', defaultValue: 'Aggiorna' })}
+      </button>
     </div>
   );
 };
