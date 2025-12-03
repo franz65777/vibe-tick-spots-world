@@ -168,8 +168,9 @@ export async function searchPhoton(
       const normalizedName = props.name.toLowerCase();
       if (!normalizedName.includes(normalizedQuery)) continue;
       
-      // Better city extraction with multiple fallbacks
-      const city = props.city || props.district || props.locality || props.state || '';
+      // Better city extraction - prioritize actual city over neighborhoods/districts
+      // props.city is the actual city, props.district/locality are often neighborhoods
+      const city = props.city || props.state || '';
       const streetName = props.street || '';
       const streetNumber = props.housenumber || '';
       

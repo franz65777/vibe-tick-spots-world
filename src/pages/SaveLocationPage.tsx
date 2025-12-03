@@ -488,7 +488,13 @@ const SaveLocationPage = () => {
         {/* Header */}
         <div className="sticky top-0 z-50 bg-background pt-safe">
           <div className="flex items-center gap-3 p-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-lg font-semibold">{tNav('addLocation', { defaultValue: 'Aggiungi luogo' })}</h1>
@@ -545,7 +551,10 @@ const SaveLocationPage = () => {
                           <img 
                             src={getCategoryImage(result.category)} 
                             alt={result.category}
-                            className="h-8 w-8 shrink-0 object-contain"
+                            className={`shrink-0 object-contain ${
+                              result.category === 'restaurant' ? 'h-10 w-10' : 
+                              result.category === 'hotel' ? 'h-9 w-9' : 'h-8 w-8'
+                            }`}
                           />
                         )}
                         <div className="flex-1 min-w-0">
@@ -582,7 +591,10 @@ const SaveLocationPage = () => {
                           <img 
                             src={getCategoryImage(loc.category)} 
                             alt={loc.category}
-                            className="h-8 w-8 shrink-0 object-contain"
+                            className={`shrink-0 object-contain ${
+                              loc.category === 'restaurant' ? 'h-10 w-10' : 
+                              loc.category === 'hotel' ? 'h-9 w-9' : 'h-8 w-8'
+                            }`}
                           />
                         )}
                         <div className="flex-1 min-w-0">
