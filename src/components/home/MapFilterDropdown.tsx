@@ -29,8 +29,7 @@ interface UserSavedStats {
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
   const { user } = useAuth();
-  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen } = useMapFilter();
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded } = useMapFilter();
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
