@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { mapGooglePlaceTypeToCategory, isAllowedNominatimType } from '@/utils/allowedCategories';
+import { formatSearchResultAddress } from '@/utils/addressFormatter';
 import PinDetailCard from '@/components/explore/PinDetailCard';
 
 interface NearbyLocation {
@@ -176,49 +177,9 @@ const SaveLocationPage = () => {
     return bestSimilarity * 0.85 + distanceFactor * 0.15;
   };
 
-  // Format address to avoid repetition: Row 1 = Name, Row 2 = city, street, number
+  // Format address wrapper using shared utility
   const formatDisplayAddress = (name: string, address: string, city: string): string => {
-    if (!address && !city) return '';
-    
-    // Remove the name from the address if it appears at the beginning
-    let cleanAddress = address || '';
-    const normalizedName = name.toLowerCase().trim();
-    
-    if (cleanAddress.toLowerCase().startsWith(normalizedName)) {
-      cleanAddress = cleanAddress.substring(name.length).replace(/^[,\s]+/, '');
-    }
-    
-    // Parse address components
-    const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
-    
-    // Try to identify street+number (usually has numbers)
-    const streetParts: string[] = [];
-    const otherParts: string[] = [];
-    
-    for (const part of parts) {
-      // Skip if it's just a postal code or very short
-      if (/^\d{4,}/.test(part) || part.length < 3) continue;
-      // Skip if it matches the name or city
-      if (part.toLowerCase() === normalizedName) continue;
-      if (city && part.toLowerCase() === city.toLowerCase()) continue;
-      
-      // If has house number pattern, it's likely street
-      if (/\d+[-–]?\d*$/.test(part) || /^\d+/.test(part)) {
-        streetParts.push(part);
-      } else {
-        otherParts.push(part);
-      }
-    }
-    
-    // Build result: city first, then street with number
-    const result: string[] = [];
-    if (city) result.push(city);
-    else if (otherParts.length > 0) result.push(otherParts[0]);
-    
-    if (streetParts.length > 0) result.push(streetParts[0]);
-    else if (otherParts.length > (city ? 0 : 1)) result.push(otherParts[city ? 0 : 1]);
-    
-    return result.join(', ') || parts.slice(0, 2).join(', ');
+    return formatSearchResultAddress({ name, address, city });
   };
 
   const searchLocations = async (query: string) => {
