@@ -796,14 +796,14 @@ const LeafletMapSetup = ({
         }}
       />
 
-      {/* Location sharing controls */}
+      {/* Location sharing controls - positioned at same height as filter dropdown */}
       {userActiveShare && (
-        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${baseControlPosition} left-4 z-[1000] flex gap-2`}>
+        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} right-14 z-[1000] flex gap-2`}>
           <Button
             size="sm"
             variant="destructive"
             onClick={handleEndSharing}
-            className="shadow-lg rounded-full"
+            className="shadow-lg rounded-full h-9"
           >
             <X className="h-4 w-4 mr-1" />
             {t('endSharing', { ns: 'common', defaultValue: 'End' })}
@@ -812,7 +812,7 @@ const LeafletMapSetup = ({
             size="sm"
             variant="secondary"
             onClick={handleUpdateLocation}
-            className="shadow-lg rounded-full"
+            className="shadow-lg rounded-full h-9"
           >
             <RefreshCw className="h-4 w-4 mr-1" />
             {t('updateLocation', { ns: 'common', defaultValue: 'Update' })}
