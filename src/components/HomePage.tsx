@@ -689,6 +689,9 @@ const HomePage = memo(() => {
         onCitySelect={(city, coords) => {
           handleCityChange(city, coords);
           setSearchQuery(city);
+        }}
+        onLocationSelect={(location) => {
+          handleLocationSelect(location);
           setIsSearchOverlayOpen(false);
         }}
       />

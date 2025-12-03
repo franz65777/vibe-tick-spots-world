@@ -45,6 +45,7 @@ const Header = ({
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
               onSearchKeyPress={onSearchKeyPress}
+              onFocusOpen={onOpenSearchOverlay}
             />
           </div>
 
