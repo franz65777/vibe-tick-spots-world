@@ -423,7 +423,8 @@ const ShareLocationPage = () => {
         }
       }
 
-      // Calculate relevance for existing locations
+      // Calculate relevance for existing locations - filter to only include names containing query
+      const queryLower = query.toLowerCase().trim();
       let existingResults: any[] = appLocations?.map(loc => {
         const latRaw = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
         const lngRaw = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
@@ -452,7 +453,11 @@ const ShareLocationPage = () => {
           isExisting: true,
           relevance
         };
-      }).filter(r => r.relevance >= 0.5) // Higher threshold to hide irrelevant results
+      }).filter(r => {
+        // Must contain the search query in name
+        const normalizedName = r.name.toLowerCase();
+        return normalizedName.includes(queryLower) && r.relevance >= 0.3;
+      })
         .sort((a, b) => b.relevance - a.relevance)
         .slice(0, 10) || [];
 
@@ -468,33 +473,41 @@ const ShareLocationPage = () => {
         return isAllowedNominatimType(r.type, r.class);
       }) || [];
       
-      const newLocationResults = filteredNominatim.map(r => {
-        const distance = userLat && userLng 
-          ? calculateDistance(userLat, userLng, r.lat, r.lng)
-          : Infinity;
-        const relevance = calculateRelevanceScore(query, r.displayName, r.address, distance);
-        
-        // Extract name (first part before comma)
-        const namePart = r.displayName.split(',')[0].trim();
-        
-        return {
-          name: namePart,
-          address: r.address || r.displayName,
-          city: r.city || '',
-          streetName: r.streetName || '',
-          streetNumber: r.streetNumber || '',
-          lat: r.lat,
-          lng: r.lng,
-          isExisting: false,
-          distance,
-          relevance
-        };
-      }).filter(r =>
-        r.relevance >= 0.5 && // Same threshold to hide irrelevant
-        !existingResults.some(existing => 
-          Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
-        )
-      ) || [];
+      const newLocationResults = filteredNominatim
+        .filter(r => {
+          // Filter by query - name must contain search term
+          const poiName = r.name || r.displayName.split(',')[0].trim();
+          const normalizedQuery = query.toLowerCase().trim();
+          const normalizedName = poiName.toLowerCase();
+          return normalizedName.includes(normalizedQuery);
+        })
+        .map(r => {
+          const distance = userLat && userLng 
+            ? calculateDistance(userLat, userLng, r.lat, r.lng)
+            : Infinity;
+          
+          // Use proper name from Nominatim (the name field, not split displayName)
+          const poiName = r.name || r.displayName.split(',')[0].trim();
+          const relevance = calculateRelevanceScore(query, poiName, r.address, distance);
+          
+          return {
+            name: poiName,
+            address: r.address || r.displayName,
+            city: r.city || '',
+            streetName: r.streetName || '',
+            streetNumber: r.streetNumber || '',
+            lat: r.lat,
+            lng: r.lng,
+            isExisting: false,
+            distance,
+            relevance
+          };
+        }).filter(r =>
+          r.relevance >= 0.3 && // Lower threshold since we already filtered by name
+          !existingResults.some(existing => 
+            Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
+          )
+        ) || [];
 
       // Combine and sort by relevance
       let results = [...existingResults, ...newLocationResults]

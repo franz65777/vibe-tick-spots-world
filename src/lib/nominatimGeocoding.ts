@@ -8,6 +8,7 @@ interface NominatimResult {
   place_id: number;
   lat: string;
   lon: string;
+  name?: string; // POI name when available
   display_name: string;
   type?: string;
   class?: string;
@@ -32,6 +33,7 @@ export interface GeocodeResult {
   city: string;
   address: string;
   displayName: string;
+  name?: string; // Clean POI name (without address)
   type?: string;
   class?: string;
   // Structured address components for accurate display
@@ -113,12 +115,16 @@ class NominatimGeocoding {
         const streetNumber = result.address.house_number || '';
         const city = result.address.city || result.address.town || result.address.village || '';
         
+        // Use the name field if available (POI name), otherwise extract from display_name
+        const poiName = result.name || result.display_name.split(',')[0].trim();
+        
         return {
           lat: parseFloat(result.lat),
           lng: parseFloat(result.lon),
           city,
           address: result.display_name,
           displayName: result.display_name,
+          name: poiName,
           type: result.type,
           class: result.class,
           streetName,
