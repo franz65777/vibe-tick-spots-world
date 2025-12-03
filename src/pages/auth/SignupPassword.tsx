@@ -156,7 +156,21 @@ const SignupPassword: React.FC = () => {
       toast.success('Account creato con successo!');
       navigate('/');
     } catch (e: any) {
-      toast.error(e?.message || 'Errore nella creazione account');
+      const errorMsg = e?.message || 'Errore nella creazione account';
+      toast.error(errorMsg);
+      
+      // Session expired or invalid - clear and restart signup
+      if (/sessione|session|401|scadut/i.test(errorMsg)) {
+        sessionStorage.removeItem('signup_session');
+        sessionStorage.removeItem('signup_fullname');
+        sessionStorage.removeItem('signup_username');
+        sessionStorage.removeItem('signup_dob');
+        sessionStorage.removeItem('signup_gender');
+        sessionStorage.removeItem('signup_method');
+        sessionStorage.removeItem('signup_contact');
+        sessionStorage.removeItem('signup_password');
+        navigate('/signup/start');
+      }
     } finally {
       setLoading(false);
     }
