@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, MapPin, Loader2, Locate } from 'lucide-react';
+import { Search, MapPin, Loader2, Locate, Building2, UtensilsCrossed } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { searchPhoton, PhotonResult } from '@/lib/photonGeocoding';
 import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
@@ -10,15 +11,23 @@ interface CityAutocompleteBarProps {
   onSearchChange: (value: string) => void;
   onSearchKeyPress: (e: React.KeyboardEvent) => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
+  onLocationSelect?: (location: PhotonResult) => void;
   onFocusOpen?: () => void;
 }
 
 interface CityResult {
+  type: 'city';
   name: string;
   displayName: string;
   lat: number;
   lng: number;
 }
+
+interface LocationResult extends PhotonResult {
+  type: 'location';
+}
+
+type SearchResult = CityResult | LocationResult;
 
 const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   searchQuery,
@@ -26,13 +35,14 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   onSearchChange,
   onSearchKeyPress,
   onCitySelect,
+  onLocationSelect,
   onFocusOpen,
 }) => {
   const { t, i18n } = useTranslation();
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<CityResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
   const latestQueryRef = useRef<string>('');
@@ -64,8 +74,6 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
       lat: location.latitude, 
       lng: location.longitude 
     });
-    
-    // No toast here – silently update the UI with detected city
   }, [location?.latitude, location?.longitude, location?.city]);
 
   useEffect(() => {
@@ -83,7 +91,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 
     debounceTimer.current = setTimeout(() => {
       performSearch(searchQuery);
-    }, 400);
+    }, 350);
 
     return () => {
       if (debounceTimer.current) {
@@ -97,8 +105,13 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     setIsLoading(true);
     
     try {
-      // Use FREE OpenStreetMap Nominatim for city search with language support
-      const nominatimResults = await nominatimGeocoding.searchPlace(query, i18n.language);
+      // Search for both cities and locations in parallel
+      const userCoords = location ? { lat: location.latitude, lng: location.longitude } : undefined;
+      
+      const [cityResults, locationResults] = await Promise.all([
+        nominatimGeocoding.searchPlace(query, i18n.language),
+        searchPhoton(query, userCoords, 8)
+      ]);
       
       // If another selection happened or input lost focus, ignore this response
       if (selectionRef.current || !inputRef.current || document.activeElement !== inputRef.current || latestQueryRef.current !== query) {
@@ -106,17 +119,28 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         return;
       }
       
-      const cityResults: CityResult[] = nominatimResults.map((result) => ({
+      // Transform city results
+      const cities: CityResult[] = cityResults.slice(0, 4).map((result) => ({
+        type: 'city' as const,
         name: result.city || result.displayName.split(',')[0],
         displayName: result.displayName,
         lat: result.lat,
         lng: result.lng,
       }));
 
-      setResults(cityResults);
+      // Transform location results
+      const locations: LocationResult[] = locationResults.slice(0, 6).map((result) => ({
+        ...result,
+        type: 'location' as const,
+      }));
+
+      // Combine results - cities first, then locations
+      const combined: SearchResult[] = [...cities, ...locations];
+
+      setResults(combined);
       setShowResults(true);
     } catch (error) {
-      console.error('City search error:', error);
+      console.error('Search error:', error);
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -127,23 +151,44 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     console.log('🏙️ City selected from dropdown:', result.name, result);
     selectionRef.current = true;
     latestQueryRef.current = '';
-    // Cancel any pending search
+    
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
     
-    // Immediately close dropdown and clear results
     setShowResults(false);
     setResults([]);
     
-    // Call parent callbacks
     onCitySelect(result.name, { lat: result.lat, lng: result.lng });
     onSearchChange('');
     
-    // Blur input
     inputRef.current?.blur();
 
-    // Reset selection flag shortly after to allow new searches
+    setTimeout(() => {
+      selectionRef.current = false;
+    }, 300);
+  };
+
+  const handleSelectLocation = (result: LocationResult) => {
+    console.log('📍 Location selected from dropdown:', result.name, result);
+    selectionRef.current = true;
+    latestQueryRef.current = '';
+    
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    setShowResults(false);
+    setResults([]);
+    
+    // Call location select callback if provided
+    if (onLocationSelect) {
+      onLocationSelect(result);
+    }
+    
+    onSearchChange('');
+    inputRef.current?.blur();
+
     setTimeout(() => {
       selectionRef.current = false;
     }, 300);
@@ -153,7 +198,6 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     try {
       console.log('🌍 Geolocation button clicked');
       
-      // If we already have a location, immediately update the map
       if (location && location.city && location.city !== 'Unknown City') {
         console.log('📍 Using existing location:', location.city);
         onCitySelect(location.city, { 
@@ -163,10 +207,8 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         onSearchChange(location.city);
       }
       
-      // Always fetch fresh location to update if user moved
       getCurrentLocation();
       
-      // Show helpful message if there's an error
       if (!location || !location.city || location.city === 'Unknown City') {
         setTimeout(() => {
           if (!location || !location.city) {
@@ -174,9 +216,22 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           }
         }, 1000);
       }
-      // UI updates happen when location state changes via useEffect
     } catch (error) {
       console.error('Error getting current location:', error);
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'restaurant':
+      case 'cafe':
+      case 'bakery':
+      case 'bar':
+        return <UtensilsCrossed className="w-4 h-4 mt-0.5 flex-shrink-0 text-orange-500" />;
+      case 'hotel':
+        return <Building2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" />;
+      default:
+        return <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-purple-500" />;
     }
   };
 
@@ -186,12 +241,12 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         {isLoading || geoLoading ? (
           <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
         ) : (
-          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         )}
         <input
           ref={inputRef}
           type="text"
-          placeholder={searchQuery ? '' : currentCity || t('searchCities', { ns: 'home' })}
+          placeholder={searchQuery ? '' : currentCity || t('searchCitiesAndPlaces', { ns: 'home', defaultValue: 'Search cities or places...' })}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
@@ -199,7 +254,6 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
             onFocusOpen?.();
           }}
           onBlur={() => {
-            // Delay to allow click on result
             setTimeout(() => {
               setShowResults(false);
               setResults([]);
@@ -219,24 +273,64 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
-          {results.map((result, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelectCity(result)}
-              className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
-            >
-              <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground">
-                  {result.name}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {result.displayName}
-                </div>
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-xl shadow-lg max-h-[350px] overflow-y-auto">
+          {/* Cities section */}
+          {results.filter(r => r.type === 'city').length > 0 && (
+            <div>
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50">
+                {t('cities', { ns: 'common', defaultValue: 'Cities' })}
               </div>
-            </button>
-          ))}
+              {results.filter(r => r.type === 'city').map((result, idx) => (
+                <button
+                  key={`city-${idx}`}
+                  onClick={() => handleSelectCity(result as CityResult)}
+                  className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border/50 last:border-0"
+                >
+                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground">
+                      {(result as CityResult).name}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {(result as CityResult).displayName}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          
+          {/* Locations section */}
+          {results.filter(r => r.type === 'location').length > 0 && (
+            <div>
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50">
+                {t('places', { ns: 'common', defaultValue: 'Places' })}
+              </div>
+              {results.filter(r => r.type === 'location').map((result, idx) => {
+                const loc = result as LocationResult;
+                return (
+                  <button
+                    key={`loc-${idx}`}
+                    onClick={() => handleSelectLocation(loc)}
+                    className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border/50 last:border-0"
+                  >
+                    {getCategoryIcon(loc.category)}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground">
+                        {loc.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {loc.displayAddress || loc.city}
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
+                      {loc.category === 'entertainment' ? 'fun' : loc.category}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
