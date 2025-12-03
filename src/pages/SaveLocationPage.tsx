@@ -403,7 +403,7 @@ const SaveLocationPage = () => {
           streetNumber: r.streetNumber,
           coordinates: { lat: r.lat, lng: r.lng },
           distance: userLoc ? calculateDistance(userLoc.lat, userLoc.lng, r.lat, r.lng) : Infinity,
-          category: r.type || 'restaurant',
+          category: r.category || 'restaurant',
           isExisting: false
         }));
 
