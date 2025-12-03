@@ -341,49 +341,8 @@ const MobileNotificationItem = ({
   }, [notification.id]);
 
   // Live subscribe to profile updates (single and grouped)
-  useEffect(() => {
-    const ids = new Set<string>();
-    if (targetUserId) ids.add(targetUserId);
-    (notification.data?.grouped_users || []).forEach(u => {
-      if (u.id) ids.add(u.id);
-    });
-
-    if (ids.size === 0) return;
-
-    const channel = supabase.channel(`profiles_live_${notification.id}`);
-    ids.forEach((id) => {
-      channel.on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'profiles',
-        filter: `id=eq.${id}`,
-      }, (payload: any) => {
-        const newUsername = payload.new?.username as string;
-        const newAvatar = (payload.new?.avatar_url as string) || null;
-
-        if (id === targetUserId && newUsername) {
-          setUsernameOverride(newUsername);
-          setAvatarOverride(newAvatar);
-        }
-        if (newUsername) {
-          setGroupedUserOverrides(prev => ({
-            ...prev,
-            [id]: { name: newUsername, avatar: newAvatar || undefined },
-          }));
-        }
-        profileCacheRef.current.set(id, {
-          avatar: newAvatar,
-          username: newUsername,
-          timestamp: Date.now(),
-        });
-      });
-    });
-
-    const sub = channel.subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [targetUserId, notification.data?.grouped_users]);
+  // Note: Disabled realtime profile updates to prevent "subscribe multiple times" error
+  // Profile data is already fetched on mount and cached, which is sufficient for notifications
 
   const handleClick = () => {
     // Handle grouped likes - navigate to post
