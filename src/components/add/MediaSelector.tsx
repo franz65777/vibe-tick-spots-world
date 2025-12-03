@@ -85,23 +85,23 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               {t('chooseFromLibrary', { ns: 'add' })}
             </Button>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-full">
               <Button 
                 onClick={() => navigate('/save-location')}
                 size="lg"
-                className="flex-1 min-w-0 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3"
+                className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3"
               >
                 <Map className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                <span className="truncate">{t('addLocation', { ns: 'add' })}</span>
+                <span className="whitespace-nowrap">{t('addLocation', { ns: 'add' })}</span>
               </Button>
 
               <Button 
                 onClick={() => navigate('/create-list')}
                 size="lg"
-                className="flex-shrink-0 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3"
+                className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3"
               >
                 <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                <span className="truncate">{t('createList', { ns: 'add' })}</span>
+                <span className="whitespace-nowrap">{t('createList', { ns: 'add' })}</span>
               </Button>
             </div>
           </div>

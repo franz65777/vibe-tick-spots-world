@@ -53,42 +53,66 @@ const SaveLocationPage = () => {
     if (!location) return;
     
     try {
-      const { data, error } = await supabase
+      // Fetch locations that are NOT already in our database - using Nominatim for nearby POIs
+      const lat = location.latitude!;
+      const lng = location.longitude!;
+      
+      // Search for nearby places using Nominatim
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=20&bounded=1&viewbox=${lng - 0.005},${lat + 0.005},${lng + 0.005},${lat - 0.005}&addressdetails=1`;
+      
+      const response = await fetch(searchUrl, {
+        headers: { 'Accept-Language': 'en' }
+      });
+      const nominatimResults = await response.json();
+      
+      // Get existing locations to filter them out
+      const { data: existingLocations } = await supabase
         .from('locations')
-        .select('*')
+        .select('name, latitude, longitude')
         .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
-        .limit(100);
-
-      if (error) throw error;
-
-      const withDistance = data?.map(loc => {
-        const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
-        const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
-        const distance = calculateDistance(
-          location.latitude!,
-          location.longitude!,
-          lat,
-          lng
-        );
-        return {
-          id: loc.id,
-          name: loc.name,
-          address: loc.address || '',
-          city: loc.city || '',
-          streetName: undefined as string | undefined,
-          streetNumber: undefined as string | undefined,
-          distance,
-          coordinates: { lat, lng },
-          category: loc.category,
-          isExisting: true
-        };
-      }) || [];
-
-      const nearby = withDistance
-        .filter(loc => loc.distance <= 500)
-        .sort((a, b) => a.distance - b.distance)
+        .not('longitude', 'is', null);
+      
+      // Create a set of normalized names + coords for existing locations
+      const existingSet = new Set(
+        existingLocations?.map(loc => 
+          `${loc.name?.toLowerCase().trim()}-${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
+        ) || []
+      );
+      
+      const allowedTypes = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'cinema', 'nightclub', 'pub', 'fast_food', 'theatre', 'arts_centre'];
+      
+      const newLocations = nominatimResults
+        .filter((result: any) => {
+          const type = result.type || result.class;
+          if (!allowedTypes.includes(type)) return false;
+          
+          // Check if this location already exists
+          const key = `${result.name?.toLowerCase().trim()}-${Number(result.lat).toFixed(4)}-${Number(result.lon).toFixed(4)}`;
+          return !existingSet.has(key);
+        })
+        .map((result: any) => {
+          const resultLat = parseFloat(result.lat);
+          const resultLng = parseFloat(result.lon);
+          const distance = calculateDistance(lat, lng, resultLat, resultLng);
+          
+          return {
+            id: `osm-${result.osm_id}`,
+            name: result.name || result.display_name?.split(',')[0] || '',
+            address: result.display_name || '',
+            city: result.address?.city || result.address?.town || result.address?.village || '',
+            streetName: result.address?.road,
+            streetNumber: result.address?.house_number,
+            distance,
+            coordinates: { lat: resultLat, lng: resultLng },
+            category: result.type === 'pub' ? 'bar' : result.type || 'restaurant',
+            isExisting: false
+          };
+        })
+        .filter((loc: any) => loc.distance <= 500 && loc.name)
+        .sort((a: any, b: any) => a.distance - b.distance)
         .slice(0, 5);
+
+      const nearby = newLocations;
 
       // Enrich nearby locations with street addresses
       const enrichedNearby = await Promise.all(
@@ -501,58 +525,46 @@ const SaveLocationPage = () => {
   }, [searchQuery]);
 
   const handleSelectLocation = async (loc: NearbyLocation) => {
-    // Check if location exists in database
-    let locationToShow = null;
-    
-    if (loc.isExisting && loc.id && !loc.id.startsWith('osm-')) {
-      const { data: existingLocation } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('id', loc.id)
-        .single();
-      
-      locationToShow = existingLocation;
-    }
-    
-    // If location doesn't exist, create it
-    if (!locationToShow) {
-      const { data: newLocation, error } = await supabase
-        .from('locations')
-        .insert({
-          name: loc.name,
-          address: loc.address,
-          latitude: loc.coordinates.lat,
-          longitude: loc.coordinates.lng,
-          category: loc.category || 'restaurant',
-          city: loc.city,
-          created_by: user?.id,
-          pioneer_user_id: user?.id,
-        })
-        .select()
-        .single();
+    // Create the new location in database
+    const { data: newLocation, error } = await supabase
+      .from('locations')
+      .insert({
+        name: loc.name,
+        address: loc.address,
+        latitude: loc.coordinates.lat,
+        longitude: loc.coordinates.lng,
+        category: loc.category || 'restaurant',
+        city: loc.city,
+        created_by: user?.id,
+        pioneer_user_id: user?.id,
+      })
+      .select()
+      .single();
 
-      if (!error && newLocation) {
-        locationToShow = newLocation;
+    if (error) {
+      console.error('Error creating location:', error);
+      return;
+    }
+
+    // Navigate to home page with the location to show in PinDetailCard
+    navigate('/', { 
+      state: { 
+        showLocationCard: true,
+        locationData: {
+          id: newLocation.id,
+          google_place_id: newLocation.google_place_id,
+          name: newLocation.name,
+          address: newLocation.address,
+          category: newLocation.category,
+          city: newLocation.city,
+          coordinates: {
+            lat: newLocation.latitude,
+            lng: newLocation.longitude,
+          },
+        },
+        returnTo: '/save-location'
       }
-    }
-
-    // Show PinDetailCard with the location
-    setSelectedPlace({
-      id: locationToShow?.id,
-      google_place_id: locationToShow?.google_place_id,
-      name: locationToShow?.name || loc.name,
-      address: locationToShow?.address || loc.address,
-      category: locationToShow?.category || loc.category || 'restaurant',
-      city: locationToShow?.city || loc.city,
-      coordinates: {
-        lat: locationToShow?.latitude || loc.coordinates.lat,
-        lng: locationToShow?.longitude || loc.coordinates.lng,
-      },
     });
-    
-    setSearchQuery('');
-    setSearchResults([]);
-    setIsSearchFocused(false);
   };
 
   return (
