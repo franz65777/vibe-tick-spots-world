@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronUp, X, Search } from 'lucide-react';
+import { ChevronRight, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter, MapFilter } from '@/contexts/MapFilterContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -135,13 +135,10 @@ const MapFilterDropdown = () => {
   };
 
   const handleMainButtonClick = () => {
-    if (activeFilter === 'following' && !isFriendsDropdownOpen) {
-      // If friends filter is active and dropdown is closed, open horizontal filter selection
-      setIsFilterExpanded(!isFilterExpanded);
-    } else if (activeFilter === 'following' && isFriendsDropdownOpen) {
-      // If dropdown is open, close it and allow filter switching
-      setIsFriendsDropdownOpen(false);
-      setIsFilterExpanded(!isFilterExpanded);
+    if (activeFilter === 'following') {
+      // Toggle friends dropdown when friends filter is active
+      setIsFriendsDropdownOpen(!isFriendsDropdownOpen);
+      setIsFilterExpanded(false);
     } else {
       setIsFilterExpanded(!isFilterExpanded);
       setIsFriendsDropdownOpen(false);
@@ -236,18 +233,20 @@ const MapFilterDropdown = () => {
       )}
 
       {/* Active filter circle button */}
-      <button
-        onClick={handleMainButtonClick}
+      <div
         className={cn(
           "flex items-center gap-1.5 rounded-full backdrop-blur-md transition-all duration-300 relative",
           "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 shadow-lg",
           isFilterExpanded ? "pr-1.5" : "pr-2.5"
         )}
       >
-        <div className={cn(
-          "w-9 h-9 rounded-full flex items-center justify-center overflow-hidden transition-all",
-          "bg-primary/10 border border-primary/20"
-        )}>
+        <button
+          onClick={handleMainButtonClick}
+          className={cn(
+            "w-9 h-9 rounded-full flex items-center justify-center overflow-hidden transition-all",
+            "bg-primary/10 border border-primary/20"
+          )}
+        >
           {activeFilter === 'following' && selectedUser ? (
             <Avatar className="w-6 h-6 border border-background">
               <AvatarImage src={selectedUser.avatar_url || ''} />
@@ -262,24 +261,25 @@ const MapFilterDropdown = () => {
               className={cn("object-contain", activeFilterData.iconSize)}
             />
           )}
-        </div>
+        </button>
         {!isFilterExpanded && (
           <span className="text-xs font-medium text-foreground whitespace-nowrap">
             {activeFilterData.name}
           </span>
         )}
-        {activeFilter === 'following' && !isFilterExpanded ? (
-          <ChevronUp className={cn(
-            "w-4 h-4 text-muted-foreground transition-transform duration-300",
-            isFriendsDropdownOpen && "rotate-180"
-          )} />
-        ) : (
+        <button
+          onClick={() => {
+            setIsFilterExpanded(!isFilterExpanded);
+            setIsFriendsDropdownOpen(false);
+          }}
+          className="p-0.5"
+        >
           <ChevronRight className={cn(
             "w-4 h-4 text-muted-foreground transition-transform duration-300",
             isFilterExpanded && "rotate-180"
           )} />
-        )}
-      </button>
+        </button>
+      </div>
 
       {/* Expanded filter options - horizontal */}
       <div className={cn(
@@ -291,17 +291,15 @@ const MapFilterDropdown = () => {
             key={filter.id}
             onClick={() => handleFilterSelect(filter.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-md transition-all duration-200",
+              "flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md transition-all duration-200",
               "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
             )}
           >
-            <div className="w-9 h-9 flex items-center justify-center">
-              <img 
-                src={filter.icon} 
-                alt={filter.name}
-                className={cn("object-contain", filter.iconSize)}
-              />
-            </div>
+            <img 
+              src={filter.icon} 
+              alt={filter.name}
+              className={cn("object-contain", filter.iconSize)}
+            />
             <span className="text-xs font-medium text-foreground whitespace-nowrap">
               {filter.name}
             </span>
