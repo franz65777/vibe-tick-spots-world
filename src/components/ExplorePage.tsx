@@ -423,15 +423,11 @@ const ExplorePage = memo(() => {
             {/* User Results - passed as children */}
             <>
               {!isSearchActive && (
-                <div className="px-1 py-2 space-y-4">
+                <div className="px-4 py-2 space-y-4">
                   {/* Search History */}
                   {localSearchHistory.length > 0 && (
                     <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <Search className="w-4 h-4" />
-                          {t('recent', { ns: 'explore' })}
-                        </h3>
+                      <div className="flex items-center justify-end mb-2">
                         <Button
                           variant="ghost"
                           size="sm"
