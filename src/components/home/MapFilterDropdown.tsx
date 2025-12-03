@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronUp, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter, MapFilter } from '@/contexts/MapFilterContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
@@ -18,52 +19,95 @@ interface FollowedUser {
   avatar_url: string | null;
 }
 
+interface UserSavedStats {
+  userId: string;
+  restaurantCount: number;
+  barCount: number;
+  cafeCount: number;
+}
+
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
   const { user } = useAuth();
   const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds } = useMapFilter();
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isFriendsDropdownOpen, setIsFriendsDropdownOpen] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
+  const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch followed users
+  // Fetch followed users and their saved location stats
   useEffect(() => {
-    const fetchFollowedUsers = async () => {
+    const fetchFollowedUsersWithStats = async () => {
       if (!user?.id) return;
       
-      const { data, error } = await supabase
+      const { data: followData, error: followError } = await supabase
         .from('follows')
         .select('following_id, profiles!follows_following_id_fkey(id, username, avatar_url)')
         .eq('follower_id', user.id);
       
-      if (!error && data) {
-        const users = data
+      if (followError) {
+        console.error('Error fetching followed users:', followError);
+        return;
+      }
+
+      if (followData) {
+        const users = followData
           .map((f: any) => f.profiles)
           .filter(Boolean) as FollowedUser[];
         setFollowedUsers(users);
+
+        // Fetch saved location stats for each user
+        const statsMap = new Map<string, UserSavedStats>();
+        
+        for (const followedUser of users) {
+          const { data: savedPlaces } = await supabase
+            .from('saved_places')
+            .select('place_category')
+            .eq('user_id', followedUser.id);
+
+          if (savedPlaces) {
+            const stats: UserSavedStats = {
+              userId: followedUser.id,
+              restaurantCount: savedPlaces.filter(p => p.place_category === 'restaurant').length,
+              barCount: savedPlaces.filter(p => p.place_category === 'bar').length,
+              cafeCount: savedPlaces.filter(p => p.place_category === 'cafe').length,
+            };
+            statsMap.set(followedUser.id, stats);
+          }
+        }
+        setUserStats(statsMap);
       }
     };
     
-    fetchFollowedUsers();
+    fetchFollowedUsersWithStats();
   }, [user?.id]);
 
   const mapFilters = [
     { id: 'following' as const, name: t('friends'), icon: filterFriendsIcon, iconSize: 'w-7 h-7' },
     { id: 'popular' as const, name: t('everyone'), icon: filterEveryoneIcon, iconSize: 'w-6 h-6' },
-    { id: 'saved' as const, name: t('saved'), icon: filterSavedIcon, iconSize: 'w-5 h-5' }
+    { id: 'saved' as const, name: t('saved'), icon: filterSavedIcon, iconSize: 'w-6 h-6' }
   ];
 
   const activeFilterData = mapFilters.find(f => f.id === activeFilter) || mapFilters[1];
   
-  // Get selected user for avatar display
   const selectedUser = selectedFollowedUserIds.length > 0 
     ? followedUsers.find(u => u.id === selectedFollowedUserIds[0])
     : null;
 
+  const filteredUsers = followedUsers.filter(u => 
+    u.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleFilterSelect = (filterId: MapFilter) => {
     setActiveFilter(filterId);
-    setIsUserDropdownOpen(false);
     setIsFilterExpanded(false);
+    
+    if (filterId === 'following') {
+      setIsFriendsDropdownOpen(true);
+    } else {
+      setIsFriendsDropdownOpen(false);
+    }
   };
 
   const handleUserSelect = (userId: string) => {
@@ -75,83 +119,107 @@ const MapFilterDropdown = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedFollowedUserIds.length === followedUsers.length) {
-      setSelectedFollowedUserIds([]);
-    } else {
-      setSelectedFollowedUserIds(followedUsers.map(u => u.id));
-    }
+    setSelectedFollowedUserIds(followedUsers.map(u => u.id));
+  };
+
+  const handleCloseFriendsDropdown = () => {
+    setIsFriendsDropdownOpen(false);
   };
 
   const handleMainButtonClick = () => {
-    if (activeFilter === 'following' && isUserDropdownOpen) {
-      // If user dropdown is open, close it and open filter selection
-      setIsUserDropdownOpen(false);
-      setIsFilterExpanded(!isFilterExpanded);
-    } else if (activeFilter === 'following') {
-      // If on friends filter but dropdown closed, open user dropdown
-      setIsUserDropdownOpen(true);
+    if (activeFilter === 'following') {
+      setIsFriendsDropdownOpen(!isFriendsDropdownOpen);
       setIsFilterExpanded(false);
     } else {
-      // For other filters, toggle the horizontal expansion
       setIsFilterExpanded(!isFilterExpanded);
+      setIsFriendsDropdownOpen(false);
     }
   };
 
   return (
     <div className="relative flex items-center">
-      {/* User selection dropdown - opens upward, only when friends filter is active */}
-      {isUserDropdownOpen && activeFilter === 'following' && (
-        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg p-2 min-w-[200px] max-h-[250px] overflow-y-auto z-50">
-          {/* Select All option */}
-          <button
-            onClick={handleSelectAll}
-            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/10 rounded-xl transition-colors"
-          >
-            <div className={cn(
-              "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-              selectedFollowedUserIds.length === followedUsers.length 
-                ? "bg-primary border-primary" 
-                : "border-muted-foreground"
-            )}>
-              {selectedFollowedUserIds.length === followedUsers.length && (
-                <div className="w-2 h-2 bg-white rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium text-foreground">{t('allFriends')}</span>
-          </button>
-          
-          <div className="h-px bg-border/30 my-1" />
-          
-          {/* Individual users */}
-          {followedUsers.map((followedUser) => (
+      {/* Friends selection dropdown - opens upward */}
+      {isFriendsDropdownOpen && activeFilter === 'following' && (
+        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg min-w-[320px] max-h-[300px] z-50">
+          {/* Header with search, All button, and close */}
+          <div className="flex items-center gap-2 p-3 border-b border-border/30">
+            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <Input
+              type="text"
+              placeholder={t('searchPlaceholder') || "Search people you follow..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 h-8 bg-transparent border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/70 text-sm"
+            />
             <button
-              key={followedUser.id}
-              onClick={() => handleUserSelect(followedUser.id)}
-              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/10 rounded-xl transition-colors"
+              onClick={handleSelectAll}
+              className="px-3 py-1 text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary rounded-full transition-colors"
             >
-              <div className={cn(
-                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                selectedFollowedUserIds.includes(followedUser.id) 
-                  ? "bg-primary border-primary" 
-                  : "border-muted-foreground"
-              )}>
-                {selectedFollowedUserIds.includes(followedUser.id) && (
-                  <div className="w-2 h-2 bg-white rounded-full" />
-                )}
-              </div>
-              <Avatar className="w-6 h-6">
-                <AvatarImage src={followedUser.avatar_url || ''} />
-                <AvatarFallback className="text-[10px]">
-                  {followedUser.username?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-foreground truncate">{followedUser.username}</span>
+              {t('all') || 'All'}
             </button>
-          ))}
+            <button
+              onClick={handleCloseFriendsDropdown}
+              className="p-1 hover:bg-background/50 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
           
-          {followedUsers.length === 0 && (
-            <p className="text-sm text-muted-foreground px-3 py-2">{t('noFriends')}</p>
-          )}
+          {/* User list */}
+          <div className="overflow-y-auto max-h-[220px] p-2">
+            {filteredUsers.map((followedUser) => {
+              const stats = userStats.get(followedUser.id);
+              const isSelected = selectedFollowedUserIds.includes(followedUser.id);
+              
+              return (
+                <button
+                  key={followedUser.id}
+                  onClick={() => handleUserSelect(followedUser.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors",
+                    isSelected ? "bg-primary/15" : "hover:bg-background/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 border-2 border-background">
+                      <AvatarImage src={followedUser.avatar_url || ''} />
+                      <AvatarFallback className="text-sm font-medium">
+                        {followedUser.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-foreground">{followedUser.username}</span>
+                  </div>
+                  
+                  {/* Stats badges */}
+                  {stats && (
+                    <div className="flex items-center gap-1.5">
+                      {stats.restaurantCount > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">
+                          🍽️ {stats.restaurantCount}
+                        </span>
+                      )}
+                      {stats.barCount > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">
+                          🍺 {stats.barCount}
+                        </span>
+                      )}
+                      {stats.cafeCount > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">
+                          ☕ {stats.cafeCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+            
+            {filteredUsers.length === 0 && (
+              <p className="text-sm text-muted-foreground px-3 py-4 text-center">
+                {searchQuery ? t('noResults') || 'No results found' : t('noFriends') || 'No friends to show'}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -191,7 +259,7 @@ const MapFilterDropdown = () => {
         {activeFilter === 'following' && !isFilterExpanded ? (
           <ChevronUp className={cn(
             "w-4 h-4 text-muted-foreground transition-transform duration-300",
-            isUserDropdownOpen && "rotate-180"
+            isFriendsDropdownOpen && "rotate-180"
           )} />
         ) : (
           <ChevronRight className={cn(
@@ -215,11 +283,13 @@ const MapFilterDropdown = () => {
               "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
             )}
           >
-            <img 
-              src={filter.icon} 
-              alt={filter.name}
-              className={cn("object-contain", filter.id === 'saved' ? 'w-4 h-4' : filter.id === 'following' ? 'w-6 h-6' : 'w-5 h-5')}
-            />
+            <div className="w-9 h-9 flex items-center justify-center">
+              <img 
+                src={filter.icon} 
+                alt={filter.name}
+                className={cn("object-contain", filter.iconSize)}
+              />
+            </div>
             <span className="text-xs font-medium text-foreground whitespace-nowrap">
               {filter.name}
             </span>
