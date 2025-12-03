@@ -19,6 +19,8 @@ interface NearbyLocation {
   name: string;
   address: string;
   city: string;
+  streetName?: string;
+  streetNumber?: string;
   distance: number;
   coordinates: { lat: number; lng: number };
   category?: string;
@@ -178,8 +180,8 @@ const SaveLocationPage = () => {
   };
 
   // Format address wrapper using shared utility
-  const formatDisplayAddress = (name: string, address: string, city: string): string => {
-    return formatSearchResultAddress({ name, address, city });
+  const formatDisplayAddress = (name: string, address: string, city: string, streetName?: string, streetNumber?: string): string => {
+    return formatSearchResultAddress({ name, address, city, streetName, streetNumber });
   };
 
   const searchLocations = async (query: string) => {
@@ -254,13 +256,15 @@ const SaveLocationPage = () => {
           name: namePart,
           address: r.address || r.displayName,
           city: r.city || '',
+          streetName: r.streetName || '',
+          streetNumber: r.streetNumber || '',
           coordinates: { lat: r.lat, lng: r.lng },
           distance,
           category: r.type || 'restaurant',
           isExisting: false,
           relevance
         };
-      }).filter((r: any) => 
+      }).filter((r: any) =>
         r.relevance >= 0.5 && 
         !existingResults.some(existing => 
           Math.abs(existing.coordinates.lat - r.coordinates.lat) < 0.001 && 
@@ -437,7 +441,7 @@ const SaveLocationPage = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{result.name}</p>
                           <p className="text-sm text-muted-foreground truncate">
-                            {formatDisplayAddress(result.name, result.address, result.city)}
+                            {formatDisplayAddress(result.name, result.address, result.city, result.streetName, result.streetNumber)}
                           </p>
                         </div>
                       </div>
@@ -477,7 +481,7 @@ const SaveLocationPage = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{loc.name}</p>
                           <p className="text-sm text-muted-foreground truncate">
-                            {formatDisplayAddress(loc.name, loc.address, loc.city)}
+                            {formatDisplayAddress(loc.name, loc.address, loc.city, loc.streetName, loc.streetNumber)}
                           </p>
                         </div>
                       </div>
