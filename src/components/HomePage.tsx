@@ -12,7 +12,6 @@ import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
 import { Geolocation } from "@capacitor/geolocation";
-import type { PhotonResult } from '@/lib/photonGeocoding';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -379,22 +378,19 @@ const HomePage = memo(() => {
   };
 
   // Handle location selection from unified search (city search bar)
-  const handleLocationSelect = (location: PhotonResult) => {
+  const handleLocationSelect = (location: { id: string; name: string; city: string; address: string; lat: number; lng: number; category: string }) => {
     console.log('📍 Location selected from search:', location.name);
     
-    // Create a temporary place object from the Photon result
+    // Create a temporary place object from the location result
     const placeToShow: Place = {
-      id: `photon-${location.lat}-${location.lng}`,
+      id: location.id,
       name: location.name,
-      category: location.category,
+      category: location.category as any,
       coordinates: { lat: location.lat, lng: location.lng },
-      address: location.displayAddress || '',
+      address: location.address || '',
       city: location.city,
-      streetName: location.streetName,
-      streetNumber: location.streetNumber,
       isFollowing: false,
-      isNew: true,
-      isTemporary: true, // Mark as temporary until saved
+      isNew: false,
       likes: 0,
       visitors: []
     };
@@ -604,7 +600,6 @@ const HomePage = memo(() => {
             onSearchKeyPress={() => {}}
             onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
             onCitySelect={handleCityChange}
-            onLocationSelect={handleLocationSelect}
             onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
           />
         )}
