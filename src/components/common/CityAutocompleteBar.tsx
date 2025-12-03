@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, MapPin, Loader2, Locate, Building2, UtensilsCrossed } from 'lucide-react';
+import { Search, MapPin, Loader2, Locate, Building2, UtensilsCrossed, TrendingUp } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton, PhotonResult } from '@/lib/photonGeocoding';
 import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useTopCities } from '@/hooks/useTopCities';
+import CityExplorationPanel from '@/components/search/CityExplorationPanel';
 
 interface CityAutocompleteBarProps {
   searchQuery: string;
@@ -40,10 +42,13 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
+  const { topCities, loading: topCitiesLoading } = useTopCities();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [showTopCities, setShowTopCities] = useState(false);
+  const [explorationCity, setExplorationCity] = useState<{ name: string; coords: { lat: number; lng: number } } | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
   const latestQueryRef = useRef<string>('');
   const selectionRef = useRef<boolean>(false);
@@ -157,7 +162,11 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     }
     
     setShowResults(false);
+    setShowTopCities(false);
     setResults([]);
+    
+    // Open city exploration panel
+    setExplorationCity({ name: result.name, coords: { lat: result.lat, lng: result.lng } });
     
     onCitySelect(result.name, { lat: result.lat, lng: result.lng });
     onSearchChange('');
@@ -167,6 +176,26 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     setTimeout(() => {
       selectionRef.current = false;
     }, 300);
+  };
+
+  const handleTopCitySelect = (cityName: string) => {
+    // Search for city coordinates
+    nominatimGeocoding.searchPlace(cityName, i18n.language).then((results) => {
+      if (results.length > 0) {
+        const city = results[0];
+        setExplorationCity({ name: cityName, coords: { lat: city.lat, lng: city.lng } });
+        onCitySelect(cityName, { lat: city.lat, lng: city.lng });
+      }
+    });
+    setShowTopCities(false);
+    onSearchChange('');
+  };
+
+  const handleExplorationLocationSelect = (location: PhotonResult) => {
+    setExplorationCity(null);
+    if (onLocationSelect) {
+      onLocationSelect(location);
+    }
   };
 
   const handleSelectLocation = (result: LocationResult) => {
@@ -252,10 +281,14 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           onKeyPress={onSearchKeyPress}
           onFocus={() => {
             onFocusOpen?.();
+            if (!searchQuery) {
+              setShowTopCities(true);
+            }
           }}
           onBlur={() => {
             setTimeout(() => {
               setShowResults(false);
+              setShowTopCities(false);
               setResults([]);
             }, 200);
           }}
@@ -270,6 +303,27 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           <Locate className="w-4 h-4 text-primary" />
         </button>
       </div>
+
+      {/* Top cities dropdown (when focused, no query) */}
+      {showTopCities && !searchQuery && topCities.length > 0 && (
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-xl shadow-lg overflow-hidden">
+          <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50 flex items-center gap-2">
+            <TrendingUp className="w-3 h-3" />
+            {t('topCities', { ns: 'common', defaultValue: 'Top Cities' })}
+          </div>
+          {topCities.map((city, idx) => (
+            <button
+              key={`top-${idx}`}
+              onClick={() => handleTopCitySelect(city.city)}
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors text-left border-b border-border/50 last:border-0"
+            >
+              <MapPin className="w-4 h-4 flex-shrink-0 text-primary" />
+              <span className="font-medium text-foreground flex-1">{city.city}</span>
+              <span className="text-xs text-muted-foreground">{city.count} {t('pins', { ns: 'common', defaultValue: 'pins' })}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
@@ -332,6 +386,17 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* City Exploration Panel */}
+      {explorationCity && (
+        <CityExplorationPanel
+          city={explorationCity.name}
+          cityCoords={explorationCity.coords}
+          isOpen={!!explorationCity}
+          onClose={() => setExplorationCity(null)}
+          onLocationSelect={handleExplorationLocationSelect}
+        />
       )}
     </div>
   );
