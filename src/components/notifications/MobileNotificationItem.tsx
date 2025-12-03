@@ -869,7 +869,15 @@ const MobileNotificationItem = ({
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {notification.type === 'location_share' ? (
                   <Button
-                    onClick={handleOnMyWayClick}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleOnMyWayClick(e);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                     disabled={isLoading || !isLocationShareActive}
                     size="sm"
                     variant="default"

@@ -332,12 +332,12 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Controls - List View and Expand Toggle - Inside map - Hide when list is open or dropdowns are open */}
-        {!isListViewOpen && !isFriendsDropdownOpen && !isFilterExpanded && (
+        {/* Map Controls - List View and Expand Toggle - Inside map - Always render but hide when dropdowns open */}
+        {!isListViewOpen && (
         <div className={cn(
-          "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-opacity duration-300",
+          "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-all duration-150",
           isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
-          filtersVisible ? "opacity-100" : "opacity-0"
+          filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
         )} data-has-sharing={false}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
