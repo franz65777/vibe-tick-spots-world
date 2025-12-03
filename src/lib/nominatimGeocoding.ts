@@ -15,14 +15,18 @@ interface NominatimResult {
     city?: string;
     town?: string;
     village?: string;
+    suburb?: string;
+    neighbourhood?: string;
     state?: string;
     country?: string;
     road?: string;
+    street?: string;
+    pedestrian?: string;
     house_number?: string;
   };
 }
 
-interface GeocodeResult {
+export interface GeocodeResult {
   lat: number;
   lng: number;
   city: string;
@@ -30,6 +34,9 @@ interface GeocodeResult {
   displayName: string;
   type?: string;
   class?: string;
+  // Structured address components for accurate display
+  streetName?: string;
+  streetNumber?: string;
 }
 
 class NominatimGeocoding {
@@ -100,15 +107,24 @@ class NominatimGeocoding {
 
       const results: NominatimResult[] = await response.json();
 
-      let geocodeResults = results.map(result => ({
-        lat: parseFloat(result.lat),
-        lng: parseFloat(result.lon),
-        city: result.address.city || result.address.town || result.address.village || '',
-        address: result.display_name,
-        displayName: result.display_name,
-        type: result.type,
-        class: result.class,
-      }));
+      let geocodeResults = results.map(result => {
+        // Extract structured address components
+        const streetName = result.address.road || result.address.street || result.address.pedestrian || '';
+        const streetNumber = result.address.house_number || '';
+        const city = result.address.city || result.address.town || result.address.village || '';
+        
+        return {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon),
+          city,
+          address: result.display_name,
+          displayName: result.display_name,
+          type: result.type,
+          class: result.class,
+          streetName,
+          streetNumber,
+        };
+      });
 
       // Sort by distance if user location provided
       if (userLocation) {

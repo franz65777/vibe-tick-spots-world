@@ -19,6 +19,8 @@ interface NearbyLocation {
   name: string;
   address: string;
   city?: string;
+  streetName?: string;
+  streetNumber?: string;
   distance: number;
   coordinates: { lat: number; lng: number };
   category?: string;
@@ -344,6 +346,8 @@ const ShareLocationPage = () => {
           name: namePart,
           address: r.address || r.displayName,
           city: r.city || '',
+          streetName: r.streetName || '',
+          streetNumber: r.streetNumber || '',
           lat: r.lat,
           lng: r.lng,
           isExisting: false,
@@ -515,8 +519,8 @@ const ShareLocationPage = () => {
   };
 
   // Format address wrapper using shared utility
-  const formatDisplayAddress = (name: string, address: string, city?: string): string => {
-    return formatSearchResultAddress({ name, address, city });
+  const formatDisplayAddress = (name: string, address: string, city?: string, streetName?: string, streetNumber?: string): string => {
+    return formatSearchResultAddress({ name, address, city, streetName, streetNumber });
   };
 
   const toggleUserSelection = (userId: string) => {
@@ -606,7 +610,7 @@ const ShareLocationPage = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{result.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(result.name, result.address, result.city)}</p>
+                        <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(result.name, result.address, result.city, result.streetName, result.streetNumber)}</p>
                       </div>
                     </div>
                     {result.distance !== undefined && result.distance !== Infinity && (
@@ -644,7 +648,7 @@ const ShareLocationPage = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{loc.name}</p>
-                          <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(loc.name, loc.address, loc.city)}</p>
+                          <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(loc.name, loc.address, loc.city, loc.streetName, loc.streetNumber)}</p>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>

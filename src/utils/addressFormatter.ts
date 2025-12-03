@@ -81,16 +81,36 @@ export const formatDetailedAddress = async (params: {
  * Formats address for display in search results and location lists.
  * Returns ONLY: City, Street Name, Number - nothing else.
  * Filters out country, county, postal codes, eircodes, etc.
+ * 
+ * Accepts structured address components (preferred) or falls back to parsing display string.
  */
 export const formatSearchResultAddress = (params: {
   name: string;
   address: string;
   city?: string;
+  streetName?: string;
+  streetNumber?: string;
 }): string => {
-  const { name, address, city } = params;
+  const { name, address, city, streetName, streetNumber } = params;
   
-  if (!address && !city) return '';
+  if (!address && !city && !streetName) return '';
   
+  // If we have structured address components, use them directly (most accurate)
+  if (streetName || city) {
+    const result: string[] = [];
+    
+    if (city) result.push(city);
+    
+    if (streetName && streetNumber) {
+      result.push(`${streetName}, ${streetNumber}`);
+    } else if (streetName) {
+      result.push(streetName);
+    }
+    
+    return result.join(', ');
+  }
+  
+  // Fallback: Parse from display_name string
   // Clean address - remove the name if it appears at the beginning
   let cleanAddress = address || '';
   const normalizedName = name.toLowerCase().trim();
@@ -123,8 +143,8 @@ export const formatSearchResultAddress = (params: {
   
   // Find city (from parameter or from parts)
   let foundCity = city || '';
-  let streetName = '';
-  let streetNumber = '';
+  let parsedStreetName = '';
+  let parsedStreetNumber = '';
   
   for (const part of parts) {
     const trimmed = part.trim();
@@ -148,29 +168,29 @@ export const formatSearchResultAddress = (params: {
     if (numberMatch) {
       // This is a street with number
       if (/^\d/.test(numberMatch[1])) {
-        streetNumber = numberMatch[1];
-        streetName = numberMatch[2];
+        parsedStreetNumber = numberMatch[1];
+        parsedStreetName = numberMatch[2];
       } else {
-        streetName = numberMatch[1];
-        streetNumber = numberMatch[2];
+        parsedStreetName = numberMatch[1];
+        parsedStreetNumber = numberMatch[2];
       }
-    } else if (/\d+/.test(trimmed) && !streetNumber) {
+    } else if (/\d+/.test(trimmed) && !parsedStreetNumber) {
       // Has a number somewhere - could be street number
       const numOnly = trimmed.match(/\d+[-–]?\d*/);
       if (numOnly) {
-        streetNumber = numOnly[0];
-        streetName = trimmed.replace(numOnly[0], '').trim();
+        parsedStreetNumber = numOnly[0];
+        parsedStreetName = trimmed.replace(numOnly[0], '').trim();
       }
-    } else if (!foundCity && !streetName) {
+    } else if (!foundCity && !parsedStreetName) {
       // First non-number part without city could be city or street
       // If it looks like a street name (contains "street", "road", "avenue", etc.)
       if (/\b(street|road|avenue|lane|way|drive|place|square|terrace|close|court|gardens|park|row|hill|view|grove|crescent|parade|via|piazza|corso|viale|strada)\b/i.test(trimmed)) {
-        streetName = trimmed;
+        parsedStreetName = trimmed;
       } else if (!foundCity) {
         foundCity = trimmed;
       }
-    } else if (!streetName) {
-      streetName = trimmed;
+    } else if (!parsedStreetName) {
+      parsedStreetName = trimmed;
     }
   }
   
@@ -179,12 +199,12 @@ export const formatSearchResultAddress = (params: {
   
   if (foundCity) result.push(foundCity);
   
-  if (streetName && streetNumber) {
-    result.push(`${streetName}, ${streetNumber}`);
-  } else if (streetName) {
-    result.push(streetName);
-  } else if (streetNumber) {
-    result.push(streetNumber);
+  if (parsedStreetName && parsedStreetNumber) {
+    result.push(`${parsedStreetName}, ${parsedStreetNumber}`);
+  } else if (parsedStreetName) {
+    result.push(parsedStreetName);
+  } else if (parsedStreetNumber) {
+    result.push(parsedStreetNumber);
   }
   
   return result.join(', ');
