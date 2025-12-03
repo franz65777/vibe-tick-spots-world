@@ -92,6 +92,21 @@ const SignupPassword: React.FC = () => {
         } catch {}
 
         toast.error(msg);
+        
+        // Session expired or invalid - clear and restart signup
+        if (/sessione|session/i.test(msg)) {
+          sessionStorage.removeItem('signup_session');
+          sessionStorage.removeItem('signup_fullname');
+          sessionStorage.removeItem('signup_username');
+          sessionStorage.removeItem('signup_dob');
+          sessionStorage.removeItem('signup_gender');
+          sessionStorage.removeItem('signup_method');
+          sessionStorage.removeItem('signup_contact');
+          sessionStorage.removeItem('signup_password');
+          navigate('/signup/start');
+          return;
+        }
+        
         if (/telefono|phone/i.test(msg)) {
           sessionStorage.setItem('signup_nav_back', 'true');
           navigate('/signup/start');
