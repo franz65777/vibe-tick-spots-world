@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
-import { Trophy } from 'lucide-react';
+import leaderboardTrophy from '@/assets/leaderboard-trophy.png';
 interface Champion {
   id: string;
   username: string;
@@ -35,7 +35,7 @@ const CommunityChampions = ({
       variant="outline"
       className="w-full rounded-xl border-border bg-background hover:bg-muted/50 h-12 font-semibold text-base"
     >
-      <Trophy className="w-5 h-5 mr-2" />
+      <img src={leaderboardTrophy} alt="" className="w-6 h-6 mr-2" />
       {t('leaderboard', { ns: 'common' })}
     </Button>
   );

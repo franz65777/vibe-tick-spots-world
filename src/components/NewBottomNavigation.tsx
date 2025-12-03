@@ -64,8 +64,8 @@ const NewBottomNavigation = () => {
     };
   }, [user?.id, refetchProfile]);
 
-  // Hide navigation on messages, notifications, and share-location pages, or when overlays are open
-  if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications' || location.pathname === '/share-location') {
+  // Hide navigation on messages, notifications, share-location, and leaderboard pages, or when overlays are open
+  if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications' || location.pathname === '/share-location' || location.pathname === '/leaderboard') {
     return null;
   }
 

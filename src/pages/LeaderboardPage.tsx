@@ -40,9 +40,9 @@ const LeaderboardPage = () => {
         filter={filter}
       />
 
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background pb-safe">
         {/* Minimal Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border py-4">
+        <div className="sticky top-0 z-10 bg-background border-b border-border py-4 pt-safe">
           <div className="px-4">
             <div className="flex items-center gap-3 mb-4">
               <Button

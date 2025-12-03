@@ -25,12 +25,13 @@ const CommunityChampions = lazy(() => import('./home/CommunityChampions'));
 
 // Small component to render mutual followers line for recent items
 const RecentMutualFollowers = ({ userId }: { userId: string }) => {
+  const { t } = useTranslation();
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   if (mutualFollowers.length === 0) return null;
   return (
     <p className="text-xs text-muted-foreground truncate mt-0.5">
-      Seguito da {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
-      {totalCount > 2 && ` + ${totalCount - 2} altri`}
+      {t('userProfile.followedBy', { ns: 'common' })} {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
+      {totalCount > 2 && ` ${t('userProfile.andOthers', { ns: 'common', count: totalCount - 2 })}`}
     </p>
   );
 };
