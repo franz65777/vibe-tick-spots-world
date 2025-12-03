@@ -76,3 +76,116 @@ export const formatDetailedAddress = async (params: {
   
   return 'Indirizzo non disponibile';
 };
+
+/**
+ * Formats address for display in search results and location lists.
+ * Returns ONLY: City, Street Name, Number - nothing else.
+ * Filters out country, county, postal codes, eircodes, etc.
+ */
+export const formatSearchResultAddress = (params: {
+  name: string;
+  address: string;
+  city?: string;
+}): string => {
+  const { name, address, city } = params;
+  
+  if (!address && !city) return '';
+  
+  // Clean address - remove the name if it appears at the beginning
+  let cleanAddress = address || '';
+  const normalizedName = name.toLowerCase().trim();
+  
+  if (cleanAddress.toLowerCase().startsWith(normalizedName)) {
+    cleanAddress = cleanAddress.substring(name.length).replace(/^[,\s]+/, '');
+  }
+  
+  // Split into parts
+  const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
+  
+  // Patterns to EXCLUDE (country, county, postal codes, etc.)
+  const excludePatterns = [
+    /^ireland$/i,
+    /^éire$/i,
+    /^italia$/i,
+    /^italy$/i,
+    /^uk$/i,
+    /^united kingdom$/i,
+    /^germany$/i,
+    /^france$/i,
+    /^spain$/i,
+    /county\s/i,
+    /^co\.\s/i,
+    /^\d{2,}\s*[A-Z]{0,2}\d*$/i, // Postal codes like "D04", "12345", "D04 ABC"
+    /^[A-Z]\d{2}\s/i, // Eircodes like "D04 ..."
+    /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i, // UK postcodes
+    /^\d{5}(-\d{4})?$/i, // US zip codes
+  ];
+  
+  // Find city (from parameter or from parts)
+  let foundCity = city || '';
+  let streetName = '';
+  let streetNumber = '';
+  
+  for (const part of parts) {
+    const trimmed = part.trim();
+    
+    // Skip excluded patterns
+    if (excludePatterns.some(pattern => pattern.test(trimmed))) continue;
+    
+    // Skip if it matches the name
+    if (trimmed.toLowerCase() === normalizedName) continue;
+    
+    // Skip if it matches the city we already have
+    if (foundCity && trimmed.toLowerCase() === foundCity.toLowerCase()) continue;
+    
+    // Skip very short parts (likely abbreviations or codes)
+    if (trimmed.length < 3) continue;
+    
+    // Check if this part has a street number pattern
+    const numberMatch = trimmed.match(/^(\d+[-–]?\d*)\s+(.+)$/) || // "21-25 Harcourt Street"
+                        trimmed.match(/^(.+?)\s+(\d+[-–]?\d*)$/);    // "Harcourt Street 21-25"
+    
+    if (numberMatch) {
+      // This is a street with number
+      if (/^\d/.test(numberMatch[1])) {
+        streetNumber = numberMatch[1];
+        streetName = numberMatch[2];
+      } else {
+        streetName = numberMatch[1];
+        streetNumber = numberMatch[2];
+      }
+    } else if (/\d+/.test(trimmed) && !streetNumber) {
+      // Has a number somewhere - could be street number
+      const numOnly = trimmed.match(/\d+[-–]?\d*/);
+      if (numOnly) {
+        streetNumber = numOnly[0];
+        streetName = trimmed.replace(numOnly[0], '').trim();
+      }
+    } else if (!foundCity && !streetName) {
+      // First non-number part without city could be city or street
+      // If it looks like a street name (contains "street", "road", "avenue", etc.)
+      if (/\b(street|road|avenue|lane|way|drive|place|square|terrace|close|court|gardens|park|row|hill|view|grove|crescent|parade|via|piazza|corso|viale|strada)\b/i.test(trimmed)) {
+        streetName = trimmed;
+      } else if (!foundCity) {
+        foundCity = trimmed;
+      }
+    } else if (!streetName) {
+      streetName = trimmed;
+    }
+  }
+  
+  // Build result: City, Street Name, Number
+  const result: string[] = [];
+  
+  if (foundCity) result.push(foundCity);
+  
+  if (streetName && streetNumber) {
+    result.push(`${streetName}, ${streetNumber}`);
+  } else if (streetName) {
+    result.push(streetName);
+  } else if (streetNumber) {
+    result.push(streetNumber);
+  }
+  
+  return result.join(', ');
+};

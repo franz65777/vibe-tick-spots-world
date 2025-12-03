@@ -12,11 +12,13 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { mapGooglePlaceTypeToCategory, isAllowedCategory, isAllowedNominatimType } from '@/utils/allowedCategories';
+import { formatSearchResultAddress } from '@/utils/addressFormatter';
 
 interface NearbyLocation {
   id: string;
   name: string;
   address: string;
+  city?: string;
   distance: number;
   coordinates: { lat: number; lng: number };
   category?: string;
@@ -95,7 +97,8 @@ const ShareLocationPage = () => {
         return {
           id: loc.id,
           name: loc.name,
-          address: loc.address || loc.city || '',
+          address: loc.address || '',
+          city: loc.city || '',
           distance,
           coordinates: { lat, lng },
           category: loc.category
@@ -303,7 +306,8 @@ const ShareLocationPage = () => {
         return {
           id: loc.id,
           name: loc.name,
-          address: loc.address || loc.city || '',
+          address: loc.address || '',
+          city: loc.city || '',
           lat: hasCoords ? latRaw : 0,
           lng: hasCoords ? lngRaw : 0,
           distance,
@@ -333,16 +337,20 @@ const ShareLocationPage = () => {
           : Infinity;
         const relevance = calculateRelevanceScore(query, r.displayName, r.address, distance);
         
+        // Extract name (first part before comma)
+        const namePart = r.displayName.split(',')[0].trim();
+        
         return {
-          name: r.displayName,
-          address: r.address,
+          name: namePart,
+          address: r.address || r.displayName,
+          city: r.city || '',
           lat: r.lat,
           lng: r.lng,
           isExisting: false,
           distance,
           relevance
         };
-      }).filter(r => 
+      }).filter(r =>
         r.relevance >= 0.5 && // Same threshold to hide irrelevant
         !existingResults.some(existing => 
           Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
@@ -506,49 +514,9 @@ const ShareLocationPage = () => {
     }
   };
 
-  // Format address to avoid repetition: Row 1 = Name, Row 2 = city, street, number
-  const formatDisplayAddress = (name: string, address: string): string => {
-    if (!address) return '';
-    
-    // Remove the name from the address if it appears at the beginning
-    let cleanAddress = address;
-    const normalizedName = name.toLowerCase().trim();
-    const normalizedAddress = cleanAddress.toLowerCase().trim();
-    
-    // Remove name if it starts the address
-    if (normalizedAddress.startsWith(normalizedName)) {
-      cleanAddress = cleanAddress.substring(name.length).replace(/^[,\s]+/, '');
-    }
-    
-    // Parse address components
-    const parts = cleanAddress.split(',').map(p => p.trim()).filter(Boolean);
-    
-    // Try to identify city (usually longer text without numbers at start)
-    // and street+number (usually has numbers)
-    const cityParts: string[] = [];
-    const streetParts: string[] = [];
-    
-    for (const part of parts) {
-      // Skip if it's just a country or postal code
-      if (/^\d{4,}/.test(part) || part.length < 3) continue;
-      // Skip if it matches the name
-      if (part.toLowerCase() === normalizedName) continue;
-      
-      // If has house number pattern, it's likely street
-      if (/\d+[-–]?\d*$/.test(part) || /^\d+/.test(part)) {
-        streetParts.push(part);
-      } else {
-        cityParts.push(part);
-      }
-    }
-    
-    // Build result: city first, then street with number
-    const result: string[] = [];
-    if (cityParts.length > 0) result.push(cityParts[0]);
-    if (streetParts.length > 0) result.push(streetParts[0]);
-    else if (cityParts.length > 1) result.push(cityParts[1]);
-    
-    return result.join(', ') || parts.slice(0, 2).join(', ');
+  // Format address wrapper using shared utility
+  const formatDisplayAddress = (name: string, address: string, city?: string): string => {
+    return formatSearchResultAddress({ name, address, city });
   };
 
   const toggleUserSelection = (userId: string) => {
@@ -638,7 +606,7 @@ const ShareLocationPage = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{result.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(result.name, result.address)}</p>
+                        <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(result.name, result.address, result.city)}</p>
                       </div>
                     </div>
                     {result.distance !== undefined && result.distance !== Infinity && (
@@ -676,7 +644,7 @@ const ShareLocationPage = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{loc.name}</p>
-                          <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(loc.name, loc.address)}</p>
+                          <p className="text-sm text-muted-foreground truncate">{formatDisplayAddress(loc.name, loc.address, loc.city)}</p>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>
