@@ -215,21 +215,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
   // Calculate available categories based on selected users
   const availableCategories = useMemo(() => {
-    if (activeFilter !== 'following' || selectedFollowedUserIds.length === 0) {
-      return categoryConfig.map(c => c.id);
-    }
-
-    const categoriesSet = new Set<string>();
-    selectedUsers.forEach(user => {
-      if (user.categoryCounts) {
-        Object.keys(user.categoryCounts).forEach(cat => {
-          categoriesSet.add(cat);
-        });
-      }
-    });
-
-    return Array.from(categoriesSet);
-  }, [activeFilter, selectedFollowedUserIds, selectedUsers]);
+    // Always show all categories - filtering happens at the map/pin level
+    return categoryConfig.map(c => c.id);
+  }, []);
 
   return (
     <div className="w-full max-w-full z-[1100] pointer-events-none">
