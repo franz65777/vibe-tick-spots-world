@@ -542,11 +542,10 @@ const SaveLocationPage = () => {
         <div className="sticky top-0 z-50 bg-background pt-safe">
           <div className="flex items-center gap-3 p-4">
             <Button variant="ghost" size="icon" onClick={() => {
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
-                navigate('/');
-              }
+              // Clear any search state and navigate home
+              sessionStorage.removeItem('saveLocationSearchQuery');
+              sessionStorage.removeItem('saveLocationShouldRestoreSearch');
+              navigate('/');
             }}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
