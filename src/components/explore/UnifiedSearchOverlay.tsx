@@ -3,7 +3,7 @@ import { Loader2, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
-import { translateCityName } from '@/utils/cityTranslations';
+import { translateCityName, reverseTranslateCityName } from '@/utils/cityTranslations';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { AllowedCategory } from '@/utils/allowedCategories';
@@ -135,6 +135,9 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
       return;
     }
 
+    // Normalize query to English for cross-language matching
+    const queryEnglish = reverseTranslateCityName(queryLower).toLowerCase();
+
     setLoading(true);
     try {
       // Search saved locations from database - search both name AND city
@@ -170,31 +173,39 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         });
       }
 
-      // Extract unique cities from locations that match query
+      // Extract unique cities - normalize to English to merge duplicates like Milano/Milan
       const citiesFromLocations = new Map<string, CityResult>();
       (locations || []).forEach(loc => {
-        if (loc.city && loc.city.toLowerCase().includes(queryLower) && loc.latitude && loc.longitude) {
-          const cityKey = loc.city.toLowerCase();
-          if (!citiesFromLocations.has(cityKey)) {
-            citiesFromLocations.set(cityKey, {
-              name: loc.city,
-              lat: loc.latitude,
-              lng: loc.longitude,
-            });
+        if (loc.city && loc.latitude && loc.longitude) {
+          const cityLower = loc.city.toLowerCase();
+          const cityEnglish = reverseTranslateCityName(cityLower).toLowerCase();
+          
+          // Match if query matches city name OR English normalized name
+          if (cityLower.includes(queryLower) || cityEnglish.includes(queryLower) || cityEnglish.includes(queryEnglish)) {
+            // Use English name as key to merge translations
+            if (!citiesFromLocations.has(cityEnglish)) {
+              citiesFromLocations.set(cityEnglish, {
+                name: cityEnglish, // Store English name, will translate on display
+                lat: loc.latitude,
+                lng: loc.longitude,
+              });
+            }
           }
         }
       });
 
-      // Also check popular cities that match the query
-      const matchingPopularCities = popularCities.filter(city => 
-        city.name.toLowerCase().includes(queryLower)
-      );
+      // Also check popular cities - match against both original and English query
+      const matchingPopularCities = popularCities.filter(city => {
+        const cityLower = city.name.toLowerCase();
+        return cityLower.includes(queryLower) || cityLower.includes(queryEnglish);
+      });
 
-      // Combine unique cities
+      // Combine unique cities (using English names as keys)
       const allCities = [...citiesFromLocations.values()];
       matchingPopularCities.forEach(pc => {
-        if (!citiesFromLocations.has(pc.name.toLowerCase())) {
-          allCities.push(pc);
+        const pcEnglish = reverseTranslateCityName(pc.name).toLowerCase();
+        if (!citiesFromLocations.has(pcEnglish)) {
+          allCities.push({ ...pc, name: pcEnglish });
         }
       });
 
@@ -304,14 +315,18 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
               {t('cities', { ns: 'common', defaultValue: 'Cities' })}
             </div>
             <div className="flex flex-wrap gap-2">
-              {Array.from(new Map(cityResults.map(r => [r.name.split(',')[0].trim().toLowerCase(), r])).values()).map((city, index) => (
-                <CityEngagementCard
-                  key={index}
-                  cityName={city.name.split(',')[0].trim()}
-                  coords={{ lat: city.lat, lng: city.lng }}
-                  onClick={() => handleCitySelect(city)}
-                />
-              ))}
+              {cityResults.map((city, index) => {
+                // Translate city name to user's language for display
+                const displayName = translateCityName(city.name, i18n.language);
+                return (
+                  <CityEngagementCard
+                    key={index}
+                    cityName={displayName}
+                    coords={{ lat: city.lat, lng: city.lng }}
+                    onClick={() => handleCitySelect({ ...city, name: displayName })}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
