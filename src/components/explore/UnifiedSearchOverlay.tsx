@@ -174,11 +174,35 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         });
       }
 
-      // Extract unique cities - normalize to English to merge duplicates like Milano/Milan
+      // Known suburbs/neighborhoods that should NOT appear as cities (map to parent city)
+      const suburbToCity: Record<string, string> = {
+        'blackrock': 'dublin', 'dun laoghaire': 'dublin', 'dalkey': 'dublin', 'killiney': 'dublin',
+        'rathmines': 'dublin', 'ranelagh': 'dublin', 'ballsbridge': 'dublin', 'sandymount': 'dublin',
+        'clontarf': 'dublin', 'howth': 'dublin', 'malahide': 'dublin', 'swords': 'dublin',
+        'tallaght': 'dublin', 'dundrum': 'dublin', 'stillorgan': 'dublin', 'foxrock': 'dublin',
+        'bray': 'dublin', 'greystones': 'dublin', 'lucan': 'dublin', 'blanchardstown': 'dublin',
+        'brooklyn': 'new york', 'manhattan': 'new york', 'queens': 'new york', 'bronx': 'new york',
+        'staten island': 'new york', 'harlem': 'new york', 'soho': 'new york', 'tribeca': 'new york',
+        'camden': 'london', 'westminster': 'london', 'kensington': 'london', 'chelsea': 'london',
+        'hackney': 'london', 'brixton': 'london', 'shoreditch': 'london', 'notting hill': 'london',
+        'montmartre': 'paris', 'le marais': 'paris', 'belleville': 'paris', 'bastille': 'paris',
+        'trastevere': 'rome', 'testaccio': 'rome', 'prati': 'rome', 'monti': 'rome',
+        'shibuya': 'tokyo', 'shinjuku': 'tokyo', 'roppongi': 'tokyo', 'ginza': 'tokyo',
+        'el born': 'barcelona', 'gracia': 'barcelona', 'barceloneta': 'barcelona',
+        'jordaan': 'amsterdam', 'de pijp': 'amsterdam',
+      };
+
+      // Extract unique cities - normalize to English and filter out suburbs
       const citiesFromLocations = new Map<string, CityResult>();
       (locations || []).forEach(loc => {
         if (loc.city && loc.latitude && loc.longitude) {
-          const cityLower = loc.city.toLowerCase();
+          let cityLower = loc.city.toLowerCase().trim();
+          
+          // Check if it's a suburb and map to parent city
+          if (suburbToCity[cityLower]) {
+            cityLower = suburbToCity[cityLower];
+          }
+          
           const cityEnglish = reverseTranslateCityName(cityLower).toLowerCase();
           
           // Match if query matches city name OR English normalized name
@@ -215,23 +239,18 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         const userLoc = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : undefined;
         const nominatimResults = await nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc);
         
-        // Extract cities from Nominatim results
+        // Extract cities from Nominatim results - ONLY actual cities, not suburbs/neighborhoods
         const nominatimCities = new Map<string, CityResult>();
         nominatimResults.forEach(result => {
-          if (result.city) {
-            const cityEnglish = reverseTranslateCityName(result.city).toLowerCase();
-            if (!nominatimCities.has(cityEnglish) && !citiesFromLocations.has(cityEnglish)) {
-              nominatimCities.set(cityEnglish, {
-                name: cityEnglish,
-                lat: result.lat,
-                lng: result.lng,
-              });
-            }
-          }
-          // Check if the result itself is a city (class: place, type: city/town/village)
-          if (result.class === 'place' && ['city', 'town', 'village'].includes(result.type || '')) {
+          // Only accept results that are explicitly cities/towns (class: place, type: city/town)
+          // Skip villages, suburbs, neighborhoods, etc.
+          if (result.class === 'place' && ['city', 'town'].includes(result.type || '')) {
             const cityName = result.name || result.displayName.split(',')[0];
-            const cityEnglish = reverseTranslateCityName(cityName).toLowerCase();
+            let cityEnglish = reverseTranslateCityName(cityName).toLowerCase();
+            
+            // Skip if it's a known suburb
+            if (suburbToCity[cityEnglish]) return;
+            
             if (!nominatimCities.has(cityEnglish) && !citiesFromLocations.has(cityEnglish)) {
               nominatimCities.set(cityEnglish, {
                 name: cityEnglish,
