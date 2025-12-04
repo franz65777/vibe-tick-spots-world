@@ -7,6 +7,7 @@ import { translateCityName, reverseTranslateCityName } from '@/utils/cityTransla
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { AllowedCategory } from '@/utils/allowedCategories';
+import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import noResultsIcon from '@/assets/no-results-pin.png';
 
 interface UnifiedSearchOverlayProps {
@@ -209,6 +210,66 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         }
       });
 
+      // If no results from database/popular, search Nominatim for cities and locations
+      if (allCities.length === 0 || mappedLocations.length < 3) {
+        const userLoc = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : undefined;
+        const nominatimResults = await nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc);
+        
+        // Extract cities from Nominatim results
+        const nominatimCities = new Map<string, CityResult>();
+        nominatimResults.forEach(result => {
+          if (result.city) {
+            const cityEnglish = reverseTranslateCityName(result.city).toLowerCase();
+            if (!nominatimCities.has(cityEnglish) && !citiesFromLocations.has(cityEnglish)) {
+              nominatimCities.set(cityEnglish, {
+                name: cityEnglish,
+                lat: result.lat,
+                lng: result.lng,
+              });
+            }
+          }
+          // Check if the result itself is a city (class: place, type: city/town/village)
+          if (result.class === 'place' && ['city', 'town', 'village'].includes(result.type || '')) {
+            const cityName = result.name || result.displayName.split(',')[0];
+            const cityEnglish = reverseTranslateCityName(cityName).toLowerCase();
+            if (!nominatimCities.has(cityEnglish) && !citiesFromLocations.has(cityEnglish)) {
+              nominatimCities.set(cityEnglish, {
+                name: cityEnglish,
+                lat: result.lat,
+                lng: result.lng,
+              });
+            }
+          }
+        });
+        
+        // Add Nominatim cities to results
+        nominatimCities.forEach(city => allCities.push(city));
+        
+        // Extract locations (POIs) from Nominatim - filter to relevant types
+        const allowedOsmTypes = ['restaurant', 'cafe', 'bar', 'pub', 'bakery', 'hotel', 'museum', 'nightclub', 'cinema', 'theatre', 'park'];
+        const nominatimLocations: LocationResult[] = nominatimResults
+          .filter(r => r.type && allowedOsmTypes.includes(r.type))
+          .map((result, idx) => ({
+            id: `nominatim-${idx}`,
+            name: result.name || result.displayName.split(',')[0],
+            city: result.city,
+            address: result.streetName ? `${result.city}, ${result.streetName}${result.streetNumber ? ' ' + result.streetNumber : ''}` : result.city,
+            lat: result.lat,
+            lng: result.lng,
+            category: mapOsmTypeToCategory(result.type),
+          }));
+        
+        // Merge with database locations, avoiding duplicates
+        const existingCoords = new Set(mappedLocations.map(l => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
+        nominatimLocations.forEach(loc => {
+          const coordKey = `${loc.lat.toFixed(4)},${loc.lng.toFixed(4)}`;
+          if (!existingCoords.has(coordKey)) {
+            mappedLocations.push(loc);
+            existingCoords.add(coordKey);
+          }
+        });
+      }
+
       // Cache results
       searchCacheRef.current.set(cacheKey, { cities: allCities, locations: mappedLocations });
       setCityResults(allCities);
@@ -220,6 +281,25 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     } finally {
       setLoading(false);
     }
+  };
+
+  // Map OSM types to app categories
+  const mapOsmTypeToCategory = (osmType?: string): AllowedCategory => {
+    if (!osmType) return 'restaurant';
+    const mapping: Record<string, AllowedCategory> = {
+      restaurant: 'restaurant',
+      cafe: 'cafe',
+      bar: 'bar',
+      pub: 'bar',
+      bakery: 'bakery',
+      hotel: 'hotel',
+      museum: 'museum',
+      nightclub: 'entertainment',
+      cinema: 'entertainment',
+      theatre: 'entertainment',
+      park: 'entertainment',
+    };
+    return mapping[osmType] || 'restaurant';
   };
 
   const handleCitySelect = (city: { name: string; lat: number; lng: number; address?: string }) => {
@@ -367,7 +447,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         {/* No results */}
         {query.trim() && !loading && !hasResults && (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <img src={noResultsIcon} alt="No results" className="w-20 h-20 mb-3 opacity-70" />
+            <img src={noResultsIcon} alt="No results" className="w-14 h-20 mb-3 opacity-70 object-contain" />
             <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore' })}</p>
             <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore' })}</p>
           </div>
