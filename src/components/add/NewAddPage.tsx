@@ -303,6 +303,24 @@ export const NewAddPage = () => {
     setTaggedUsers(prev => prev.filter(u => u.id !== userId));
   };
 
+  const handleSocialLocationImport = (location: {
+    name: string;
+    address?: string;
+    lat: number;
+    lng: number;
+    types?: string[];
+  }) => {
+    handleLocationSelect({
+      id: `social_${Date.now()}`,
+      name: location.name,
+      address: location.address || '',
+      lat: location.lat,
+      lng: location.lng,
+      types: location.types || []
+    });
+    toast.success(t('locationImported', { ns: 'add', defaultValue: 'Location imported from Instagram!' }));
+  };
+
   return (
     <PostEditor
       selectedFiles={selectedFiles}
@@ -323,6 +341,7 @@ export const NewAddPage = () => {
       onRatingChange={hasValidBusinessAccount ? undefined : setRating}
       onSubmit={handleSubmit}
       isBusinessAccount={hasValidBusinessAccount}
+      onSocialLocationImport={handleSocialLocationImport}
     />
   );
 };
