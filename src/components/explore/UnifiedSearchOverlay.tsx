@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { translateCityName } from '@/utils/cityTranslations';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { AllowedCategory } from '@/utils/allowedCategories';
+import noResultsIcon from '@/assets/no-results-pin.png';
 
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
@@ -136,14 +137,14 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
 
     setLoading(true);
     try {
-      // Search saved locations from database
+      // Search saved locations from database - search both name AND city
       const { data: locations, error } = await supabase
         .from('locations')
         .select('id, name, city, address, latitude, longitude, category')
-        .ilike('name', `%${queryLower}%`)
+        .or(`name.ilike.%${queryLower}%,city.ilike.%${queryLower}%`)
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .limit(20);
+        .limit(30);
 
       if (error) {
         console.error('Location search error:', error);
@@ -351,8 +352,8 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         {/* No results */}
         {query.trim() && !loading && !hasResults && (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <MapPin className="w-16 h-16 mb-3 opacity-50" />
-            <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore', defaultValue: 'No results found' })}</p>
+            <img src={noResultsIcon} alt="No results" className="w-20 h-20 mb-3 opacity-70" />
+            <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore' })}</p>
             <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore' })}</p>
           </div>
         )}

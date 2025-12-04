@@ -103,6 +103,10 @@ export const turkishTranslations = {
       add: 'Ekle',
       feed: 'Akış',
       profile: 'Profil'
+    },
+    explore: {
+      noResultsFound: 'Sonuç bulunamadı',
+      tryDifferentSearch: 'Farklı bir arama deneyin'
     }
   }
 };
