@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
-import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getCategoryImage } from '@/utils/categoryIcons';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 
@@ -93,9 +93,10 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
   }, [isOpen]);
 
   useEffect(() => {
-    const cacheKey = `${query.toLowerCase().trim()}-${i18n.language}`;
+    const queryTrimmed = query.trim().toLowerCase();
+    const cacheKey = `${queryTrimmed}-${i18n.language}`;
     
-    if (!query.trim()) {
+    if (!queryTrimmed) {
       setCityResults([]);
       setLocationResults([]);
       setLoading(false);
@@ -113,17 +114,16 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     
     setLoading(true);
     const timer = setTimeout(() => {
-      searchAll();
-    }, 200);
+      searchAll(queryTrimmed);
+    }, 150);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, i18n.language]);
 
-  const searchAll = async () => {
-    if (!query.trim()) return;
+  const searchAll = async (queryLower: string) => {
+    if (!queryLower) return;
 
-    const cacheKey = `${query.toLowerCase()}-${i18n.language}`;
-    const queryLower = query.toLowerCase().trim();
+    const cacheKey = `${queryLower}-${i18n.language}`;
     
     // Check cache first
     if (searchCacheRef.current.has(cacheKey)) {
@@ -322,16 +322,16 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
               {t('locations', { ns: 'common', defaultValue: 'Locations' })}
             </div>
             <div className="space-y-2">
-              {locationResults.map((location, index) => {
-                const CategoryIcon = getCategoryIcon(location.category);
+            {locationResults.map((location, index) => {
+                const categoryImage = getCategoryImage(location.category);
                 return (
                   <button
                     key={index}
                     onClick={() => handleLocationSelect(location)}
                     className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <CategoryIcon className="w-5 h-5 text-primary" />
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <img src={categoryImage} alt={location.category} className="w-8 h-8 object-contain" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-foreground truncate">
