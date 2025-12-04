@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
-import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import addPageHero from '@/assets/add-page-hero.png';
+import { SocialImportModal } from './SocialImportModal';
 
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -12,6 +13,13 @@ interface MediaSelectorProps {
   onFilesSelect: (files: FileList) => void;
   onRemoveFile: (index: number) => void;
   maxFiles?: number;
+  onSocialLocationImport?: (location: {
+    name: string;
+    address?: string;
+    lat: number;
+    lng: number;
+    types?: string[];
+  }) => void;
 }
 
 export const MediaSelector: React.FC<MediaSelectorProps> = ({
@@ -19,11 +27,13 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   previewUrls,
   onFilesSelect,
   onRemoveFile,
-  maxFiles = 5
+  maxFiles = 5,
+  onSocialLocationImport
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showSocialImport, setShowSocialImport] = useState(false);
 
   const handleClick = () => {
     fileInputRef.current?.click();
@@ -85,6 +95,16 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               {t('chooseFromLibrary', { ns: 'add' })}
             </Button>
 
+            {/* Import from Instagram */}
+            <Button 
+              onClick={() => setShowSocialImport(true)}
+              size="lg"
+              className="w-full h-12 rounded-2xl bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-2xl border-2 border-pink-500/30 hover:border-pink-500/50 hover:from-pink-500/30 hover:to-purple-500/30 text-foreground transition-all duration-200 shadow-sm"
+            >
+              <Instagram className="w-5 h-5 mr-2 text-pink-500" />
+              {t('importFromInstagram', { ns: 'add', defaultValue: 'Import from Instagram' })}
+            </Button>
+
             <div className="flex gap-3 w-full">
               <Button 
                 onClick={() => navigate('/save-location')}
@@ -115,6 +135,18 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             className="hidden"
           />
         </div>
+
+        {/* Social Import Modal */}
+        {onSocialLocationImport && (
+          <SocialImportModal
+            isOpen={showSocialImport}
+            onClose={() => setShowSocialImport(false)}
+            onLocationFound={(location) => {
+              onSocialLocationImport(location);
+              setShowSocialImport(false);
+            }}
+          />
+        )}
       </div>
     );
   }

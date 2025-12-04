@@ -28,6 +28,13 @@ interface PostEditorProps {
   onRatingChange?: (rating: number | undefined) => void;
   onSubmit: () => void;
   isBusinessAccount?: boolean;
+  onSocialLocationImport?: (location: {
+    name: string;
+    address?: string;
+    lat: number;
+    lng: number;
+    types?: string[];
+  }) => void;
 }
 
 export const PostEditor: React.FC<PostEditorProps> = ({
@@ -48,7 +55,8 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   onUserRemoved,
   onRatingChange,
   onSubmit,
-  isBusinessAccount = false
+  isBusinessAccount = false,
+  onSocialLocationImport
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -85,6 +93,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
         onFilesSelect={onFilesSelect}
         onRemoveFile={onRemoveFile}
         maxFiles={5}
+        onSocialLocationImport={onSocialLocationImport}
       />
     );
   }
