@@ -55,6 +55,9 @@ verify_jwt = false
 [functions.check-availability]
 verify_jwt = false
 
+[functions.extract-google-maps-list]
+verify_jwt = false
+
 [db]
 # Port to use for the local database URL.
 port = 54322
