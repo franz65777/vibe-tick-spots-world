@@ -7,6 +7,7 @@ import { saveTagsTranslations } from './i18n-save-tags';
 import { onboardingTranslations } from './i18n-onboarding';
 import { turkishTranslations } from './i18n-turkish';
 import { signupTranslations } from './i18n-signup';
+import { createListTranslations } from './i18n-create-list';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -8065,6 +8066,16 @@ Object.keys(signupTranslations).forEach(lang => {
   }
 });
 
+// Merge createList translations into resources
+Object.keys(createListTranslations).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang] = {
+      ...resources[lang],
+      createList: createListTranslations[lang]
+    };
+  }
+});
+
 // Add Chinese (zh) as the 12th language
 // Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
 /* resources.zh = {
@@ -8080,7 +8091,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,
