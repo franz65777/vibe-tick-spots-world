@@ -5,7 +5,7 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import addPageHero from '@/assets/add-page-hero.png';
-import { SocialImportModal } from './SocialImportModal';
+import { SocialImportTutorial } from './SocialImportTutorial';
 
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -13,13 +13,6 @@ interface MediaSelectorProps {
   onFilesSelect: (files: FileList) => void;
   onRemoveFile: (index: number) => void;
   maxFiles?: number;
-  onSocialLocationImport?: (location: {
-    name: string;
-    address?: string;
-    lat: number;
-    lng: number;
-    types?: string[];
-  }) => void;
 }
 
 export const MediaSelector: React.FC<MediaSelectorProps> = ({
@@ -27,8 +20,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   previewUrls,
   onFilesSelect,
   onRemoveFile,
-  maxFiles = 5,
-  onSocialLocationImport
+  maxFiles = 5
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -136,17 +128,11 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           />
         </div>
 
-        {/* Social Import Modal */}
-        {onSocialLocationImport && (
-          <SocialImportModal
-            isOpen={showSocialImport}
-            onClose={() => setShowSocialImport(false)}
-            onLocationFound={(location) => {
-              onSocialLocationImport(location);
-              setShowSocialImport(false);
-            }}
-          />
-        )}
+        {/* Social Import Tutorial */}
+        <SocialImportTutorial
+          open={showSocialImport}
+          onClose={() => setShowSocialImport(false)}
+        />
       </div>
     );
   }
