@@ -6,7 +6,6 @@ import eyeIcon from '@/assets/eye-icon.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
-import '../i18n-create-list';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -127,7 +126,7 @@ const CreateListPage = () => {
       setSelectedLocationIds(locationData.map(l => l.location_id));
     } catch (error) {
       console.error('Error loading folder:', error);
-      toast.error(t('errorLoading'));
+      toast.error(t('errorLoading', 'Error loading list'));
     } finally {
       setLoading(false);
     }
@@ -135,7 +134,7 @@ const CreateListPage = () => {
 
   const handleSave = async () => {
     if (!user || !folderName.trim()) {
-      toast.error(t('nameRequired'));
+      toast.error(t('nameRequired', 'List name is required'));
       return;
     }
 
@@ -174,7 +173,7 @@ const CreateListPage = () => {
           if (insertError) throw insertError;
         }
 
-        toast.success(t('listUpdated'));
+        toast.success(t('listUpdated', 'List updated'));
       } else {
         const randomColor = FOLDER_COLORS[Math.floor(Math.random() * FOLDER_COLORS.length)];
 
@@ -207,13 +206,13 @@ const CreateListPage = () => {
           if (locationsError) throw locationsError;
         }
 
-        toast.success(t('listCreated'));
+        toast.success(t('listCreated', 'List created'));
       }
 
       navigate('/profile?tab=trips');
     } catch (error) {
       console.error('Error saving folder:', error);
-      toast.error(t('errorSaving'));
+      toast.error(t('errorSaving', 'Error saving list'));
     } finally {
       setSaving(false);
     }
@@ -222,7 +221,7 @@ const CreateListPage = () => {
   const handleDelete = async () => {
     if (!folderId || !user) return;
 
-    const confirmed = window.confirm(t('confirmDelete'));
+    const confirmed = window.confirm(t('confirmDelete', 'Are you sure you want to delete this list?'));
     if (!confirmed) return;
 
     try {
@@ -233,11 +232,11 @@ const CreateListPage = () => {
 
       if (error) throw error;
 
-      toast.success(t('listDeleted'));
+      toast.success(t('listDeleted', 'List deleted'));
       navigate('/profile?tab=trips');
     } catch (error) {
       console.error('Error deleting folder:', error);
-      toast.error(t('errorDeleting'));
+      toast.error(t('errorDeleting', 'Error deleting list'));
     }
   };
 
@@ -316,10 +315,10 @@ const CreateListPage = () => {
         .getPublicUrl(filePath);
 
       setCoverImageUrl(publicUrl);
-      toast.success(t('coverUploaded'));
+      toast.success(t('coverUploaded', 'Cover image uploaded'));
     } catch (error: any) {
       console.error('Error uploading cover image:', error);
-      const message = error?.message || t('errorUploadingCover');
+      const message = error?.message || t('errorUploadingCover', 'Error uploading image');
       toast.error(message);
     } finally {
       setUploadingCover(false);
@@ -347,13 +346,13 @@ const CreateListPage = () => {
         </button>
         <h2 className="text-lg font-semibold">
           {isEditMode
-            ? t('editList')
-            : t('createNewList')}
+            ? t('editList', 'Edit List')
+            : t('createNewList', 'Create New List')}
         </h2>
         <button
           onClick={() => setIsPrivate(!isPrivate)}
           className="p-2 hover:bg-accent rounded-full transition-colors"
-          title={isPrivate ? t('privateList') : t('publicList')}
+          title={isPrivate ? t('privateList', 'Private') : t('publicList', 'Public')}
         >
           {isPrivate ? (
             <img src={lockIcon} alt="Private" className="h-5 w-5" />
@@ -369,7 +368,7 @@ const CreateListPage = () => {
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">
-                {t('common:loading')}...
+                {t('common:loading', 'Loading')}...
               </div>
             </div>
           ) : (
@@ -390,10 +389,10 @@ const CreateListPage = () => {
                   </div>
                   <div className="flex-1 text-left">
                     <h3 className="font-medium text-sm">
-                      {t('importFromGoogleMaps')}
+                      {t('importFromGoogleMaps', 'Import from Google Maps')}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {t('importFromGoogleMapsDesc')}
+                      {t('importFromGoogleMapsDesc', 'Import your saved lists from Google Maps')}
                     </p>
                   </div>
                   <Plus className="w-5 h-5 text-muted-foreground" />
@@ -403,12 +402,12 @@ const CreateListPage = () => {
               {/* List Name */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  {t('listName')} *
+                  {t('listName', 'List name')} *
                 </label>
                 <Input
                   value={folderName}
                   onChange={(e) => setFolderName(e.target.value)}
-                  placeholder={t('listNamePlaceholder')}
+                  placeholder={t('listNamePlaceholder', 'e.g. ❤️ Favorites, 🍕 To try...')}
                   maxLength={50}
                   className="h-11 rounded-lg"
                 />
@@ -417,12 +416,12 @@ const CreateListPage = () => {
               {/* Description */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  {t('description')}
+                  {t('description', 'Description (optional)')}
                 </label>
                 <Input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('descriptionPlaceholder')}
+                  placeholder={t('descriptionPlaceholder', 'Add a description...')}
                   maxLength={200}
                   className="h-11 rounded-lg"
                 />
@@ -431,7 +430,7 @@ const CreateListPage = () => {
               {/* Cover Image */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  {t('coverImage')}
+                  {t('coverImage', 'Cover image (optional)')}
                 </label>
                 {coverImageUrl ? (
                   <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
@@ -448,13 +447,13 @@ const CreateListPage = () => {
                     <div className="h-20 rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
                       {uploadingCover ? (
                         <span className="text-sm text-muted-foreground">
-                          {t('uploading')}
+                          {t('uploading', 'Uploading...')}
                         </span>
                       ) : (
                         <>
                           <Upload className="h-5 w-5 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
-                            {t('uploadImage')}
+                            {t('uploadImage', 'Upload image')}
                           </span>
                         </>
                       )}
@@ -478,7 +477,7 @@ const CreateListPage = () => {
                   <img src={eyeIcon} alt="Public" className="h-5 w-7" />
                 )}
                 <span className="text-sm">
-                  {isPrivate ? t('privateList') : t('publicList')}
+                  {isPrivate ? t('privateList', 'Only you can see this list') : t('publicList', 'Everyone can see this list')}
                 </span>
               </div>
 
@@ -487,7 +486,7 @@ const CreateListPage = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-muted-foreground">
-                      {t('importedPlaces')}
+                      {t('importedPlaces', 'Imported places')}
                     </label>
                     <span className="text-xs text-primary font-medium">
                       {importedPlaces.length}
@@ -525,7 +524,7 @@ const CreateListPage = () => {
               {/* Locations Section */}
               <div className="space-y-3">
                 <label className="text-sm font-medium text-muted-foreground">
-                  {t('selectPlaces')}
+                  {t('selectPlaces', 'Select places to add')}
                 </label>
 
                 {/* Search Bar */}
@@ -534,7 +533,7 @@ const CreateListPage = () => {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t('searchPlaces')}
+                    placeholder={t('searchPlaces', 'Search places...')}
                     className="pl-10 h-10 rounded-lg"
                   />
                 </div>
@@ -542,7 +541,7 @@ const CreateListPage = () => {
                 {/* Selected Count */}
                 {selectedLocationIds.length > 0 && (
                   <div className="text-sm text-primary font-medium">
-                    {t('placesSelected', { count: selectedLocationIds.length })}
+                    {t('placesSelected', { count: selectedLocationIds.length, defaultValue: '{{count}} places selected' })}
                   </div>
                 )}
 
@@ -550,11 +549,11 @@ const CreateListPage = () => {
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {savedLocations.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      {t('noSavedPlaces')}
+                      {t('noSavedPlaces', 'You have no saved places to add yet')}
                     </p>
                   ) : filteredLocations.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      {t('noPlacesFoundSearch')}
+                      {t('noPlacesFoundSearch', 'No places found')}
                     </p>
                   ) : (
                     filteredLocations.map((place: any) => {
@@ -613,14 +612,14 @@ const CreateListPage = () => {
               disabled={saving}
             >
               <Trash2 className="h-5 w-5 mr-2" />
-              {t('delete')}
+              {t('delete', 'Delete')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={saving || !folderName.trim()}
               className="flex-1 h-12 rounded-lg"
             >
-              {saving ? t('saving') : t('save')}
+              {saving ? t('saving', 'Saving...') : t('save', 'Save')}
             </Button>
           </>
         ) : (
@@ -629,7 +628,7 @@ const CreateListPage = () => {
             disabled={saving || !folderName.trim()}
             className="w-full h-12 rounded-lg"
           >
-            {saving ? t('creating') : t('create')}
+            {saving ? t('creating', 'Creating...') : t('create', 'Create')}
           </Button>
         )}
       </div>
