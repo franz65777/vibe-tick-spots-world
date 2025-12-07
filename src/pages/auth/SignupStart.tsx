@@ -124,6 +124,7 @@ const SignupStart: React.FC = () => {
           email: method === 'email' ? email.trim() : undefined,
           phone: method === 'phone' ? phone.trim() : undefined,
           redirectUrl: 'https://spott.cloud',
+          language: i18n.language,
         }
       });
 

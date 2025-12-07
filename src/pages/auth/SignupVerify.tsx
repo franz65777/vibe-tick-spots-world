@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const SignupVerify: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const method = (params.get('method') as 'email' | 'phone') || 'email';
@@ -68,6 +68,7 @@ const SignupVerify: React.FC = () => {
           method,
           email: method === 'email' ? email : undefined,
           phone: method === 'phone' ? phone : undefined,
+          language: i18n.language,
         }
       });
 
