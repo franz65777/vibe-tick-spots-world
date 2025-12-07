@@ -1,0 +1,1 @@
+UPDATE profiles SET onboarding_completed = false WHERE username = 'FraTrinky';
