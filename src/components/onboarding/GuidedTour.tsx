@@ -317,13 +317,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
   return (
     <div className="fixed inset-0 z-[1999]">
       {/* Dim overlay - allows interaction with map */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/80 pointer-events-none" />
-      
-      {/* Pulsing ring around center to draw attention to pins */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-        <div className="w-32 h-32 rounded-full border-2 border-primary/50 animate-ping" style={{ animationDuration: '2s' }} />
-        <div className="absolute inset-0 w-32 h-32 rounded-full border-2 border-primary/30" />
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/70 pointer-events-none" />
 
       {/* Simple bottom card */}
       <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
@@ -344,32 +338,31 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
             {t('mapGuideDescription')}
           </p>
           
-          {/* Status indicator */}
+          {/* Status and button - only show continue when saved */}
           {hasSavedPlace ? (
-            <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <Check className="w-4 h-4 text-white" />
+            <>
+              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <Check className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('placeSaved')}</span>
               </div>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('placeSaved')}</span>
-            </div>
+              <Button 
+                onClick={onNext} 
+                className="w-full rounded-xl h-12 text-base font-semibold"
+              >
+                {t('continueToNext')}
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </Button>
+            </>
           ) : (
-            <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-muted/50 border border-border">
-              <div className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <div className="w-6 h-6 rounded-full border-2 border-primary/50 flex items-center justify-center animate-pulse">
+                <MapPin className="w-3 h-3 text-primary" />
               </div>
-              <span className="text-sm text-muted-foreground">{t('saveFirst')}</span>
+              <span className="text-sm text-primary font-medium">{t('saveFirst')}</span>
             </div>
           )}
-          
-          {/* Continue button */}
-          <Button 
-            onClick={onNext} 
-            className="w-full rounded-xl h-12 text-base font-semibold"
-            disabled={!hasSavedPlace}
-          >
-            {t('continueToNext')}
-            <ChevronRight className="w-5 h-5 ml-1" />
-          </Button>
         </div>
       </div>
     </div>
