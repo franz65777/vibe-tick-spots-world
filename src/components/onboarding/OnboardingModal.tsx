@@ -158,7 +158,7 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
 
       if (error) {
         console.error('Error updating onboarding status:', error);
-        toast.error('Failed to save progress');
+        toast.error(t('errorSaving') || 'Failed to save progress');
         return;
       }
 
@@ -168,13 +168,13 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
       // Navigate to explore page to help user start saving locations
       if (currentStep === steps.length - 1) {
         navigate('/discover');
-        toast.success('Welcome to Spott! Start exploring places to save.', {
+        toast.success(t('welcomeToast') || 'Welcome to Spott! Start exploring places to save.', {
           duration: 4000,
         });
       }
     } catch (error) {
       console.error('Onboarding completion error:', error);
-      toast.error('Something went wrong');
+      toast.error(t('errorGeneric') || 'Something went wrong');
     }
   };
 
