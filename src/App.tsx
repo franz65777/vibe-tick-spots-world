@@ -142,8 +142,8 @@ function AppContent() {
           <Route path="/create-trip" element={<CreateTripPage />} />
           <Route path="/create-list" element={<CreateListPage />} />
           <Route path="/save-location" element={<SaveLocationPage />} />
-          <Route path="*" element={<NotFound />} />
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );

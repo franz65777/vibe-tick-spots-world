@@ -12,8 +12,8 @@ const SignupVerify: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const method = (params.get('method') as 'email' | 'phone') || 'email';
-  const email = params.get('email') || '';
-  const phone = params.get('phone') || '';
+  const email = decodeURIComponent(params.get('email') || '');
+  const phone = decodeURIComponent(params.get('phone') || '');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
