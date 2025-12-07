@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { useUserSearchHistory } from '@/hooks/useUserSearchHistory';
 import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
+import { useSuggestedUsers } from '@/hooks/useSuggestedUsers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +58,7 @@ const ExplorePage = memo(() => {
   const { champions } = useCommunityChampions(currentCity);
   const { searchHistory, deleteSearchHistoryItem, fetchSearchHistory } = useUserSearchHistory();
   const { suggestions, fetchSuggestions } = useFollowSuggestions();
+  const { suggestedUsers, loading: suggestedLoading } = useSuggestedUsers();
   const [viewingStories, setViewingStories] = useState<any[]>([]);
   const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
   const [fromMessages, setFromMessages] = useState(false);
@@ -425,8 +427,52 @@ const ExplorePage = memo(() => {
             <>
               {!isSearchActive && (
                 <div className="px-4 py-2 space-y-4">
-                  {/* Search History */}
-                  {localSearchHistory.length > 0 && (
+                  {/* Suggested Users - shown when search bar is focused */}
+                  {inputFocused && suggestedUsers.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <UserPlus className="w-4 h-4" />
+                          {t('suggested', { ns: 'explore' })}
+                        </h3>
+                      </div>
+                      <div className="space-y-2">
+                        {suggestedUsers.slice(0, 10).map((suggestedUser) => (
+                          <div
+                            key={suggestedUser.id}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer"
+                            onClick={() => handleUserClick(suggestedUser.id)}
+                          >
+                            <div className="relative flex-shrink-0">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={suggestedUser.avatar_url || undefined} />
+                                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                                  {suggestedUser.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              {suggestedUser.has_active_story && (
+                                <div className="absolute inset-0 rounded-full ring-2 ring-primary" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0 text-left">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {suggestedUser.username || 'User'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {suggestedUser.mutual_count > 0 
+                                  ? `${suggestedUser.mutual_count} ${t('mutualFriends', { ns: 'explore' })}`
+                                  : `${suggestedUser.places_visited} ${t('places', { ns: 'explore' })}`
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Search History - shown when search bar is NOT focused */}
+                  {!inputFocused && localSearchHistory.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
