@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { X, ChevronRight, Camera, MapPin, Users } from 'lucide-react';
-import EditProfileModal from '@/components/settings/EditProfileModal';
+import { X, ChevronRight, MapPin, Users, Upload } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { AvatarCropEditor } from '@/components/settings/AvatarCropEditor';
+import cameraIcon from '@/assets/onboarding-camera.png';
 
 export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'complete';
 
@@ -22,16 +29,31 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation('guidedTour');
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const { profile, updateProfile, refetch } = useProfile();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showCropEditor, setShowCropEditor] = useState(false);
+  const [tempImageForCrop, setTempImageForCrop] = useState<string | null>(null);
+
+  // Update avatar preview when profile loads
+  useEffect(() => {
+    if (profile?.avatar_url) {
+      setAvatarPreview(profile.avatar_url);
+    }
+  }, [profile?.avatar_url]);
 
   // Handle step transitions
   useEffect(() => {
     if (!isActive) return;
 
     if (currentStep === 'profile-photo') {
-      setShowProfileModal(true);
+      // Stay on home page for photo upload step
+      navigate('/');
     } else if (currentStep === 'map-guide') {
-      setShowProfileModal(false);
       navigate('/');
     } else if (currentStep === 'explore-guide') {
       navigate('/explore');
@@ -40,7 +62,6 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
 
   const handleSkipStep = () => {
     if (currentStep === 'profile-photo') {
-      setShowProfileModal(false);
       onStepChange('map-guide');
     } else if (currentStep === 'map-guide') {
       onStepChange('explore-guide');
@@ -51,7 +72,6 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
 
   const handleNextStep = () => {
     if (currentStep === 'profile-photo') {
-      setShowProfileModal(false);
       onStepChange('map-guide');
     } else if (currentStep === 'map-guide') {
       onStepChange('explore-guide');
@@ -60,52 +80,169 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     }
   };
 
-  const handleProfileModalClose = (open: boolean) => {
-    if (!open) {
-      // When profile modal closes, move to next step
-      onStepChange('map-guide');
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('invalidImageType'));
+      return;
     }
-    setShowProfileModal(open);
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('imageTooLarge'));
+      return;
+    }
+
+    // Open crop editor
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTempImageForCrop(reader.result as string);
+      setShowCropEditor(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user?.id) return;
+
+    const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setAvatarPreview(previewUrl);
+
+    try {
+      setIsUploading(true);
+      const fileName = `avatar-${Date.now()}.jpg`;
+      const filePath = `${user.id}/avatar/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      await updateProfile({ avatar_url: publicUrl });
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success(t('photoUploaded'));
+      
+      // Automatically move to next step after successful upload
+      setTimeout(() => {
+        onStepChange('map-guide');
+      }, 1000);
+    } catch (e) {
+      console.error('Error uploading cropped avatar:', e);
+      toast.error(t('uploadError'));
+    } finally {
+      setIsUploading(false);
+    }
+
+    setShowCropEditor(false);
+    setTempImageForCrop(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropEditor(false);
+    setTempImageForCrop(null);
   };
 
   if (!isActive) return null;
 
-  // Profile photo step - uses EditProfileModal
+  // Show crop editor on top of everything
+  if (showCropEditor && tempImageForCrop) {
+    return (
+      <div className="fixed inset-0 z-[3000]">
+        <AvatarCropEditor
+          image={tempImageForCrop}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      </div>
+    );
+  }
+
+  // Profile photo step - direct upload experience
   if (currentStep === 'profile-photo') {
     return (
-      <>
-        {/* Overlay with coach mark */}
-        <div className="fixed inset-0 z-[1999] bg-black/60 flex items-start justify-center pt-20">
-          <div className="bg-background rounded-2xl p-6 mx-4 max-w-sm shadow-xl animate-fade-in">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                <Camera className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg">{t('profilePhotoTitle')}</h3>
-                <p className="text-sm text-muted-foreground">{t('step')} 1/3</p>
-              </div>
+      <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ''; }}
+          onChange={handleFileSelect}
+          className="hidden"
+          disabled={isUploading}
+        />
+
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
+          {/* Camera icon */}
+          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center">
+            <img src={cameraIcon} alt="" className="w-12 h-12 object-contain" />
+          </div>
+
+          {/* Title and step indicator */}
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold">{t('profilePhotoTitle')}</h2>
+            <p className="text-sm text-muted-foreground">{t('step')} 1/3</p>
+          </div>
+
+          {/* Description */}
+          <p className="text-center text-muted-foreground max-w-sm">
+            {t('profilePhotoDescription')}
+          </p>
+
+          {/* Avatar preview */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 relative group"
+            disabled={isUploading}
+          >
+            <Avatar className="w-32 h-32 cursor-pointer border-4 border-primary/30">
+              <AvatarImage src={avatarPreview || undefined} alt="Profile" />
+              <AvatarFallback className="text-3xl bg-muted">
+                {profile?.username?.substring(0, 2).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Upload className="w-8 h-8 text-white" />
             </div>
-            <p className="text-muted-foreground mb-4">
-              {t('profilePhotoDescription')}
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSkipStep} className="flex-1 rounded-xl">
-                {t('skip')}
-              </Button>
-              <Button onClick={() => setShowProfileModal(true)} className="flex-1 rounded-xl">
-                {t('addPhoto')}
-              </Button>
-            </div>
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </button>
+
+          {/* Buttons */}
+          <div className="w-full max-w-sm flex gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={handleSkipStep} 
+              className="flex-1 rounded-xl h-12"
+              disabled={isUploading}
+            >
+              {t('skip')}
+            </Button>
+            <Button 
+              onClick={() => fileInputRef.current?.click()} 
+              className="flex-1 rounded-xl h-12"
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                t('addPhoto')
+              )}
+            </Button>
           </div>
         </div>
-        
-        {/* Edit Profile Modal */}
-        <EditProfileModal 
-          open={showProfileModal} 
-          onOpenChange={handleProfileModalClose}
-        />
-      </>
+      </div>
     );
   }
 
