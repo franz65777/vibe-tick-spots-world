@@ -122,24 +122,37 @@ const SignupPassword: React.FC = () => {
         return;
       }
 
-      // CRITICAL: Set the new user's session to prevent logging into wrong account
-      if (!data.session) {
-        toast.error(t('signup:invalidSession'));
+      // Try to set the new user's session if available
+      if (data.session) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        if (sessionError) {
+          console.error('Session set error:', sessionError);
+          // Account created but session failed - redirect to login
+          toast.success(t('signup:accountCreated'));
+          toast.info(t('signup:pleaseLogin') || 'Please log in with your new account');
+          
+          // Clear session storage
+          sessionStorage.clear();
+          navigate('/auth?mode=login');
+          return;
+        }
+
+        console.log('New user logged in:', data.user?.id);
+      } else {
+        // Session not available - account created but user needs to log in manually
+        console.log('Account created but no session returned');
+        toast.success(t('signup:accountCreated'));
+        toast.info(t('signup:pleaseLogin') || 'Please log in with your new account');
+        
+        // Clear session storage
+        sessionStorage.clear();
+        navigate('/auth?mode=login');
         return;
       }
-
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-
-      if (sessionError) {
-        console.error('Session set error:', sessionError);
-        toast.error(t('signup:autoLoginError'));
-        return;
-      }
-
-      console.log('New user logged in:', data.user?.id);
 
       // Clear session storage
       sessionStorage.removeItem('signup_session');
