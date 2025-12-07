@@ -306,7 +306,7 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
   return null;
 };
 
-// Map Guide Overlay - Interactive with spotlight
+// Map Guide Overlay - Clean, simple design
 interface MapGuideOverlayProps {
   onNext: () => void;
   hasSavedPlace: boolean;
@@ -315,78 +315,60 @@ interface MapGuideOverlayProps {
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   return (
-    <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Semi-transparent overlay with cutout for map */}
-      <div className="absolute inset-0 bg-black/60" />
+    <div className="fixed inset-0 z-[1999]">
+      {/* Dim overlay - allows interaction with map */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/80 pointer-events-none" />
       
-      {/* Top spotlight hint for category filters */}
-      <div className="absolute top-16 left-4 right-4 pointer-events-auto">
-        <div className="bg-background/95 backdrop-blur-sm rounded-xl p-3 shadow-lg animate-pulse-slow flex items-center gap-3 max-w-xs">
-          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-sm font-medium">{t('spotlightCategories')}</p>
-        </div>
+      {/* Pulsing ring around center to draw attention to pins */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        <div className="w-32 h-32 rounded-full border-2 border-primary/50 animate-ping" style={{ animationDuration: '2s' }} />
+        <div className="absolute inset-0 w-32 h-32 rounded-full border-2 border-primary/30" />
       </div>
 
-      {/* Bottom left spotlight for filters */}
-      <div className="absolute bottom-32 left-4 pointer-events-auto">
-        <div className="bg-background/95 backdrop-blur-sm rounded-xl p-3 shadow-lg animate-pulse-slow flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <Users className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-sm font-medium">{t('spotlightFilters')}</p>
-        </div>
-      </div>
-
-      {/* Center spotlight for pins */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
-        <div className="bg-background/95 backdrop-blur-sm rounded-xl p-4 shadow-lg animate-bounce-slow flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <MapPin className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold">{t('spotlightPin')}</p>
-            <p className="text-xs text-muted-foreground">{t('mapGuideHint')}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom coach mark */}
-      <div className="absolute bottom-4 left-4 right-4 pointer-events-auto">
-        <div className="bg-background rounded-2xl p-5 shadow-xl max-w-md mx-auto">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-primary" />
+      {/* Simple bottom card */}
+      <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
+        <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50">
+          {/* Header with icon */}
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div>
-              <h3 className="font-bold">{t('mapGuideTitle')}</h3>
-              <p className="text-xs text-muted-foreground">{t('step')} 2/3</p>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">{t('mapGuideDescription')}</p>
-          
-          {/* Progress indicator */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${hasSavedPlace ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
-              {hasSavedPlace ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>{t('placeSaved')}</span>
-                </>
-              ) : (
-                <span>{t('saveFirst')}</span>
-              )}
+            <div className="flex-1">
+              <h3 className="text-lg font-bold leading-tight">{t('mapGuideTitle')}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('step')} 2/3</p>
             </div>
           </div>
           
+          {/* Description */}
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+            {t('mapGuideDescription')}
+          </p>
+          
+          {/* Status indicator */}
+          {hasSavedPlace ? (
+            <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <Check className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('placeSaved')}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-muted/50 border border-border">
+              <div className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+              </div>
+              <span className="text-sm text-muted-foreground">{t('saveFirst')}</span>
+            </div>
+          )}
+          
+          {/* Continue button */}
           <Button 
             onClick={onNext} 
-            className="w-full rounded-xl"
+            className="w-full rounded-xl h-12 text-base font-semibold"
             disabled={!hasSavedPlace}
           >
             {t('continueToNext')}
-            <ChevronRight className="w-4 h-4 ml-1" />
+            <ChevronRight className="w-5 h-5 ml-1" />
           </Button>
         </div>
       </div>
