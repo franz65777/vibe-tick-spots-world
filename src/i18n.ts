@@ -8,6 +8,7 @@ import { onboardingTranslations } from './i18n-onboarding';
 import { turkishTranslations } from './i18n-turkish';
 import { signupTranslations } from './i18n-signup';
 import { createListTranslations } from './i18n-create-list';
+import { guidedTourTranslations } from './i18n-guided-tour';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -8076,6 +8077,16 @@ Object.keys(createListTranslations).forEach(lang => {
   }
 });
 
+// Merge guided tour translations into resources
+Object.keys(guidedTourTranslations).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang] = {
+      ...resources[lang],
+      ...guidedTourTranslations[lang]
+    };
+  }
+});
+
 // Add Chinese (zh) as the 12th language
 // Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
 /* resources.zh = {
@@ -8091,7 +8102,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

@@ -19,9 +19,10 @@ import messagesIcon from '@/assets/onboarding-messages.png';
 interface OnboardingModalProps {
   open: boolean;
   onComplete: () => void;
+  onStartGuidedTour?: () => void;
 }
 
-const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
+const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModalProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [languageLoaded, setLanguageLoaded] = useState(false);
   const navigate = useNavigate();
@@ -196,9 +197,12 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
       // Close the modal and trigger completion callback
       onComplete();
       
-      // Navigate to explore page to help user start saving locations
-      if (currentStep === steps.length - 1) {
-        navigate('/discover');
+      // Start the guided tour instead of navigating to /discover
+      if (currentStep === steps.length - 1 && onStartGuidedTour) {
+        onStartGuidedTour();
+      } else if (currentStep === steps.length - 1) {
+        // Fallback if no guided tour handler
+        navigate('/');
         toast.success(t('welcomeToast') || 'Welcome to Spott! Start exploring places to save.', {
           duration: 4000,
         });
