@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { X, ChevronRight, MapPin, Users, Upload } from 'lucide-react';
+import { X, ChevronRight, MapPin, Users, Upload, Check, Sparkles } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +38,7 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [showCropEditor, setShowCropEditor] = useState(false);
   const [tempImageForCrop, setTempImageForCrop] = useState<string | null>(null);
+  const [hasSavedPlace, setHasSavedPlace] = useState(false);
 
   // Update avatar preview when profile loads
   useEffect(() => {
@@ -46,12 +47,51 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     }
   }, [profile?.avatar_url]);
 
+  // Check if user has saved any place
+  useEffect(() => {
+    const checkSavedPlaces = async () => {
+      if (!user?.id) return;
+      
+      const { count } = await supabase
+        .from('saved_places')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      
+      setHasSavedPlace((count || 0) > 0);
+    };
+    
+    if (currentStep === 'map-guide') {
+      checkSavedPlaces();
+      
+      // Subscribe to changes
+      const channel = supabase
+        .channel('saved_places_onboarding')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'saved_places',
+            filter: `user_id=eq.${user?.id}`,
+          },
+          () => {
+            setHasSavedPlace(true);
+            toast.success(t('placeSaved'));
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [currentStep, user?.id, t]);
+
   // Handle step transitions
   useEffect(() => {
     if (!isActive) return;
 
     if (currentStep === 'profile-photo') {
-      // Stay on home page for photo upload step
       navigate('/');
     } else if (currentStep === 'map-guide') {
       navigate('/');
@@ -64,6 +104,11 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     if (currentStep === 'profile-photo') {
       onStepChange('map-guide');
     } else if (currentStep === 'map-guide') {
+      // Can't skip map-guide without saving at least one place
+      if (!hasSavedPlace) {
+        toast.error(t('saveFirst'));
+        return;
+      }
       onStepChange('explore-guide');
     } else if (currentStep === 'explore-guide') {
       onComplete();
@@ -74,6 +119,10 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     if (currentStep === 'profile-photo') {
       onStepChange('map-guide');
     } else if (currentStep === 'map-guide') {
+      if (!hasSavedPlace) {
+        toast.error(t('saveFirst'));
+        return;
+      }
       onStepChange('explore-guide');
     } else if (currentStep === 'explore-guide') {
       onComplete();
@@ -94,7 +143,6 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
       return;
     }
 
-    // Open crop editor
     const reader = new FileReader();
     reader.onloadend = () => {
       setTempImageForCrop(reader.result as string);
@@ -129,7 +177,6 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success(t('photoUploaded'));
       
-      // Automatically move to next step after successful upload
       setTimeout(() => {
         onStepChange('map-guide');
       }, 1000);
@@ -164,11 +211,10 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     );
   }
 
-  // Profile photo step - direct upload experience
+  // Profile photo step
   if (currentStep === 'profile-photo') {
     return (
       <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom">
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -180,23 +226,19 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
         />
 
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
-          {/* Camera icon */}
           <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center">
             <img src={cameraIcon} alt="" className="w-12 h-12 object-contain" />
           </div>
 
-          {/* Title and step indicator */}
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold">{t('profilePhotoTitle')}</h2>
             <p className="text-sm text-muted-foreground">{t('step')} 1/3</p>
           </div>
 
-          {/* Description */}
           <p className="text-center text-muted-foreground max-w-sm">
             {t('profilePhotoDescription')}
           </p>
 
-          {/* Avatar preview */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -219,7 +261,6 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
             )}
           </button>
 
-          {/* Buttons */}
           <div className="w-full max-w-sm flex gap-3 pt-4">
             <Button 
               variant="outline" 
@@ -246,15 +287,9 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     );
   }
 
-  // Map guide step
+  // Map guide step - Interactive overlay
   if (currentStep === 'map-guide') {
-    return (
-      <MapGuideOverlay 
-        onSkip={handleSkipStep}
-        onNext={handleNextStep}
-        t={t}
-      />
-    );
+    return <MapGuideOverlay onNext={handleNextStep} hasSavedPlace={hasSavedPlace} t={t} />;
   }
 
   // Explore guide step
@@ -271,80 +306,86 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
   return null;
 };
 
-// Map Guide Overlay Component - Full screen informational page
+// Map Guide Overlay - Interactive with spotlight
 interface MapGuideOverlayProps {
-  onSkip: () => void;
   onNext: () => void;
+  hasSavedPlace: boolean;
   t: (key: string) => string;
 }
 
-const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onSkip, onNext, t }) => {
+const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   return (
-    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom">
-      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
-        {/* Map icon */}
-        <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center">
-          <MapPin className="w-10 h-10 text-primary" />
+    <div className="fixed inset-0 z-[1999] pointer-events-none">
+      {/* Semi-transparent overlay with cutout for map */}
+      <div className="absolute inset-0 bg-black/60" />
+      
+      {/* Top spotlight hint for category filters */}
+      <div className="absolute top-16 left-4 right-4 pointer-events-auto">
+        <div className="bg-background/95 backdrop-blur-sm rounded-xl p-3 shadow-lg animate-pulse-slow flex items-center gap-3 max-w-xs">
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-primary" />
+          </div>
+          <p className="text-sm font-medium">{t('spotlightCategories')}</p>
         </div>
+      </div>
 
-        {/* Title and step indicator */}
-        <div className="text-center space-y-1">
-          <h2 className="text-2xl font-bold">{t('mapGuideTitle')}</h2>
-          <p className="text-sm text-muted-foreground">{t('step')} 2/3</p>
+      {/* Bottom left spotlight for filters */}
+      <div className="absolute bottom-32 left-4 pointer-events-auto">
+        <div className="bg-background/95 backdrop-blur-sm rounded-xl p-3 shadow-lg animate-pulse-slow flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <Users className="w-4 h-4 text-primary" />
+          </div>
+          <p className="text-sm font-medium">{t('spotlightFilters')}</p>
         </div>
+      </div>
 
-        {/* Description */}
-        <p className="text-center text-muted-foreground max-w-sm">
-          {t('mapGuideDescription')}
-        </p>
+      {/* Center spotlight for pins */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
+        <div className="bg-background/95 backdrop-blur-sm rounded-xl p-4 shadow-lg animate-bounce-slow flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <MapPin className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{t('spotlightPin')}</p>
+            <p className="text-xs text-muted-foreground">{t('mapGuideHint')}</p>
+          </div>
+        </div>
+      </div>
 
-        {/* Feature cards */}
-        <div className="w-full max-w-sm space-y-3">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-primary">1</span>
+      {/* Bottom coach mark */}
+      <div className="absolute bottom-4 left-4 right-4 pointer-events-auto">
+        <div className="bg-background rounded-2xl p-5 shadow-xl max-w-md mx-auto">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h4 className="font-semibold text-sm">{t('categoriesTitle')}</h4>
-              <p className="text-xs text-muted-foreground">{t('categoriesShort')}</p>
+              <h3 className="font-bold">{t('mapGuideTitle')}</h3>
+              <p className="text-xs text-muted-foreground">{t('step')} 2/3</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">{t('mapGuideDescription')}</p>
+          
+          {/* Progress indicator */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${hasSavedPlace ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
+              {hasSavedPlace ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>{t('placeSaved')}</span>
+                </>
+              ) : (
+                <span>{t('saveFirst')}</span>
+              )}
             </div>
           </div>
           
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-primary">2</span>
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">{t('saveLocationTitle')}</h4>
-              <p className="text-xs text-muted-foreground">{t('saveLocationShort')}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-primary">3</span>
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">{t('filtersTitle')}</h4>
-              <p className="text-xs text-muted-foreground">{t('filtersShort')}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="w-full max-w-sm flex gap-3 pt-4">
-          <Button 
-            variant="outline" 
-            onClick={onSkip} 
-            className="flex-1 rounded-xl h-12"
-          >
-            {t('skip')}
-          </Button>
           <Button 
             onClick={onNext} 
-            className="flex-1 rounded-xl h-12"
+            className="w-full rounded-xl"
+            disabled={!hasSavedPlace}
           >
-            {t('next')}
+            {t('continueToNext')}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
@@ -353,7 +394,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onSkip, onNext, t }) 
   );
 };
 
-// Explore Guide Overlay Component
+// Explore Guide Overlay
 interface ExploreGuideOverlayProps {
   onSkip: () => void;
   onComplete: () => void;
@@ -363,7 +404,6 @@ interface ExploreGuideOverlayProps {
 const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onComplete, t }) => {
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Semi-transparent overlay */}
       <div className="absolute inset-0 bg-black/50" />
       
       {/* Highlight the search area */}
