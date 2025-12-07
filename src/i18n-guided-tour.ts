@@ -19,14 +19,20 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       profilePhotoDescription: 'Help your friends recognize you! Add a photo to your profile so people can find and connect with you.',
       
       // Step 2: Map Guide
+      mapGuideTitle: 'Discover the Map',
+      mapGuideDescription: 'Your interactive map to discover and save the best places in your city!',
+      
       categoriesTitle: 'Browse by Category',
       categoriesDescription: 'Use these filters to find restaurants, bars, cafes, and more. Tap a category to see only those places on the map.',
+      categoriesShort: 'Filter places by type at the top of the map',
       
       saveLocationTitle: 'Save Your Favorites',
       saveLocationDescription: 'Tap on any location pin to see details. Then hit the save button to add it to your collection!',
+      saveLocationShort: 'Tap a pin and save it to your collection',
       
       filtersTitle: 'Filter by Friends',
       filtersDescription: 'Switch between Friends, Everyone, or Saved to see different locations. Friends shows places saved by people you follow.',
+      filtersShort: 'See places from friends, everyone, or your saves',
       
       // Step 3: Explore
       exploreTitle: 'Find Friends',
@@ -49,14 +55,20 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       profilePhotoTitle: 'Aggiungi una Foto Profilo',
       profilePhotoDescription: 'Aiuta i tuoi amici a riconoscerti! Aggiungi una foto al tuo profilo così le persone possono trovarti e connettersi con te.',
       
+      mapGuideTitle: 'Scopri la Mappa',
+      mapGuideDescription: 'La tua mappa interattiva per scoprire e salvare i migliori posti nella tua città!',
+      
       categoriesTitle: 'Esplora per Categoria',
       categoriesDescription: 'Usa questi filtri per trovare ristoranti, bar, caffè e altro. Tocca una categoria per vedere solo quei posti sulla mappa.',
+      categoriesShort: 'Filtra i luoghi per tipo in alto nella mappa',
       
       saveLocationTitle: 'Salva i Tuoi Preferiti',
       saveLocationDescription: 'Tocca un pin sulla mappa per vedere i dettagli. Poi premi il pulsante salva per aggiungerlo alla tua collezione!',
+      saveLocationShort: 'Tocca un pin e salvalo nella tua collezione',
       
       filtersTitle: 'Filtra per Amici',
       filtersDescription: 'Passa tra Amici, Tutti o Salvati per vedere luoghi diversi. Amici mostra i posti salvati dalle persone che segui.',
+      filtersShort: 'Vedi luoghi da amici, tutti o i tuoi salvati',
       
       exploreTitle: 'Trova Amici',
       exploreDescription: 'Cerca amici e altri utenti da seguire. Scopri quali posti stanno salvando e lasciati ispirare dalle loro scoperte!',
