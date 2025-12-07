@@ -1,0 +1,1 @@
+UPDATE profiles SET language = 'fr' WHERE id = 'b577e40a-a3c1-4bff-a17e-7999f5770db8';
