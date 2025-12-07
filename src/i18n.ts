@@ -428,6 +428,8 @@ const resources = {
       yourPostsAt: 'Your Posts at',
       postsTab: 'Posts',
       reviewsTab: 'Reviews',
+      suggested: 'Suggested',
+      mutualFriends: 'mutual friends',
     },
     add: {
       newPost: 'New Post',
@@ -1277,6 +1279,8 @@ const resources = {
       yourPostsAt: 'Tus publicaciones en',
       postsTab: 'Publicaciones',
       reviewsTab: 'Reseñas',
+      suggested: 'Sugeridos',
+      mutualFriends: 'amigos en común',
     },
     add: {
       newPost: 'Nueva publicación',
@@ -2117,6 +2121,8 @@ const resources = {
       yourPostsAt: 'I tuoi post a',
       postsTab: 'Post',
       reviewsTab: 'Recensioni',
+      suggested: 'Suggeriti',
+      mutualFriends: 'amici in comune',
     },
     add: {
       newPost: 'Nuovo Post',
@@ -2940,6 +2946,8 @@ const resources = {
       yourPostsAt: 'Vos posts à',
       postsTab: 'Publications',
       reviewsTab: 'Avis',
+      suggested: 'Suggérés',
+      mutualFriends: 'amis en commun',
     },
     add: {
       newPost: 'Nouveau post',
@@ -3644,6 +3652,8 @@ const resources = {
       yourPostsAt: 'Ihre Beiträge in',
       postsTab: 'Beiträge',
       reviewsTab: 'Bewertungen',
+      suggested: 'Vorgeschlagen',
+      mutualFriends: 'gemeinsame Freunde',
     },
     add: {
       newPost: 'Neuer Beitrag',
@@ -4286,6 +4296,8 @@ const resources = {
       yourPostsAt: 'Suas publicações em',
       postsTab: 'Publicações',
       reviewsTab: 'Avaliações',
+      suggested: 'Sugeridos',
+      mutualFriends: 'amigos em comum',
     },
     add: {
       newPost: 'Nova publicação',
@@ -4863,6 +4875,8 @@ const resources = {
       locationsWithImages: '有图片的地点',
       postsTab: '帖子',
       reviewsTab: '评论',
+      suggested: '推荐',
+      mutualFriends: '共同好友',
     },
     add: {
       newPost: '新帖子',
@@ -5409,6 +5423,8 @@ const resources = {
       locationsWithImages: '画像付きの場所',
       postsTab: '投稿',
       reviewsTab: 'レビュー',
+      suggested: 'おすすめ',
+      mutualFriends: '共通の友達',
     },
     add: {
       newPost: '新しい投稿',
@@ -5993,6 +6009,8 @@ const resources = {
       locationsWithImages: '이미지 있는 장소',
       postsTab: '게시물',
       reviewsTab: '리뷰',
+      suggested: '추천',
+      mutualFriends: '공통 친구',
     },
     add: {
       newPost: '새 게시물',
@@ -6560,6 +6578,8 @@ const resources = {
       locationsWithImages: 'أماكن بها صور',
       postsTab: 'المنشورات',
       reviewsTab: 'التقييمات',
+      suggested: 'مقترح',
+      mutualFriends: 'أصدقاء مشتركين',
     },
     add: {
       newPost: 'منشور جديد',
@@ -7126,6 +7146,8 @@ const resources = {
       locationsWithImages: 'छवियों के साथ स्थान',
       postsTab: 'पोस्ट',
       reviewsTab: 'समीक्षाएं',
+      suggested: 'सुझाव',
+      mutualFriends: 'आम दोस्त',
     },
     add: {
       newPost: 'नई पोस्ट',
@@ -7709,6 +7731,8 @@ const resources = {
       locationsWithImages: 'Места с изображениями',
       postsTab: 'Публикации',
       reviewsTab: 'Отзывы',
+      suggested: 'Рекомендуемые',
+      mutualFriends: 'общих друзей',
     },
     add: {
       newPost: 'Новый пост',
