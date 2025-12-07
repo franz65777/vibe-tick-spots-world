@@ -139,7 +139,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
         <div className="space-y-6 py-4">
           <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-6 text-center space-y-4">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-              <img src={mapIcon} alt="Mission" className="w-10 h-10 object-contain" />
+              <img src={rocketIcon} alt="Mission" className="w-10 h-10 object-contain" />
             </div>
             <div>
               <h3 className="font-bold text-lg mb-2">{t('firstMission')}</h3>
@@ -264,9 +264,6 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold">
                 {steps[currentStep].title}
-                {currentStep === 2 && (
-                  <img src={rocketIcon} alt="Rocket" className="inline-block w-10 h-10 ml-2 -mt-1" />
-                )}
               </h2>
               <p className="text-base text-muted-foreground">
                 {steps[currentStep].description}
