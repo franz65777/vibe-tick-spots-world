@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
@@ -23,9 +23,40 @@ interface OnboardingModalProps {
 
 const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [languageLoaded, setLanguageLoaded] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t } = useTranslation('onboarding');
+  const { t, i18n } = useTranslation('onboarding');
+
+  // Load user's language from profile before rendering content
+  useEffect(() => {
+    const loadLanguage = async () => {
+      if (!user?.id || languageLoaded) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('language')
+          .eq('id', user.id)
+          .single();
+
+        const lang = profile?.language || sessionStorage.getItem('signup_language') || localStorage.getItem('i18nextLng') || 'en';
+        
+        if (i18n.language !== lang) {
+          await i18n.changeLanguage(lang);
+          localStorage.setItem('i18nextLng', lang);
+        }
+      } catch (e) {
+        console.error('Error loading language for onboarding:', e);
+      } finally {
+        setLanguageLoaded(true);
+      }
+    };
+
+    if (open) {
+      loadLanguage();
+    }
+  }, [user?.id, open, i18n, languageLoaded]);
 
   const steps = [
     {
@@ -181,6 +212,15 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   if (!open) return null;
+  
+  // Wait for language to load before rendering content
+  if (!languageLoaded) {
+    return (
+      <div className="fixed inset-0 z-[2000] bg-background flex items-center justify-center safe-top safe-bottom">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <>

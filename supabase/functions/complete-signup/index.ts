@@ -15,6 +15,7 @@ interface CompleteSignupRequest {
   password: string;
   email?: string;
   phone?: string;
+  language?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,7 +32,8 @@ const handler = async (req: Request): Promise<Response> => {
       gender, 
       password,
       email,
-      phone 
+      phone,
+      language 
     }: CompleteSignupRequest = await req.json();
 
     // Initialize Supabase Admin Client
@@ -174,6 +176,7 @@ const handler = async (req: Request): Promise<Response> => {
       .update({
         full_name: fullName,
         username: username.toLowerCase(),
+        language: language || 'en',
       })
       .eq('id', authData.user.id);
 
