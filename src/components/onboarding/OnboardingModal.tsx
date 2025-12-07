@@ -6,15 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { Camera, MapPin, Users } from 'lucide-react';
+import rocketIcon from '@/assets/onboarding-rocket.png';
 import mapIcon from '@/assets/onboarding-map.png';
-import exploreIcon from '@/assets/onboarding-explore.png';
-import listIcon from '@/assets/onboarding-list.png';
-import profileIcon from '@/assets/onboarding-profile.png';
 import friendsIcon from '@/assets/onboarding-friends.png';
-import followIcon from '@/assets/onboarding-follow.png';
-import likeIcon from '@/assets/onboarding-like.png';
-import shareIcon from '@/assets/onboarding-share.png';
-import messagesIcon from '@/assets/onboarding-messages.png';
 
 interface OnboardingModalProps {
   open: boolean;
@@ -60,104 +55,78 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
   }, [user?.id, open, i18n, languageLoaded]);
 
   const steps = [
+    // Step 1: Profile Photo
     {
-      title: t('welcomeTitle'),
-      description: t('welcomeDescription'),
+      title: t('profilePhotoTitle'),
+      description: t('profilePhotoDescription'),
       content: (
-        <div className="space-y-6 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
-              <img src={mapIcon} alt={t('map')} className="w-12 h-12 mb-2 object-contain" />
-              <h3 className="font-semibold text-sm">{t('map')}</h3>
-              <p className="text-xs text-muted-foreground text-center">{t('mapDescription')}</p>
-            </div>
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
-              <img src={exploreIcon} alt={t('explore')} className="w-12 h-12 mb-2 object-contain" />
-              <h3 className="font-semibold text-sm">{t('explore')}</h3>
-              <p className="text-xs text-muted-foreground text-center">{t('exploreDescription')}</p>
-            </div>
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
-              <img src={listIcon} alt={t('lists')} className="w-12 h-12 mb-2 object-contain" />
-              <h3 className="font-semibold text-sm">{t('lists')}</h3>
-              <p className="text-xs text-muted-foreground text-center">{t('listsDescription')}</p>
-            </div>
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
-              <img src={profileIcon} alt={t('profile')} className="w-12 h-12 mb-2 object-contain" />
-              <h3 className="font-semibold text-sm">{t('profile')}</h3>
-              <p className="text-xs text-muted-foreground text-center">{t('profileDescription')}</p>
-            </div>
+        <div className="flex flex-col items-center py-8">
+          <div className="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <Camera className="w-16 h-16 text-primary" />
           </div>
+          <p className="text-center text-muted-foreground max-w-xs">
+            {t('profilePhotoTip')}
+          </p>
         </div>
       ),
     },
+    // Step 2: Map Guide
     {
-      title: t('connectTitle'),
-      description: t('connectDescription'),
+      title: t('mapGuideTitle'),
+      description: t('mapGuideDescription'),
       content: (
-        <div className="space-y-2 py-2">
-          <div className="flex items-center justify-center mb-4">
-            <img src={friendsIcon} alt={t('connectTitle')} className="w-24 h-24 object-contain" />
+        <div className="space-y-6 py-4">
+          <div className="flex justify-center mb-4">
+            <img src={rocketIcon} alt="Rocket" className="w-24 h-24 object-contain" />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={followIcon} alt={t('followFriends')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-sm">{t('followFriends')}</h3>
-                <p className="text-xs text-muted-foreground">{t('followFriendsDescription')}</p>
+          <div className="bg-secondary/20 rounded-2xl p-5">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                <img src={mapIcon} alt="Map" className="w-10 h-10 object-contain" />
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={likeIcon} alt={t('likeComment')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-sm">{t('likeComment')}</h3>
-                <p className="text-xs text-muted-foreground">{t('likeCommentDescription')}</p>
+            <h3 className="font-bold text-lg text-center mb-2">{t('firstMission')}</h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              {t('firstMissionDescription')}
+            </p>
+            <div className="space-y-3 text-left">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                <span className="text-sm">{t('mission1')}</span>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={shareIcon} alt={t('shareExperiences')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-sm">{t('shareExperiences')}</h3>
-                <p className="text-xs text-muted-foreground">{t('shareExperiencesDescription')}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                <span className="text-sm">{t('mission2')}</span>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={messagesIcon} alt={t('directMessages')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-sm">{t('directMessages')}</h3>
-                <p className="text-xs text-muted-foreground">{t('directMessagesDescription')}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                <span className="text-sm">{t('mission3')}</span>
               </div>
             </div>
           </div>
         </div>
       ),
     },
+    // Step 3: Explore / Friends
     {
-      title: t('getStartedTitle'),
-      description: t('getStartedDescription'),
+      title: t('exploreGuideTitle'),
+      description: t('exploreGuideDescription'),
       content: (
-        <div className="space-y-6 py-4">
-          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-6 text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-              <img src={mapIcon} alt="Mission" className="w-10 h-10 object-contain" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-2">{t('firstMission')}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t('firstMissionDescription')}
-              </p>
-            </div>
-            <div className="space-y-2 text-left text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">1</div>
-                <span>{t('mission1')}</span>
+        <div className="flex flex-col items-center py-8">
+          <img src={friendsIcon} alt="Friends" className="w-28 h-28 object-contain mb-6" />
+          <div className="space-y-4 w-full max-w-sm">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/20">
+              <Users className="w-8 h-8 text-primary flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-sm">{t('findFriends')}</h4>
+                <p className="text-xs text-muted-foreground">{t('findFriendsDescription')}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">2</div>
-                <span>{t('mission2')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">3</div>
-                <span>{t('mission3')}</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/20">
+              <MapPin className="w-8 h-8 text-primary flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-sm">{t('discoverPlaces')}</h4>
+                <p className="text-xs text-muted-foreground">{t('discoverPlacesDescription')}</p>
               </div>
             </div>
           </div>
