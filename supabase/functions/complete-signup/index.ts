@@ -140,6 +140,34 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to create user");
     }
 
+    // Generate a session for the newly created user using generateLink
+    let session = null;
+    try {
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: email || authData.user.email!,
+      });
+
+      if (!linkError && linkData?.properties?.hashed_token) {
+        // Use the token to create a session
+        const { data: sessionData, error: sessionErr } = await supabase.auth.verifyOtp({
+          token_hash: linkData.properties.hashed_token,
+          type: 'magiclink',
+        });
+        
+        if (!sessionErr && sessionData?.session) {
+          session = sessionData.session;
+          console.log("Session created successfully for user:", authData.user.id);
+        } else {
+          console.error("Session creation via OTP failed:", sessionErr);
+        }
+      } else {
+        console.error("Failed to generate magic link:", linkError);
+      }
+    } catch (sessionGenError) {
+      console.error("Session generation error:", sessionGenError);
+    }
+
     // Ensure profile has correct data (trigger already created it)
     const { error: profileError } = await supabase
       .from('profiles')
@@ -175,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true,
         user: authData.user,
-        session: authData.session
+        session: session
       }),
       {
         status: 200,
