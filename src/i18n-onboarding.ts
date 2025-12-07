@@ -35,6 +35,9 @@ export const onboardingTranslations = {
       mission1: 'Your favorite hometown spot',
       mission2: 'A restaurant you love',
       mission3: 'A dream travel destination',
+      errorSaving: 'Failed to save progress',
+      welcomeToast: 'Welcome to Spott! Start exploring places to save.',
+      errorGeneric: 'Something went wrong',
     }
   },
   it: {
@@ -72,6 +75,9 @@ export const onboardingTranslations = {
       mission1: 'Il tuo spot preferito della tua città',
       mission2: 'Un ristorante che ami',
       mission3: 'Una destinazione di viaggio dei tuoi sogni',
+      errorSaving: 'Impossibile salvare i progressi',
+      welcomeToast: 'Benvenuto su Spott! Inizia a esplorare luoghi da salvare.',
+      errorGeneric: 'Qualcosa è andato storto',
     }
   },
   es: {
@@ -109,6 +115,9 @@ export const onboardingTranslations = {
       mission1: 'Tu lugar favorito de tu ciudad',
       mission2: 'Un restaurante que te encante',
       mission3: 'Un destino de viaje soñado',
+      errorSaving: 'Error al guardar el progreso',
+      welcomeToast: '¡Bienvenido a Spott! Empieza a explorar lugares para guardar.',
+      errorGeneric: 'Algo salió mal',
     }
   },
   fr: {
@@ -146,6 +155,9 @@ export const onboardingTranslations = {
       mission1: 'Votre spot préféré de votre ville',
       mission2: 'Un restaurant que vous aimez',
       mission3: 'Une destination de voyage de rêve',
+      errorSaving: 'Échec de la sauvegarde',
+      welcomeToast: 'Bienvenue sur Spott ! Commencez à explorer des lieux à sauvegarder.',
+      errorGeneric: "Quelque chose s'est mal passé",
     }
   },
   de: {
@@ -183,6 +195,9 @@ export const onboardingTranslations = {
       mission1: 'Dein Lieblings-Spot in deiner Stadt',
       mission2: 'Ein Restaurant, das du liebst',
       mission3: 'Ein Traum-Reiseziel',
+      errorSaving: 'Fortschritt konnte nicht gespeichert werden',
+      welcomeToast: 'Willkommen bei Spott! Beginne Orte zu erkunden und zu speichern.',
+      errorGeneric: 'Etwas ist schiefgelaufen',
     }
   },
   pt: {
@@ -220,6 +235,9 @@ export const onboardingTranslations = {
       mission1: 'Seu spot favorito da sua cidade',
       mission2: 'Um restaurante que você ama',
       mission3: 'Um destino de viagem dos sonhos',
+      errorSaving: 'Falha ao salvar o progresso',
+      welcomeToast: 'Bem-vindo ao Spott! Comece a explorar lugares para salvar.',
+      errorGeneric: 'Algo deu errado',
     }
   },
   ru: {
@@ -257,9 +275,12 @@ export const onboardingTranslations = {
       mission1: 'Ваше любимое место в родном городе',
       mission2: 'Ресторан, который вы любите',
       mission3: 'Место мечты для путешествия',
+      errorSaving: 'Не удалось сохранить прогресс',
+      welcomeToast: 'Добро пожаловать в Spott! Начните исследовать места для сохранения.',
+      errorGeneric: 'Что-то пошло не так',
     }
   },
-  zh: {
+  'zh-CN': {
     onboarding: {
       step: '步骤',
       of: '/',
@@ -294,6 +315,9 @@ export const onboardingTranslations = {
       mission1: '您家乡最喜欢的地点',
       mission2: '您喜爱的餐厅',
       mission3: '梦想旅行目的地',
+      errorSaving: '保存进度失败',
+      welcomeToast: '欢迎来到 Spott！开始探索要保存的地点。',
+      errorGeneric: '出了些问题',
     }
   },
   ja: {
@@ -331,6 +355,9 @@ export const onboardingTranslations = {
       mission1: '地元のお気に入りスポット',
       mission2: '好きなレストラン',
       mission3: '夢の旅行先',
+      errorSaving: '進捗の保存に失敗しました',
+      welcomeToast: 'Spottへようこそ！保存する場所を探索開始しましょう。',
+      errorGeneric: '問題が発生しました',
     }
   },
   ar: {
@@ -368,6 +395,9 @@ export const onboardingTranslations = {
       mission1: 'مكانك المفضل في مدينتك',
       mission2: 'مطعم تحبه',
       mission3: 'وجهة سفر من أحلامك',
+      errorSaving: 'فشل في حفظ التقدم',
+      welcomeToast: 'مرحبًا بك في Spott! ابدأ استكشاف الأماكن للحفظ.',
+      errorGeneric: 'حدث خطأ ما',
     }
   },
   ko: {
@@ -405,6 +435,9 @@ export const onboardingTranslations = {
       mission1: '고향의 좋아하는 스팟',
       mission2: '좋아하는 레스토랑',
       mission3: '꿈의 여행 목적지',
+      errorSaving: '진행 상황 저장 실패',
+      welcomeToast: 'Spott에 오신 것을 환영합니다! 저장할 장소 탐색을 시작하세요.',
+      errorGeneric: '문제가 발생했습니다',
     }
   },
   tr: {
@@ -442,6 +475,9 @@ export const onboardingTranslations = {
       mission1: 'Memleketinizde favori yeriniz',
       mission2: 'Sevdiğiniz bir restoran',
       mission3: 'Rüya seyahat destinasyonu',
+      errorSaving: 'İlerleme kaydedilemedi',
+      welcomeToast: "Spott'a hoş geldiniz! Kaydetmek için yerleri keşfetmeye başlayın.",
+      errorGeneric: 'Bir şeyler ters gitti',
     }
   },
 };
