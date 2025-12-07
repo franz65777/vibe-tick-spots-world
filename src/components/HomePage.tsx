@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
+import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 import { Geolocation } from "@capacitor/geolocation";
 
 // Lazy load heavy components
@@ -82,6 +83,10 @@ const HomePage = memo(() => {
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  
+  // Guided tour state
+  const [showGuidedTour, setShowGuidedTour] = useState(false);
+  const [guidedTourStep, setGuidedTourStep] = useState<GuidedTourStep>('profile-photo');
 
   // Logo state - show only on first login (this session)
   const [showLogo, setShowLogo] = useState(() => {
@@ -560,6 +565,22 @@ const HomePage = memo(() => {
       <OnboardingModal 
         open={showOnboarding}
         onComplete={() => setShowOnboarding(false)}
+        onStartGuidedTour={() => {
+          setShowOnboarding(false);
+          setShowGuidedTour(true);
+          setGuidedTourStep('profile-photo');
+        }}
+      />
+      
+      {/* Guided Tour */}
+      <GuidedTour
+        isActive={showGuidedTour}
+        currentStep={guidedTourStep}
+        onStepChange={setGuidedTourStep}
+        onComplete={() => {
+          setShowGuidedTour(false);
+          setGuidedTourStep('complete');
+        }}
       />
       
       <div 
