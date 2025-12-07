@@ -271,7 +271,7 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
   return null;
 };
 
-// Map Guide Overlay Component
+// Map Guide Overlay Component - Full screen informational page
 interface MapGuideOverlayProps {
   onSkip: () => void;
   onNext: () => void;
@@ -279,86 +279,74 @@ interface MapGuideOverlayProps {
 }
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onSkip, onNext, t }) => {
-  const [subStep, setSubStep] = useState<'categories' | 'save-location' | 'filters'>('categories');
-
-  const handleNext = () => {
-    if (subStep === 'categories') {
-      setSubStep('save-location');
-    } else if (subStep === 'save-location') {
-      setSubStep('filters');
-    } else {
-      onNext();
-    }
-  };
-
-  const getSubStepContent = () => {
-    switch (subStep) {
-      case 'categories':
-        return {
-          title: t('categoriesTitle'),
-          description: t('categoriesDescription'),
-          highlightPosition: 'top', // Categories are at the top
-        };
-      case 'save-location':
-        return {
-          title: t('saveLocationTitle'),
-          description: t('saveLocationDescription'),
-          highlightPosition: 'center', // Pin cards are in center
-        };
-      case 'filters':
-        return {
-          title: t('filtersTitle'),
-          description: t('filtersDescription'),
-          highlightPosition: 'bottom-left', // Filters are bottom-left
-        };
-    }
-  };
-
-  const content = getSubStepContent();
-  const stepNumber = subStep === 'categories' ? '2.1' : subStep === 'save-location' ? '2.2' : '2.3';
-
   return (
-    <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Semi-transparent overlay */}
-      <div className="absolute inset-0 bg-black/50" />
-      
-      {/* Highlight cutout based on position */}
-      {subStep === 'categories' && (
-        <div className="absolute top-0 left-0 right-0 h-28 bg-transparent" 
-             style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)', position: 'relative', zIndex: 1 }} />
-      )}
-      
-      {subStep === 'filters' && (
-        <div className="absolute bottom-20 left-4 w-48 h-14 rounded-xl bg-transparent"
-             style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)', position: 'relative', zIndex: 1 }} />
-      )}
+    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
+        {/* Map icon */}
+        <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center">
+          <MapPin className="w-10 h-10 text-primary" />
+        </div>
 
-      {/* Coach mark card */}
-      <div className={`absolute pointer-events-auto ${
-        subStep === 'categories' ? 'top-32 left-4 right-4' : 
-        subStep === 'filters' ? 'bottom-40 left-4 right-4' :
-        'top-1/2 left-4 right-4 -translate-y-1/2'
-      }`}>
-        <div className="bg-background rounded-2xl p-5 shadow-xl animate-fade-in max-w-md mx-auto">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-primary" />
+        {/* Title and step indicator */}
+        <div className="text-center space-y-1">
+          <h2 className="text-2xl font-bold">{t('mapGuideTitle')}</h2>
+          <p className="text-sm text-muted-foreground">{t('step')} 2/3</p>
+        </div>
+
+        {/* Description */}
+        <p className="text-center text-muted-foreground max-w-sm">
+          {t('mapGuideDescription')}
+        </p>
+
+        {/* Feature cards */}
+        <div className="w-full max-w-sm space-y-3">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-primary">1</span>
             </div>
             <div>
-              <h3 className="font-bold">{content.title}</h3>
-              <p className="text-xs text-muted-foreground">{t('step')} {stepNumber}/3</p>
+              <h4 className="font-semibold text-sm">{t('categoriesTitle')}</h4>
+              <p className="text-xs text-muted-foreground">{t('categoriesShort')}</p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">{content.description}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onSkip} className="flex-1 rounded-xl text-sm">
-              {t('skip')}
-            </Button>
-            <Button onClick={handleNext} className="flex-1 rounded-xl text-sm">
-              {subStep === 'filters' ? t('next') : t('gotIt')}
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+          
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-primary">2</span>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">{t('saveLocationTitle')}</h4>
+              <p className="text-xs text-muted-foreground">{t('saveLocationShort')}</p>
+            </div>
           </div>
+          
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-primary">3</span>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">{t('filtersTitle')}</h4>
+              <p className="text-xs text-muted-foreground">{t('filtersShort')}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="w-full max-w-sm flex gap-3 pt-4">
+          <Button 
+            variant="outline" 
+            onClick={onSkip} 
+            className="flex-1 rounded-xl h-12"
+          >
+            {t('skip')}
+          </Button>
+          <Button 
+            onClick={onNext} 
+            className="flex-1 rounded-xl h-12"
+          >
+            {t('next')}
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
         </div>
       </div>
     </div>
