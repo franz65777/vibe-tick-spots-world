@@ -48,6 +48,7 @@ const SignupPassword: React.FC = () => {
       const gender = sessionStorage.getItem('signup_gender');
       const method = sessionStorage.getItem('signup_method');
       const contact = sessionStorage.getItem('signup_contact');
+      const language = sessionStorage.getItem('signup_language') || localStorage.getItem('i18nextLng') || 'en';
 
       if (!sessionToken || !fullName || !username || !dob || !gender || !method || !contact) {
         throw new Error(t('signup:incompleteData'));
@@ -63,6 +64,7 @@ const SignupPassword: React.FC = () => {
         dateOfBirth: dob,
         gender,
         password,
+        language,
       };
 
       if (method === 'email') {

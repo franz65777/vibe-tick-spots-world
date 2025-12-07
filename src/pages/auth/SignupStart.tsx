@@ -137,9 +137,11 @@ const SignupStart: React.FC = () => {
           description: 'Il dominio email non è verificato. Usa questo codice per testare.'
         });
       } else {
-        toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
+      toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
       }
 
+      // Store language in session storage for signup flow
+      sessionStorage.setItem('signup_language', i18n.language);
       navigate(`/signup/verify?method=${method}&${method}=${encodeURIComponent(method === 'email' ? email.trim() : phone.trim())}`);
     } catch (e: any) {
       toast.error(e?.message || t('auth:cannotSendCode'));
