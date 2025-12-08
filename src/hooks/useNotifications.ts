@@ -193,6 +193,21 @@ export const useNotifications = () => {
               prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
             );
           }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Notification deleted:', payload);
+            setNotifications(prev => 
+              prev.filter(n => n.id !== payload.old.id)
+            );
+          }
         );
 
       channel.subscribe((status) => {
@@ -269,6 +284,34 @@ export const useNotifications = () => {
     return await markAsRead(unreadIds);
   };
 
+  const deleteNotification = async (notificationId: string) => {
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    try {
+      // Optimistically remove from local state first
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting notification:', error);
+        // Refetch to restore state if delete failed
+        fetchNotifications();
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      fetchNotifications();
+      return { success: false, error: 'Failed to delete notification' };
+    }
+  };
+
   return {
     notifications,
     unreadCount,
@@ -276,6 +319,7 @@ export const useNotifications = () => {
     sendNotification,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
     refresh: fetchNotifications
   };
 };
