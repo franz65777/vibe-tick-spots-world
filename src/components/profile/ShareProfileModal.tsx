@@ -143,7 +143,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('searchPlaceholder')}
+              placeholder={t('shareLocation.searchPlaceholder')}
               className="pl-10"
               autoFocus
             />
@@ -163,11 +163,11 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                   <div className="flex items-center gap-2 mb-3">
                     <MessageCircle className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {t('frequentContacts')}
+                      {t('shareLocation.frequentContacts')}
                     </span>
                   </div>
                   <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4 pr-4">
+                    <div className="flex gap-4 pr-8">
                       {filteredFrequent.map((contact) => (
                         <button
                           key={contact.id}
@@ -203,11 +203,11 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {t('allContacts')}
+                      {t('shareLocation.allContacts')}
                     </span>
                   </div>
                   <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4 pr-4">
+                    <div className="flex gap-4 pr-8">
                       {filteredAll.map((contact) => (
                         <button
                           key={contact.id}
