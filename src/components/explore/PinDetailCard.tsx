@@ -572,11 +572,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   {/* Save Button - with spotlight during onboarding */}
                   <div className="relative">
                     {isOnboardingMapStep && !isSaved && (
-                      <>
-                        {/* Pulsating ring effect */}
-                        <div className="absolute -inset-1 rounded-2xl bg-primary/30 animate-pulse z-0" />
-                        <div className="absolute -inset-2 rounded-2xl border-2 border-primary animate-ping z-0" style={{ animationDuration: '1.5s' }} />
-                      </>
+                      <div className="absolute inset-0 rounded-2xl ring-2 ring-primary ring-offset-1 ring-offset-background animate-pulse z-0" />
                     )}
                     <Button
                       onClick={(e) => {
@@ -588,7 +584,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       size="sm"
                       className={cn(
                         "relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full",
-                        isOnboardingMapStep && !isSaved && "ring-2 ring-primary ring-offset-2 ring-offset-background z-10"
+                        isOnboardingMapStep && !isSaved && "bg-primary/10 z-10"
                       )}
                     >
                       <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
