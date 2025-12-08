@@ -962,27 +962,26 @@ const SharingControls = ({
   t: any;
   filtersVisible?: boolean;
 }) => {
-  const { isFilterExpanded, isFriendsDropdownOpen, filterDropdownWidth } = useMapFilter();
+  const { isFilterExpanded, isFriendsDropdownOpen } = useMapFilter();
+  const containerRef = useRef<HTMLDivElement>(null);
   
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
-  // Calculate left position based on dropdown width + gap
-  const leftPosition = filterDropdownWidth + 24; // 24px gap from dropdown
-  
   return (
     <div 
+      ref={containerRef}
       className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} z-[1000] flex gap-2 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      style={{ left: `${leftPosition}px` }}
+      style={{ left: '50%', transform: 'translateX(-50%)' }}
     >
       <button
         onClick={handleEndSharing}
-        className="h-9 px-4 rounded-full bg-red-500/80 dark:bg-red-600/80 backdrop-blur-md border border-red-400/30 shadow-lg text-white text-sm font-medium hover:bg-red-600/90 dark:hover:bg-red-700/90 transition-colors"
+        className="h-9 px-4 rounded-full bg-red-500/80 dark:bg-red-600/80 backdrop-blur-md border border-red-400/30 shadow-lg text-white text-sm font-medium hover:bg-red-600/90 dark:hover:bg-red-700/90 transition-colors whitespace-nowrap"
       >
         {t('endSharing', { ns: 'common', defaultValue: 'Termina' })}
       </button>
       <button
         onClick={handleUpdateLocation}
-        className="h-9 px-4 rounded-full bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border border-border/30 shadow-lg text-foreground text-sm font-medium hover:bg-gray-300/50 dark:hover:bg-slate-700/70 transition-colors"
+        className="h-9 px-4 rounded-full bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border border-border/30 shadow-lg text-foreground text-sm font-medium hover:bg-gray-300/50 dark:hover:bg-slate-700/70 transition-colors whitespace-nowrap"
       >
         {t('updateLocation', { ns: 'common', defaultValue: 'Aggiorna' })}
       </button>

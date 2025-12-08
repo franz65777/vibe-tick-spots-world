@@ -57,10 +57,22 @@ export const useSocialEngagement = (postId: string) => {
     setIsSaved(newSavedState);
   }, [postId, user]);
 
-  const addComment = useCallback(async (content: string) => {
+  const addComment = useCallback(async (
+    content: string,
+    successMessage?: string,
+    errorMessage?: string,
+    emptyErrorMessage?: string
+  ) => {
     if (!user) return;
     
-    const newComment = await engagement.addPostComment(postId, user.id, content);
+    const newComment = await engagement.addPostComment(
+      postId, 
+      user.id, 
+      content,
+      successMessage,
+      errorMessage,
+      emptyErrorMessage
+    );
     if (newComment) {
       setComments(prev => [...prev, newComment]);
     }
