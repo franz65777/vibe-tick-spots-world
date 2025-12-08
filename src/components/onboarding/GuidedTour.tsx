@@ -12,8 +12,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AvatarCropEditor } from '@/components/settings/AvatarCropEditor';
 import cameraIcon from '@/assets/onboarding-camera.png';
 import binocularsIcon from '@/assets/onboarding-binoculars.png';
+import friendsIcon from '@/assets/onboarding-friends.png';
+import travelIcon from '@/assets/onboarding-travel.png';
+import reviewIcon from '@/assets/onboarding-review.png';
 
-export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'complete';
+export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'welcome' | 'complete';
 
 interface GuidedTourProps {
   isActive: boolean;
@@ -148,6 +151,8 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
       }
       onStepChange('explore-guide');
     } else if (currentStep === 'explore-guide') {
+      onStepChange('welcome');
+    } else if (currentStep === 'welcome') {
       onComplete();
     }
   };
@@ -162,6 +167,8 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
       }
       onStepChange('explore-guide');
     } else if (currentStep === 'explore-guide') {
+      onStepChange('welcome');
+    } else if (currentStep === 'welcome') {
       onComplete();
     }
   };
@@ -269,7 +276,7 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
 
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold">{t('profilePhotoTitle')}</h2>
-            <p className="text-sm text-muted-foreground">{t('step')} 1/3</p>
+            <p className="text-sm text-muted-foreground">{t('step')} 1/4</p>
           </div>
 
           <p className="text-center text-muted-foreground max-w-sm">
@@ -334,9 +341,16 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     return (
       <ExploreGuideOverlay
         onSkip={handleSkipStep}
-        onComplete={onComplete}
+        onNext={handleNextStep}
         t={t}
       />
+    );
+  }
+
+  // Welcome step - final step
+  if (currentStep === 'welcome') {
+    return (
+      <WelcomeScreen onComplete={onComplete} t={t} />
     );
   }
 
@@ -406,7 +420,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold leading-tight">{t('mapGuideTitle')}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">{t('step')} 2/3</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('step')} 2/4</p>
               </div>
             </div>
             
@@ -445,11 +459,11 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
 // Explore Guide Overlay
 interface ExploreGuideOverlayProps {
   onSkip: () => void;
-  onComplete: () => void;
+  onNext: () => void;
   t: (key: string) => string;
 }
 
-const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onComplete, t }) => {
+const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onNext, t }) => {
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
       <div className="absolute inset-0 bg-black/50" />
@@ -462,12 +476,12 @@ const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onCom
       <div className="absolute top-36 left-4 right-4 pointer-events-auto">
         <div className="bg-background rounded-2xl p-5 shadow-xl animate-fade-in max-w-md mx-auto">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary" />
+            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+              <img src={friendsIcon} alt="" className="w-10 h-10 object-contain" />
             </div>
             <div>
               <h3 className="font-bold">{t('exploreTitle')}</h3>
-              <p className="text-xs text-muted-foreground">{t('step')} 3/3</p>
+              <p className="text-xs text-muted-foreground">{t('step')} 3/4</p>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mb-4">{t('exploreDescription')}</p>
@@ -475,12 +489,93 @@ const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onCom
             <Button variant="outline" onClick={onSkip} className="flex-1 rounded-xl text-sm">
               {t('skip')}
             </Button>
-            <Button onClick={onComplete} className="flex-1 rounded-xl text-sm">
-              {t('finish')}
+            <Button onClick={onNext} className="flex-1 rounded-xl text-sm">
+              {t('next')}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Welcome Screen - Final onboarding step
+interface WelcomeScreenProps {
+  onComplete: () => void;
+  t: (key: string) => string;
+}
+
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete, t }) => {
+  return (
+    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
+        {/* Decorative icons grid */}
+        <div className="relative w-full max-w-xs h-48 mb-4">
+          {/* Travel suitcase - center top */}
+          <img 
+            src={travelIcon} 
+            alt="" 
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-28 object-contain animate-fade-in"
+            style={{ animationDelay: '0.1s' }}
+          />
+          {/* Friends dining - bottom left */}
+          <img 
+            src={friendsIcon} 
+            alt="" 
+            className="absolute bottom-0 left-0 w-24 h-24 object-contain animate-fade-in"
+            style={{ animationDelay: '0.3s' }}
+          />
+          {/* Review/rating - bottom right */}
+          <img 
+            src={reviewIcon} 
+            alt="" 
+            className="absolute bottom-0 right-0 w-24 h-24 object-contain animate-fade-in"
+            style={{ animationDelay: '0.5s' }}
+          />
+        </div>
+
+        {/* Welcome Title */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            {t('welcomeTitle')}
+          </h1>
+          <p className="text-muted-foreground text-sm">{t('welcomeSubtitle')}</p>
+        </div>
+
+        {/* Feature highlights */}
+        <div className="w-full max-w-sm space-y-3 mt-4">
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-sm text-foreground">{t('welcomeFeature1')}</p>
+          </div>
+          
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-sm text-foreground">{t('welcomeFeature2')}</p>
+          </div>
+          
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-sm text-foreground">{t('welcomeFeature3')}</p>
+          </div>
+        </div>
+
+        {/* Start button */}
+        <Button 
+          onClick={onComplete} 
+          size="lg"
+          className="w-full max-w-sm rounded-xl h-14 text-lg font-semibold mt-6"
+        >
+          {t('letsGo')}
+          <ChevronRight className="w-5 h-5 ml-2" />
+        </Button>
       </div>
     </div>
   );
