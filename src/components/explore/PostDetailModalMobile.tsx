@@ -371,9 +371,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   return (
     <>
-      <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
+      <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide pt-safe">
         {/* Top safe area padding */}
-        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-4">
+        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4">
           {(locationId || userId || showBackButton) && (
             <button
               onClick={onClose}
@@ -395,7 +395,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           return (
             <article key={post.id} data-post-id={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-2" />}
               {/* Header */}
-              <div className="post-compact-header flex items-center justify-between border-b border-border">
+              <div className="post-compact-header flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <button 
                     onClick={(e) => {
@@ -531,6 +531,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
               {/* Actions and Content */}
               <div className="post-compact-actions space-y-2.5">
+                {/* Caption - moved above actions */}
+                {post.caption && renderCaption(post)}
+
                 <PostActions
                   postId={post.id}
                   likesCount={post.likes_count || 0}
@@ -541,9 +544,6 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                   onCommentClick={handleCommentClick}
                   onShareClick={() => setShareOpen(true)}
                 />
-
-                {/* Caption */}
-                {post.caption && renderCaption(post)}
 
                 {/* Timestamp */}
                 <p className="text-xs text-muted-foreground uppercase text-left">
