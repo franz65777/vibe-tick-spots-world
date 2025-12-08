@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { X, Share2, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { X, Search, MessageCircle, Send, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { pinSharingService } from '@/services/pinSharingService';
 import { toast } from 'sonner';
+import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 
 interface PinShareModalProps {
   isOpen: boolean;
@@ -17,22 +19,25 @@ interface PinShareModalProps {
 
 const PinShareModal = ({ isOpen, onClose, place }: PinShareModalProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation('messages');
   const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState<any[]>([]);
+  const [allContacts, setAllContacts] = useState<any[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const { frequentContacts, loading: frequentLoading } = useFrequentContacts();
 
   useEffect(() => {
     if (isOpen && user) {
-      loadFollowingUsers();
+      loadAllContacts();
     } else {
       setSelectedUsers(new Set());
       setSearchQuery('');
+      setAllContacts([]);
     }
   }, [isOpen, user]);
 
-  const loadFollowingUsers = async () => {
+  const loadAllContacts = async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -44,7 +49,7 @@ const PinShareModal = ({ isOpen, onClose, place }: PinShareModalProps) => {
       const followingIds = follows?.map(f => f.following_id) || [];
 
       if (followingIds.length === 0) {
-        setUsers([]);
+        setAllContacts([]);
         setLoading(false);
         return;
       }
@@ -55,29 +60,28 @@ const PinShareModal = ({ isOpen, onClose, place }: PinShareModalProps) => {
         .in('id', followingIds)
         .order('username');
 
-      setUsers(profiles || []);
+      setAllContacts(profiles || []);
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('Error loading contacts:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleUser = (userId: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
-    }
-    setSelectedUsers(newSelected);
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
   };
 
-  const handleSend = async () => {
-    if (selectedUsers.size === 0) {
-      toast.error('Please select at least one person');
-      return;
-    }
+  const handleSendToSelected = async () => {
+    if (!user || selectedUsers.size === 0) return;
 
     setSending(true);
     try {
@@ -92,109 +96,188 @@ const PinShareModal = ({ isOpen, onClose, place }: PinShareModalProps) => {
         google_place_id: place.google_place_id
       };
 
-      const promises = Array.from(selectedUsers).map(userId =>
-        pinSharingService.sharePin(userId, pinData)
+      await Promise.all(
+        Array.from(selectedUsers).map(userId =>
+          pinSharingService.sharePin(userId, pinData)
+        )
       );
-
-      await Promise.all(promises);
       
-      toast.success(`Shared with ${selectedUsers.size} ${selectedUsers.size === 1 ? 'person' : 'people'}`);
+      toast.success(t('locationShared', { ns: 'common' }));
       onClose();
     } catch (error) {
       console.error('Error sharing pin:', error);
-      toast.error('Failed to share pin');
+      toast.error(t('shareError', { ns: 'common' }));
     } finally {
       setSending(false);
     }
   };
 
-  const filteredUsers = users.filter(u =>
-    u.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter contacts based on search
+  const filteredFrequent = frequentContacts.filter(c =>
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredAll = allContacts.filter(c =>
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const isSearching = searchQuery.trim().length > 0;
+
+  if (!isOpen) return null;
+
+  const renderContactButton = (contact: any) => (
+    <button
+      key={contact.id}
+      onClick={() => toggleUserSelection(contact.id)}
+      className="flex flex-col items-center gap-2 min-w-[72px] flex-shrink-0 pt-1"
+    >
+      <div className="relative">
+        <Avatar className={`h-14 w-14 transition-all ${selectedUsers.has(contact.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
+          <AvatarImage src={contact.avatar_url} />
+          <AvatarFallback className="bg-primary/10 text-primary text-lg">
+            {contact.username?.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        {selectedUsers.has(contact.id) && (
+          <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-0.5">
+            <Check className="w-3 h-3 text-primary-foreground" />
+          </div>
+        )}
+      </div>
+      <span className="text-xs text-center truncate w-full">
+        {contact.username}
+      </span>
+    </button>
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md z-[3001]">
-        <DialogHeader>
-          <DialogTitle>Share {place?.name}</DialogTitle>
-        </DialogHeader>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[3001] flex items-end sm:items-center justify-center">
+      <div className="bg-background rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md h-[70vh] sm:h-[60vh] overflow-hidden flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="p-4 flex items-center justify-between flex-shrink-0">
+          <div className="w-8" />
+          <h3 className="font-bold text-lg text-center">{t('share', { ns: 'common' })}</h3>
+          <Button
+            onClick={onClose}
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
 
-        <div className="space-y-4">
-          <Input
-            placeholder="Search people..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
+        {/* Search */}
+        <div className="px-4 pb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className="pl-10"
+              autoFocus
+            />
+          </div>
+        </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <ScrollArea className="flex-1 px-4">
+          {loading || frequentLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
-            <div className="max-h-[300px] overflow-y-auto space-y-2">
-              {filteredUsers.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
-                  {searchQuery ? 'No users found' : 'Follow people to share with them'}
-                </p>
-              ) : (
-                filteredUsers.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => toggleUser(user.id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                      selectedUsers.has(user.id)
-                        ? 'bg-blue-50 border-2 border-blue-500'
-                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                    }`}
-                  >
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={user.avatar_url || ''} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white">
-                        {user.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-gray-900">{user.username}</p>
+            <div className="space-y-6 pb-4">
+              {/* When searching, show only All Contacts */}
+              {isSearching ? (
+                filteredAll.length > 0 ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-semibold text-muted-foreground tracking-wide">
+                        {t('allContacts')}
+                      </span>
                     </div>
-                    {selectedUsers.has(user.id) && (
-                      <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                    <div className="overflow-x-auto scrollbar-hide">
+                      <div className="flex gap-4" style={{ paddingRight: '2rem' }}>
+                        {filteredAll.map(renderContactButton)}
                       </div>
-                    )}
-                  </button>
-                ))
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                    <p className="text-muted-foreground">
+                      {t('noResults', { ns: 'common' })}
+                    </p>
+                  </div>
+                )
+              ) : (
+                <>
+                  {/* Frequent Contacts */}
+                  {filteredFrequent.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs font-semibold text-muted-foreground tracking-wide">
+                          {t('frequentContacts')}
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto scrollbar-hide">
+                        <div className="flex gap-4" style={{ paddingRight: '2rem' }}>
+                          {filteredFrequent.map(renderContactButton)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* All Contacts */}
+                  {filteredAll.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-semibold text-muted-foreground tracking-wide">
+                          {t('allContacts')}
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto scrollbar-hide">
+                        <div className="flex gap-4" style={{ paddingRight: '2rem' }}>
+                          {filteredAll.map(renderContactButton)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {filteredFrequent.length === 0 && filteredAll.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                      <p className="text-muted-foreground">
+                        {t('noContacts', { ns: 'common' })}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
+        </ScrollArea>
 
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
+        {/* Share Button - only visible when users are selected */}
+        {selectedUsers.size > 0 && (
+          <div className="p-4 flex-shrink-0">
             <Button
-              onClick={handleSend}
-              disabled={selectedUsers.size === 0 || sending}
-              className="flex-1 gap-2"
+              onClick={handleSendToSelected}
+              disabled={sending}
+              className="w-full gap-2 rounded-xl"
             >
               {sending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Sending...
-                </>
+                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
-                <>
-                  <Share2 className="w-4 h-4" />
-                  Send {selectedUsers.size > 0 && `(${selectedUsers.size})`}
-                </>
+                <Send className="w-4 h-4" />
               )}
+              {t('share', { ns: 'common' })}
             </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        )}
+      </div>
+    </div>
   );
 };
 
