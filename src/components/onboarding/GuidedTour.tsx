@@ -354,16 +354,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
 
   // Hide overlay completely when dropdown is open
   if (isDropdownOpen) {
-    return (
-      <div className="fixed inset-0 z-[1999] pointer-events-none">
-        {/* No overlay when dropdown is open */}
-        <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
-          <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50 opacity-0">
-            {/* Hidden card to maintain layout */}
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
