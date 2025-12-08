@@ -492,7 +492,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           }
         }}
       >
-        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${onBack ? 'z-[10020]' : 'z-[2000]'}`}>
+        <DrawerContent data-pin-detail-card="true" className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${onBack ? 'z-[10020]' : 'z-[2000]'}`}>
           {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />

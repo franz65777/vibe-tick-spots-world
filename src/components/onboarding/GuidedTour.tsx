@@ -326,6 +326,7 @@ interface MapGuideOverlayProps {
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   const [showFullOverlay, setShowFullOverlay] = useState(true);
+  const [isPinCardOpen, setIsPinCardOpen] = useState(false);
   
   // Remove overlay from map after 4 seconds
   useEffect(() => {
@@ -335,61 +336,82 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Detect when PinDetailCard is open by checking for its presence in DOM
+  useEffect(() => {
+    const checkPinCard = () => {
+      const pinCard = document.querySelector('[data-pin-detail-card="true"]');
+      setIsPinCardOpen(!!pinCard);
+    };
+
+    // Check initially
+    checkPinCard();
+
+    // Use MutationObserver to detect when PinDetailCard appears/disappears
+    const observer = new MutationObserver(checkPinCard);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
   
   return (
     <>
-      {/* TOP OVERLAY - ALWAYS visible during step 2, never hidden */}
-      <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
-        {showFullOverlay ? (
-          // Full screen dark overlay for first 4 seconds
-          <div className="fixed inset-0 bg-black/40 transition-opacity duration-500" />
-        ) : (
-          // Only shade the header area (search bar + trending section) - approximately 200px from top
-          <div className="h-[200px] bg-gradient-to-b from-black/40 via-black/25 to-transparent transition-opacity duration-500" />
-        )}
-      </div>
-
-      {/* Simple bottom card - only the card is interactive */}
-      <div className="fixed bottom-6 left-4 right-4 z-[9999] pointer-events-auto">
-        <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50">
-          {/* Header with icon */}
-          <div className="flex items-start gap-4 mb-2">
-            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <img src={binocularsIcon} alt="" className="w-12 h-12 object-contain" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold leading-tight">{t('mapGuideTitle')}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{t('step')} 2/3</p>
-            </div>
-          </div>
-          
-          {/* Description - only show when not saved yet */}
-          {!hasSavedPlace && (
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              {t('mapGuideDescription')}
-            </p>
+      {/* TOP OVERLAY - ALWAYS visible during step 2, hidden when pin card is open */}
+      {!isPinCardOpen && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
+          {showFullOverlay ? (
+            // Full screen dark overlay for first 4 seconds
+            <div className="fixed inset-0 bg-black/40 transition-opacity duration-500" />
+          ) : (
+            // Only shade the header area (search bar + trending section) - approximately 200px from top
+            <div className="h-[200px] bg-gradient-to-b from-black/40 via-black/25 to-transparent transition-opacity duration-500" />
           )}
-          
-          {/* Success state with continue button */}
-          {hasSavedPlace ? (
-            <>
-              <div className="flex items-center gap-3 mb-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-base font-semibold text-green-600 dark:text-green-400">{t('placeSaved')}</span>
-              </div>
-              <Button 
-                onClick={onNext} 
-                className="w-full rounded-xl h-12 text-base font-semibold"
-              >
-                {t('continueToNext')}
-                <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
-            </>
-          ) : null}
         </div>
-      </div>
+      )}
+
+      {/* Simple bottom card - hidden when pin card is open */}
+      {!isPinCardOpen && (
+        <div className="fixed bottom-6 left-4 right-4 z-[9999] pointer-events-auto">
+          <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50">
+            {/* Header with icon */}
+            <div className="flex items-start gap-4 mb-2">
+              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img src={binocularsIcon} alt="" className="w-12 h-12 object-contain" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold leading-tight">{t('mapGuideTitle')}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('step')} 2/3</p>
+              </div>
+            </div>
+            
+            {/* Description - only show when not saved yet */}
+            {!hasSavedPlace && (
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                {t('mapGuideDescription')}
+              </p>
+            )}
+            
+            {/* Success state with continue button */}
+            {hasSavedPlace ? (
+              <>
+                <div className="flex items-center gap-3 mb-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Check className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-base font-semibold text-green-600 dark:text-green-400">{t('placeSaved')}</span>
+                </div>
+                <Button 
+                  onClick={onNext} 
+                  className="w-full rounded-xl h-12 text-base font-semibold"
+                >
+                  {t('continueToNext')}
+                  <ChevronRight className="w-5 h-5 ml-1" />
+                </Button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </>
   );
 };
