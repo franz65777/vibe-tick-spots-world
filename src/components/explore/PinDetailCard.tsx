@@ -107,6 +107,20 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     return () => observer.disconnect();
   }, []);
   
+  // Dispatch event when dropdown opens/closes during onboarding
+  useEffect(() => {
+    if (isOnboardingMapStep) {
+      if (dropdownOpen) {
+        document.body.setAttribute('data-save-dropdown-open', 'true');
+      } else {
+        document.body.removeAttribute('data-save-dropdown-open');
+      }
+    }
+    return () => {
+      document.body.removeAttribute('data-save-dropdown-open');
+    };
+  }, [dropdownOpen, isOnboardingMapStep]);
+  
   // Source post ID - if the pin was opened from a post
   const sourcePostId = place.sourcePostId;
   const { cityLabel } = useNormalizedCity({
