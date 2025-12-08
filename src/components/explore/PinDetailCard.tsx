@@ -371,7 +371,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       await locationInteractionService.saveLocation(locationId, locationData, tag);
       setIsSaved(true);
       setCurrentSaveTag(tag);
-      toast.success(t('location_saved'));
+      toast.success(t('locationSaved'));
       
       // Dispatch global event to sync other components (map, lists, etc.)
       window.dispatchEvent(new CustomEvent('location-save-changed', {
