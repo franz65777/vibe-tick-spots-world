@@ -258,7 +258,12 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   const handleDeleteComment = async (commentId: string) => {
     if (!user?.id) return;
-    const success = await deletePostComment(commentId, user.id);
+    const success = await deletePostComment(
+      commentId, 
+      user.id,
+      t('comments.deleted', 'Commento eliminato'),
+      t('comments.deleteFailed', 'Impossibile eliminare il commento')
+    );
     if (success) {
       setComments(prev => prev.filter(c => c.id !== commentId));
       loadPostData();

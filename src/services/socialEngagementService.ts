@@ -285,7 +285,12 @@ export async function addPostComment(
   }
 }
 
-export async function deletePostComment(commentId: string, userId: string): Promise<boolean> {
+export async function deletePostComment(
+  commentId: string, 
+  userId: string,
+  successMessage?: string,
+  errorMessage?: string
+): Promise<boolean> {
   try {
     // Get post_id before deleting
     const { data: comment } = await supabase
@@ -320,11 +325,11 @@ export async function deletePostComment(commentId: string, userId: string): Prom
         .eq('id', comment.post_id);
     }
 
-    toast.success('Comment deleted');
+    toast.success(successMessage || 'Comment deleted');
     return true;
   } catch (error) {
     console.error('Error deleting comment:', error);
-    toast.error('Failed to delete comment');
+    toast.error(errorMessage || 'Failed to delete comment');
     return false;
   }
 }

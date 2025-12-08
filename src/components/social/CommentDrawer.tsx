@@ -101,6 +101,9 @@ export const CommentDrawer = ({
     await onDeleteComment(commentId);
   };
 
+  // Translate delete button text
+  const deleteText = t('comments.delete', 'Elimina');
+
   const toggleCommentLike = useCallback(async (commentId: string) => {
     if (!user?.id) return;
 
@@ -185,7 +188,7 @@ export const CommentDrawer = ({
 
           {/* Header */}
           <div className="flex items-center justify-center px-4 py-3 shrink-0 relative">
-            <h3 className="font-semibold text-base">Commenti</h3>
+            <h3 className="font-semibold text-base">{t('comments.title', 'Commenti')}</h3>
             <Button
               variant="ghost"
               size="icon"
@@ -203,10 +206,10 @@ export const CommentDrawer = ({
                 <img 
                   src={noCommentsIcon} 
                   alt="No comments" 
-                  className="w-16 h-16 mb-4 opacity-60"
+                  className="w-20 h-20 mb-4 opacity-60"
                 />
-                <p className="text-muted-foreground text-sm">Nessun commento</p>
-                <p className="text-muted-foreground text-xs mt-1">Sii il primo a commentare!</p>
+                <p className="text-muted-foreground text-sm">{t('comments.noComments', 'Nessun commento')}</p>
+                <p className="text-muted-foreground text-xs mt-1">{t('comments.beFirst', 'Sii il primo a commentare!')}</p>
               </div>
             ) : (
               <div className="space-y-4 py-4">
@@ -272,7 +275,7 @@ export const CommentDrawer = ({
                               }}
                               className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
                             >
-                              Elimina
+                              {deleteText}
                             </button>
                           )}
                         </div>
@@ -298,7 +301,7 @@ export const CommentDrawer = ({
                 <Input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Aggiungi un commento..."
+                  placeholder={t('comments.addPlaceholder', 'Aggiungi un commento...')}
                   className="rounded-full pr-10 h-11 bg-muted border-0"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
