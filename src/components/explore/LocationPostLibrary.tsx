@@ -324,7 +324,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
       setCurrentSaveTag('general');
-      toast.success(t('location_unsaved'));
+      toast.success(t('locationRemoved'));
       
       // Dispatch global event for sync
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
