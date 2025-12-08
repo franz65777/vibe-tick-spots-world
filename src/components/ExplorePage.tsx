@@ -48,7 +48,10 @@ const ExplorePage = memo(() => {
     return state?.searchQuery || '';
   });
   const [isSearching, setIsSearching] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
+  const [inputFocused, setInputFocused] = useState(() => {
+    const state = location.state as { fromOnboarding?: boolean } | null;
+    return state?.fromOnboarding === true;
+  });
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -87,6 +90,17 @@ const ExplorePage = memo(() => {
   useEffect(() => {
     setLocalSearchHistory(searchHistory.filter((i) => !i.target_user_id || !hiddenUserIds.has(i.target_user_id)));
   }, [searchHistory, hiddenUserIds]);
+
+  // Auto-focus search input when coming from onboarding
+  useEffect(() => {
+    const state = location.state as { fromOnboarding?: boolean } | null;
+    if (state?.fromOnboarding && searchInputRef.current) {
+      // Small delay to ensure component is mounted
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [location.state]);
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
