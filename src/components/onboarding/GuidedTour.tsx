@@ -325,10 +325,27 @@ interface MapGuideOverlayProps {
 }
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
+  const [showFullOverlay, setShowFullOverlay] = useState(true);
+  
+  // Remove overlay from map after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFullOverlay(false);
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Very subtle overlay - map should be the clear focus */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+      {/* Overlay - full screen for first 5 seconds, then only top portion */}
+      {showFullOverlay ? (
+        // Full overlay with gradient - reading mode
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 transition-opacity duration-500" />
+      ) : (
+        // Only shade the header area above the map
+        <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-black/40 via-black/20 to-transparent transition-opacity duration-500" />
+      )}
 
       {/* Simple bottom card - only the card is interactive */}
       <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
