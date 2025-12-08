@@ -33,10 +33,18 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       
       // Step 3: Explore
       exploreTitle: 'Find Friends',
-      exploreDescription: 'Search for friends and other users to follow. See what places they\'re saving and get inspired by their discoveries!',
+      exploreDescription: 'Search for friends and other users to follow. Share your favorite spots and see what places they\'re saving!',
       suggested: 'Suggested for you',
       mutualFriends: 'mutual friends',
       savedPlaces: 'saved places',
+      
+      // Welcome screen
+      welcomeTitle: 'Welcome to Spott!',
+      welcomeSubtitle: 'Your adventure starts now',
+      welcomeFeature1: 'Save your favorite spots and never forget that amazing place again',
+      welcomeFeature2: 'Get exclusive discounts, events and promotions from places you love',
+      welcomeFeature3: 'Share discoveries with friends and explore together',
+      letsGo: "Let's Go!",
     }
   },
   it: {
@@ -68,10 +76,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Tocca per esplorare',
       
       exploreTitle: 'Trova Amici',
-      exploreDescription: 'Cerca amici e altri utenti da seguire. Scopri quali posti stanno salvando e lasciati ispirare dalle loro scoperte!',
+      exploreDescription: 'Cerca amici e altri utenti da seguire. Condividi i tuoi posti preferiti e scopri quali luoghi stanno salvando!',
       suggested: 'Suggeriti per te',
       mutualFriends: 'amici in comune',
       savedPlaces: 'luoghi salvati',
+      
+      welcomeTitle: 'Benvenuto su Spott!',
+      welcomeSubtitle: 'La tua avventura inizia ora',
+      welcomeFeature1: 'Salva i tuoi posti preferiti e non dimenticare mai quel posto fantastico',
+      welcomeFeature2: 'Ricevi sconti esclusivi, eventi e promozioni dai luoghi che ami',
+      welcomeFeature3: 'Condividi le scoperte con gli amici ed esplorate insieme',
+      letsGo: 'Iniziamo!',
     }
   },
   fr: {
@@ -102,10 +117,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Appuyez pour explorer',
       
       exploreTitle: 'Trouver des Amis',
-      exploreDescription: 'Cherchez des amis et d\'autres utilisateurs à suivre. Découvrez les lieux qu\'ils sauvegardent !',
+      exploreDescription: 'Cherchez des amis et d\'autres utilisateurs à suivre. Partagez vos spots préférés et découvrez les lieux qu\'ils sauvegardent!',
       suggested: 'Suggérés pour vous',
       mutualFriends: 'amis en commun',
       savedPlaces: 'lieux sauvegardés',
+      
+      welcomeTitle: 'Bienvenue sur Spott!',
+      welcomeSubtitle: 'Votre aventure commence maintenant',
+      welcomeFeature1: 'Sauvegardez vos endroits préférés et n\'oubliez plus jamais ce lieu incroyable',
+      welcomeFeature2: 'Recevez des réductions exclusives, événements et promotions des lieux que vous aimez',
+      welcomeFeature3: 'Partagez vos découvertes avec vos amis et explorez ensemble',
+      letsGo: 'C\'est parti!',
     }
   },
   es: {
@@ -136,10 +158,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Toca para explorar',
       
       exploreTitle: 'Encontrar Amigos',
-      exploreDescription: '¡Busca amigos y otros usuarios para seguir. Mira qué lugares están guardando!',
+      exploreDescription: '¡Busca amigos y otros usuarios para seguir. Comparte tus lugares favoritos y mira qué lugares están guardando!',
       suggested: 'Sugeridos para ti',
       mutualFriends: 'amigos en común',
       savedPlaces: 'lugares guardados',
+      
+      welcomeTitle: '¡Bienvenido a Spott!',
+      welcomeSubtitle: 'Tu aventura comienza ahora',
+      welcomeFeature1: 'Guarda tus lugares favoritos y nunca olvides ese sitio increíble',
+      welcomeFeature2: 'Recibe descuentos exclusivos, eventos y promociones de los lugares que amas',
+      welcomeFeature3: 'Comparte descubrimientos con amigos y exploren juntos',
+      letsGo: '¡Vamos!',
     }
   },
   de: {
@@ -170,10 +199,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Tippen zum Erkunden',
       
       exploreTitle: 'Freunde finden',
-      exploreDescription: 'Suche nach Freunden und anderen Nutzern zum Folgen. Sieh, welche Orte sie speichern!',
+      exploreDescription: 'Suche nach Freunden und anderen Nutzern zum Folgen. Teile deine Lieblingsorte und sieh, welche Orte sie speichern!',
       suggested: 'Vorschläge für dich',
       mutualFriends: 'gemeinsame Freunde',
       savedPlaces: 'gespeicherte Orte',
+      
+      welcomeTitle: 'Willkommen bei Spott!',
+      welcomeSubtitle: 'Dein Abenteuer beginnt jetzt',
+      welcomeFeature1: 'Speichere deine Lieblingsorte und vergiss nie wieder diesen tollen Ort',
+      welcomeFeature2: 'Erhalte exklusive Rabatte, Events und Aktionen von Orten, die du liebst',
+      welcomeFeature3: 'Teile Entdeckungen mit Freunden und erkundet gemeinsam',
+      letsGo: 'Los geht\'s!',
     }
   },
   pt: {
@@ -204,10 +240,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Toque para explorar',
       
       exploreTitle: 'Encontre Amigos',
-      exploreDescription: 'Procure amigos e outros usuários para seguir. Veja quais lugares eles estão salvando!',
+      exploreDescription: 'Procure amigos e outros usuários para seguir. Compartilhe seus lugares favoritos e veja quais lugares eles estão salvando!',
       suggested: 'Sugeridos para você',
       mutualFriends: 'amigos em comum',
       savedPlaces: 'lugares salvos',
+      
+      welcomeTitle: 'Bem-vindo ao Spott!',
+      welcomeSubtitle: 'Sua aventura começa agora',
+      welcomeFeature1: 'Salve seus lugares favoritos e nunca esqueça aquele lugar incrível',
+      welcomeFeature2: 'Receba descontos exclusivos, eventos e promoções dos lugares que você ama',
+      welcomeFeature3: 'Compartilhe descobertas com amigos e explorem juntos',
+      letsGo: 'Vamos!',
     }
   },
   ru: {
@@ -238,10 +281,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Нажмите для просмотра',
       
       exploreTitle: 'Найти друзей',
-      exploreDescription: 'Ищите друзей и других пользователей для подписки. Смотрите, какие места они сохраняют!',
+      exploreDescription: 'Ищите друзей и других пользователей для подписки. Делитесь любимыми местами и смотрите, какие места они сохраняют!',
       suggested: 'Рекомендуем вам',
       mutualFriends: 'общих друзей',
       savedPlaces: 'сохранённых мест',
+      
+      welcomeTitle: 'Добро пожаловать в Spott!',
+      welcomeSubtitle: 'Ваше приключение начинается сейчас',
+      welcomeFeature1: 'Сохраняйте любимые места и никогда не забывайте то удивительное место',
+      welcomeFeature2: 'Получайте эксклюзивные скидки, события и акции от мест, которые вы любите',
+      welcomeFeature3: 'Делитесь открытиями с друзьями и исследуйте вместе',
+      letsGo: 'Поехали!',
     }
   },
   'zh-CN': {
@@ -272,10 +322,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: '点击探索',
       
       exploreTitle: '寻找朋友',
-      exploreDescription: '搜索要关注的朋友和其他用户。看看他们正在保存什么地方！',
+      exploreDescription: '搜索要关注的朋友和其他用户。分享你喜欢的地点，看看他们正在保存什么地方！',
       suggested: '为你推荐',
       mutualFriends: '共同好友',
       savedPlaces: '已保存地点',
+      
+      welcomeTitle: '欢迎来到Spott！',
+      welcomeSubtitle: '你的冒险现在开始',
+      welcomeFeature1: '保存你最喜欢的地点，永远不会忘记那个神奇的地方',
+      welcomeFeature2: '从你喜爱的地方获得专属折扣、活动和促销',
+      welcomeFeature3: '与朋友分享发现，一起探索',
+      letsGo: '开始吧！',
     }
   },
   ja: {
@@ -306,10 +363,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'タップして探索',
       
       exploreTitle: '友達を見つける',
-      exploreDescription: '友達を検索してフォローしましょう。彼らがどんな場所を保存しているか見てください！',
+      exploreDescription: '友達を検索してフォローしましょう。お気に入りの場所を共有して、彼らがどんな場所を保存しているか見てください！',
       suggested: 'おすすめ',
       mutualFriends: '共通の友達',
       savedPlaces: '保存された場所',
+      
+      welcomeTitle: 'Spottへようこそ！',
+      welcomeSubtitle: 'あなたの冒険が今始まります',
+      welcomeFeature1: 'お気に入りの場所を保存して、あの素晴らしい場所を忘れないで',
+      welcomeFeature2: '好きな場所から限定割引、イベント、プロモーションを受け取る',
+      welcomeFeature3: '友達と発見を共有し、一緒に探検しよう',
+      letsGo: 'さあ、始めよう！',
     }
   },
   ar: {
@@ -340,10 +404,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'اضغط للاستكشاف',
       
       exploreTitle: 'ابحث عن أصدقاء',
-      exploreDescription: 'ابحث عن أصدقاء ومستخدمين آخرين لمتابعتهم. شاهد الأماكن التي يحفظونها!',
+      exploreDescription: 'ابحث عن أصدقاء ومستخدمين آخرين لمتابعتهم. شارك أماكنك المفضلة وشاهد الأماكن التي يحفظونها!',
       suggested: 'مقترحات لك',
       mutualFriends: 'أصدقاء مشتركين',
       savedPlaces: 'أماكن محفوظة',
+      
+      welcomeTitle: 'مرحبًا بك في Spott!',
+      welcomeSubtitle: 'مغامرتك تبدأ الآن',
+      welcomeFeature1: 'احفظ أماكنك المفضلة ولا تنسَ أبدًا ذلك المكان الرائع',
+      welcomeFeature2: 'احصل على خصومات حصرية وفعاليات وعروض من الأماكن التي تحبها',
+      welcomeFeature3: 'شارك اكتشافاتك مع الأصدقاء واستكشفوا معًا',
+      letsGo: 'هيا بنا!',
     }
   },
   ko: {
@@ -374,10 +445,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: '탭하여 탐색',
       
       exploreTitle: '친구 찾기',
-      exploreDescription: '친구와 다른 사용자를 검색하여 팔로우하세요. 그들이 어떤 장소를 저장하는지 보세요!',
+      exploreDescription: '친구와 다른 사용자를 검색하여 팔로우하세요. 좋아하는 장소를 공유하고 그들이 어떤 장소를 저장하는지 보세요!',
       suggested: '추천',
       mutualFriends: '공통 친구',
       savedPlaces: '저장된 장소',
+      
+      welcomeTitle: 'Spott에 오신 것을 환영합니다!',
+      welcomeSubtitle: '당신의 모험이 지금 시작됩니다',
+      welcomeFeature1: '좋아하는 장소를 저장하고 그 놀라운 곳을 절대 잊지 마세요',
+      welcomeFeature2: '좋아하는 장소에서 독점 할인, 이벤트 및 프로모션을 받으세요',
+      welcomeFeature3: '친구와 발견을 공유하고 함께 탐험하세요',
+      letsGo: '시작하기!',
     }
   },
   tr: {
@@ -408,10 +486,17 @@ export const guidedTourTranslations: Record<string, { guidedTour: Record<string,
       spotlightPin: 'Keşfetmek için dokun',
       
       exploreTitle: 'Arkadaş Bul',
-      exploreDescription: 'Takip etmek için arkadaşları ve diğer kullanıcıları ara. Hangi yerleri kaydettiklerini gör!',
+      exploreDescription: 'Takip etmek için arkadaşları ve diğer kullanıcıları ara. Favori mekanlarını paylaş ve hangi yerleri kaydettiklerini gör!',
       suggested: 'Senin için öneriler',
       mutualFriends: 'ortak arkadaş',
       savedPlaces: 'kayıtlı mekan',
+      
+      welcomeTitle: 'Spott\'a Hoş Geldin!',
+      welcomeSubtitle: 'Maceran şimdi başlıyor',
+      welcomeFeature1: 'Favori mekanlarını kaydet ve o harika yeri asla unutma',
+      welcomeFeature2: 'Sevdiğin yerlerden özel indirimler, etkinlikler ve promosyonlar al',
+      welcomeFeature3: 'Keşiflerini arkadaşlarınla paylaş ve birlikte keşfedin',
+      letsGo: 'Hadi Başlayalım!',
     }
   },
 };
