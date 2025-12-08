@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Send, MessageCircle } from 'lucide-react';
+import { X, Search, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,6 +80,12 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
   const handleSendProfile = async (recipientId: string, recipientUsername: string) => {
     if (!user) return;
 
+    // Prevent sharing profile with the same user
+    if (recipientId === profileId) {
+      toast.error(t('userProfile.cannotShareWithSameUser'));
+      return;
+    }
+
     setSending(recipientId);
     try {
       const { data: profileData, error } = await supabase
@@ -102,13 +108,13 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
     }
   };
 
-  // Filter contacts based on search
+  // Filter contacts based on search and exclude the profile being shared
   const filteredFrequent = frequentContacts.filter(c =>
-    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase()) && c.id !== profileId
   );
   
   const filteredAll = allContacts.filter(c =>
-    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase()) && c.id !== profileId
   );
 
   if (!isOpen) return null;
@@ -137,7 +143,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('shareLocation.searchPlaceholder')}
+              placeholder={t('searchPlaceholder')}
               className="pl-10"
               autoFocus
             />
@@ -157,17 +163,17 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                   <div className="flex items-center gap-2 mb-3">
                     <MessageCircle className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {t('shareLocation.frequentContacts')}
+                      {t('frequentContacts')}
                     </span>
                   </div>
                   <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 pr-4">
                       {filteredFrequent.map((contact) => (
                         <button
                           key={contact.id}
                           onClick={() => handleSendProfile(contact.id, contact.username)}
                           disabled={sending === contact.id}
-                          className="flex flex-col items-center gap-2 min-w-[72px]"
+                          className="flex flex-col items-center gap-2 min-w-[72px] flex-shrink-0"
                         >
                           <div className="relative">
                             <Avatar className="h-14 w-14">
@@ -197,17 +203,17 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {t('shareLocation.allContacts')}
+                      {t('allContacts')}
                     </span>
                   </div>
                   <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 pr-4">
                       {filteredAll.map((contact) => (
                         <button
                           key={contact.id}
                           onClick={() => handleSendProfile(contact.id, contact.username)}
                           disabled={sending === contact.id}
-                          className="flex flex-col items-center gap-2 min-w-[72px]"
+                          className="flex flex-col items-center gap-2 min-w-[72px] flex-shrink-0"
                         >
                           <div className="relative">
                             <Avatar className="h-14 w-14">

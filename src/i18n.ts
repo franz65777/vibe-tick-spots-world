@@ -204,7 +204,8 @@ const resources = {
         searchPeople: 'Search for people...',
         searchToShare: 'Search for people to share this profile',
         profileShared: 'Profile shared with @{{username}}',
-        shareError: 'Failed to share profile'
+        shareError: 'Failed to share profile',
+        cannotShareWithSameUser: 'Cannot share this profile with the same user'
       }
     },
     navigation: {
@@ -1098,7 +1099,12 @@ const resources = {
         cities: 'Ciudades',
         photos: 'Fotos',
         blockUser: 'Bloquear Usuario',
-        unblockUser: 'Desbloquear Usuario'
+        unblockUser: 'Desbloquear Usuario',
+        searchPeople: 'Buscar personas...',
+        searchToShare: 'Busca personas con quienes compartir este perfil',
+        profileShared: 'Perfil compartido con @{{username}}',
+        shareError: 'Error al compartir el perfil',
+        cannotShareWithSameUser: 'No puedes compartir este perfil con el mismo usuario'
       }
     },
     navigation: {
@@ -1952,7 +1958,8 @@ const resources = {
         searchPeople: 'Cerca persone...',
         searchToShare: 'Cerca persone con cui condividere questo profilo',
         profileShared: 'Profilo condiviso con @{{username}}',
-        shareError: 'Impossibile condividere il profilo'
+        shareError: 'Impossibile condividere il profilo',
+        cannotShareWithSameUser: 'Non puoi condividere questo profilo con lo stesso utente'
       }
     },
     navigation: {
@@ -2779,7 +2786,12 @@ const resources = {
         cities: 'Villes',
         photos: 'Photos',
         blockUser: 'Bloquer l\'Utilisateur',
-        unblockUser: 'Débloquer l\'Utilisateur'
+        unblockUser: 'Débloquer l\'Utilisateur',
+        searchPeople: 'Rechercher des personnes...',
+        searchToShare: 'Recherchez des personnes avec qui partager ce profil',
+        profileShared: 'Profil partagé avec @{{username}}',
+        shareError: 'Échec du partage du profil',
+        cannotShareWithSameUser: 'Impossible de partager ce profil avec le même utilisateur'
       }
     },
     navigation: {
@@ -3487,7 +3499,12 @@ const resources = {
         cities: 'Städte',
         photos: 'Fotos',
         blockUser: 'Benutzer blockieren',
-        unblockUser: 'Benutzer entsperren'
+        unblockUser: 'Benutzer entsperren',
+        searchPeople: 'Personen suchen...',
+        searchToShare: 'Suchen Sie nach Personen, mit denen Sie dieses Profil teilen möchten',
+        profileShared: 'Profil geteilt mit @{{username}}',
+        shareError: 'Profil konnte nicht geteilt werden',
+        cannotShareWithSameUser: 'Sie können dieses Profil nicht mit demselben Benutzer teilen'
       }
     },
     navigation: {
@@ -4133,7 +4150,12 @@ const resources = {
         cities: 'Cidades',
         photos: 'Fotos',
         blockUser: 'Bloquear Usuário',
-        unblockUser: 'Desbloquear Usuário'
+        unblockUser: 'Desbloquear Usuário',
+        searchPeople: 'Procurar pessoas...',
+        searchToShare: 'Procure pessoas para compartilhar este perfil',
+        profileShared: 'Perfil compartilhado com @{{username}}',
+        shareError: 'Falha ao compartilhar o perfil',
+        cannotShareWithSameUser: 'Você não pode compartilhar este perfil com o mesmo usuário'
       }
     },
     navigation: {
