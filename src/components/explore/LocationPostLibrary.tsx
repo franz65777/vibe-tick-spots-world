@@ -300,7 +300,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       }, tag);
       setIsSaved(true);
       setCurrentSaveTag(tag);
-      toast.success(t('location_saved'));
+      toast.success(t('locationSaved'));
       
       // Dispatch global event for sync
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
