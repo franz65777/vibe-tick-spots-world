@@ -688,9 +688,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               </div>
             ) : (
               <>
-                {/* Overlay to dim content and close dropdown */}
+                {/* Invisible click-away layer to close dropdown (no visual overlay) */}
                 <div 
-                  className="fixed inset-0 bg-black/50 z-40"
+                  className="fixed inset-0 z-40"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDropdownOpen(false);
