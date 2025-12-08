@@ -326,7 +326,6 @@ interface MapGuideOverlayProps {
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   const [showFullOverlay, setShowFullOverlay] = useState(true);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Remove overlay from map after 3 seconds
   useEffect(() => {
@@ -337,33 +336,18 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
     return () => clearTimeout(timer);
   }, []);
   
-  // Listen for save dropdown open/close - check DOM directly on interval for reliability
-  useEffect(() => {
-    const checkDropdown = () => {
-      const isOpen = document.body.hasAttribute('data-save-dropdown-open');
-      setIsDropdownOpen(isOpen);
-    };
-    
-    checkDropdown();
-    const interval = setInterval(checkDropdown, 100);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <>
-      {/* TOP OVERLAY - separate div that only covers the header area */}
-      {!isDropdownOpen && (
-        <div className="fixed top-0 left-0 right-0 z-[100] pointer-events-none">
-          {showFullOverlay ? (
-            // Full screen dark overlay for first 3 seconds - use a separate full-screen div
-            <div className="fixed inset-0 bg-black/40 transition-opacity duration-500" />
-          ) : (
-            // Only shade the header area (search bar + trending section) - approximately 200px from top
-            <div className="h-[200px] bg-gradient-to-b from-black/40 via-black/25 to-transparent transition-opacity duration-500" />
-          )}
-        </div>
-      )}
+      {/* TOP OVERLAY - ALWAYS visible during step 2, never hidden */}
+      <div className="fixed top-0 left-0 right-0 z-[100] pointer-events-none">
+        {showFullOverlay ? (
+          // Full screen dark overlay for first 3 seconds
+          <div className="fixed inset-0 bg-black/40 transition-opacity duration-500" />
+        ) : (
+          // Only shade the header area (search bar + trending section) - approximately 200px from top
+          <div className="h-[200px] bg-gradient-to-b from-black/40 via-black/25 to-transparent transition-opacity duration-500" />
+        )}
+      </div>
 
       {/* Simple bottom card - only the card is interactive */}
       <div className="fixed bottom-6 left-4 right-4 z-[100] pointer-events-auto">
