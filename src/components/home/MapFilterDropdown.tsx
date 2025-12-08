@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronRight, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter, MapFilter } from '@/contexts/MapFilterContext';
@@ -29,10 +29,26 @@ interface UserSavedStats {
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
   const { user } = useAuth();
-  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded } = useMapFilter();
+  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth } = useMapFilter();
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Measure and report dropdown width
+  useEffect(() => {
+    if (containerRef.current) {
+      const updateWidth = () => {
+        if (containerRef.current) {
+          setFilterDropdownWidth(containerRef.current.offsetWidth);
+        }
+      };
+      updateWidth();
+      const observer = new ResizeObserver(updateWidth);
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    }
+  }, [setFilterDropdownWidth, activeFilter, isFilterExpanded]);
 
   // Fetch followed users and their saved location stats
   useEffect(() => {
@@ -152,7 +168,7 @@ const MapFilterDropdown = () => {
   };
 
   return (
-    <div className="relative flex items-center">
+    <div ref={containerRef} className="relative flex items-center">
       {/* Friends selection dropdown - opens upward */}
       {isFriendsDropdownOpen && activeFilter === 'following' && (
         <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg min-w-[320px] max-h-[300px] z-50">
