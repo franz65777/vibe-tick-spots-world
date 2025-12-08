@@ -21,7 +21,7 @@ interface ShareProfileModalProps {
 
 const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: ShareProfileModalProps) => {
   const { user } = useAuth();
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const { setIsShareProfileOpen } = useUIState();
   const [searchQuery, setSearchQuery] = useState('');
   const [allContacts, setAllContacts] = useState<any[]>([]);
@@ -166,8 +166,8 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                       {t('shareLocation.frequentContacts')}
                     </span>
                   </div>
-                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4 pr-8">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div className="flex gap-4" style={{ paddingRight: '2rem' }}>
                       {filteredFrequent.map((contact) => (
                         <button
                           key={contact.id}
@@ -206,8 +206,8 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                       {t('shareLocation.allContacts')}
                     </span>
                   </div>
-                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4 pr-8">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div className="flex gap-4" style={{ paddingRight: '2rem' }}>
                       {filteredAll.map((contact) => (
                         <button
                           key={contact.id}
