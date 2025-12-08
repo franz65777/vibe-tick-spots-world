@@ -56,8 +56,8 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     // We only care about NEW saves during onboarding, not existing ones
     setHasSavedPlace(false);
     
-    // Subscribe to NEW saved_places inserts only
-    const channel = supabase
+    // Subscribe to NEW saved_places inserts
+    const savedPlacesChannel = supabase
       .channel('saved_places_onboarding')
       .on(
         'postgres_changes',
@@ -69,15 +69,41 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
         },
         () => {
           setHasSavedPlace(true);
-          toast.success(t('placeSaved'));
         }
       )
       .subscribe();
     
-    return () => {
-      supabase.removeChannel(channel);
+    // Also subscribe to user_saved_locations inserts
+    const userSavedLocationsChannel = supabase
+      .channel('user_saved_locations_onboarding')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_saved_locations',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          setHasSavedPlace(true);
+        }
+      )
+      .subscribe();
+
+    // Also listen to location-save-changed event for immediate feedback
+    const handleSaveChange = (e: CustomEvent) => {
+      if (e.detail?.isSaved) {
+        setHasSavedPlace(true);
+      }
     };
-  }, [currentStep, user?.id, t]);
+    window.addEventListener('location-save-changed', handleSaveChange as EventListener);
+    
+    return () => {
+      supabase.removeChannel(savedPlacesChannel);
+      supabase.removeChannel(userSavedLocationsChannel);
+      window.removeEventListener('location-save-changed', handleSaveChange as EventListener);
+    };
+  }, [currentStep, user?.id]);
 
   // Prefetch ExplorePage when on map-guide step
   useEffect(() => {

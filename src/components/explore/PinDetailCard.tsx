@@ -395,7 +395,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
       setCurrentSaveTag('general');
-      toast.success(t('location_unsaved'));
+      toast.success(t('locationRemoved'));
       
       // Dispatch global event to sync
       window.dispatchEvent(new CustomEvent('location-save-changed', {
