@@ -107,12 +107,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     return () => observer.disconnect();
   }, []);
   
-  // Dispatch event when dropdown opens/closes - always set attribute for onboarding to detect
+  // Dispatch custom event when dropdown opens/closes for onboarding to detect
   useEffect(() => {
     if (dropdownOpen) {
       document.body.setAttribute('data-save-dropdown-open', 'true');
+      window.dispatchEvent(new CustomEvent('save-dropdown-change', { detail: { open: true } }));
     } else {
       document.body.removeAttribute('data-save-dropdown-open');
+      window.dispatchEvent(new CustomEvent('save-dropdown-change', { detail: { open: false } }));
     }
     return () => {
       document.body.removeAttribute('data-save-dropdown-open');
