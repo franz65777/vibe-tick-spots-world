@@ -328,43 +328,40 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
   const [showFullOverlay, setShowFullOverlay] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
-  // Remove overlay from map after 5 seconds
+  // Remove overlay from map after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFullOverlay(false);
-    }, 5000);
+    }, 3000);
     
     return () => clearTimeout(timer);
   }, []);
   
-  // Listen for save dropdown open/close via custom event
+  // Listen for save dropdown open/close - check DOM directly on interval for reliability
   useEffect(() => {
-    const handleDropdownChange = (e: CustomEvent<{ open: boolean }>) => {
-      setIsDropdownOpen(e.detail.open);
+    const checkDropdown = () => {
+      const isOpen = document.body.hasAttribute('data-save-dropdown-open');
+      setIsDropdownOpen(isOpen);
     };
     
-    // Also check initial state
-    const isOpen = document.body.hasAttribute('data-save-dropdown-open');
-    setIsDropdownOpen(isOpen);
+    // Check immediately and on interval
+    checkDropdown();
+    const interval = setInterval(checkDropdown, 100);
     
-    window.addEventListener('save-dropdown-change', handleDropdownChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('save-dropdown-change', handleDropdownChange as EventListener);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[1999] pointer-events-none">
+    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9998 }}>
       {/* Overlay - only show when dropdown is NOT open */}
       {!isDropdownOpen && (
         <>
           {showFullOverlay ? (
-            // Full overlay with gradient - reading mode (first 5 seconds)
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 transition-opacity duration-500" />
+            // Full overlay with gradient - reading mode (first 3 seconds)
+            <div className="absolute inset-0 bg-black/40 transition-opacity duration-500" />
           ) : (
-            // Only shade the header area (search bar + trending section) - approximately 180px from top
-            <div className="absolute top-0 left-0 right-0 h-[180px] bg-gradient-to-b from-black/40 to-transparent transition-opacity duration-500" />
+            // Only shade the header area (search bar + trending section) - approximately 200px from top
+            <div className="absolute top-0 left-0 right-0 h-[200px] bg-gradient-to-b from-black/40 via-black/30 to-transparent transition-opacity duration-500" />
           )}
         </>
       )}
