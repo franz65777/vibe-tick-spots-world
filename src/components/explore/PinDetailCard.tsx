@@ -571,13 +571,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 <div className="grid grid-cols-4 gap-1.5 flex-1">
                   {/* Save Button - with sparkle effect during onboarding */}
                   <div className="relative">
-                    {isOnboardingMapStep && !isSaved && (
+                    {isOnboardingMapStep && !isSaved && !dropdownOpen && (
                       <>
-                        {/* Sparkle effects */}
-                        <span className="absolute -top-2 -left-1 text-lg animate-bounce" style={{ animationDelay: '0ms' }}>✨</span>
-                        <span className="absolute -top-1 -right-1 text-lg animate-bounce" style={{ animationDelay: '200ms' }}>⭐</span>
-                        <span className="absolute -bottom-1 -left-2 text-sm animate-bounce" style={{ animationDelay: '400ms' }}>✨</span>
-                        <span className="absolute -bottom-2 right-0 text-sm animate-bounce" style={{ animationDelay: '300ms' }}>🌟</span>
+                        {/* Sparkle effects - only when dropdown is closed */}
+                        <span className="absolute -top-2 -left-1 text-lg animate-bounce z-20" style={{ animationDelay: '0ms' }}>✨</span>
+                        <span className="absolute -top-1 -right-1 text-lg animate-bounce z-20" style={{ animationDelay: '200ms' }}>⭐</span>
+                        <span className="absolute -bottom-1 -left-2 text-sm animate-bounce z-20" style={{ animationDelay: '400ms' }}>✨</span>
+                        <span className="absolute -bottom-2 right-0 text-sm animate-bounce z-20" style={{ animationDelay: '300ms' }}>🌟</span>
                       </>
                     )}
                     <Button
@@ -588,10 +588,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       disabled={loading}
                       variant="secondary"
                       size="sm"
-                      className={cn(
-                        "relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full",
-                        isOnboardingMapStep && !isSaved && "bg-primary/20 border-2 border-primary"
-                      )}
+                      className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full"
                     >
                       <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                        {isSaved ? (
