@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 const NotificationsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
 
@@ -158,6 +158,7 @@ const NotificationsPage = () => {
                 notification={notification}
                 onMarkAsRead={handleMarkAsRead}
                 onAction={handleNotificationClick}
+                onDelete={deleteNotification}
                 openSwipeId={openSwipeId}
                 onSwipeOpen={setOpenSwipeId}
               />

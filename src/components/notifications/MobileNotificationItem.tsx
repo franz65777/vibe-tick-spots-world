@@ -45,6 +45,7 @@ interface MobileNotificationItemProps {
   };
   onMarkAsRead: (id: string) => void;
   onAction: (notification: any) => void;
+  onDelete?: (id: string) => Promise<any>;
   openSwipeId?: string | null;
   onSwipeOpen?: (id: string | null) => void;
 }
@@ -53,6 +54,7 @@ const MobileNotificationItem = ({
   notification, 
   onMarkAsRead, 
   onAction,
+  onDelete,
   openSwipeId,
   onSwipeOpen
 }: MobileNotificationItemProps) => {
@@ -741,31 +743,33 @@ const MobileNotificationItem = ({
               className="h-10 w-10 rounded-full bg-destructive/10 hover:bg-destructive/20"
               onClick={async (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 setIsLoading(true);
                 try {
-                  // Try hard delete first
-                  const { error: delErr } = await supabase
-                    .from('notifications')
-                    .delete()
-                    .eq('id', notification.id);
-
-                  if (delErr) {
-                    // Fallback: expire the notification so backend queries can ignore it
-                    const { error: updErr } = await supabase
+                  if (onDelete) {
+                    await onDelete(notification.id);
+                  } else {
+                    // Fallback to direct delete if no handler provided
+                    const { error: delErr } = await supabase
                       .from('notifications')
-                      .update({ expires_at: new Date().toISOString() })
+                      .delete()
                       .eq('id', notification.id);
-                    if (updErr) {
-                      console.warn('Delete blocked by RLS, hiding locally');
-                    }
-                  }
 
-                  // Hide locally regardless
-                  setHidden(true);
+                    if (delErr) {
+                      // Fallback: expire the notification so backend queries can ignore it
+                      await supabase
+                        .from('notifications')
+                        .update({ expires_at: new Date().toISOString() })
+                        .eq('id', notification.id);
+                    }
+                    setHidden(true);
+                  }
                 } finally {
                   setIsLoading(false);
                 }
               }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
             >
               <Trash2 className="h-5 w-5 text-destructive" />
             </Button>
@@ -853,6 +857,10 @@ const MobileNotificationItem = ({
                 ) : notification.type === 'follow' ? (
                   <Button
                     onClick={handleFollowClick}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                     disabled={isLoading}
                     size="sm"
                     variant={isFollowing ? 'outline' : 'default'}
