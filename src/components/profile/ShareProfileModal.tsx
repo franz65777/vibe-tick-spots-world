@@ -144,10 +144,10 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
     <button
       key={contact.id}
       onClick={() => toggleUserSelection(contact.id)}
-      className="flex flex-col items-center gap-2 min-w-[72px] flex-shrink-0"
+      className="flex flex-col items-center gap-2 min-w-[72px] flex-shrink-0 pt-1"
     >
       <div className="relative">
-        <Avatar className={`h-14 w-14 transition-all ${selectedUsers.has(contact.id) ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+        <Avatar className={`h-14 w-14 transition-all ${selectedUsers.has(contact.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
           <AvatarImage src={contact.avatar_url} />
           <AvatarFallback className="bg-primary/10 text-primary text-lg">
             {contact.username?.charAt(0).toUpperCase()}
@@ -276,18 +276,18 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
 
         {/* Share Button - only visible when users are selected */}
         {selectedUsers.size > 0 && (
-          <div className="p-4 border-t border-border flex-shrink-0">
+          <div className="p-4 flex-shrink-0">
             <Button
               onClick={handleSendToSelected}
               disabled={sending}
-              className="w-full gap-2"
+              className="w-full gap-2 rounded-xl"
             >
               {sending ? (
                 <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              {t('common.share', { ns: 'common' })} ({selectedUsers.size})
+              {t('share', { ns: 'common' })}
             </Button>
           </div>
         )}
