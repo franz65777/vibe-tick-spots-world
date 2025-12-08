@@ -47,44 +47,35 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     }
   }, [profile?.avatar_url]);
 
-  // Check if user has saved any place
+  // Track new place saved during this onboarding step (not existing places)
   useEffect(() => {
-    const checkSavedPlaces = async () => {
-      if (!user?.id) return;
-      
-      const { count } = await supabase
-        .from('saved_places')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-      
-      setHasSavedPlace((count || 0) > 0);
-    };
+    if (currentStep !== 'map-guide' || !user?.id) return;
     
-    if (currentStep === 'map-guide') {
-      checkSavedPlaces();
-      
-      // Subscribe to changes
-      const channel = supabase
-        .channel('saved_places_onboarding')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'saved_places',
-            filter: `user_id=eq.${user?.id}`,
-          },
-          () => {
-            setHasSavedPlace(true);
-            toast.success(t('placeSaved'));
-          }
-        )
-        .subscribe();
-      
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    // Reset hasSavedPlace to false when entering this step
+    // We only care about NEW saves during onboarding, not existing ones
+    setHasSavedPlace(false);
+    
+    // Subscribe to NEW saved_places inserts only
+    const channel = supabase
+      .channel('saved_places_onboarding')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'saved_places',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          setHasSavedPlace(true);
+          toast.success(t('placeSaved'));
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentStep, user?.id, t]);
 
   // Prefetch ExplorePage when on map-guide step
