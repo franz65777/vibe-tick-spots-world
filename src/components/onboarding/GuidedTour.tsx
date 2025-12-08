@@ -327,8 +327,8 @@ interface MapGuideOverlayProps {
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Light overlay - keeps map clearly visible */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+      {/* Very subtle overlay - map should be the clear focus */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
 
       {/* Simple bottom card - only the card is interactive */}
       <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
