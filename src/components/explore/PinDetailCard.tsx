@@ -89,6 +89,24 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [isListOpen, setIsListOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
+  // Check if onboarding is active on map-guide step
+  const [isOnboardingMapStep, setIsOnboardingMapStep] = useState(false);
+  
+  useEffect(() => {
+    const checkOnboardingStep = () => {
+      const step = document.body.getAttribute('data-onboarding-step');
+      setIsOnboardingMapStep(step === 'map-guide');
+    };
+    
+    checkOnboardingStep();
+    
+    // Listen for changes
+    const observer = new MutationObserver(checkOnboardingStep);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-onboarding-step'] });
+    
+    return () => observer.disconnect();
+  }, []);
+  
   // Source post ID - if the pin was opened from a post
   const sourcePostId = place.sourcePostId;
   const { cityLabel } = useNormalizedCity({
@@ -551,33 +569,46 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             {!dropdownOpen ? (
               <div className="flex items-center gap-1.5">
                 <div className="grid grid-cols-4 gap-1.5 flex-1">
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDropdownOpen(true);
-                    }}
-                    disabled={loading}
-                    variant="secondary"
-                    size="sm"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
-                  >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                     {isSaved ? (
-                       currentSaveTag === 'general' ? (
-                         <Bookmark className="h-5 w-5 fill-current" />
+                  {/* Save Button - with spotlight during onboarding */}
+                  <div className="relative">
+                    {isOnboardingMapStep && !isSaved && (
+                      <>
+                        {/* Pulsating ring effect */}
+                        <div className="absolute -inset-1 rounded-2xl bg-primary/30 animate-pulse z-0" />
+                        <div className="absolute -inset-2 rounded-2xl border-2 border-primary animate-ping z-0" style={{ animationDuration: '1.5s' }} />
+                      </>
+                    )}
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDropdownOpen(true);
+                      }}
+                      disabled={loading}
+                      variant="secondary"
+                      size="sm"
+                      className={cn(
+                        "relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full",
+                        isOnboardingMapStep && !isSaved && "ring-2 ring-primary ring-offset-2 ring-offset-background z-10"
+                      )}
+                    >
+                      <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                       {isSaved ? (
+                         currentSaveTag === 'general' ? (
+                           <Bookmark className="h-5 w-5 fill-current" />
+                         ) : (
+                           <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
+                         )
                        ) : (
-                         <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
-                       )
-                     ) : (
-                       <Bookmark className="h-5 w-5" />
-                     )}
-                    <span className="text-xs">
-                      {isSaved 
-                        ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
-                        : t('save', { ns: 'common', defaultValue: 'Save' })
-                      }
-                    </span>
-                  </Button>
+                         <Bookmark className="h-5 w-5" />
+                       )}
+                      <span className="text-xs">
+                        {isSaved 
+                          ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
+                          : t('save', { ns: 'common', defaultValue: 'Save' })
+                        }
+                      </span>
+                    </Button>
+                  </div>
 
                   <Button
                     onClick={(e) => {

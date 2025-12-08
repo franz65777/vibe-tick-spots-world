@@ -87,9 +87,15 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     }
   }, [currentStep, hasSavedPlace]);
 
-  // Handle step transitions
+  // Handle step transitions and set global onboarding state
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      document.body.removeAttribute('data-onboarding-step');
+      return;
+    }
+
+    // Set current step as data attribute for other components to detect
+    document.body.setAttribute('data-onboarding-step', currentStep);
 
     if (currentStep === 'profile-photo') {
       navigate('/');
@@ -99,6 +105,10 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
       // Navigate with state to open search bar focused
       navigate('/explore', { state: { fromOnboarding: true } });
     }
+    
+    return () => {
+      document.body.removeAttribute('data-onboarding-step');
+    };
   }, [currentStep, isActive, navigate]);
 
   const handleSkipStep = () => {
