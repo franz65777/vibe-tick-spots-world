@@ -208,12 +208,15 @@ export async function getPostComments(postId: string): Promise<Comment[]> {
 export async function addPostComment(
   postId: string,
   userId: string,
-  content: string
+  content: string,
+  successMessage?: string,
+  errorMessage?: string,
+  emptyErrorMessage?: string
 ): Promise<Comment | null> {
   try {
     const trimmed = content.trim();
     if (!trimmed) {
-      toast.error('Comment cannot be empty');
+      toast.error(emptyErrorMessage || 'Comment cannot be empty');
       return null;
     }
 
@@ -271,7 +274,7 @@ export async function addPostComment(
       });
     }
 
-    toast.success('Comment added');
+    toast.success(successMessage || 'Comment added');
 
     return {
       ...comment,
@@ -280,7 +283,7 @@ export async function addPostComment(
     };
   } catch (error) {
     console.error('Error adding comment:', error);
-    toast.error('Failed to add comment');
+    toast.error(errorMessage || 'Failed to add comment');
     return null;
   }
 }

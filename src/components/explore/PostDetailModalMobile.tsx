@@ -249,7 +249,14 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   const handleAddComment = async (content: string, postId: string) => {
     if (!user?.id) return;
-    const newComment = await addPostComment(postId, user.id, content);
+    const newComment = await addPostComment(
+      postId, 
+      user.id, 
+      content,
+      t('comments.added', 'Commento aggiunto'),
+      t('comments.addFailed', 'Impossibile aggiungere il commento'),
+      t('comments.emptyError', 'Il commento non può essere vuoto')
+    );
     if (newComment) {
       setComments(prev => [...prev, newComment]);
       loadPostData();
