@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { AvatarCropEditor } from '@/components/settings/AvatarCropEditor';
 import cameraIcon from '@/assets/onboarding-camera.png';
+import binocularsIcon from '@/assets/onboarding-binoculars.png';
 
 export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'complete';
 
@@ -315,17 +316,17 @@ interface MapGuideOverlayProps {
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   return (
-    <div className="fixed inset-0 z-[1999]">
+    <div className="fixed inset-0 z-[1999] pointer-events-none">
       {/* Dim overlay - allows interaction with map */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/70" />
 
-      {/* Simple bottom card */}
+      {/* Simple bottom card - only the card is interactive */}
       <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
         <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50">
           {/* Header with icon */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-6 h-6 text-primary-foreground" />
+            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img src={binocularsIcon} alt="" className="w-12 h-12 object-contain" />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold leading-tight">{t('mapGuideTitle')}</h3>
