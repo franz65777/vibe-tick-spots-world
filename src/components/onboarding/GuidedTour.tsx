@@ -359,13 +359,13 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
 
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Overlay - full screen for first 5 seconds, then only top portion */}
+      {/* Overlay - full screen for first 5 seconds, then only header area */}
       {showFullOverlay ? (
-        // Full overlay with gradient - reading mode
+        // Full overlay with gradient - reading mode (first 5 seconds)
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 transition-opacity duration-500" />
       ) : (
-        // Only shade the header area above the map
-        <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-black/40 via-black/20 to-transparent transition-opacity duration-500" />
+        // Only shade the header area (search bar + trending section) - approximately 180px from top
+        <div className="absolute top-0 left-0 right-0 h-[180px] bg-gradient-to-b from-black/40 to-transparent transition-opacity duration-500" />
       )}
 
       {/* Simple bottom card - only the card is interactive */}
