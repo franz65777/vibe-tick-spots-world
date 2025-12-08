@@ -354,20 +354,19 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
     };
   }, []);
 
-  // Hide overlay completely when dropdown is open
-  if (isDropdownOpen) {
-    return null;
-  }
-
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
-      {/* Overlay - full screen for first 5 seconds, then only header area */}
-      {showFullOverlay ? (
-        // Full overlay with gradient - reading mode (first 5 seconds)
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 transition-opacity duration-500" />
-      ) : (
-        // Only shade the header area (search bar + trending section) - approximately 180px from top
-        <div className="absolute top-0 left-0 right-0 h-[180px] bg-gradient-to-b from-black/40 to-transparent transition-opacity duration-500" />
+      {/* Overlay - only show when dropdown is NOT open */}
+      {!isDropdownOpen && (
+        <>
+          {showFullOverlay ? (
+            // Full overlay with gradient - reading mode (first 5 seconds)
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 transition-opacity duration-500" />
+          ) : (
+            // Only shade the header area (search bar + trending section) - approximately 180px from top
+            <div className="absolute top-0 left-0 right-0 h-[180px] bg-gradient-to-b from-black/40 to-transparent transition-opacity duration-500" />
+          )}
+        </>
       )}
 
       {/* Simple bottom card - only the card is interactive */}
