@@ -21,7 +21,7 @@ interface ShareProfileModalProps {
 
 const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: ShareProfileModalProps) => {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t } = useTranslation('messages');
   const { setIsShareProfileOpen } = useUIState();
   const [searchQuery, setSearchQuery] = useState('');
   const [allContacts, setAllContacts] = useState<any[]>([]);
@@ -82,7 +82,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
 
     // Prevent sharing profile with the same user
     if (recipientId === profileId) {
-      toast.error(t('userProfile.cannotShareWithSameUser'));
+      toast.error(t('userProfile.cannotShareWithSameUser', { ns: 'common' }));
       return;
     }
 
@@ -98,11 +98,11 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
 
       await messageService.sendProfileShare(recipientId, profileData);
       
-      toast.success(t('userProfile.profileShared', { username: recipientUsername }));
+      toast.success(t('userProfile.profileShared', { username: recipientUsername, ns: 'common' }));
       onClose();
     } catch (error) {
       console.error('Error sharing profile:', error);
-      toast.error(t('userProfile.shareError'));
+      toast.error(t('userProfile.shareError', { ns: 'common' }));
     } finally {
       setSending(null);
     }
@@ -125,7 +125,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
         {/* Header */}
         <div className="p-4 flex items-center justify-between flex-shrink-0">
           <div className="w-8" />
-          <h3 className="font-bold text-lg text-center">{t('userProfile.shareProfile')}</h3>
+          <h3 className="font-bold text-lg text-center">{t('userProfile.shareProfile', { ns: 'common' })}</h3>
           <Button
             onClick={onClose}
             variant="ghost"
@@ -143,7 +143,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('shareLocation.searchPlaceholder')}
+              placeholder={t('searchPlaceholder')}
               className="pl-10"
               autoFocus
             />
@@ -162,8 +162,8 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {t('shareLocation.frequentContacts')}
+                    <span className="text-xs font-semibold text-muted-foreground tracking-wide">
+                      {t('frequentContacts')}
                     </span>
                   </div>
                   <div className="overflow-x-auto scrollbar-hide">
@@ -202,8 +202,8 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
               {filteredAll.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {t('shareLocation.allContacts')}
+                    <span className="text-xs font-semibold text-muted-foreground tracking-wide">
+                      {t('allContacts')}
                     </span>
                   </div>
                   <div className="overflow-x-auto scrollbar-hide">
@@ -242,7 +242,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
               {filteredFrequent.length === 0 && filteredAll.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                   <p className="text-muted-foreground">
-                    {searchQuery.trim() ? t('noResults') : t('userProfile.searchToShare')}
+                    {searchQuery.trim() ? t('noResults', { ns: 'common' }) : t('userProfile.searchToShare', { ns: 'common' })}
                   </p>
                 </div>
               )}
