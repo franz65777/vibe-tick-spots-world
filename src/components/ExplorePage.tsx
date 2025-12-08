@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
 import { AiAssistantModal } from './ai/AiAssistantModal';
-
+import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 // Lazy load heavy components
 const ExploreHeaderBar = lazy(() => import('./explore/ExploreHeaderBar'));
 const ExploreResults = lazy(() => import('./explore/ExploreResults'));
@@ -52,6 +52,11 @@ const ExplorePage = memo(() => {
     const state = location.state as { fromOnboarding?: boolean } | null;
     return state?.fromOnboarding === true;
   });
+  const [showGuidedTour, setShowGuidedTour] = useState(() => {
+    const state = location.state as { fromOnboarding?: boolean } | null;
+    return state?.fromOnboarding === true;
+  });
+  const [guidedTourStep, setGuidedTourStep] = useState<GuidedTourStep>('explore-guide');
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -661,6 +666,17 @@ const ExplorePage = memo(() => {
       <AiAssistantModal 
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
+      />
+
+      {/* Guided Tour - for onboarding step 3 */}
+      <GuidedTour
+        isActive={showGuidedTour}
+        currentStep={guidedTourStep}
+        onStepChange={setGuidedTourStep}
+        onComplete={() => {
+          setShowGuidedTour(false);
+          navigate('/');
+        }}
       />
     </div>
   );

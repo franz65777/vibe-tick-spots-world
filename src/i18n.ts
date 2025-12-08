@@ -200,7 +200,11 @@ const resources = {
         cities: 'Cities',
         photos: 'Photos',
         blockUser: 'Block User',
-        unblockUser: 'Unblock User'
+        unblockUser: 'Unblock User',
+        searchPeople: 'Search for people...',
+        searchToShare: 'Search for people to share this profile',
+        profileShared: 'Profile shared with @{{username}}',
+        shareError: 'Failed to share profile'
       }
     },
     navigation: {
@@ -1022,6 +1026,7 @@ const resources = {
       noReviewsYet: 'Aún no hay reseñas',
       noPostsYet: 'Aún no hay publicaciones',
       coordinatesNotAvailable: 'Coordenadas no disponibles',
+      locationRemoved: 'Ubicación eliminada',
       chooseMapApp: 'Elige tu aplicación de mapas preferida',
       featuredInLists: 'Destacado en Listas',
       marketingCampaign: {
@@ -1870,6 +1875,7 @@ const resources = {
       noReviewsYet: 'Nessuna recensione ancora',
       noPostsYet: 'Nessun post ancora',
       coordinatesNotAvailable: 'Coordinate non disponibili',
+      locationRemoved: 'Luogo rimosso',
       chooseMapApp: 'Scegli la tua app di mappe preferita',
       featuredInLists: 'In Evidenza nelle Liste',
       marketingCampaign: {
@@ -1940,7 +1946,11 @@ const resources = {
         cities: 'Città',
         photos: 'Foto',
         blockUser: 'Blocca Utente',
-        unblockUser: 'Sblocca Utente'
+        unblockUser: 'Sblocca Utente',
+        searchPeople: 'Cerca persone...',
+        searchToShare: 'Cerca persone con cui condividere questo profilo',
+        profileShared: 'Profilo condiviso con @{{username}}',
+        shareError: 'Impossibile condividere il profilo'
       }
     },
     navigation: {
@@ -2695,6 +2705,7 @@ const resources = {
       noReviewsYet: 'Pas encore d\'avis',
       noPostsYet: 'Pas encore de publications',
       coordinatesNotAvailable: 'Coordonnées non disponibles',
+      locationRemoved: 'Lieu supprimé',
       chooseMapApp: 'Choisissez votre application de cartes préférée',
       featuredInLists: 'Mis en Avant dans les Listes',
       marketingCampaign: {
@@ -3415,6 +3426,7 @@ const resources = {
       noReviewsYet: 'Noch keine Bewertungen',
       noPostsYet: 'Noch keine Beiträge',
       coordinatesNotAvailable: 'Koordinaten nicht verfügbar',
+      locationRemoved: 'Ort entfernt',
       chooseMapApp: 'Wählen Sie Ihre bevorzugte Karten-App',
       featuredInLists: 'In Listen Vorgestellt',
       marketingCampaign: {
@@ -4039,6 +4051,7 @@ const resources = {
       noReviewsYet: 'Ainda sem avaliações',
       noPostsYet: 'Ainda sem publicações',
       coordinatesNotAvailable: 'Coordenadas não disponíveis',
+      locationRemoved: 'Local removido',
       chooseMapApp: 'Escolha seu aplicativo de mapas preferido',
       forYou: 'Para você',
       promotions: 'Promoções',
