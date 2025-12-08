@@ -327,11 +327,11 @@ interface MapGuideOverlayProps {
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   const [showFullOverlay, setShowFullOverlay] = useState(true);
   
-  // Remove overlay from map after 3 seconds
+  // Remove overlay from map after 4 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFullOverlay(false);
-    }, 3000);
+    }, 4000);
     
     return () => clearTimeout(timer);
   }, []);
@@ -339,9 +339,9 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
   return (
     <>
       {/* TOP OVERLAY - ALWAYS visible during step 2, never hidden */}
-      <div className="fixed top-0 left-0 right-0 z-[100] pointer-events-none">
+      <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
         {showFullOverlay ? (
-          // Full screen dark overlay for first 3 seconds
+          // Full screen dark overlay for first 4 seconds
           <div className="fixed inset-0 bg-black/40 transition-opacity duration-500" />
         ) : (
           // Only shade the header area (search bar + trending section) - approximately 200px from top
@@ -350,7 +350,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
       </div>
 
       {/* Simple bottom card - only the card is interactive */}
-      <div className="fixed bottom-6 left-4 right-4 z-[100] pointer-events-auto">
+      <div className="fixed bottom-6 left-4 right-4 z-[9999] pointer-events-auto">
         <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50">
           {/* Header with icon */}
           <div className="flex items-start gap-4 mb-2">
