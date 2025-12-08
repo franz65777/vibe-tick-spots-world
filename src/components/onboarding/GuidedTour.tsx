@@ -337,19 +337,21 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
     return () => clearTimeout(timer);
   }, []);
   
-  // Listen for save dropdown open/close
+  // Listen for save dropdown open/close via custom event
   useEffect(() => {
-    const checkDropdown = () => {
-      const isOpen = document.body.hasAttribute('data-save-dropdown-open');
-      setIsDropdownOpen(isOpen);
+    const handleDropdownChange = (e: CustomEvent<{ open: boolean }>) => {
+      setIsDropdownOpen(e.detail.open);
     };
     
-    checkDropdown();
+    // Also check initial state
+    const isOpen = document.body.hasAttribute('data-save-dropdown-open');
+    setIsDropdownOpen(isOpen);
     
-    const observer = new MutationObserver(checkDropdown);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-save-dropdown-open'] });
+    window.addEventListener('save-dropdown-change', handleDropdownChange as EventListener);
     
-    return () => observer.disconnect();
+    return () => {
+      window.removeEventListener('save-dropdown-change', handleDropdownChange as EventListener);
+    };
   }, []);
 
   // Hide overlay completely when dropdown is open
