@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { messageService } from '@/services/messageService';
 import { toast } from 'sonner';
+import { useUIState } from '@/contexts/UIStateContext';
 
 interface ShareProfileModalProps {
   isOpen: boolean;
@@ -20,22 +21,17 @@ interface ShareProfileModalProps {
 const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: ShareProfileModalProps) => {
   const { user } = useAuth();
   const { t } = useTranslation('common');
+  const { setIsShareProfileOpen } = useUIState();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [sending, setSending] = useState<string | null>(null);
 
-  // Hide bottom navigation when modal is open
+  // Update UI state when modal opens/closes
   useEffect(() => {
-    if (isOpen) {
-      document.body.setAttribute('data-share-profile-open', 'true');
-    } else {
-      document.body.removeAttribute('data-share-profile-open');
-    }
-    return () => {
-      document.body.removeAttribute('data-share-profile-open');
-    };
-  }, [isOpen]);
+    setIsShareProfileOpen(isOpen);
+    return () => setIsShareProfileOpen(false);
+  }, [isOpen, setIsShareProfileOpen]);
 
   useEffect(() => {
     if (isOpen) {
