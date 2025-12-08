@@ -107,6 +107,15 @@ export const turkishTranslations = {
     explore: {
       noResultsFound: 'Sonuç bulunamadı',
       tryDifferentSearch: 'Farklı bir arama deneyin'
+    },
+    shareLocation: {
+      frequentContacts: 'Sık Kullanılan Kişiler',
+      allContacts: 'Tüm Kişiler',
+      searchPlaceholder: 'Ara...',
+      noFrequentContacts: 'Henüz sık kullanılan kişi yok',
+      suggestedContacts: 'Önerilen Kişiler',
+      noSuggestedContacts: 'Öneri görmek için kişileri takip edin',
+      followPeoplePrompt: 'Bağlantı kurmak ve sohbet etmek için insanları takip etmeye başlayın'
     }
   }
 };
