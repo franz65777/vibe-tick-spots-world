@@ -308,17 +308,6 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     return (
       <div className="text-sm text-left">
         <span className="text-foreground">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-              navigate(`/profile/${userId}`);
-            }}
-            className="font-semibold hover:opacity-70"
-          >
-            {username}
-          </button>
-          {' '}
           <span className="inline">
             {isExpanded ? (
               <>
