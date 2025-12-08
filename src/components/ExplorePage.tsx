@@ -457,9 +457,10 @@ const ExplorePage = memo(() => {
                       </div>
                       <div className="space-y-2">
                         {suggestedUsers.slice(0, 10).map((suggestedUser) => (
-                          <div
+                          <button
+                            type="button"
                             key={suggestedUser.id}
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer"
+                            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer text-left"
                             onClick={() => handleUserClick(suggestedUser.id)}
                           >
                             <div className="relative flex-shrink-0">
@@ -470,7 +471,7 @@ const ExplorePage = memo(() => {
                                 </AvatarFallback>
                               </Avatar>
                               {suggestedUser.has_active_story && (
-                                <div className="absolute inset-0 rounded-full ring-2 ring-primary" />
+                                <div className="absolute inset-0 rounded-full ring-2 ring-primary pointer-events-none" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0 text-left">
@@ -484,7 +485,7 @@ const ExplorePage = memo(() => {
                                 }
                               </p>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>

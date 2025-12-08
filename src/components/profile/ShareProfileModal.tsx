@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Send } from 'lucide-react';
+import { X, Search, Send, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { messageService } from '@/services/messageService';
 import { toast } from 'sonner';
 import { useUIState } from '@/contexts/UIStateContext';
+import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 
 interface ShareProfileModalProps {
   isOpen: boolean;
@@ -23,9 +24,10 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
   const { t } = useTranslation('common');
   const { setIsShareProfileOpen } = useUIState();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [allContacts, setAllContacts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState<string | null>(null);
+  const { frequentContacts, loading: frequentLoading } = useFrequentContacts();
 
   // Update UI state when modal opens/closes
   useEffect(() => {
@@ -33,36 +35,45 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
     return () => setIsShareProfileOpen(false);
   }, [isOpen, setIsShareProfileOpen]);
 
+  // Load all contacts (followed users)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
+      loadAllContacts();
+    }
+    if (!isOpen) {
       setSearchQuery('');
-      setSearchResults([]);
+      setAllContacts([]);
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setSearching(true);
+  const loadAllContacts = async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url, bio')
-        .ilike('username', `%${query}%`)
-        .neq('id', user?.id || '')
-        .limit(20);
+      const { data: follows } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
 
-      if (error) throw error;
-      setSearchResults(data || []);
+      const followingIds = follows?.map(f => f.following_id) || [];
+
+      if (followingIds.length === 0) {
+        setAllContacts([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', followingIds)
+        .order('username');
+
+      setAllContacts(profiles || []);
     } catch (error) {
-      console.error('Error searching users:', error);
-      setSearchResults([]);
+      console.error('Error loading contacts:', error);
     } finally {
-      setSearching(false);
+      setLoading(false);
     }
   };
 
@@ -71,7 +82,6 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
 
     setSending(recipientId);
     try {
-      // Fetch the profile data to share
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('id, username, avatar_url, bio, follower_count, following_count, posts_count')
@@ -92,14 +102,24 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
     }
   };
 
+  // Filter contacts based on search
+  const filteredFrequent = frequentContacts.filter(c =>
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredAll = allContacts.filter(c =>
+    c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
       <div className="bg-background rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md h-[70vh] sm:h-[60vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header - no border */}
+        {/* Header */}
         <div className="p-4 flex items-center justify-between flex-shrink-0">
-          <h3 className="font-bold text-lg">{t('userProfile.shareProfile')}</h3>
+          <div className="w-8" />
+          <h3 className="font-bold text-lg text-center">{t('userProfile.shareProfile')}</h3>
           <Button
             onClick={onClose}
             variant="ghost"
@@ -110,73 +130,116 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
           </Button>
         </div>
 
-        {/* Search - no border */}
+        {/* Search */}
         <div className="px-4 pb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder={t('userProfile.searchPeople')}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('shareLocation.searchPlaceholder')}
               className="pl-10"
               autoFocus
             />
           </div>
         </div>
 
-        {/* Results */}
-        <ScrollArea className="flex-1">
-          {searching ? (
+        <ScrollArea className="flex-1 px-4">
+          {loading || frequentLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : searchResults.length > 0 ? (
-            <div className="p-2">
-              {searchResults.map((profile) => (
-                <div
-                  key={profile.id}
-                  className="flex items-center gap-3 p-3 hover:bg-accent rounded-xl transition-colors"
-                >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {profile.username?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">
-                      {profile.username}
-                    </p>
-                    {profile.bio && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {profile.bio}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleSendProfile(profile.id, profile.username)}
-                    disabled={sending === profile.id}
-                    className="shrink-0"
-                  >
-                    {sending === profile.id ? (
-                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : searchQuery.trim() ? (
-            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-              <p className="text-muted-foreground">{t('noResults')}</p>
-            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-              <p className="text-muted-foreground">
-                {t('userProfile.searchToShare')}
-              </p>
+            <div className="space-y-6 pb-4">
+              {/* Frequent Contacts */}
+              {filteredFrequent.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t('shareLocation.frequentContacts')}
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                    <div className="flex gap-4">
+                      {filteredFrequent.map((contact) => (
+                        <button
+                          key={contact.id}
+                          onClick={() => handleSendProfile(contact.id, contact.username)}
+                          disabled={sending === contact.id}
+                          className="flex flex-col items-center gap-2 min-w-[72px]"
+                        >
+                          <div className="relative">
+                            <Avatar className="h-14 w-14">
+                              <AvatarImage src={contact.avatar_url} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                                {contact.username?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {sending === contact.id && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-full">
+                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-center truncate w-full">
+                            {contact.username}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* All Contacts */}
+              {filteredAll.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t('shareLocation.allContacts')}
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                    <div className="flex gap-4">
+                      {filteredAll.map((contact) => (
+                        <button
+                          key={contact.id}
+                          onClick={() => handleSendProfile(contact.id, contact.username)}
+                          disabled={sending === contact.id}
+                          className="flex flex-col items-center gap-2 min-w-[72px]"
+                        >
+                          <div className="relative">
+                            <Avatar className="h-14 w-14">
+                              <AvatarImage src={contact.avatar_url} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                                {contact.username?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {sending === contact.id && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-full">
+                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-center truncate w-full">
+                            {contact.username}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {filteredFrequent.length === 0 && filteredAll.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                  <p className="text-muted-foreground">
+                    {searchQuery.trim() ? t('noResults') : t('userProfile.searchToShare')}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>

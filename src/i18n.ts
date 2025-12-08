@@ -712,6 +712,7 @@ const resources = {
       noFrequentContacts: 'No frequent contacts yet',
       noSuggestedContacts: 'Follow people to see suggestions here',
       followPeoplePrompt: 'Start following people to connect and chat',
+      allContacts: 'All Contacts',
     },
     business: {
       overview: 'Overview',
@@ -1538,6 +1539,7 @@ const resources = {
       noFrequentContacts: 'Aún no hay contactos frecuentes',
       noSuggestedContacts: 'Sigue personas para ver sugerencias aquí',
       followPeoplePrompt: 'Empieza a seguir personas para conectar y chatear',
+      allContacts: 'Todos los Contactos',
     },
     business: {
       overview: 'Resumen',
@@ -2407,6 +2409,7 @@ const resources = {
       noFrequentContacts: 'Nessun contatto frequente ancora',
       noSuggestedContacts: 'Segui persone per vedere suggerimenti qui',
       followPeoplePrompt: 'Inizia a seguire persone per connetterti e chattare',
+      allContacts: 'Tutti i Contatti',
     },
     business: {
       overview: 'Panoramica',
@@ -3170,6 +3173,7 @@ const resources = {
       noFrequentContacts: 'Pas encore de contacts fréquents',
       noSuggestedContacts: 'Suivez des personnes pour voir des suggestions ici',
       followPeoplePrompt: 'Commencez à suivre des personnes pour vous connecter et discuter',
+      allContacts: 'Tous les Contacts',
     },
     business: {
       businessOverview: 'Vue d\'ensemble de l\'entreprise',
@@ -3872,6 +3876,7 @@ const resources = {
       noFrequentContacts: 'Noch keine häufigen Kontakte',
       noSuggestedContacts: 'Folgen Sie Personen, um Vorschläge hier zu sehen',
       followPeoplePrompt: 'Beginnen Sie, Personen zu folgen, um sich zu verbinden und zu chatten',
+      allContacts: 'Alle Kontakte',
     },
     business: {
       businessOverview: 'Geschäftsübersicht',
@@ -4539,6 +4544,7 @@ const resources = {
       noFrequentContacts: 'Ainda não há contatos frequentes',
       noSuggestedContacts: 'Siga pessoas para ver sugestões aqui',
       followPeoplePrompt: 'Comece a seguir pessoas para se conectar e conversar',
+      allContacts: 'Todos os Contatos',
     },
     business: {
       businessOverview: 'Visão Geral do Negócio',
@@ -5099,6 +5105,7 @@ const resources = {
       noFrequentContacts: '还没有常用联系人',
       noSuggestedContacts: '关注他人以查看建议',
       followPeoplePrompt: '开始关注他人以连接和聊天',
+      allContacts: '所有联系人',
     },
     business: {
       businessOverview: '企业概览',
@@ -5664,6 +5671,7 @@ const resources = {
       noFrequentContacts: 'まだ頻繁な連絡先はありません',
       noSuggestedContacts: 'フォローして提案を表示',
       followPeoplePrompt: '人々をフォローして接続とチャットを始めましょう',
+      allContacts: 'すべての連絡先',
     },
     business: {
       businessOverview: 'ビジネス概要',
@@ -6233,6 +6241,7 @@ const resources = {
       noFrequentContacts: '아직 자주 연락하는 연락처가 없습니다',
       noSuggestedContacts: '팔로우하여 여기에서 제안 보기',
       followPeoplePrompt: '사람들을 팔로우하여 연결하고 채팅하세요',
+      allContacts: '모든 연락처',
     },
     business: {
       businessOverview: '비즈니스 개요',
@@ -6802,6 +6811,7 @@ const resources = {
       noFrequentContacts: 'لا توجد جهات اتصال متكررة بعد',
       noSuggestedContacts: 'تابع الأشخاص لرؤية الاقتراحات هنا',
       followPeoplePrompt: 'ابدأ بمتابعة الأشخاص للتواصل والدردشة',
+      allContacts: 'جميع جهات الاتصال',
     },
     business: {
       businessOverview: 'نظرة عامة على الأعمال',
@@ -7951,6 +7961,7 @@ const resources = {
       noFrequentContacts: 'Пока нет частых контактов',
       noSuggestedContacts: 'Подпишитесь на людей, чтобы увидеть предложения здесь',
       followPeoplePrompt: 'Начните подписываться на людей, чтобы общаться и переписываться',
+      allContacts: 'Все контакты',
     },
     business: {
       businessOverview: 'Обзор бизнеса',
