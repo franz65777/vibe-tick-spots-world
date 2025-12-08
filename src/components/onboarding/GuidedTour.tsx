@@ -344,7 +344,6 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
       setIsDropdownOpen(isOpen);
     };
     
-    // Check immediately and on interval
     checkDropdown();
     const interval = setInterval(checkDropdown, 100);
     
@@ -352,22 +351,22 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9998 }}>
-      {/* Overlay - only show when dropdown is NOT open */}
+    <>
+      {/* TOP OVERLAY - separate div that only covers the header area */}
       {!isDropdownOpen && (
-        <>
+        <div className="fixed top-0 left-0 right-0 z-[100] pointer-events-none">
           {showFullOverlay ? (
-            // Full overlay with gradient - reading mode (first 3 seconds)
-            <div className="absolute inset-0 bg-black/40 transition-opacity duration-500" />
+            // Full screen dark overlay for first 3 seconds - use a separate full-screen div
+            <div className="fixed inset-0 bg-black/40 transition-opacity duration-500" />
           ) : (
             // Only shade the header area (search bar + trending section) - approximately 200px from top
-            <div className="absolute top-0 left-0 right-0 h-[200px] bg-gradient-to-b from-black/40 via-black/30 to-transparent transition-opacity duration-500" />
+            <div className="h-[200px] bg-gradient-to-b from-black/40 via-black/25 to-transparent transition-opacity duration-500" />
           )}
-        </>
+        </div>
       )}
 
       {/* Simple bottom card - only the card is interactive */}
-      <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
+      <div className="fixed bottom-6 left-4 right-4 z-[100] pointer-events-auto">
         <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50">
           {/* Header with icon */}
           <div className="flex items-start gap-4 mb-2">
@@ -407,7 +406,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
           ) : null}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
