@@ -87,6 +87,14 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     }
   }, [currentStep, user?.id, t]);
 
+  // Prefetch ExplorePage when on map-guide step
+  useEffect(() => {
+    if (currentStep === 'map-guide' && hasSavedPlace) {
+      // Preload the ExplorePage component
+      import('@/components/ExplorePage').catch(() => {});
+    }
+  }, [currentStep, hasSavedPlace]);
+
   // Handle step transitions
   useEffect(() => {
     if (!isActive) return;
@@ -96,7 +104,8 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     } else if (currentStep === 'map-guide') {
       navigate('/');
     } else if (currentStep === 'explore-guide') {
-      navigate('/explore');
+      // Navigate with state to open search bar focused
+      navigate('/explore', { state: { fromOnboarding: true } });
     }
   }, [currentStep, isActive, navigate]);
 
@@ -333,19 +342,21 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
             </div>
           </div>
           
-          {/* Description */}
-          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-            {t('mapGuideDescription')}
-          </p>
+          {/* Description - only show when not saved yet */}
+          {!hasSavedPlace && (
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+              {t('mapGuideDescription')}
+            </p>
+          )}
           
-          {/* Status and button - only show continue when saved */}
+          {/* Success state with continue button */}
           {hasSavedPlace ? (
             <>
-              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3 mb-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('placeSaved')}</span>
+                <span className="text-base font-semibold text-green-600 dark:text-green-400">{t('placeSaved')}</span>
               </div>
               <Button 
                 onClick={onNext} 
@@ -355,14 +366,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
                 <ChevronRight className="w-5 h-5 ml-1" />
               </Button>
             </>
-          ) : (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20">
-              <div className="w-6 h-6 rounded-full border-2 border-primary/50 flex items-center justify-center animate-pulse">
-                <MapPin className="w-3 h-3 text-primary" />
-              </div>
-              <span className="text-sm text-primary font-medium">{t('saveFirst')}</span>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
