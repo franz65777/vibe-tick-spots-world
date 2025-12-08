@@ -326,6 +326,7 @@ interface MapGuideOverlayProps {
 
 const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace, t }) => {
   const [showFullOverlay, setShowFullOverlay] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Remove overlay from map after 5 seconds
   useEffect(() => {
@@ -335,6 +336,35 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
     
     return () => clearTimeout(timer);
   }, []);
+  
+  // Listen for save dropdown open/close
+  useEffect(() => {
+    const checkDropdown = () => {
+      const isOpen = document.body.hasAttribute('data-save-dropdown-open');
+      setIsDropdownOpen(isOpen);
+    };
+    
+    checkDropdown();
+    
+    const observer = new MutationObserver(checkDropdown);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-save-dropdown-open'] });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  // Hide overlay completely when dropdown is open
+  if (isDropdownOpen) {
+    return (
+      <div className="fixed inset-0 z-[1999] pointer-events-none">
+        {/* No overlay when dropdown is open */}
+        <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
+          <div className="bg-background rounded-2xl p-5 shadow-2xl max-w-sm mx-auto border border-border/50 opacity-0">
+            {/* Hidden card to maintain layout */}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
