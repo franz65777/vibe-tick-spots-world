@@ -1974,7 +1974,7 @@ const resources = {
         unmute: 'Riattiva',
         moreOptions: 'Altre Opzioni',
         follow: 'Segui',
-        saved: 'Salvato',
+        saved: 'Salvati',
         cities: 'Città',
         photos: 'Foto',
         blockUser: 'Blocca Utente',

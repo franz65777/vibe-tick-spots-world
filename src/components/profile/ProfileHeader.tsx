@@ -156,21 +156,21 @@ const ProfileHeader = ({
             )}
           </div>
 
-          {/* Stats Row - below username */}
+          {/* Stats Row - inline like "6 Follower" */}
           <div className="flex gap-4 mt-2">
-            <button className="text-center" onClick={onFollowersClick}>
-              <div className="text-sm font-bold text-foreground">{displayStats.followers}</div>
-              <div className="text-xs text-muted-foreground">{t('followers', { ns: 'common' })}</div>
+            <button className="flex items-center gap-1" onClick={onFollowersClick}>
+              <span className="text-sm font-bold text-foreground">{displayStats.followers}</span>
+              <span className="text-sm text-muted-foreground">{t('followers', { ns: 'common' })}</span>
             </button>
             
-            <button className="text-center" onClick={onFollowingClick}>
-              <div className="text-sm font-bold text-foreground">{displayStats.following}</div>
-              <div className="text-xs text-muted-foreground">{t('following', { ns: 'common' })}</div>
+            <button className="flex items-center gap-1" onClick={onFollowingClick}>
+              <span className="text-sm font-bold text-foreground">{displayStats.following}</span>
+              <span className="text-sm text-muted-foreground">{t('followingTab', { ns: 'common' })}</span>
             </button>
             
-            <button className="text-center" onClick={onLocationsClick}>
-              <div className="text-sm font-bold text-foreground">{displayStats.locations}</div>
-              <div className="text-xs text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</div>
+            <button className="flex items-center gap-1" onClick={onLocationsClick}>
+              <span className="text-sm font-bold text-foreground">{displayStats.locations}</span>
+              <span className="text-sm text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</span>
             </button>
           </div>
         </div>
