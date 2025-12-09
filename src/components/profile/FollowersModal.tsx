@@ -214,6 +214,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
       setSelectedStoryIndex(storyIndex >= 0 ? storyIndex : 0);
       setIsStoriesViewerOpen(true);
     } else {
+      onClose();
       navigate(`/profile/${user.id}`);
     }
   };
@@ -347,7 +348,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                         </div>
                       </button>
                       <button
-                        onClick={() => navigate(`/profile/${user.id}`)}
+                        onClick={() => {
+                          onClose();
+                          navigate(`/profile/${user.id}`);
+                        }}
                         className="text-left min-w-0 flex-1"
                       >
                         <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>

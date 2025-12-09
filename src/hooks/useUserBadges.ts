@@ -277,6 +277,29 @@ const fetchUserStats = async (hasCache: boolean = false) => {
           { level: 2, name: 'Silver', requirement: 20, earned: stats.reviewsCount >= 20, earnedDate: stats.reviewsCount >= 20 ? new Date().toISOString() : undefined },
           { level: 3, name: 'Gold', requirement: 50, earned: stats.reviewsCount >= 50, earnedDate: stats.reviewsCount >= 50 ? new Date().toISOString() : undefined }
         ]
+      },
+
+      // Progressive Social Network Badge
+      {
+        id: 'socialNetwork',
+        name: t('socialNetwork', { ns: 'badges' }),
+        description: t('socialNetworkDesc', { ns: 'badges' }),
+        icon: '👥',
+        category: 'social',
+        level: 'bronze',
+        gradient: 'from-pink-400 to-rose-500',
+        earned: stats.followersCount >= 10,
+        progress: stats.followersCount,
+        currentLevel: calculateLevel(stats.followersCount, [
+          { requirement: 10 },
+          { requirement: 50 },
+          { requirement: 200 }
+        ]),
+        levels: [
+          { level: 1, name: 'Bronze', requirement: 10, earned: stats.followersCount >= 10, earnedDate: stats.followersCount >= 10 ? new Date().toISOString() : undefined },
+          { level: 2, name: 'Silver', requirement: 50, earned: stats.followersCount >= 50, earnedDate: stats.followersCount >= 50 ? new Date().toISOString() : undefined },
+          { level: 3, name: 'Gold', requirement: 200, earned: stats.followersCount >= 200, earnedDate: stats.followersCount >= 200 ? new Date().toISOString() : undefined }
+        ]
       }
     ];
 

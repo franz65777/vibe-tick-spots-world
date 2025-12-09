@@ -650,7 +650,9 @@ const resources = {
       prolificPoster: 'Prolific Poster',
       prolificPosterDesc: 'Create 25+ posts',
       contentMaster: 'Content Master',
-      contentMasterDesc: 'Create 100+ posts'
+      contentMasterDesc: 'Create 100+ posts',
+      socialNetwork: 'Social Network',
+      socialNetworkDesc: 'Build your community with 10+ followers'
     },
     notifications: {
       title: 'Notifications',
@@ -1489,6 +1491,8 @@ const resources = {
       featuredInDiscovery: 'Destacado en descubrir',
       earlyAccessFeatures: 'Acceso anticipado a nuevas funciones',
       exclusiveCommunityAccess: 'Acceso exclusivo a la comunidad',
+      socialNetwork: 'Red Social',
+      socialNetworkDesc: 'Construye tu comunidad con 10+ seguidores'
     },
     notifications: {
       title: 'Notificaciones',
@@ -2367,6 +2371,8 @@ const resources = {
       featuredInDiscovery: 'In evidenza in Scopri',
       earlyAccessFeatures: 'Accesso anticipato alle nuove funzioni',
       exclusiveCommunityAccess: 'Accesso esclusivo alla community',
+      socialNetwork: 'Rete Sociale',
+      socialNetworkDesc: 'Costruisci la tua community con 10+ follower'
     },
     notifications: {
       title: 'Notifiche',
@@ -3142,6 +3148,8 @@ const resources = {
       prolificPosterDesc: 'Créez 25+ publications',
       contentMaster: 'Maître du contenu',
       contentMasterDesc: 'Créez 100+ publications',
+      socialNetwork: 'Réseau Social',
+      socialNetworkDesc: 'Construisez votre communauté avec 10+ abonnés',
       newBadgeUnlocked: 'Nouveau badge débloqué'
     },
     notifications: {
@@ -3862,6 +3870,8 @@ const resources = {
       prolificPosterDesc: 'Erstelle 25+ Beiträge',
       contentMaster: 'Content-Meister',
       contentMasterDesc: 'Erstelle 100+ Beiträge',
+      socialNetwork: 'Soziales Netzwerk',
+      socialNetworkDesc: 'Baue deine Community mit 10+ Followern auf',
       newBadgeUnlocked: 'Neues Abzeichen freigeschaltet'
     },
     notifications: {
@@ -4537,7 +4547,9 @@ const resources = {
       prolificPoster: 'Postador Prolífico',
       prolificPosterDesc: 'Crie 25+ publicações',
       contentMaster: 'Mestre de Conteúdo',
-      contentMasterDesc: 'Crie 100+ publicações'
+      contentMasterDesc: 'Crie 100+ publicações',
+      socialNetwork: 'Rede Social',
+      socialNetworkDesc: 'Construa sua comunidade com 10+ seguidores'
     },
     notifications: {
       title: 'Notificações',
@@ -5105,6 +5117,8 @@ const resources = {
       prolificPosterDesc: '创建25+个帖子',
       contentMaster: '内容大师',
       contentMasterDesc: '创建100+个帖子',
+      socialNetwork: '社交网络',
+      socialNetworkDesc: '建立你的社区并拥有10+粉丝',
       newBadgeUnlocked: '新徽章解锁'
     },
     notifications: {
@@ -5678,7 +5692,9 @@ const resources = {
       prolificPoster: '多作投稿者',
       prolificPosterDesc: '25以上の投稿を作成',
       contentMaster: 'コンテンツマスター',
-      contentMasterDesc: '100以上の投稿を作成'
+      contentMasterDesc: '100以上の投稿を作成',
+      socialNetwork: 'ソーシャルネットワーク',
+      socialNetworkDesc: '10人以上のフォロワーでコミュニティを構築'
     },
     notifications: {
       title: '通知',
@@ -6255,6 +6271,8 @@ const resources = {
       prolificPosterDesc: '25개 이상 게시물 생성',
       contentMaster: '콘텐츠 마스터',
       contentMasterDesc: '100개 이상 게시물 생성',
+      socialNetwork: '소셜 네트워크',
+      socialNetworkDesc: '10명 이상의 팔로워로 커뮤니티 구축',
       newBadgeUnlocked: '새 배지 획득'
     },
     notifications: {
@@ -6832,6 +6850,8 @@ const resources = {
       prolificPosterDesc: 'أنشئ 25+ منشوراً',
       contentMaster: 'سيد المحتوى',
       contentMasterDesc: 'أنشئ 100+ منشور',
+      socialNetwork: 'الشبكة الاجتماعية',
+      socialNetworkDesc: 'ابنِ مجتمعك مع 10+ متابعين',
       newBadgeUnlocked: 'تم فتح شارة جديدة'
     },
     notifications: {
@@ -7424,7 +7444,9 @@ const resources = {
       prolificPoster: 'प्रचुर पोस्टर',
       prolificPosterDesc: '25+ पोस्ट बनाएं',
       contentMaster: 'सामग्री मास्टर',
-      contentMasterDesc: '100+ पोस्ट बनाएं'
+      contentMasterDesc: '100+ पोस्ट बनाएं',
+      socialNetwork: 'सोशल नेटवर्क',
+      socialNetworkDesc: '10+ फॉलोअर्स के साथ अपना समुदाय बनाएं'
     },
     notifications: {
       title: 'सूचनाएं',
@@ -7996,6 +8018,8 @@ const resources = {
       prolificPosterDesc: 'Создайте 25+ постов',
       contentMaster: 'Мастер контента',
       contentMasterDesc: 'Создайте 100+ постов',
+      socialNetwork: 'Социальная сеть',
+      socialNetworkDesc: 'Создай сообщество с 10+ подписчиками',
       newBadgeUnlocked: 'Новый значок разблокирован'
     },
     notifications: {

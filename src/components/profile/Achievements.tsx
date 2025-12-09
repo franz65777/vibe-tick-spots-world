@@ -51,30 +51,30 @@ const Achievements = ({ userId }: AchievementsProps) => {
           <span className="text-sm text-primary font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 overflow-y-auto scrollbar-hide">
+        <div className="grid grid-cols-3 gap-2">
           {displayBadges.map((badge) => (
             <div 
               key={badge.id} 
               onClick={() => handleBadgeClick(badge)}
-              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+              className={`flex flex-col items-center p-2 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
                 badge.earned 
                   ? `bg-gradient-to-br ${badge.gradient} border-transparent shadow-md`
                   : 'bg-muted/30 border-border hover:border-border/60'
               }`}
               title={badge.description}
             >
-              <div className="text-3xl mb-2 relative">
+              <div className="text-xl mb-1 relative">
                 <span className={badge.earned ? 'filter-none' : 'filter grayscale opacity-60'}>
                   {badge.icon}
                 </span>
                 {badge.earned && (
-                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ${
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center shadow-sm ${
                     badge.level === 'bronze' ? 'bg-orange-500' :
                     badge.level === 'silver' ? 'bg-gray-400' :
                     badge.level === 'gold' ? 'bg-yellow-500' : 
                     'bg-purple-500'
                   }`}>
-                    <span className="text-xs font-bold text-white">
+                    <span className="text-[10px] font-bold text-white">
                       {badge.level === 'bronze' ? 'B' : 
                        badge.level === 'silver' ? 'S' : 
                        badge.level === 'gold' ? 'G' : 'P'}
@@ -82,26 +82,11 @@ const Achievements = ({ userId }: AchievementsProps) => {
                   </div>
                 )}
               </div>
-              <span className={`text-sm font-medium text-center leading-tight ${
+              <span className={`text-xs font-medium text-center leading-tight line-clamp-2 ${
                 badge.earned ? 'text-white' : 'text-muted-foreground'
               }`}>
                 {badge.name}
               </span>
-              
-              {/* Progress indicator for unearned badges */}
-              {!badge.earned && badge.progress !== undefined && badge.maxProgress && (
-                <div className="w-full mt-2">
-                  <div className="w-full bg-muted rounded-full h-1.5">
-                    <div 
-                      className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${(badge.progress / badge.maxProgress) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1 block">
-                    {badge.progress}/{badge.maxProgress}
-                  </span>
-                </div>
-              )}
             </div>
           ))}
         </div>
