@@ -457,11 +457,13 @@ const ExplorePage = memo(() => {
                       </div>
                       <div className="space-y-2">
                         {suggestedUsers.slice(0, 10).map((suggestedUser) => (
-                          <button
-                            type="button"
+                          <div
                             key={suggestedUser.id}
                             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer text-left"
-                            onClick={() => handleUserClick(suggestedUser.id)}
+                            onClick={() => {
+                              console.log('Clicked suggested user:', suggestedUser.id);
+                              handleUserClick(suggestedUser.id);
+                            }}
                           >
                             <div className="relative flex-shrink-0">
                               <Avatar className="h-10 w-10">
@@ -485,7 +487,7 @@ const ExplorePage = memo(() => {
                                 }
                               </p>
                             </div>
-                          </button>
+                          </div>
                         ))}
                       </div>
                     </div>
