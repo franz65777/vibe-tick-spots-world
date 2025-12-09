@@ -800,9 +800,12 @@ const LeafletMapSetup = ({
             : 'relative w-full h-full rounded-lg overflow-hidden'
         }
         style={{ 
-          minHeight: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           visibility: selectedPostFromPin ? 'hidden' : 'visible',
-          position: selectedPostFromPin ? 'absolute' : 'relative',
           pointerEvents: selectedPostFromPin ? 'none' : 'auto'
         }}
       />
