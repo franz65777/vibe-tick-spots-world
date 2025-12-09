@@ -108,108 +108,94 @@ const ProfileHeader = ({
 
   return (
     <div className="py-2 bg-background">
-      <div className="flex gap-4 px-3">
-        {/* Left column: Avatar + Bio */}
-        <div className="flex flex-col shrink-0">
-          {/* Profile Picture */}
-          <div className="relative">
-            {hasMyStories ? (
-              <button
-                onClick={handleStoryClick}
-                className="relative flex-shrink-0"
-                aria-label="View your story"
-              >
-                <div className={cn(
-                  "relative rounded-full p-[2px] border-2",
-                  myStoriesAllViewed ? "border-gray-300 dark:border-gray-600" : "border-primary"
-                )}>
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={profile?.avatar_url} alt={displayUsername} />
-                    <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
-                      {getInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              </button>
-            ) : (
-              <div className="relative flex-shrink-0">
-                <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
-                  {profile?.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt={displayUsername}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
-                  )}
-                </div>
+      {/* Main row: Avatar + Name/Stats + Badges */}
+      <div className="flex items-start gap-4 px-3">
+        {/* Avatar */}
+        <div className="shrink-0">
+          {hasMyStories ? (
+            <button
+              onClick={handleStoryClick}
+              className="relative flex-shrink-0"
+              aria-label="View your story"
+            >
+              <div className={cn(
+                "relative rounded-full p-[2px] border-2",
+                myStoriesAllViewed ? "border-gray-300 dark:border-gray-600" : "border-primary"
+              )}>
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={profile?.avatar_url} alt={displayUsername} />
+                  <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </button>
+          ) : (
+            <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt={displayUsername}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Middle: Name and Stats */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-foreground">{displayUsername}</h1>
+            {hasBusinessAccount && (
+              <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shrink-0">
+                <Building2 className="w-3 h-3 text-primary-foreground" />
               </div>
             )}
           </div>
 
-          {/* Bio below avatar */}
-          {profile?.bio && (
-            <p className="text-sm text-foreground text-left line-clamp-2 mt-2 max-w-[80px]">
-              {profile.bio}
-            </p>
-          )}
-        </div>
-
-        {/* Right column: Name, Stats, Badges */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-1">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <h1 className="text-base font-bold text-foreground">{displayUsername}</h1>
-              {hasBusinessAccount && (
-                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shrink-0">
-                  <Building2 className="w-3 h-3 text-primary-foreground" />
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 shrink-0">
-              <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-10 w-10 p-0"
-                onClick={() => navigate('/settings')}
-              >
-                <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Stats Row */}
+          {/* Stats Row - below username */}
           <div className="flex gap-4 mt-2">
-            <button 
-              className="text-center"
-              onClick={onFollowersClick}
-            >
+            <button className="text-center" onClick={onFollowersClick}>
               <div className="text-sm font-bold text-foreground">{displayStats.followers}</div>
               <div className="text-xs text-muted-foreground">{t('followers', { ns: 'common' })}</div>
             </button>
             
-            <button 
-              className="text-center"
-              onClick={onFollowingClick}
-            >
+            <button className="text-center" onClick={onFollowingClick}>
               <div className="text-sm font-bold text-foreground">{displayStats.following}</div>
               <div className="text-xs text-muted-foreground">{t('following', { ns: 'common' })}</div>
             </button>
             
-            <button 
-              className="text-center"
-              onClick={onLocationsClick}
-            >
+            <button className="text-center" onClick={onLocationsClick}>
               <div className="text-sm font-bold text-foreground">{displayStats.locations}</div>
               <div className="text-xs text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</div>
             </button>
           </div>
         </div>
+
+        {/* Right: Badges + Settings */}
+        <div className="flex items-center gap-2 shrink-0">
+          <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-10 w-10 p-0"
+            onClick={() => navigate('/settings')}
+          >
+            <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />
+          </Button>
+        </div>
       </div>
+
+      {/* Bio below avatar - aligned left */}
+      {profile?.bio && (
+        <p className="text-sm text-foreground text-left mt-2 px-3">
+          {profile.bio}
+        </p>
+      )}
 
       <CreateStoryModal
         isOpen={isCreateStoryOpen}
