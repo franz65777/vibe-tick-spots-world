@@ -39,7 +39,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
@@ -56,7 +56,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
         if (newSavedState && saveTag) {
           setCurrentSaveTag(saveTag as SaveTag);
         } else if (!newSavedState) {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       }
 
@@ -89,9 +89,9 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
         setIsSaved(saved);
         if (saved) {
           const tag = await locationInteractionService.getCurrentSaveTag(place.google_place_id || place.id);
-          setCurrentSaveTag((tag as SaveTag) || 'general');
+          setCurrentSaveTag((tag as SaveTag) || 'been');
         } else {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       } catch (error) {
         console.error('Error checking saved state:', error);
@@ -146,7 +146,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
-      setCurrentSaveTag('general');
+      setCurrentSaveTag('been');
       window.dispatchEvent(new CustomEvent('location-save-changed', {
         detail: { locationId: place.id, isSaved: false }
       }));

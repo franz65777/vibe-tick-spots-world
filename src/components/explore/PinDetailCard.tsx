@@ -63,7 +63,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const { t, i18n } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [showVisitedModal, setShowVisitedModal] = useState(false);
@@ -248,7 +248,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         );
         setCurrentSaveTag(tag as SaveTag);
       } else {
-        setCurrentSaveTag('general');
+        setCurrentSaveTag('been');
       }
       }
     };
@@ -394,7 +394,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
-      setCurrentSaveTag('general');
+      setCurrentSaveTag('been');
       toast.success(t('locationRemoved'));
       
       // Dispatch global event to sync
@@ -606,11 +606,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     >
                       <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                        {isSaved ? (
-                         currentSaveTag === 'general' ? (
-                           <Bookmark className="h-5 w-5 fill-current" />
-                         ) : (
-                           <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
-                         )
+                         <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
                        ) : (
                          <Bookmark className="h-5 w-5" />
                        )}
@@ -712,11 +708,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                         <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
                       </button>
                     )}
-                    {SAVE_TAG_OPTIONS.filter(option => {
-                      // If location is saved, don't show the "general" option, only show tag options
-                      if (isSaved && option.value === 'general') return false;
-                      return true;
-                    }).map((option) => (
+                    {SAVE_TAG_OPTIONS.map((option) => (
                       <button
                         key={option.value}
                         onClick={(e) => {
@@ -728,16 +720,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                           option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
                         }`}
                       >
-                        {option.value === 'general' ? (
-                          <Bookmark className="h-4 w-4 flex-shrink-0" />
-                        ) : (
-                          <span className="text-sm leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
-                        )}
+                        <span className="text-sm leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
                         <span className="text-sm font-medium text-left flex-1">
-                          {option.value === 'general' 
-                            ? t('save', { ns: 'common', defaultValue: 'Save' })
-                            : t(option.value, { ns: 'save_tags', defaultValue: option.value })
-                          }
+                          {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
                         </span>
                       </button>
                     ))}

@@ -79,7 +79,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [resolvedCoordinates, setResolvedCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isSaved, setIsSaved] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [directionsModalOpen, setDirectionsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -484,7 +484,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         if (data?.save_tag) {
           setCurrentSaveTag(data.save_tag as SaveTag);
         } else {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       } catch (error) {
         console.error('Error checking saved status:', error);
@@ -557,7 +557,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       const unsaved = await locationInteractionService.unsaveLocation(location.id);
       if (unsaved) {
         setIsSaved(false);
-        setCurrentSaveTag('general');
+        setCurrentSaveTag('been');
         toast.success(t('locationRemoved', { ns: 'common' }));
       }
     } catch (error) {

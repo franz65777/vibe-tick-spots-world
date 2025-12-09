@@ -3189,14 +3189,14 @@ export type Database = {
       }
       get_city_engagement:
         | {
-            Args: { p_city: string; p_user: string }
+            Args: { p_city: string }
             Returns: {
               followed_users: Json
               total_pins: number
             }[]
           }
         | {
-            Args: { p_city: string }
+            Args: { p_city: string; p_user: string }
             Returns: {
               followed_users: Json
               total_pins: number

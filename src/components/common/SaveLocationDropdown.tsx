@@ -7,19 +7,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bookmark, BookmarkCheck } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
-import saveTagDate from '@/assets/save-tag-date.png';
-import saveTagBirthday from '@/assets/save-tag-birthday.png';
-import saveTagNightOut from '@/assets/save-tag-night-out.png';
-import saveTagFamily from '@/assets/save-tag-family.png';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
 
 // Map tag values to imported icons
 const TAG_ICONS: Record<string, string> = {
-  date_night: saveTagDate,
-  birthday: saveTagBirthday,
-  night_out: saveTagNightOut,
-  family: saveTagFamily,
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
 };
 
 interface SaveLocationDropdownProps {
@@ -51,7 +49,7 @@ export const SaveLocationDropdown = ({
   disabled = false,
   variant = 'ghost',
   size = 'icon',
-  currentSaveTag = 'general',
+  currentSaveTag = 'been',
   showLabel = false,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
@@ -73,15 +71,9 @@ export const SaveLocationDropdown = ({
   
   // Function to get the display label for a save tag
   const getTagLabel = (tag: SaveTag) => {
-    if (tag === 'general') {
-      return t('save', { ns: 'common', defaultValue: 'Save' });
-    }
     const option = SAVE_TAG_OPTIONS.find(opt => opt.value === tag);
     if (option) {
-      // Extract just the category name without the save_tags prefix
-      const parts = option.labelKey.split('.');
-      const key = parts[parts.length - 1];
-      return t(key, { ns: 'save_tags', defaultValue: key });
+      return t(option.labelKey, { ns: 'save_tags', defaultValue: option.labelKey });
     }
     return t('save', { ns: 'common', defaultValue: 'Save' });
   };
@@ -96,9 +88,7 @@ export const SaveLocationDropdown = ({
             disabled={disabled}
             className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : ""}
           >
-            {currentSaveTag === 'general' ? (
-              <Bookmark className="h-5 w-5 fill-current" />
-            ) : currentTagOption ? (
+            {currentTagOption ? (
               <TagIcon option={currentTagOption} />
             ) : (
               <Bookmark className="h-5 w-5 fill-current" />
@@ -118,11 +108,7 @@ export const SaveLocationDropdown = ({
               onClick={() => handleSaveWithTag(option.value)}
               className={"cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1"}
             >
-              {option.value === 'general' ? (
-                <Bookmark className="h-5 w-5" />
-              ) : (
-                <TagIcon option={option} />
-              )}
+              <TagIcon option={option} />
               <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
             </DropdownMenuItem>
           ))}
@@ -156,11 +142,7 @@ export const SaveLocationDropdown = ({
             onClick={() => handleSaveWithTag(option.value)}
             className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1"
           >
-            {option.value === 'general' ? (
-              <Bookmark className="h-5 w-5" />
-            ) : (
-              <TagIcon option={option} />
-            )}
+            <TagIcon option={option} />
             <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
           </DropdownMenuItem>
         ))}
