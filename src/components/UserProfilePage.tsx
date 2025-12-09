@@ -217,15 +217,15 @@ const UserProfilePage = () => {
       </div>
 
       {/* Profile Header - Instagram Style */}
-      <div className="px-4 py-2">
+      <div className="px-4 py-1">
         {/* Avatar and Stats Row */}
-        <div className="flex items-start gap-4 mb-3">
+        <div className="flex items-start gap-3 mb-2">
           {/* Avatar on left */}
           <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-full">
+            <div className="w-14 h-14 rounded-full">
               <Avatar className="w-full h-full">
                 <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
-                <AvatarFallback className="text-lg font-semibold">
+                <AvatarFallback className="text-sm font-semibold">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
@@ -233,12 +233,12 @@ const UserProfilePage = () => {
           </div>
 
           {/* Right side: Username, Stats, Badges */}
-          <div className="flex-1 pt-1">
+          <div className="flex-1">
             {/* Username */}
-            <h2 className="text-base font-semibold mb-1">{displayUsername}</h2>
+            <h2 className="text-base font-semibold">{displayUsername}</h2>
             
             {/* Stats Row - Followers, Following, Saved */}
-            <div className="flex gap-3 text-sm mb-2">
+            <div className="flex gap-3 text-sm mt-1">
               <button 
                 onClick={() => openModal('followers')}
                 className="hover:opacity-70 transition-opacity"
@@ -265,10 +265,12 @@ const UserProfilePage = () => {
             </div>
 
             {/* Badges */}
-            <BadgeDisplay 
-              userId={userId} 
-              onBadgesClick={() => setShowBadgesModal(true)} 
-            />
+            <div className="mt-1">
+              <BadgeDisplay 
+                userId={userId} 
+                onBadgesClick={() => setShowBadgesModal(true)} 
+              />
+            </div>
           </div>
         </div>
 
