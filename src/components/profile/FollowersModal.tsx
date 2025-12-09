@@ -25,6 +25,7 @@ interface UserWithFollowStatus {
   username: string;
   avatar_url: string | null;
   isFollowing?: boolean;
+  savedPlacesCount?: number;
 }
 
 const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: FollowersModalProps) => {
@@ -77,9 +78,21 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         } else {
           const followUsers = data?.map((item: any) => item.profiles).filter(Boolean) || [];
           
+          const userIds = followUsers.map((u: any) => u.id);
+          
+          // Fetch saved places count for each user
+          const { data: savedPlacesData } = await supabase
+            .from('saved_places')
+            .select('user_id')
+            .in('user_id', userIds);
+          
+          const savedPlacesCounts = new Map<string, number>();
+          savedPlacesData?.forEach(sp => {
+            savedPlacesCounts.set(sp.user_id, (savedPlacesCounts.get(sp.user_id) || 0) + 1);
+          });
+          
           // Check follow status for each user
           if (currentUser) {
-            const userIds = followUsers.map((u: any) => u.id);
             const { data: followsData } = await supabase
               .from('follows')
               .select('following_id')
@@ -90,12 +103,17 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
             
             const usersWithStatus = followUsers.map((u: any) => ({
               ...u,
-              isFollowing: followingIds.has(u.id)
+              isFollowing: followingIds.has(u.id),
+              savedPlacesCount: savedPlacesCounts.get(u.id) || 0
             }));
             
             setUsers(usersWithStatus);
           } else {
-            setUsers(followUsers);
+            const usersWithCount = followUsers.map((u: any) => ({
+              ...u,
+              savedPlacesCount: savedPlacesCounts.get(u.id) || 0
+            }));
+            setUsers(usersWithCount);
           }
         }
       } catch (error) {
@@ -333,7 +351,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                         className="text-left min-w-0 flex-1"
                       >
                         <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
-                        <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {user.savedPlacesCount || 0} {t('savedPlaces', { ns: 'common', defaultValue: 'saved places' })}
+                        </p>
                       </button>
                     </div>
                     
