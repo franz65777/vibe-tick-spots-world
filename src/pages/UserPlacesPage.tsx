@@ -266,63 +266,60 @@ const UserPlacesPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Full map view - extends behind header */}
-      <div className="flex-1 relative">
-        {/* Map taking full space - extends behind header */}
-        <div className="absolute inset-0">
-          <MapFilterProvider>
-            <LeafletMapSetup
-              places={places}
-              onPinClick={handlePinClick}
-              mapCenter={mapCenter}
-              selectedPlace={selectedPlace}
-              onCloseSelectedPlace={() => setSelectedPlace(null)}
-              onMapClick={() => setSelectedPlace(null)}
-              fullScreen={true}
-              preventCenterUpdate={false}
-            />
-          </MapFilterProvider>
-        </div>
-
-        {/* Header overlay - high z-index to stay above map */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-[1000] pointer-events-auto">
-          <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-bold">
-            {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-          </h1>
-          <div className="w-6" />
-        </div>
-
-        {/* City pills at bottom - only show if multiple cities */}
-        {cities.length > 1 && (
-          <div className="absolute bottom-6 left-0 right-0 z-[1000] px-4 pb-safe pointer-events-auto">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {cities.map(({ city, count }) => (
-                <button
-                  key={city}
-                  onClick={() => handleCityClick(city)}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-full backdrop-blur-sm border shadow-lg shrink-0 transition-all ${
-                    selectedCity === city 
-                      ? 'bg-primary text-primary-foreground border-primary' 
-                      : 'bg-background/90 border-border'
-                  }`}
-                >
-                  <span className="font-medium">{city}</span>
-                  <span className={`text-xs ${selectedCity === city ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{count}</span>
-                </button>
-              ))}
-            </div>
-            {!selectedCity && (
-              <p className="text-center text-sm text-muted-foreground mt-2">
-                {t('userProfile.tapCityToSee', { ns: 'common' })}
-              </p>
-            )}
-          </div>
-        )}
+    <div className="fixed inset-0 bg-background">
+      {/* Map taking full screen including behind header */}
+      <div className="absolute inset-0">
+        <MapFilterProvider>
+          <LeafletMapSetup
+            places={places}
+            onPinClick={handlePinClick}
+            mapCenter={mapCenter}
+            selectedPlace={selectedPlace}
+            onCloseSelectedPlace={() => setSelectedPlace(null)}
+            onMapClick={() => setSelectedPlace(null)}
+            fullScreen={true}
+            preventCenterUpdate={false}
+          />
+        </MapFilterProvider>
       </div>
+
+      {/* Header overlay - transparent with text shadow for visibility */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] z-[1000]">
+        <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity rounded-full bg-background/60 backdrop-blur-sm">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-bold px-3 py-1 rounded-full bg-background/60 backdrop-blur-sm">
+          {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+        </h1>
+        <div className="w-10" />
+      </div>
+
+      {/* City pills at bottom - only show if multiple cities */}
+      {cities.length > 1 && (
+        <div className="absolute bottom-6 left-0 right-0 z-[1000] px-4 pb-safe">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {cities.map(({ city, count }) => (
+              <button
+                key={city}
+                onClick={() => handleCityClick(city)}
+                className={`flex items-center gap-1 px-4 py-2 rounded-full backdrop-blur-sm border shadow-lg shrink-0 transition-all ${
+                  selectedCity === city 
+                    ? 'bg-primary text-primary-foreground border-primary' 
+                    : 'bg-background/90 border-border'
+                }`}
+              >
+                <span className="font-medium">{city}</span>
+                <span className={`text-xs ${selectedCity === city ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{count}</span>
+              </button>
+            ))}
+          </div>
+          {!selectedCity && (
+            <p className="text-center text-sm text-muted-foreground mt-2 bg-background/60 backdrop-blur-sm rounded-full px-3 py-1 mx-auto w-fit">
+              {t('userProfile.tapCityToSee', { ns: 'common' })}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
