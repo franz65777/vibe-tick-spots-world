@@ -8,6 +8,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
+
+// Map tag values to imported icons
+const TAG_ICONS: Record<string, string> = {
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
+};
 
 interface SavedByModalProps {
   isOpen: boolean;
@@ -206,7 +216,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
                     <div className="flex items-center gap-3">
                       {/* Save category indicator */}
                       <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <span className="text-lg leading-none">{saveTagOption?.emoji || '📍'}</span>
+                        <img src={TAG_ICONS[u.save_tag] || saveTagBeen} alt="" className="w-5 h-5 object-contain" />
                       </div>
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={u.avatar_url || undefined} />
