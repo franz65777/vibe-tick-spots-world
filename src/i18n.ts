@@ -218,7 +218,11 @@ const resources = {
         allLocations: 'all locations',
         visitedLocations: 'visited',
         toTryLocations: 'to try',
-        favouriteLocations: 'favourite'
+        favouriteLocations: 'favourite',
+        places: 'places',
+        tapCityToSee: 'tap on any of the cities above to see the places there',
+        allCities: 'All cities',
+        noLocationsInCity: 'No locations in this city'
       }
     },
     navigation: {
@@ -1131,7 +1135,11 @@ const resources = {
         allLocations: 'todos',
         visitedLocations: 'visitados',
         toTryLocations: 'por probar',
-        favouriteLocations: 'favoritos'
+        favouriteLocations: 'favoritos',
+        places: 'lugares',
+        tapCityToSee: 'toca cualquier ciudad para ver los lugares',
+        allCities: 'Todas las ciudades',
+        noLocationsInCity: 'No hay lugares en esta ciudad'
       }
     },
     navigation: {
@@ -2001,7 +2009,11 @@ const resources = {
         allLocations: 'tutti',
         visitedLocations: 'visitati',
         toTryLocations: 'da provare',
-        favouriteLocations: 'preferiti'
+        favouriteLocations: 'preferiti',
+        places: 'luoghi',
+        tapCityToSee: 'tocca una città per vedere i luoghi',
+        allCities: 'Tutte le città',
+        noLocationsInCity: 'Nessun luogo in questa città'
       }
     },
     navigation: {
