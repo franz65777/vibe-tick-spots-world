@@ -208,6 +208,7 @@ const resources = {
         photos: 'Photos',
         blockUser: 'Block User',
         unblockUser: 'Unblock User',
+        alreadyFollowing: 'Following',
         searchPeople: 'Search for people...',
         searchToShare: 'Search for people to share this profile',
         profileShared: 'Profile shared with @{{username}}',
@@ -1115,6 +1116,7 @@ const resources = {
         photos: 'Fotos',
         blockUser: 'Bloquear Usuario',
         unblockUser: 'Desbloquear Usuario',
+        alreadyFollowing: 'Siguiendo',
         searchPeople: 'Buscar personas...',
         searchToShare: 'Busca personas con quienes compartir este perfil',
         profileShared: 'Perfil compartido con @{{username}}',
@@ -1979,6 +1981,7 @@ const resources = {
         photos: 'Foto',
         blockUser: 'Blocca Utente',
         unblockUser: 'Sblocca Utente',
+        alreadyFollowing: 'Segui già',
         searchPeople: 'Cerca persone...',
         searchToShare: 'Cerca persone con cui condividere questo profilo',
         profileShared: 'Profilo condiviso con @{{username}}',
@@ -2820,6 +2823,7 @@ const resources = {
         photos: 'Photos',
         blockUser: 'Bloquer l\'Utilisateur',
         unblockUser: 'Débloquer l\'Utilisateur',
+        alreadyFollowing: 'Abonné',
         searchPeople: 'Rechercher des personnes...',
         searchToShare: 'Recherchez des personnes avec qui partager ce profil',
         profileShared: 'Profil partagé avec @{{username}}',
@@ -3542,6 +3546,7 @@ const resources = {
         photos: 'Fotos',
         blockUser: 'Benutzer blockieren',
         unblockUser: 'Benutzer entsperren',
+        alreadyFollowing: 'Folge ich',
         searchPeople: 'Personen suchen...',
         searchToShare: 'Suchen Sie nach Personen, mit denen Sie dieses Profil teilen möchten',
         profileShared: 'Profil geteilt mit @{{username}}',
@@ -4202,6 +4207,7 @@ const resources = {
         photos: 'Fotos',
         blockUser: 'Bloquear Usuário',
         unblockUser: 'Desbloquear Usuário',
+        alreadyFollowing: 'Seguindo',
         searchPeople: 'Procurar pessoas...',
         searchToShare: 'Procure pessoas para compartilhar este perfil',
         profileShared: 'Perfil compartilhado com @{{username}}',
@@ -5970,7 +5976,8 @@ const resources = {
         cities: '도시',
         photos: '사진',
         blockUser: '사용자 차단',
-        unblockUser: '차단 해제'
+        unblockUser: '차단 해제',
+        alreadyFollowing: '팔로잉'
       }
     },
     navigation: {
@@ -6549,7 +6556,8 @@ const resources = {
         cities: 'مدن',
         photos: 'صور',
         blockUser: 'حظر المستخدم',
-        unblockUser: 'إلغاء حظر المستخدم'
+        unblockUser: 'إلغاء حظر المستخدم',
+        alreadyFollowing: 'متابَع'
       }
     },
     navigation: {
@@ -7127,7 +7135,8 @@ const resources = {
         cities: 'शहर',
         photos: 'फ़ोटो',
         blockUser: 'उपयोगकर्ता को ब्लॉक करें',
-        unblockUser: 'उपयोगकर्ता को अनब्लॉक करें'
+        unblockUser: 'उपयोगकर्ता को अनब्लॉक करें',
+        alreadyFollowing: 'फ़ॉलो कर रहे हैं'
       }
     },
     navigation: {
@@ -7721,7 +7730,8 @@ const resources = {
         cities: 'Города',
         photos: 'Фото',
         blockUser: 'Заблокировать пользователя',
-        unblockUser: 'Разблокировать пользователя'
+        unblockUser: 'Разблокировать пользователя',
+        alreadyFollowing: 'Подписан'
       }
     },
     navigation: {
