@@ -962,12 +962,12 @@ const SharingControls = ({
   t: any;
   filtersVisible?: boolean;
 }) => {
-  const { isFilterExpanded, isFriendsDropdownOpen, filterDropdownWidth } = useMapFilter();
+  const { isFilterExpanded, isFriendsDropdownOpen, filterDropdownRightEdge } = useMapFilter();
   
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
-  // Position next to the filter dropdown with a small gap (16px margin + dropdown width)
-  const leftPosition = 16 + filterDropdownWidth + 12; // 16px left margin + dropdown width + 12px gap
+  // Position directly next to the filter dropdown using its right edge + small gap
+  const leftPosition = filterDropdownRightEdge + 12; // right edge + 12px gap
   
   return (
     <div 
