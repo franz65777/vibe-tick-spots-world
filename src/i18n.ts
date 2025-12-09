@@ -213,7 +213,11 @@ const resources = {
         searchToShare: 'Search for people to share this profile',
         profileShared: 'Profile shared with @{{username}}',
         shareError: 'Failed to share profile',
-        cannotShareWithSameUser: 'Cannot share this profile with the same user'
+        cannotShareWithSameUser: 'Cannot share this profile with the same user',
+        inCommon: 'in common',
+        allPlaces: 'all places',
+        wantToTry: 'want to try',
+        favourite: 'favourite'
       }
     },
     navigation: {
@@ -1986,7 +1990,11 @@ const resources = {
         searchToShare: 'Cerca persone con cui condividere questo profilo',
         profileShared: 'Profilo condiviso con @{{username}}',
         shareError: 'Impossibile condividere il profilo',
-        cannotShareWithSameUser: 'Non puoi condividere questo profilo con lo stesso utente'
+        cannotShareWithSameUser: 'Non puoi condividere questo profilo con lo stesso utente',
+        inCommon: 'in comune',
+        allPlaces: 'tutti i posti',
+        wantToTry: 'da provare',
+        favourite: 'preferiti'
       }
     },
     navigation: {
