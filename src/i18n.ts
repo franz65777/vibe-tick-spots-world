@@ -1002,7 +1002,12 @@ const resources = {
       takePhoto: 'Tomar Foto',
       supportedFormats: 'JPG, PNG, MP4, MOV hasta 100MB',
       location: 'Ubicación',
-      notifications: 'Notificaciones',
+      notifications: {
+        title: 'Notificaciones',
+        muted: 'Notificaciones silenciadas',
+        enabled: 'Notificaciones activadas',
+        updateFailed: 'Error al actualizar notificaciones'
+      },
       yourSavedPlaces: 'Tus Lugares Guardados',
       hide: 'Ocultar',
       showAll: 'Mostrar Todo',
@@ -2752,6 +2757,12 @@ const resources = {
         noPlacesFound: 'Aucun lieu trouvé. Essayez une autre recherche.',
         selectedLocation: 'Lieu sélectionné',
       },
+      notifications: {
+        title: 'Notifications',
+        muted: 'Notifications désactivées',
+        enabled: 'Notifications activées',
+        updateFailed: 'Échec de la mise à jour des notifications'
+      },
       months: {
         0: 'Janvier',
         1: 'Février',
@@ -3479,6 +3490,12 @@ const resources = {
         noPlacesFound: 'Keine Orte gefunden. Versuche eine andere Suche.',
         selectedLocation: 'Ausgewählter Ort',
       },
+      notifications: {
+        title: 'Benachrichtigungen',
+        muted: 'Benachrichtigungen stummgeschaltet',
+        enabled: 'Benachrichtigungen aktiviert',
+        updateFailed: 'Aktualisierung der Benachrichtigungen fehlgeschlagen'
+      },
       months: {
         0: 'Januar',
         1: 'Februar',
@@ -4115,6 +4132,12 @@ const resources = {
         failedToSave: 'Erro ao salvar local. Tente novamente.',
         noPlacesFound: 'Nenhum local encontrado. Tente outra busca.',
         selectedLocation: 'Local selecionado',
+      },
+      notifications: {
+        title: 'Notificações',
+        muted: 'Notificações silenciadas',
+        enabled: 'Notificações ativadas',
+        updateFailed: 'Falha ao atualizar notificações'
       },
       months: {
         0: 'Janeiro',
@@ -4771,6 +4794,12 @@ const resources = {
         noPlacesFound: '未找到位置，请尝试其他搜索',
         selectedLocation: '已选位置',
       },
+      notifications: {
+        title: '通知',
+        muted: '通知已静音',
+        enabled: '通知已启用',
+        updateFailed: '更新通知设置失败'
+      },
     },
     navigation: {
       explore: '探索',
@@ -5318,6 +5347,12 @@ const resources = {
         failedToSave: '保存に失敗しました。もう一度お試しください',
         noPlacesFound: '場所が見つかりませんでした。別の検索をお試しください',
         selectedLocation: '選択した場所',
+      },
+      notifications: {
+        title: '通知',
+        muted: '通知をミュートしました',
+        enabled: '通知を有効にしました',
+        updateFailed: '通知設定の更新に失敗しました'
       },
     },
     navigation: {
@@ -5885,6 +5920,12 @@ const resources = {
         failedToSave: '저장에 실패했습니다. 다시 시도하세요',
         noPlacesFound: '장소를 찾을 수 없습니다. 다른 검색을 시도하세요',
         selectedLocation: '선택한 장소',
+      },
+      notifications: {
+        title: '알림',
+        muted: '알림 음소거됨',
+        enabled: '알림 활성화됨',
+        updateFailed: '알림 설정 업데이트 실패'
       },
       week: '주',
       weeks: '주',
@@ -6456,6 +6497,12 @@ const resources = {
         noPlacesFound: 'لم يتم العثور على أماكن. جرب بحثًا مختلفًا',
         selectedLocation: 'الموقع المحدد',
       },
+      notifications: {
+        title: 'الإشعارات',
+        muted: 'تم كتم الإشعارات',
+        enabled: 'تم تفعيل الإشعارات',
+        updateFailed: 'فشل تحديث إعدادات الإشعارات'
+      },
       week: 'أسبوع',
       weeks: 'أسابيع',
       leaderboard: 'لوحة المتصدرين',
@@ -7024,6 +7071,12 @@ const resources = {
         failedToSave: 'सहेजने में विफल। पुनः प्रयास करें',
         noPlacesFound: 'कोई स्थान नहीं मिला। अन्य खोज आज़माएं',
         selectedLocation: 'चयनित स्थान',
+      },
+      notifications: {
+        title: 'सूचनाएं',
+        muted: 'सूचनाएं म्यूट हैं',
+        enabled: 'सूचनाएं सक्षम हैं',
+        updateFailed: 'सूचना सेटिंग्स अपडेट करने में विफल'
       },
       all: 'सभी',
       weeks: 'सप्ताह',
@@ -7609,6 +7662,12 @@ const resources = {
         failedToSave: 'Не удалось сохранить. Попробуйте снова',
         noPlacesFound: 'Места не найдены. Попробуйте другой поиск',
         selectedLocation: 'Выбранное место',
+      },
+      notifications: {
+        title: 'Уведомления',
+        muted: 'Уведомления отключены',
+        enabled: 'Уведомления включены',
+        updateFailed: 'Не удалось обновить настройки уведомлений'
       },
       week: 'неделя',
       weeks: 'недели',
