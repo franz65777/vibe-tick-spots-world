@@ -166,7 +166,7 @@ const UserProfilePage = () => {
   return (
     <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       {/* Header - Instagram Style */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-3 flex-1">
           <button 
             onClick={handleBack}
@@ -182,13 +182,13 @@ const UserProfilePage = () => {
               onClick={toggleMute}
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full"
+              className="h-11 w-11 rounded-full"
               title={isMuted ? t('userProfile.unmute', { ns: 'common' }) : t('userProfile.mute', { ns: 'common' })}
             >
               {isMuted ? (
-                <BellOff className="w-5 h-5" />
+                <BellOff className="w-7 h-7" />
               ) : (
-                <Bell className="w-5 h-5" />
+                <Bell className="w-7 h-7" />
               )}
             </Button>
             <DropdownMenu>
@@ -217,10 +217,10 @@ const UserProfilePage = () => {
       </div>
 
       {/* Profile Header - Instagram Style */}
-      <div className="px-4 py-3">
-        {/* Avatar and Username/Stats Row */}
-        <div className="flex items-start gap-4 mb-4">
-          {/* Smaller Avatar */}
+      <div className="px-4 py-2">
+        {/* Avatar and Username Row */}
+        <div className="flex items-center gap-4 mb-2">
+          {/* Avatar */}
           <div className="relative shrink-0">
             <div className="w-[72px] h-[72px] rounded-full">
               <Avatar className="w-full h-full">
@@ -232,44 +232,41 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Username and Stats Column */}
-          <div className="flex-1 flex flex-col gap-3">
-            {/* Username with Badges */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">{displayUsername}</h2>
-              <BadgeDisplay 
-                userId={userId} 
-                onBadgesClick={() => setShowBadgesModal(true)} 
-              />
-            </div>
-
-            {/* Stats Row - Followers, Following, Saved */}
-            <div className="flex gap-4 text-sm">
-              <button 
-                onClick={() => openModal('followers')}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <span className="font-bold">{profile.followers_count || 0}</span>{' '}
-                <span className="text-muted-foreground">{t('userProfile.followers', { ns: 'common' })}</span>
-              </button>
-              
-              <button 
-                onClick={() => openModal('following')}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <span className="font-bold">{profile.following_count || 0}</span>{' '}
-                <span className="text-muted-foreground">{t('userProfile.following', { ns: 'common' })}</span>
-              </button>
-              
-              <button 
-                onClick={() => setIsLocationsListOpen(true)}
-                className="hover:opacity-70 transition-opacity"
-              >
-                <span className="font-bold">{profile.places_visited || 0}</span>{' '}
-                <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
-              </button>
-            </div>
+          {/* Username with Badges */}
+          <div className="flex-1 flex items-center justify-between">
+            <h2 className="text-base font-semibold">{displayUsername}</h2>
+            <BadgeDisplay 
+              userId={userId} 
+              onBadgesClick={() => setShowBadgesModal(true)} 
+            />
           </div>
+        </div>
+
+        {/* Stats Row - Followers, Following, Saved - Positioned below badges */}
+        <div className="flex gap-4 text-sm mb-3">
+          <button 
+            onClick={() => openModal('followers')}
+            className="hover:opacity-70 transition-opacity"
+          >
+            <span className="font-bold">{profile.followers_count || 0}</span>{' '}
+            <span className="text-muted-foreground">{t('userProfile.followers', { ns: 'common' })}</span>
+          </button>
+          
+          <button 
+            onClick={() => openModal('following')}
+            className="hover:opacity-70 transition-opacity"
+          >
+            <span className="font-bold">{profile.following_count || 0}</span>{' '}
+            <span className="text-muted-foreground">{t('userProfile.following', { ns: 'common' })}</span>
+          </button>
+          
+          <button 
+            onClick={() => setIsLocationsListOpen(true)}
+            className="hover:opacity-70 transition-opacity"
+          >
+            <span className="font-bold">{profile.places_visited || 0}</span>{' '}
+            <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
+          </button>
         </div>
 
         {/* Full Name (only if different from username) */}
@@ -324,15 +321,15 @@ const UserProfilePage = () => {
 
         {/* Action Buttons - Instagram Style */}
         {!isOwnProfile && (
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
             <Button 
               onClick={handleFollowToggle}
               variant={profile.is_following ? "secondary" : "default"}
-              className="flex-1 rounded-lg font-semibold h-9"
+              className="flex-1 rounded-xl font-semibold h-11 text-base"
             >
               {profile.is_following ? (
                 <>
-                  {t('userProfile.following', { ns: 'common' })}
+                  {t('userProfile.alreadyFollowing', { ns: 'common' })}
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </>
               ) : (
@@ -342,11 +339,11 @@ const UserProfilePage = () => {
             <Button 
               variant="secondary"
               size="icon"
-              className="rounded-lg h-9 w-9"
+              className="rounded-xl h-11 w-11"
               onClick={() => navigate('/messages', { state: { initialUserId: userId } })}
               title={t('userProfile.sendMessage', { ns: 'common' })}
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-5 h-5" />
             </Button>
           </div>
         )}
