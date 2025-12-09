@@ -217,10 +217,46 @@ const UserProfilePage = () => {
       </div>
 
       {/* Profile Header - Instagram Style */}
-      <div className="px-4 py-2">
-        {/* Avatar and Username Row */}
-        <div className="flex items-center gap-4 mb-2">
-          {/* Avatar */}
+      <div className="px-4 py-1">
+        {/* Avatar and Stats Row */}
+        <div className="flex gap-4 mb-2">
+          {/* Left side: Stats under username */}
+          <div className="flex-1 flex flex-col justify-center">
+            {/* Stats Row - Followers, Following, Saved */}
+            <div className="flex gap-3 text-sm mb-2">
+              <button 
+                onClick={() => openModal('followers')}
+                className="hover:opacity-70 transition-opacity"
+              >
+                <span className="font-bold">{profile.followers_count || 0}</span>{' '}
+                <span className="text-muted-foreground">{t('userProfile.followers', { ns: 'common' })}</span>
+              </button>
+              
+              <button 
+                onClick={() => openModal('following')}
+                className="hover:opacity-70 transition-opacity"
+              >
+                <span className="font-bold">{profile.following_count || 0}</span>{' '}
+                <span className="text-muted-foreground">{t('userProfile.following', { ns: 'common' })}</span>
+              </button>
+              
+              <button 
+                onClick={() => setIsLocationsListOpen(true)}
+                className="hover:opacity-70 transition-opacity"
+              >
+                <span className="font-bold">{profile.places_visited || 0}</span>{' '}
+                <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
+              </button>
+            </div>
+
+            {/* Badges */}
+            <BadgeDisplay 
+              userId={userId} 
+              onBadgesClick={() => setShowBadgesModal(true)} 
+            />
+          </div>
+
+          {/* Avatar on right */}
           <div className="relative shrink-0">
             <div className="w-[72px] h-[72px] rounded-full">
               <Avatar className="w-full h-full">
@@ -231,42 +267,6 @@ const UserProfilePage = () => {
               </Avatar>
             </div>
           </div>
-
-          {/* Username with Badges */}
-          <div className="flex-1 flex items-center justify-between">
-            <h2 className="text-base font-semibold">{displayUsername}</h2>
-            <BadgeDisplay 
-              userId={userId} 
-              onBadgesClick={() => setShowBadgesModal(true)} 
-            />
-          </div>
-        </div>
-
-        {/* Stats Row - Followers, Following, Saved - Positioned below badges */}
-        <div className="flex gap-4 text-sm mb-3">
-          <button 
-            onClick={() => openModal('followers')}
-            className="hover:opacity-70 transition-opacity"
-          >
-            <span className="font-bold">{profile.followers_count || 0}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.followers', { ns: 'common' })}</span>
-          </button>
-          
-          <button 
-            onClick={() => openModal('following')}
-            className="hover:opacity-70 transition-opacity"
-          >
-            <span className="font-bold">{profile.following_count || 0}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.following', { ns: 'common' })}</span>
-          </button>
-          
-          <button 
-            onClick={() => setIsLocationsListOpen(true)}
-            className="hover:opacity-70 transition-opacity"
-          >
-            <span className="font-bold">{profile.places_visited || 0}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
-          </button>
         </div>
 
         {/* Full Name (only if different from username) */}
@@ -280,14 +280,14 @@ const UserProfilePage = () => {
 
         {/* Bio */}
         {profile.bio && (
-          <p className="text-sm text-foreground mb-3">
+          <p className="text-sm text-foreground mb-2">
             {profile.bio}
           </p>
         )}
 
         {/* Mutual Followers */}
         {!isOwnProfile && mutualFollowers.length > 0 && (
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-3">
             <div className="flex -space-x-2">
               {mutualFollowers.map((follower) => (
                 <button
@@ -321,16 +321,16 @@ const UserProfilePage = () => {
 
         {/* Action Buttons - Instagram Style */}
         {!isOwnProfile && (
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-2 items-center">
             <Button 
               onClick={handleFollowToggle}
               variant={profile.is_following ? "secondary" : "default"}
-              className="flex-1 rounded-xl font-semibold h-11 text-base"
+              className={`flex-1 rounded-lg font-medium h-9 text-sm ${profile.is_following ? 'bg-gray-300 dark:bg-secondary text-gray-700 dark:text-secondary-foreground' : ''}`}
             >
               {profile.is_following ? (
                 <>
                   {t('userProfile.alreadyFollowing', { ns: 'common' })}
-                  <ChevronDown className="w-4 h-4 ml-1" />
+                  <ChevronDown className="w-3 h-3 ml-1" />
                 </>
               ) : (
                 t('userProfile.follow', { ns: 'common' })
@@ -339,11 +339,11 @@ const UserProfilePage = () => {
             <Button 
               variant="secondary"
               size="icon"
-              className="rounded-xl h-11 w-11"
+              className="rounded-lg h-9 w-9 bg-gray-300 dark:bg-secondary text-gray-700 dark:text-secondary-foreground"
               onClick={() => navigate('/messages', { state: { initialUserId: userId } })}
               title={t('userProfile.sendMessage', { ns: 'common' })}
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4" />
             </Button>
           </div>
         )}
