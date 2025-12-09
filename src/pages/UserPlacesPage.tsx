@@ -314,10 +314,15 @@ const UserPlacesPage = () => {
         </MapFilterProvider>
       </div>
 
-      {/* Blurred header overlay - very transparent so map shows through */}
+      {/* Blurred header overlay with gradient fade at bottom */}
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-auto">
-        <div className="bg-background/30 backdrop-blur-md pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center justify-between px-4 py-3">
+        <div 
+          className="backdrop-blur-sm pt-[env(safe-area-inset-top)]"
+          style={{
+            background: 'linear-gradient(to bottom, hsl(var(--background) / 0.5) 0%, hsl(var(--background) / 0.3) 60%, transparent 100%)'
+          }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 pb-6">
             <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity">
               <ArrowLeft className="w-6 h-6" />
             </button>

@@ -57,9 +57,9 @@ export const useUserSavedCities = (userId?: string) => {
           if (city) {
             cityCount[city] = (cityCount[city] || 0) + 1;
           }
-          // Count by save_tag
+          // Count by save_tag - handle both underscore and hyphen formats
           if (loc.save_tag === 'been') beenCount++;
-          else if (loc.save_tag === 'to-try') toTryCount++;
+          else if (loc.save_tag === 'to-try' || loc.save_tag === 'to_try') toTryCount++;
           else if (loc.save_tag === 'favourite') favouriteCount++;
         });
       }
@@ -71,9 +71,9 @@ export const useUserSavedCities = (userId?: string) => {
           if (sp.city) {
             cityCount[sp.city] = (cityCount[sp.city] || 0) + 1;
           }
-          // Count by save_tag
+          // Count by save_tag - handle both underscore and hyphen formats
           if (sp.save_tag === 'been') beenCount++;
-          else if (sp.save_tag === 'to-try') toTryCount++;
+          else if (sp.save_tag === 'to-try' || sp.save_tag === 'to_try') toTryCount++;
           else if (sp.save_tag === 'favourite') favouriteCount++;
         });
       }
