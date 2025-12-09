@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export const useNotificationMuting = (targetUserId?: string) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [isMuted, setIsMuted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,10 +62,13 @@ export const useNotificationMuting = (targetUserId?: string) => {
       if (error) throw error;
 
       setIsMuted(newMuteState);
-      toast.success(newMuteState ? 'Notifications muted' : 'Notifications enabled');
+      toast.success(newMuteState 
+        ? t('notifications.muted', { ns: 'common', defaultValue: 'Notifications muted' })
+        : t('notifications.enabled', { ns: 'common', defaultValue: 'Notifications enabled' })
+      );
     } catch (error) {
       console.error('Error toggling mute:', error);
-      toast.error('Failed to update notification settings');
+      toast.error(t('notifications.updateFailed', { ns: 'common', defaultValue: 'Failed to update notification settings' }));
     }
   };
 
