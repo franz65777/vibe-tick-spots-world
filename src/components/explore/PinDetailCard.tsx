@@ -32,7 +32,17 @@ import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import { toast } from 'sonner';
+
+// Map tag values to imported icons
+const TAG_ICONS: Record<string, string> = {
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
+};
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -606,7 +616,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     >
                       <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                        {isSaved ? (
-                         <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
+                         <img src={TAG_ICONS[currentSaveTag] || saveTagBeen} alt="" className="h-5 w-5 object-contain" />
                        ) : (
                          <Bookmark className="h-5 w-5" />
                        )}
@@ -720,7 +730,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                           option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
                         }`}
                       >
-                        <span className="text-sm leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
+                        <img src={TAG_ICONS[option.value]} alt="" className="h-4 w-4 object-contain flex-shrink-0" />
                         <span className="text-sm font-medium text-left flex-1">
                           {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
                         </span>

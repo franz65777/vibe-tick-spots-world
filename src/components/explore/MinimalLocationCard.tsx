@@ -12,6 +12,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 import { useTranslation } from 'react-i18next';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
+
+// Map tag values to imported icons
+const TAG_ICONS: Record<string, string> = {
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
+};
 
 interface MinimalLocationCardProps {
   place: {
@@ -77,8 +87,8 @@ const MinimalLocationCard = ({
               {place.name}
             </h3>
             {saveTagOption && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
-                {saveTagOption.emoji}
+              <Badge variant="secondary" className="text-[10px] px-1 py-0 h-5 shrink-0">
+                <img src={TAG_ICONS[saveTagOption.value]} alt="" className="w-3.5 h-3.5 object-contain" />
               </Badge>
             )}
             {activeSharesHere.length > 0 && (

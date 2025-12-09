@@ -12,6 +12,17 @@ import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
+
+// Map tag values to imported icons
+const TAG_ICONS: Record<string, string> = {
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
+};
+
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { toast } from 'sonner';
 import SimpleCategoryFilter from '@/components/explore/SimpleCategoryFilter';
@@ -591,7 +602,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
                       const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag);
                       if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
                       const translationKey = option.labelKey;
-                      return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
+                      const iconSrc = TAG_ICONS[option.value];
+                      return (
+                        <div className="flex items-center gap-2">
+                          {iconSrc && <img src={iconSrc} alt="" className="w-4 h-4 object-contain" />}
+                          {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                        </div>
+                      );
                     })()
                 }
               </SelectValue>
@@ -600,9 +617,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
               <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
               {SAVE_TAG_OPTIONS.map((option) => {
                 const translationKey = option.labelKey;
+                const iconSrc = TAG_ICONS[option.value];
                 return (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                    <div className="flex items-center gap-2">
+                      {iconSrc && <img src={iconSrc} alt="" className="w-4 h-4 object-contain" />}
+                      {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                    </div>
                   </SelectItem>
                 );
               })}
@@ -674,9 +695,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
                               <h3 className="font-bold text-foreground text-sm truncate text-left">
                                 {p.name}
                               </h3>
-                              {saveTagOption && p.save_tag !== 'general' && (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
-                                  {saveTagOption.emoji}
+                              {saveTagOption && (
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-5 shrink-0">
+                                  <img src={TAG_ICONS[p.save_tag]} alt="" className="w-3.5 h-3.5 object-contain" />
                                 </Badge>
                               )}
                             </div>
