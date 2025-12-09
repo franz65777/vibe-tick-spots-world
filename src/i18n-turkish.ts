@@ -14,6 +14,7 @@ export const turkishTranslations = {
       unfollowed: 'Takip Bırakıldı',
       followers: 'Takipçiler',
       mutual: 'karşılıklı',
+      savedPlaces: 'kaydedilen yerler',
       save: 'Kaydet',
       unsave: 'Kaydı Kaldır',
       cancel: 'İptal',
