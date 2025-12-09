@@ -314,9 +314,9 @@ const UserPlacesPage = () => {
         </MapFilterProvider>
       </div>
 
-      {/* Blurred header overlay at the very top */}
+      {/* Blurred header overlay - very transparent so map shows through */}
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-auto">
-        <div className="bg-background/70 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+        <div className="bg-background/30 backdrop-blur-md pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between px-4 py-3">
             <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity">
               <ArrowLeft className="w-6 h-6" />
