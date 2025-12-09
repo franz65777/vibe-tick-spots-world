@@ -297,9 +297,9 @@ const UserPlacesPage = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-background">
-      {/* Map taking full screen including behind header */}
-      <div className="absolute inset-0">
+    <div className="fixed inset-0">
+      {/* Map taking full screen - extends behind header */}
+      <div className="absolute inset-0 z-0">
         <MapFilterProvider>
           <LeafletMapSetup
             places={places}
@@ -314,25 +314,27 @@ const UserPlacesPage = () => {
         </MapFilterProvider>
       </div>
 
-      {/* Header overlay - full width blur background */}
-      <div className="absolute top-0 left-0 right-0 bg-background/60 backdrop-blur-md z-[1000] pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold">
-              {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-            </h1>
-            {filterCategoryIcons[filterCategory] && (
-              <img 
-                src={filterCategoryIcons[filterCategory]} 
-                alt="" 
-                className="w-6 h-6"
-              />
-            )}
+      {/* Blurred header overlay at the very top */}
+      <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-auto">
+        <div className="bg-background/70 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold">
+                {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+              </h1>
+              {filterCategoryIcons[filterCategory] && (
+                <img 
+                  src={filterCategoryIcons[filterCategory]} 
+                  alt="" 
+                  className="w-6 h-6"
+                />
+              )}
+            </div>
+            <div className="w-10" />
           </div>
-          <div className="w-10" />
         </div>
       </div>
 
