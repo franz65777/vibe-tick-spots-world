@@ -182,7 +182,7 @@ const UserProfilePage = () => {
               onClick={toggleMute}
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full"
+              className="h-10 w-10 rounded-full"
               title={isMuted ? t('userProfile.unmute', { ns: 'common' }) : t('userProfile.mute', { ns: 'common' })}
             >
               {isMuted ? (
@@ -196,7 +196,7 @@ const UserProfilePage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-full"
+                  className="h-10 w-10 rounded-full"
                   title={t('userProfile.moreOptions', { ns: 'common' })}
                 >
                   <MoreHorizontal className="w-6 h-6" />
