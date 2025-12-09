@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type MapFilter = 'following' | 'popular' | 'recommended' | 'saved' | 'shared';
-export type SaveTagFilter = 'general' | 'date_night' | 'birthday' | 'night_out' | 'family';
+export type SaveTagFilter = 'been' | 'to_try' | 'favourite';
 
 interface MapFilterContextType {
   activeFilter: MapFilter;

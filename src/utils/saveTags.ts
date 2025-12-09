@@ -1,6 +1,6 @@
 // Save tag types and translations
 
-export type SaveTag = 'general' | 'date_night' | 'birthday' | 'night_out' | 'family';
+export type SaveTag = 'been' | 'to_try' | 'favourite';
 
 export interface SaveTagOption {
   value: SaveTag;
@@ -9,11 +9,9 @@ export interface SaveTagOption {
 }
 
 export const SAVE_TAG_OPTIONS: SaveTagOption[] = [
-  { value: 'general', emoji: '📍', labelKey: 'general' },
-  { value: 'date_night', emoji: '💑', labelKey: 'date_night' },
-  { value: 'birthday', emoji: '🎂', labelKey: 'birthday' },
-  { value: 'night_out', emoji: '🎉', labelKey: 'night_out' },
-  { value: 'family', emoji: '👨‍👩‍👧‍👦', labelKey: 'family' },
+  { value: 'been', emoji: '📍', labelKey: 'been' },
+  { value: 'to_try', emoji: '👀', labelKey: 'to_try' },
+  { value: 'favourite', emoji: '⭐', labelKey: 'favourite' },
 ];
 
 export const getSaveTagOption = (tag: SaveTag): SaveTagOption => {

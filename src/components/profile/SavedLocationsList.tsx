@@ -590,11 +590,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
                   : (() => {
                       const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag);
                       if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
-                      const labelParts = option.labelKey.split('.');
-                      const translationKey = labelParts[labelParts.length - 1];
-                      if (option.value === 'general') {
-                        return <div className="flex items-center gap-2"><Bookmark className="w-4 h-4" /> {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}</div>;
-                      }
+                      const translationKey = option.labelKey;
                       return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
                     })()
                 }
@@ -603,20 +599,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
             <SelectContent className="bg-background border-border z-[9999]">
               <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
               {SAVE_TAG_OPTIONS.map((option) => {
-                const labelParts = option.labelKey.split('.');
-                const translationKey = labelParts[labelParts.length - 1];
+                const translationKey = option.labelKey;
                 return (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.value === 'general' ? (
-                      <div className="flex items-center gap-2">
-                        <Bookmark className="w-4 h-4" />
-                        {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
-                      </div>
-                    ) : (
-                      <>
-                        {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
-                      </>
-                    )}
+                    {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
                   </SelectItem>
                 );
               })}

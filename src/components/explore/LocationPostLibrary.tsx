@@ -87,7 +87,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [showSavedBy, setShowSavedBy] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [showActionButtons, setShowActionButtons] = useState(true);
@@ -159,7 +159,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         );
         setCurrentSaveTag(tag as SaveTag);
       } else {
-        setCurrentSaveTag('general');
+        setCurrentSaveTag('been');
       }
     } catch (error) {
       console.error('Error checking if location is saved:', error);
@@ -323,7 +323,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
-      setCurrentSaveTag('general');
+      setCurrentSaveTag('been');
       toast.success(t('locationRemoved'));
       
       // Dispatch global event for sync
@@ -433,11 +433,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                 >
                   <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none" />
                   {isSaved ? (
-                    currentSaveTag === 'general' ? (
-                      <Bookmark className="h-5 w-5 fill-current" />
-                    ) : (
-                      <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{(SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji) || '📍'}</span>
-                    )
+                    <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{(SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji) || '📍'}</span>
                   ) : (
                     <Bookmark className="h-5 w-5" />
                   )}
@@ -517,10 +513,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                           <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
                         </button>
                       )}
-                      {SAVE_TAG_OPTIONS.filter(option => {
-                        if (isSaved && option.value === 'general') return false;
-                        return true;
-                      }).map((option) => (
+                      {SAVE_TAG_OPTIONS.map((option) => (
                         <button
                           key={option.value}
                           onClick={(e) => {
@@ -530,16 +523,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                           }}
                           className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent transition-colors min-h-[44px]"
                         >
-                          {option.value === 'general' ? (
-                            <Bookmark className="h-4 w-4 flex-shrink-0" />
-                          ) : (
-                            <span className="text-sm leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
-                          )}
-                          <span className="text-sm font-medium text-left flex-1">
-                            {option.value === 'general' 
-                              ? t('save', { ns: 'common', defaultValue: 'Save' })
-                              : t(option.value, { ns: 'save_tags', defaultValue: option.value })
-                            }
+                          <span className="text-sm leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
+                        <span className="text-sm font-medium text-left flex-1">
+                          {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
                           </span>
                         </button>
                       ))}

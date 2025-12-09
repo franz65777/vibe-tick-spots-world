@@ -35,7 +35,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -88,9 +88,9 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         const saved = await locationInteractionService.isLocationSaved(place.id);
         if (saved) {
           const tag = await locationInteractionService.getCurrentSaveTag(place.google_place_id || place.id);
-          setCurrentSaveTag((tag as SaveTag) || 'general');
+          setCurrentSaveTag((tag as SaveTag) || 'been');
         } else {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       } catch (error) {
         console.error('Error fetching save tag:', error);
@@ -108,7 +108,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         if (newSavedState && saveTag) {
           setCurrentSaveTag(saveTag as SaveTag);
         } else if (!newSavedState) {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       }
     };
@@ -169,7 +169,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
     setIsSaving(true);
     try {
       await locationInteractionService.unsaveLocation(place.id);
-      setCurrentSaveTag('general');
+      setCurrentSaveTag('been');
       // Refetch engagement to update state
       await refetch();
       // Emit global event

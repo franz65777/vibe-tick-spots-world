@@ -29,7 +29,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -75,9 +75,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           const tag = await locationInteractionService.getCurrentSaveTag(
             place.google_place_id || place.id
           );
-          setCurrentSaveTag((tag as SaveTag) || 'general');
+          setCurrentSaveTag((tag as SaveTag) || 'been');
         } else {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       } catch (error) {
         console.error('Error checking interactions:', error);
@@ -96,7 +96,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         if (saveTag) {
           setCurrentSaveTag(saveTag as SaveTag);
         } else if (!newSavedState) {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       }
     };
@@ -159,7 +159,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
-      setCurrentSaveTag('general');
+      setCurrentSaveTag('been');
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
         detail: { locationId: place.id, isSaved: false } 

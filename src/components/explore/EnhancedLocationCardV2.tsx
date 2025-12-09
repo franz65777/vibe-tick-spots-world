@@ -22,7 +22,7 @@ interface EnhancedLocationCardV2Props {
 
 const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Props) => {
   const [isSaved, setIsSaved] = useState(false);
-  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const [loading, setLoading] = useState(false);
 
   const { cityLabel } = useNormalizedCity({
@@ -51,9 +51,9 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
           const tag = await locationInteractionService.getCurrentSaveTag(
             place.google_place_id || place.id
           );
-          setCurrentSaveTag((tag as SaveTag) || 'general');
+          setCurrentSaveTag((tag as SaveTag) || 'been');
         } else {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       } catch (error) {
         console.error('Error checking saved state:', error);
@@ -71,7 +71,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
         if (saveTag) {
           setCurrentSaveTag(saveTag as SaveTag);
         } else if (!newSavedState) {
-          setCurrentSaveTag('general');
+          setCurrentSaveTag('been');
         }
       }
     };
@@ -119,7 +119,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
-      setCurrentSaveTag('general');
+      setCurrentSaveTag('been');
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
         detail: { locationId: place.id, isSaved: false } 

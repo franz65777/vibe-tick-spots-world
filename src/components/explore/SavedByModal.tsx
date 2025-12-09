@@ -54,7 +54,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           }
           internal?.forEach((r: any) => {
             if (r.user_id) {
-              userSaveTags.set(r.user_id, (r.save_tag as SaveTag) || 'general');
+              userSaveTags.set(r.user_id, (r.save_tag as SaveTag) || 'been');
             }
           });
         }
@@ -70,7 +70,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           }
           google?.forEach((r: any) => {
             if (r.user_id && !userSaveTags.has(r.user_id)) {
-              userSaveTags.set(r.user_id, (r.save_tag as SaveTag) || 'general');
+              userSaveTags.set(r.user_id, (r.save_tag as SaveTag) || 'been');
             }
           });
         }
@@ -109,7 +109,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           username: p.username,
           avatar_url: p.avatar_url,
           isFollowing: followingSet.has(p.id),
-          save_tag: userSaveTags.get(p.id) || 'general',
+          save_tag: userSaveTags.get(p.id) || 'been',
         }));
 
         // Sort: current user first, then following, then others
@@ -206,11 +206,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
                     <div className="flex items-center gap-3">
                       {/* Save category indicator */}
                       <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        {u.save_tag === 'general' ? (
-                          <Bookmark className="w-5 h-5 text-primary fill-primary" />
-                        ) : (
-                          <span className="text-lg leading-none">{saveTagOption?.emoji || '📍'}</span>
-                        )}
+                        <span className="text-lg leading-none">{saveTagOption?.emoji || '📍'}</span>
                       </div>
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={u.avatar_url || undefined} />

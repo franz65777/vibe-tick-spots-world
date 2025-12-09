@@ -76,7 +76,7 @@ const MinimalLocationCard = ({
             <h3 className="font-bold text-foreground text-sm truncate text-left">
               {place.name}
             </h3>
-            {saveTagOption && place.saveTag !== 'general' && (
+            {saveTagOption && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
                 {saveTagOption.emoji}
               </Badge>
