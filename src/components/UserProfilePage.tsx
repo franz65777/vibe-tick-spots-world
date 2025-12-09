@@ -1,5 +1,9 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown, Ban, Globe, Eye, Bookmark, Heart } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, Ban } from 'lucide-react';
+import saveTagAll from '@/assets/save-tag-all.png';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -345,112 +349,98 @@ const UserProfilePage = () => {
 
       </div>
 
-      {/* Cities Filter Section */}
-      {cities.length > 0 && <div className="px-4 py-2">
-          {/* City Pills - Horizontally Scrollable */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {cities.map(cityData => {})}
-          </div>
-
-          {/* Stats Row with Category Cards */}
-          <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-            {/* In Common Card - Only show for other profiles */}
-            {!isOwnProfile && <button onClick={() => {/* TODO: Open map with common locations */}} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
-                <div className="flex -space-x-2">
-                  <Avatar className="w-8 h-8 border-2 border-background">
-                    <AvatarImage src={commonLocations.theirAvatar || undefined} />
-                    <AvatarFallback className="text-xs">{profile.username?.substring(0, 1).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <Avatar className="w-8 h-8 border-2 border-background">
-                    <AvatarImage src={commonLocations.myAvatar || undefined} />
-                    <AvatarFallback className="text-xs">{currentUser?.email?.substring(0, 1).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-bold">{commonLocations.count}</span>
-                  <span className="text-xs text-muted-foreground">{t('userProfile.inCommon', {
-                ns: 'common'
-              })}</span>
-                </div>
-              </button>}
-
-            {/* All Locations Card */}
-            <button onClick={() => navigate('/', {
-          state: {
-            showMapExpanded: true,
-            filterUserId: userId,
-            filterCategory: 'all'
-          }
-        })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
-              <div className="flex flex-col items-start">
-                <div className="flex items-center gap-1">
-                  <Globe className="w-4 h-4" />
-                  <span className="font-bold">{categoryCounts.all}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{t('userProfile.allLocations', {
-                ns: 'common'
-              })}</span>
+      {/* Category Cards Section */}
+      <div className="px-4 py-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {/* In Common Card - Only show for other profiles */}
+          {!isOwnProfile && <button onClick={() => {/* TODO: Open map with common locations */}} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+              <div className="flex -space-x-2">
+                <Avatar className="w-8 h-8 border-2 border-background">
+                  <AvatarImage src={commonLocations.theirAvatar || undefined} />
+                  <AvatarFallback className="text-xs">{profile.username?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <Avatar className="w-8 h-8 border-2 border-background">
+                  <AvatarImage src={commonLocations.myAvatar || undefined} />
+                  <AvatarFallback className="text-xs">{currentUser?.email?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                </Avatar>
               </div>
-            </button>
-
-            {/* Visited Locations Card */}
-            <button onClick={() => navigate('/', {
-          state: {
-            showMapExpanded: true,
-            filterUserId: userId,
-            filterCategory: 'been'
-          }
-        })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
               <div className="flex flex-col items-start">
-                <div className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" />
-                  <span className="font-bold">{categoryCounts.been}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{t('userProfile.visitedLocations', {
-                ns: 'common'
-              })}</span>
+                <span className="font-bold">{commonLocations.count}</span>
+                <span className="text-xs text-muted-foreground">{t('userProfile.inCommon', {
+              ns: 'common'
+            })}</span>
               </div>
-            </button>
+            </button>}
 
-            {/* To Try Locations Card */}
-            <button onClick={() => navigate('/', {
-          state: {
-            showMapExpanded: true,
-            filterUserId: userId,
-            filterCategory: 'to-try'
-          }
-        })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
-              <div className="flex flex-col items-start">
-                <div className="flex items-center gap-1">
-                  <Bookmark className="w-4 h-4" />
-                  <span className="font-bold">{categoryCounts.toTry}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{t('userProfile.toTryLocations', {
-                ns: 'common'
-              })}</span>
-              </div>
-            </button>
+          {/* All Locations Card */}
+          <button onClick={() => navigate('/', {
+        state: {
+          showMapExpanded: true,
+          filterUserId: userId,
+          filterCategory: 'all'
+        }
+      })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+            <img src={saveTagAll} alt="" className="w-6 h-6 object-contain" />
+            <div className="flex flex-col items-start">
+              <span className="font-bold">{categoryCounts.all}</span>
+              <span className="text-xs text-muted-foreground">{t('userProfile.allLocations', {
+              ns: 'common'
+            })}</span>
+            </div>
+          </button>
 
-            {/* Favourite Locations Card */}
-            <button onClick={() => navigate('/', {
-          state: {
-            showMapExpanded: true,
-            filterUserId: userId,
-            filterCategory: 'favourite'
-          }
-        })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
-              <div className="flex flex-col items-start">
-                <div className="flex items-center gap-1">
-                  <Heart className="w-4 h-4" />
-                  <span className="font-bold">{categoryCounts.favourite}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{t('userProfile.favouriteLocations', {
-                ns: 'common'
-              })}</span>
-              </div>
-            </button>
-          </div>
-        </div>}
+          {/* Visited Locations Card */}
+          <button onClick={() => navigate('/', {
+        state: {
+          showMapExpanded: true,
+          filterUserId: userId,
+          filterCategory: 'been'
+        }
+      })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+            <img src={saveTagBeen} alt="" className="w-6 h-6 object-contain" />
+            <div className="flex flex-col items-start">
+              <span className="font-bold">{categoryCounts.been}</span>
+              <span className="text-xs text-muted-foreground">{t('userProfile.visitedLocations', {
+              ns: 'common'
+            })}</span>
+            </div>
+          </button>
+
+          {/* To Try Locations Card */}
+          <button onClick={() => navigate('/', {
+        state: {
+          showMapExpanded: true,
+          filterUserId: userId,
+          filterCategory: 'to-try'
+        }
+      })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+            <img src={saveTagToTry} alt="" className="w-6 h-6 object-contain" />
+            <div className="flex flex-col items-start">
+              <span className="font-bold">{categoryCounts.toTry}</span>
+              <span className="text-xs text-muted-foreground">{t('userProfile.toTryLocations', {
+              ns: 'common'
+            })}</span>
+            </div>
+          </button>
+
+          {/* Favourite Locations Card */}
+          <button onClick={() => navigate('/', {
+        state: {
+          showMapExpanded: true,
+          filterUserId: userId,
+          filterCategory: 'favourite'
+        }
+      })} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+            <img src={saveTagFavourite} alt="" className="w-6 h-6 object-contain" />
+            <div className="flex flex-col items-start">
+              <span className="font-bold">{categoryCounts.favourite}</span>
+              <span className="text-xs text-muted-foreground">{t('userProfile.favouriteLocations', {
+              ns: 'common'
+            })}</span>
+            </div>
+          </button>
+        </div>
+      </div>
       
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       
