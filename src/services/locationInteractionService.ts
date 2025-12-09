@@ -66,11 +66,27 @@ class LocationInteractionService {
       }
 
       // Delete any existing save with different tag to ensure only one save per location
+      // Delete from user_saved_locations
       await supabase
         .from('user_saved_locations')
         .delete()
         .eq('user_id', user.user.id)
         .eq('location_id', internalLocationId);
+
+      // Also delete from legacy saved_places table using google_place_id
+      if (locationData?.google_place_id) {
+        await supabase
+          .from('saved_places')
+          .delete()
+          .eq('user_id', user.user.id)
+          .eq('place_id', locationData.google_place_id);
+      }
+      // Also try to delete using locationId as place_id (fallback)
+      await supabase
+        .from('saved_places')
+        .delete()
+        .eq('user_id', user.user.id)
+        .eq('place_id', locationId);
 
       // Now insert the new save with the correct tag
       const { error } = await supabase
