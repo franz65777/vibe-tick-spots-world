@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown, Ban } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown, Ban, Globe, Eye, Bookmark, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -12,6 +12,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useNotificationMuting } from '@/hooks/useNotificationMuting';
 import { useUserBlocking } from '@/hooks/useUserBlocking';
+import { useUserSavedCities } from '@/hooks/useUserSavedCities';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import ProfileTabs from './profile/ProfileTabs';
@@ -37,7 +38,9 @@ const UserProfilePage = () => {
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   const { isMuted, toggleMute } = useNotificationMuting(userId);
   const { isBlocked, blockUser, unblockUser } = useUserBlocking(userId);
+  const { cities, commonLocations, allPlacesCount } = useUserSavedCities(userId);
   const [activeTab, setActiveTab] = useState('posts');
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
     type: null
@@ -177,20 +180,26 @@ const UserProfilePage = () => {
           <h1 className="text-lg font-semibold">{displayUsername}</h1>
         </div>
         {!isOwnProfile && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Follow Button */}
+            <Button 
+              onClick={handleFollowToggle}
+              variant={profile.is_following ? "secondary" : "default"}
+              className={`rounded-full font-medium h-8 px-4 text-sm ${profile.is_following ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}
+            >
+              {profile.is_following ? t('userProfile.alreadyFollowing', { ns: 'common' }) : t('userProfile.follow', { ns: 'common' })}
+            </Button>
+            {/* Message Button */}
             <Button
-              onClick={toggleMute}
               variant="ghost"
               size="icon"
-              className="h-11 w-11 rounded-full"
-              title={isMuted ? t('userProfile.unmute', { ns: 'common' }) : t('userProfile.mute', { ns: 'common' })}
+              className="h-10 w-10 rounded-full"
+              onClick={() => navigate('/messages', { state: { initialUserId: userId } })}
+              title={t('userProfile.sendMessage', { ns: 'common' })}
             >
-              {isMuted ? (
-                <BellOff className="w-7 h-7" />
-              ) : (
-                <Bell className="w-7 h-7" />
-              )}
+              <MessageCircle className="w-6 h-6" />
             </Button>
+            {/* More Options Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -203,6 +212,19 @@ const UserProfilePage = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={toggleMute}>
+                  {isMuted ? (
+                    <>
+                      <Bell className="w-4 h-4 mr-2" />
+                      {t('userProfile.unmute', { ns: 'common' })}
+                    </>
+                  ) : (
+                    <>
+                      <BellOff className="w-4 h-4 mr-2" />
+                      {t('userProfile.mute', { ns: 'common' })}
+                    </>
+                  )}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
                   {t('userProfile.shareProfile', { ns: 'common' })}
                 </DropdownMenuItem>
@@ -324,35 +346,97 @@ const UserProfilePage = () => {
           </div>
         )}
 
-        {/* Action Buttons - Instagram Style */}
-        {!isOwnProfile && (
-          <div className="flex gap-2 items-center">
-            <Button 
-              onClick={handleFollowToggle}
-              variant={profile.is_following ? "secondary" : "default"}
-              className={`flex-1 rounded-lg font-medium h-9 text-sm ${profile.is_following ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}
-            >
-              {profile.is_following ? (
-                <>
-                  {t('userProfile.alreadyFollowing', { ns: 'common' })}
-                  <ChevronDown className="w-3 h-3 ml-1" />
-                </>
-              ) : (
-                t('userProfile.follow', { ns: 'common' })
-              )}
-            </Button>
-            <Button 
-              variant="secondary"
-              size="icon"
-              className="rounded-lg h-9 w-9 bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground"
-              onClick={() => navigate('/messages', { state: { initialUserId: userId } })}
-              title={t('userProfile.sendMessage', { ns: 'common' })}
-            >
-              <MessageCircle className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
       </div>
+
+      {/* Cities Filter Section */}
+      {!isOwnProfile && cities.length > 0 && (
+        <div className="px-4 py-2">
+          {/* City Pills - Horizontally Scrollable */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => setSelectedCity(null)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                selectedCity === null
+                  ? 'bg-foreground text-background'
+                  : 'bg-gray-200/60 dark:bg-slate-700/60 text-foreground'
+              }`}
+            >
+              <Globe className="w-4 h-4" />
+              {t('common.all')}
+            </button>
+            {cities.map((cityData) => (
+              <button
+                key={cityData.city}
+                onClick={() => setSelectedCity(cityData.city)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                  selectedCity === cityData.city
+                    ? 'bg-foreground text-background'
+                    : 'bg-gray-200/60 dark:bg-slate-700/60 text-foreground'
+                }`}
+              >
+                {cityData.city.toLowerCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Stats Row with Avatars */}
+          <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+            {/* In Common Card */}
+            <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+              <div className="flex -space-x-2">
+                <Avatar className="w-8 h-8 border-2 border-background">
+                  <AvatarImage src={commonLocations.theirAvatar || undefined} />
+                  <AvatarFallback className="text-xs">{profile.username?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <Avatar className="w-8 h-8 border-2 border-background">
+                  <AvatarImage src={commonLocations.myAvatar || undefined} />
+                  <AvatarFallback className="text-xs">{currentUser?.email?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                  <span className="font-bold">{commonLocations.count}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.inCommon', { ns: 'common' })}</span>
+              </div>
+            </div>
+
+            {/* All Places Card */}
+            <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1">
+                  <Globe className="w-4 h-4" />
+                  <span className="font-bold">{allPlacesCount}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.allPlaces', { ns: 'common' })}</span>
+              </div>
+            </div>
+
+            {/* Want to Try Card - Filter by save_tag */}
+            <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1">
+                  <Bookmark className="w-4 h-4" />
+                  <span className="font-bold">-</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.wantToTry', { ns: 'common' })}</span>
+              </div>
+            </div>
+
+            {/* Favourite Card */}
+            <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1">
+                  <Heart className="w-4 h-4" />
+                  <span className="font-bold">-</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.favourite', { ns: 'common' })}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       
