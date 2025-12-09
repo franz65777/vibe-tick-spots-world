@@ -24,6 +24,7 @@ const resources = {
       searching: 'Searching...',
       follow: 'Follow',
       following: 'Following',
+      followingTab: 'Following',
       unfollowed: 'Unfollowed',
       followers: 'Followers',
       mutual: 'mutual',
@@ -92,7 +93,12 @@ const resources = {
       takePhoto: 'Take Photo',
       supportedFormats: 'JPG, PNG, MP4, MOV up to 100MB',
       location: 'Location',
-      notifications: 'Notifications',
+      notifications: {
+        title: 'Notifications',
+        muted: 'Notifications muted',
+        enabled: 'Notifications enabled',
+        updateFailed: 'Failed to update notification settings'
+      },
       yourSavedPlaces: 'Your Saved Places',
       hide: 'Hide',
       showAll: 'Show All',
@@ -1782,6 +1788,7 @@ const resources = {
       searching: 'Ricerca...',
       follow: 'Segui',
       following: 'Segui già',
+      followingTab: 'Seguiti',
       unfollowed: 'Non segui più',
       followers: 'Follower',
       mutual: 'reciproci',
@@ -1851,7 +1858,12 @@ const resources = {
       takePhoto: 'Scatta Foto',
       supportedFormats: 'JPG, PNG, MP4, MOV fino a 100MB',
       location: 'Posizione',
-      notifications: 'Notifiche',
+      notifications: {
+        title: 'Notifiche',
+        muted: 'Notifiche silenziate',
+        enabled: 'Notifiche abilitate',
+        updateFailed: 'Impossibile aggiornare le impostazioni notifiche'
+      },
       yourSavedPlaces: 'I Tuoi Luoghi Salvati',
       hide: 'Nascondi',
       showAll: 'Mostra Tutto',

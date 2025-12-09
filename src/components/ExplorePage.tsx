@@ -460,8 +460,12 @@ const ExplorePage = memo(() => {
                           <div
                             key={suggestedUser.id}
                             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer text-left"
-                            onClick={() => {
-                              console.log('Clicked suggested user:', suggestedUser.id);
+                            role="button"
+                            tabIndex={0}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               handleUserClick(suggestedUser.id);
                             }}
                           >

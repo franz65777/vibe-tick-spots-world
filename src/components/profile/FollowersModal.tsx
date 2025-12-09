@@ -228,13 +228,13 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-[2000] flex flex-col">
+      <div className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
         {/* Header with Back Button and Username */}
         <div className="flex items-center gap-4 p-4">
-          <button onClick={onClose} className="p-2 -ml-2 mt-[28px]">
+          <button onClick={onClose} className="p-2 -ml-2">
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
-          <h2 className="text-xl font-bold text-foreground mt-5">
+          <h2 className="text-xl font-bold text-foreground">
             {targetProfile?.username || 'User'}
           </h2>
         </div>
@@ -264,7 +264,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                 : "text-muted-foreground"
             )}
           >
-            {t('following', { ns: 'common' })}
+            {t('followingTab', { ns: 'common', defaultValue: 'Seguiti' })}
             {activeTab === 'following' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}

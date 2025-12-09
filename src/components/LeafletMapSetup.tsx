@@ -966,8 +966,8 @@ const SharingControls = ({
   
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
-  // Position next to the filter dropdown with a small gap
-  const leftPosition = filterDropdownWidth + 24; // 24px gap from dropdown edge
+  // Position next to the filter dropdown with a small gap (16px margin + dropdown width)
+  const leftPosition = 16 + filterDropdownWidth + 12; // 16px left margin + dropdown width + 12px gap
   
   return (
     <div 
