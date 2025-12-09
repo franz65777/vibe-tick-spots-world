@@ -108,7 +108,7 @@ const ProfileHeader = ({
 
   return (
     <div className="pt-1 pb-2 bg-background">
-      {/* Main row: Avatar + Name/Stats + Badges */}
+      {/* Main row: Avatar + Name/Stats + Badges + Settings */}
       <div className="flex items-start gap-3 px-3">
         {/* Avatar */}
         <div className="shrink-0">
@@ -122,7 +122,7 @@ const ProfileHeader = ({
                 "relative rounded-full p-[2px] border-2",
                 myStoriesAllViewed ? "border-gray-300 dark:border-gray-600" : "border-primary"
               )}>
-                <Avatar className="w-14 h-14">
+                <Avatar className="w-16 h-16">
                   <AvatarImage src={profile?.avatar_url} alt={displayUsername} />
                   <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
                     {getInitials()}
@@ -131,7 +131,7 @@ const ProfileHeader = ({
               </div>
             </button>
           ) : (
-            <div className="w-14 h-14 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
+            <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
               {profile?.avatar_url ? (
                 <img 
                   src={profile.avatar_url} 
@@ -157,7 +157,7 @@ const ProfileHeader = ({
           </div>
 
           {/* Stats Row - inline like "6 Follower" */}
-          <div className="flex gap-3 mt-1">
+          <div className="flex gap-3 mt-2">
             <button className="flex items-center gap-1" onClick={onFollowersClick}>
               <span className="text-sm font-bold text-foreground">{displayStats.followers}</span>
               <span className="text-sm text-muted-foreground">{t('followers', { ns: 'common' })}</span>
@@ -173,15 +173,12 @@ const ProfileHeader = ({
               <span className="text-sm text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</span>
             </button>
           </div>
-
-          {/* Badges below stats */}
-          <div className="mt-1">
-            <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
-          </div>
         </div>
 
-        {/* Right: Settings only */}
-        <div className="shrink-0">
+        {/* Right: Badges + Settings */}
+        <div className="flex items-center gap-2 shrink-0">
+          <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
+          
           <Button 
             variant="ghost" 
             size="sm" 
