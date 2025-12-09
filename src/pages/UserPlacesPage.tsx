@@ -30,13 +30,14 @@ const UserPlacesPage = () => {
   const { user: currentUser } = useAuth();
   
   const initialFilterCategory = (location.state as any)?.filterCategory || 'all';
-  const [filterCategory, setFilterCategory] = useState<string>(initialFilterCategory);
+  const [filterCategory] = useState<string>(initialFilterCategory);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [cities, setCities] = useState<{ city: string; count: number }[]>([]);
   const [profile, setProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Fetch user profile
   useEffect(() => {
@@ -52,7 +53,7 @@ const UserPlacesPage = () => {
     fetchProfile();
   }, [userId]);
 
-  // Fetch all saved locations for the user
+  // Fetch saved locations for the user - filtered by category
   useEffect(() => {
     const fetchLocations = async () => {
       if (!userId) return;
@@ -61,8 +62,8 @@ const UserPlacesPage = () => {
       try {
         const allLocations: SavedLocation[] = [];
 
-        // Fetch from user_saved_locations
-        const { data: internalLocs } = await supabase
+        // Fetch from user_saved_locations with optional category filter
+        let internalQuery = supabase
           .from('user_saved_locations')
           .select(`
             location_id,
@@ -70,6 +71,13 @@ const UserPlacesPage = () => {
             locations(id, name, category, city, address, latitude, longitude, image_url)
           `)
           .eq('user_id', userId);
+
+        // Apply category filter at query level if not 'all'
+        if (filterCategory !== 'all' && filterCategory !== 'common') {
+          internalQuery = internalQuery.eq('save_tag', filterCategory);
+        }
+
+        const { data: internalLocs } = await internalQuery;
 
         if (internalLocs) {
           internalLocs.forEach(loc => {
@@ -89,11 +97,17 @@ const UserPlacesPage = () => {
           });
         }
 
-        // Fetch from saved_places (Google Places)
-        const { data: savedPlaces } = await supabase
+        // Fetch from saved_places (Google Places) with optional category filter
+        let savedPlacesQuery = supabase
           .from('saved_places')
           .select('id, place_id, place_name, place_category, city, coordinates, save_tag')
           .eq('user_id', userId);
+
+        if (filterCategory !== 'all' && filterCategory !== 'common') {
+          savedPlacesQuery = savedPlacesQuery.eq('save_tag', filterCategory);
+        }
+
+        const { data: savedPlaces } = await savedPlacesQuery;
 
         if (savedPlaces) {
           savedPlaces.forEach(sp => {
@@ -133,7 +147,7 @@ const UserPlacesPage = () => {
           setLocations(allLocations);
         }
 
-        // Calculate cities
+        // Calculate cities from fetched locations
         const cityCount: Record<string, number> = {};
         allLocations.forEach(loc => {
           if (loc.city) {
@@ -145,32 +159,29 @@ const UserPlacesPage = () => {
           .sort((a, b) => b.count - a.count);
         setCities(citiesArray);
 
+        // Auto-select city if only one city exists
+        if (citiesArray.length === 1) {
+          setSelectedCity(citiesArray[0].city);
+        }
+
       } catch (err) {
         console.error('Error fetching locations:', err);
       } finally {
         setLoading(false);
+        setHasInitialized(true);
       }
     };
 
     fetchLocations();
   }, [userId, currentUser, filterCategory]);
 
-  // Filter locations by category and city
+  // Filter locations by city only (category already filtered at query level)
   const filteredLocations = useMemo(() => {
-    let result = locations;
-
-    // Filter by save_tag category
-    if (filterCategory !== 'all' && filterCategory !== 'common') {
-      result = result.filter(loc => loc.save_tag === filterCategory);
-    }
-
-    // Filter by city
     if (selectedCity) {
-      result = result.filter(loc => loc.city === selectedCity);
+      return locations.filter(loc => loc.city === selectedCity);
     }
-
-    return result;
-  }, [locations, filterCategory, selectedCity]);
+    return locations;
+  }, [locations, selectedCity]);
 
   // Convert to Place format for map
   const places: Place[] = filteredLocations
@@ -205,30 +216,51 @@ const UserPlacesPage = () => {
 
   const handleCityClick = (city: string) => {
     setSelectedCity(city);
-    // Find first location in that city to center map
-    const loc = filteredLocations.find(l => l.city === city && l.coordinates);
-    if (loc) {
-      // The map will re-center based on filtered places
+  };
+
+  const handleBack = () => {
+    if (selectedCity && cities.length > 1) {
+      // Go back to city selection if there are multiple cities
+      setSelectedCity(null);
+    } else {
+      // Navigate back to previous page
+      navigate(-1);
     }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-50">
-        <button onClick={() => navigate(-1)} className="p-0 hover:opacity-70 transition-opacity">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-lg font-bold">
-          {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-        </h1>
-        <div className="w-6" /> {/* Spacer for centering */}
-      </div>
+  // Show empty state if no locations for this filter
+  if (hasInitialized && locations.length === 0) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-50">
+          <button onClick={() => navigate(-1)} className="p-0 hover:opacity-70 transition-opacity">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-lg font-bold">
+            {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+          </h1>
+          <div className="w-6" />
+        </div>
 
-      {/* If no city selected - show full map with city pills */}
-      {!selectedCity ? (
+        {/* Empty state */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center px-8">
+            <p className="text-muted-foreground">
+              {t('userProfile.noLocationsInCity', { ns: 'common' })}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      {/* If no city selected or single city - show full map with city pills */}
+      {!selectedCity || cities.length <= 1 ? (
         <div className="flex-1 relative">
-          {/* Map taking full space */}
+          {/* Map taking full space - extends behind header */}
           <div className="absolute inset-0">
             <MapFilterProvider>
               <LeafletMapSetup
@@ -244,41 +276,58 @@ const UserPlacesPage = () => {
             </MapFilterProvider>
           </div>
 
-          {/* City pills at bottom */}
-          <div className="absolute bottom-6 left-0 right-0 z-[1000] px-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {cities.map(({ city, count }) => (
-                <button
-                  key={city}
-                  onClick={() => handleCityClick(city)}
-                  className="flex items-center gap-1 px-4 py-2 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg shrink-0"
-                >
-                  <span className="font-medium">{city}</span>
-                  <span className="text-xs text-muted-foreground">{count}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-center text-sm text-muted-foreground mt-2">
-              {t('userProfile.tapCityToSee', { ns: 'common' })}
-            </p>
-          </div>
-        </div>
-      ) : (
-        /* City selected - 60/40 split view */
-        <div className="flex-1 flex flex-col">
-          {/* Back to all cities button */}
-          <div className="px-4 py-2 bg-background border-b border-border">
-            <button
-              onClick={() => setSelectedCity(null)}
-              className="flex items-center gap-2 text-sm text-primary"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {t('userProfile.allCities', { ns: 'common' })}
+          {/* Header overlay */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-[1000]">
+            <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
+              <ArrowLeft className="w-6 h-6" />
             </button>
-            <h2 className="text-lg font-semibold mt-1">{selectedCity}</h2>
+            <h1 className="text-lg font-bold">
+              {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+            </h1>
+            <div className="w-6" />
           </div>
 
-          {/* Map - 60% */}
+          {/* City pills at bottom - only show if multiple cities */}
+          {cities.length > 1 && (
+            <div className="absolute bottom-6 left-0 right-0 z-[1000] px-4 pb-safe">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {cities.map(({ city, count }) => (
+                  <button
+                    key={city}
+                    onClick={() => handleCityClick(city)}
+                    className="flex items-center gap-1 px-4 py-2 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg shrink-0"
+                  >
+                    <span className="font-medium">{city}</span>
+                    <span className="text-xs text-muted-foreground">{count}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-center text-sm text-muted-foreground mt-2">
+                {t('userProfile.tapCityToSee', { ns: 'common' })}
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* City selected with multiple cities - 60/40 split view */
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-50">
+            <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-lg font-bold">
+              {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+            </h1>
+            <div className="w-6" />
+          </div>
+
+          {/* City name */}
+          <div className="px-4 py-2 bg-background border-b border-border">
+            <h2 className="text-lg font-semibold">{selectedCity}</h2>
+          </div>
+
+          {/* Map - 55% */}
           <div className="h-[55%] relative">
             <MapFilterProvider>
               <LeafletMapSetup
@@ -294,9 +343,9 @@ const UserPlacesPage = () => {
             </MapFilterProvider>
           </div>
 
-          {/* Location list - 40% */}
+          {/* Location list - 45% */}
           <ScrollArea className="flex-1 bg-background">
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-3 pb-safe">
               {filteredLocations.map(loc => (
                 <div
                   key={loc.id}
