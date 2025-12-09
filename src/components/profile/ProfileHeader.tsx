@@ -157,7 +157,7 @@ const ProfileHeader = ({
           </div>
 
           {/* Stats Row - inline like "6 Follower" */}
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mt-2">
             <button className="flex items-center gap-1" onClick={onFollowersClick}>
               <span className="text-sm font-bold text-foreground">{displayStats.followers}</span>
               <span className="text-sm text-muted-foreground">{t('followers', { ns: 'common' })}</span>
