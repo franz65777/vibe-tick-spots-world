@@ -185,10 +185,12 @@ export const useUserSavedCities = (userId?: string) => {
           table: 'user_saved_locations'
         },
         (payload) => {
+          console.log('user_saved_locations change detected:', payload.eventType);
           // Check if the change is for this user
           const newRecord = payload.new as any;
           const oldRecord = payload.old as any;
           if (newRecord?.user_id === userId || oldRecord?.user_id === userId) {
+            console.log('Refetching cities for user');
             fetchCitiesAndCommon();
           }
         }
@@ -205,10 +207,12 @@ export const useUserSavedCities = (userId?: string) => {
           table: 'saved_places'
         },
         (payload) => {
+          console.log('saved_places change detected:', payload.eventType);
           // Check if the change is for this user
           const newRecord = payload.new as any;
           const oldRecord = payload.old as any;
           if (newRecord?.user_id === userId || oldRecord?.user_id === userId) {
+            console.log('Refetching cities for user');
             fetchCitiesAndCommon();
           }
         }
