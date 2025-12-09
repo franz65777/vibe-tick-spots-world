@@ -215,9 +215,10 @@ const resources = {
         shareError: 'Failed to share profile',
         cannotShareWithSameUser: 'Cannot share this profile with the same user',
         inCommon: 'in common',
-        allPlaces: 'all places',
-        wantToTry: 'want to try',
-        favourite: 'favourite'
+        allLocations: 'all locations',
+        visitedLocations: 'visited',
+        toTryLocations: 'to try',
+        favouriteLocations: 'favourite'
       }
     },
     navigation: {
@@ -1125,7 +1126,12 @@ const resources = {
         searchToShare: 'Busca personas con quienes compartir este perfil',
         profileShared: 'Perfil compartido con @{{username}}',
         shareError: 'Error al compartir el perfil',
-        cannotShareWithSameUser: 'No puedes compartir este perfil con el mismo usuario'
+        cannotShareWithSameUser: 'No puedes compartir este perfil con el mismo usuario',
+        inCommon: 'en común',
+        allLocations: 'todos',
+        visitedLocations: 'visitados',
+        toTryLocations: 'por probar',
+        favouriteLocations: 'favoritos'
       }
     },
     navigation: {
@@ -1992,9 +1998,10 @@ const resources = {
         shareError: 'Impossibile condividere il profilo',
         cannotShareWithSameUser: 'Non puoi condividere questo profilo con lo stesso utente',
         inCommon: 'in comune',
-        allPlaces: 'tutti i posti',
-        wantToTry: 'da provare',
-        favourite: 'preferiti'
+        allLocations: 'tutti',
+        visitedLocations: 'visitati',
+        toTryLocations: 'da provare',
+        favouriteLocations: 'preferiti'
       }
     },
     navigation: {
@@ -2836,7 +2843,12 @@ const resources = {
         searchToShare: 'Recherchez des personnes avec qui partager ce profil',
         profileShared: 'Profil partagé avec @{{username}}',
         shareError: 'Échec du partage du profil',
-        cannotShareWithSameUser: 'Impossible de partager ce profil avec le même utilisateur'
+        cannotShareWithSameUser: 'Impossible de partager ce profil avec le même utilisateur',
+        inCommon: 'en commun',
+        allLocations: 'tous',
+        visitedLocations: 'visités',
+        toTryLocations: 'à essayer',
+        favouriteLocations: 'favoris'
       }
     },
     navigation: {
@@ -3559,7 +3571,12 @@ const resources = {
         searchToShare: 'Suchen Sie nach Personen, mit denen Sie dieses Profil teilen möchten',
         profileShared: 'Profil geteilt mit @{{username}}',
         shareError: 'Profil konnte nicht geteilt werden',
-        cannotShareWithSameUser: 'Sie können dieses Profil nicht mit demselben Benutzer teilen'
+        cannotShareWithSameUser: 'Sie können dieses Profil nicht mit demselben Benutzer teilen',
+        inCommon: 'gemeinsam',
+        allLocations: 'alle',
+        visitedLocations: 'besucht',
+        toTryLocations: 'ausprobieren',
+        favouriteLocations: 'favoriten'
       }
     },
     navigation: {
@@ -4220,7 +4237,12 @@ const resources = {
         searchToShare: 'Procure pessoas para compartilhar este perfil',
         profileShared: 'Perfil compartilhado com @{{username}}',
         shareError: 'Falha ao compartilhar o perfil',
-        cannotShareWithSameUser: 'Você não pode compartilhar este perfil com o mesmo usuário'
+        cannotShareWithSameUser: 'Você não pode compartilhar este perfil com o mesmo usuário',
+        inCommon: 'em comum',
+        allLocations: 'todos',
+        visitedLocations: 'visitados',
+        toTryLocations: 'experimentar',
+        favouriteLocations: 'favoritos'
       }
     },
     navigation: {
@@ -5985,7 +6007,12 @@ const resources = {
         photos: '사진',
         blockUser: '사용자 차단',
         unblockUser: '차단 해제',
-        alreadyFollowing: '팔로잉'
+        alreadyFollowing: '팔로잉',
+        inCommon: '공통',
+        allLocations: '전체',
+        visitedLocations: '방문',
+        toTryLocations: '가볼곳',
+        favouriteLocations: '즐겨찾기'
       }
     },
     navigation: {
@@ -6565,7 +6592,12 @@ const resources = {
         photos: 'صور',
         blockUser: 'حظر المستخدم',
         unblockUser: 'إلغاء حظر المستخدم',
-        alreadyFollowing: 'متابَع'
+        alreadyFollowing: 'متابَع',
+        inCommon: 'مشترك',
+        allLocations: 'الكل',
+        visitedLocations: 'زيارة',
+        toTryLocations: 'للتجربة',
+        favouriteLocations: 'المفضلة'
       }
     },
     navigation: {
@@ -7144,7 +7176,12 @@ const resources = {
         photos: 'फ़ोटो',
         blockUser: 'उपयोगकर्ता को ब्लॉक करें',
         unblockUser: 'उपयोगकर्ता को अनब्लॉक करें',
-        alreadyFollowing: 'फ़ॉलो कर रहे हैं'
+        alreadyFollowing: 'फ़ॉलो कर रहे हैं',
+        inCommon: 'सामान्य',
+        allLocations: 'सभी',
+        visitedLocations: 'देखे गए',
+        toTryLocations: 'आज़माने के लिए',
+        favouriteLocations: 'पसंदीदा'
       }
     },
     navigation: {
@@ -7739,7 +7776,12 @@ const resources = {
         photos: 'Фото',
         blockUser: 'Заблокировать пользователя',
         unblockUser: 'Разблокировать пользователя',
-        alreadyFollowing: 'Подписан'
+        alreadyFollowing: 'Подписан',
+        inCommon: 'общие',
+        allLocations: 'все',
+        visitedLocations: 'посещённые',
+        toTryLocations: 'попробовать',
+        favouriteLocations: 'избранные'
       }
     },
     navigation: {
