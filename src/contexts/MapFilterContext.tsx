@@ -27,6 +27,8 @@ interface MapFilterContextType {
   setIsFilterExpanded: (expanded: boolean) => void;
   filterDropdownWidth: number;
   setFilterDropdownWidth: (width: number) => void;
+  filterDropdownRightEdge: number;
+  setFilterDropdownRightEdge: (right: number) => void;
 }
 
 const MapFilterContext = createContext<MapFilterContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
   const [isFriendsDropdownOpen, setIsFriendsDropdownOpen] = useState<boolean>(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false);
   const [filterDropdownWidth, setFilterDropdownWidth] = useState<number>(0);
+  const [filterDropdownRightEdge, setFilterDropdownRightEdge] = useState<number>(0);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -115,6 +118,8 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
         setIsFilterExpanded,
         filterDropdownWidth,
         setFilterDropdownWidth,
+        filterDropdownRightEdge,
+        setFilterDropdownRightEdge,
       }}
     >
       {children}

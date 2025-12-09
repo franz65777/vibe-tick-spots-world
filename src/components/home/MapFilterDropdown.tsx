@@ -29,26 +29,33 @@ interface UserSavedStats {
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
   const { user } = useAuth();
-  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth } = useMapFilter();
+  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth, setFilterDropdownRightEdge } = useMapFilter();
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Measure and report dropdown width
+  // Measure and report dropdown width and right edge position
   useEffect(() => {
     if (containerRef.current) {
-      const updateWidth = () => {
+      const updatePosition = () => {
         if (containerRef.current) {
-          setFilterDropdownWidth(containerRef.current.offsetWidth);
+          const rect = containerRef.current.getBoundingClientRect();
+          setFilterDropdownWidth(rect.width);
+          setFilterDropdownRightEdge(rect.right);
         }
       };
-      updateWidth();
-      const observer = new ResizeObserver(updateWidth);
+      updatePosition();
+      const observer = new ResizeObserver(updatePosition);
       observer.observe(containerRef.current);
-      return () => observer.disconnect();
+      // Also update on scroll/resize
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        observer.disconnect();
+        window.removeEventListener('resize', updatePosition);
+      };
     }
-  }, [setFilterDropdownWidth, activeFilter, isFilterExpanded]);
+  }, [setFilterDropdownWidth, setFilterDropdownRightEdge, activeFilter, isFilterExpanded]);
 
   // Fetch followed users and their saved location stats
   useEffect(() => {
