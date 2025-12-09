@@ -1,5 +1,5 @@
 
-import { Building2, Plus } from 'lucide-react';
+import { Building2, Globe, Eye, Bookmark, Heart } from 'lucide-react';
 import settingsIcon from '@/assets/settings-icon.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -11,6 +11,7 @@ import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
 import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
 import { useOptimizedSavedPlaces } from '@/hooks/useOptimizedSavedPlaces';
+import { useUserSavedCities } from '@/hooks/useUserSavedCities';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useStories } from '@/hooks/useStories';
@@ -24,6 +25,8 @@ interface ProfileHeaderProps {
   onPostsClick: () => void;
   onLocationsClick: () => void;
   onBadgesClick?: () => void;
+  selectedCity?: string | null;
+  onCitySelect?: (city: string | null) => void;
 }
 
 const ProfileHeader = ({ 
@@ -31,11 +34,14 @@ const ProfileHeader = ({
   onFollowingClick, 
   onPostsClick, 
   onLocationsClick,
-  onBadgesClick
+  onBadgesClick,
+  selectedCity,
+  onCitySelect
 }: ProfileHeaderProps) => {
   const { t } = useTranslation();
   const { profile, refetch } = useOptimizedProfile();
   const { user } = useAuth();
+  const { cities, categoryCounts } = useUserSavedCities(user?.id);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
@@ -191,10 +197,85 @@ const ProfileHeader = ({
       </div>
 
       {/* Bio below avatar - aligned left */}
-      {profile?.bio && (
-        <p className="text-sm text-foreground text-left mt-2 px-3">
-          {profile.bio}
-        </p>
+      {/* Cities Filter Section */}
+      {cities.length > 0 && (
+        <div className="px-3 pt-3 pb-1">
+          {/* City Pills - Horizontally Scrollable */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {cities.map((cityData) => (
+              <button
+                key={cityData.city}
+                onClick={() => onCitySelect?.(selectedCity === cityData.city ? null : cityData.city)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                  selectedCity === cityData.city
+                    ? 'bg-foreground text-background'
+                    : 'bg-gray-200/60 dark:bg-slate-700/60 text-foreground'
+                }`}
+              >
+                {cityData.city.toLowerCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Stats Row with Category Cards */}
+          <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
+            {/* All Locations Card */}
+            <button 
+              onClick={() => navigate('/', { state: { showMapExpanded: true, filterUserId: user?.id, filterCategory: 'all' } })}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0"
+            >
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-1">
+                  <Globe className="w-4 h-4" />
+                  <span className="font-bold">{categoryCounts.all}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.allLocations', { ns: 'common' })}</span>
+              </div>
+            </button>
+
+            {/* Visited Locations Card */}
+            <button 
+              onClick={() => navigate('/', { state: { showMapExpanded: true, filterUserId: user?.id, filterCategory: 'been' } })}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0"
+            >
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                  <span className="font-bold">{categoryCounts.been}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.visitedLocations', { ns: 'common' })}</span>
+              </div>
+            </button>
+
+            {/* To Try Locations Card */}
+            <button 
+              onClick={() => navigate('/', { state: { showMapExpanded: true, filterUserId: user?.id, filterCategory: 'to-try' } })}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0"
+            >
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-1">
+                  <Bookmark className="w-4 h-4" />
+                  <span className="font-bold">{categoryCounts.toTry}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.toTryLocations', { ns: 'common' })}</span>
+              </div>
+            </button>
+
+            {/* Favourite Locations Card */}
+            <button 
+              onClick={() => navigate('/', { state: { showMapExpanded: true, filterUserId: user?.id, filterCategory: 'favourite' } })}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0"
+            >
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-1">
+                  <Heart className="w-4 h-4" />
+                  <span className="font-bold">{categoryCounts.favourite}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t('userProfile.favouriteLocations', { ns: 'common' })}</span>
+              </div>
+            </button>
+          </div>
+        </div>
       )}
 
       <CreateStoryModal
