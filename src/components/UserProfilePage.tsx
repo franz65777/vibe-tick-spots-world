@@ -371,7 +371,11 @@ const UserProfilePage = () => {
             </button>}
 
           {/* All Locations Card */}
-          <button onClick={() => navigate(`/user-places/${userId}`, { state: { filterCategory: 'all' } })} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+          <button 
+            onClick={() => categoryCounts.all > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'all' } })} 
+            disabled={categoryCounts.all === 0}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+          >
             <img src={saveTagAll} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
               <span className="font-bold text-sm">{categoryCounts.all}</span>
@@ -380,7 +384,11 @@ const UserProfilePage = () => {
           </button>
 
           {/* Visited Locations Card */}
-          <button onClick={() => navigate(`/user-places/${userId}`, { state: { filterCategory: 'been' } })} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+          <button 
+            onClick={() => categoryCounts.been > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'been' } })} 
+            disabled={categoryCounts.been === 0}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.been === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+          >
             <img src={saveTagBeen} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
               <span className="font-bold text-sm">{categoryCounts.been}</span>
@@ -389,7 +397,11 @@ const UserProfilePage = () => {
           </button>
 
           {/* To Try Locations Card */}
-          <button onClick={() => navigate(`/user-places/${userId}`, { state: { filterCategory: 'to-try' } })} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+          <button 
+            onClick={() => categoryCounts.toTry > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'to-try' } })} 
+            disabled={categoryCounts.toTry === 0}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.toTry === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+          >
             <img src={saveTagToTry} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
               <span className="font-bold text-sm">{categoryCounts.toTry}</span>
@@ -398,7 +410,11 @@ const UserProfilePage = () => {
           </button>
 
           {/* Favourite Locations Card */}
-          <button onClick={() => navigate(`/user-places/${userId}`, { state: { filterCategory: 'favourite' } })} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
+          <button 
+            onClick={() => categoryCounts.favourite > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'favourite' } })} 
+            disabled={categoryCounts.favourite === 0}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.favourite === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+          >
             <img src={saveTagFavourite} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
               <span className="font-bold text-sm">{categoryCounts.favourite}</span>
