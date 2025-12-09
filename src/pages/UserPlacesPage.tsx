@@ -298,8 +298,8 @@ const UserPlacesPage = () => {
 
   return (
     <div className="fixed inset-0">
-      {/* Map taking full screen - extends behind header */}
-      <div className="absolute inset-0 z-0">
+      {/* Map taking full screen - extends behind header with no top offset */}
+      <div className="absolute top-0 left-0 right-0 bottom-0 z-0">
         <MapFilterProvider>
           <LeafletMapSetup
             places={places}

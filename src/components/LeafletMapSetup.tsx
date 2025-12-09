@@ -796,7 +796,7 @@ const LeafletMapSetup = ({
         ref={containerRef}
         className={
           fullScreen
-            ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background'
+            ? 'relative w-full h-full overflow-hidden bg-background'
             : 'relative w-full h-full rounded-lg overflow-hidden'
         }
         style={{ 

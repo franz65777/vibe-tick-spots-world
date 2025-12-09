@@ -172,34 +172,45 @@ export const useUserSavedCities = (userId?: string) => {
     fetchCitiesAndCommon();
 
     // Subscribe to realtime changes for live updates
+    // Use unique channel IDs to avoid conflicts
+    const channelId = Math.random().toString(36).slice(2);
+    
     const savedLocationsChannel = supabase
-      .channel(`user_saved_locations_${userId}`)
+      .channel(`user_saved_locations_changes_${userId}_${channelId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'user_saved_locations',
-          filter: `user_id=eq.${userId}`
+          table: 'user_saved_locations'
         },
-        () => {
-          fetchCitiesAndCommon();
+        (payload) => {
+          // Check if the change is for this user
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          if (newRecord?.user_id === userId || oldRecord?.user_id === userId) {
+            fetchCitiesAndCommon();
+          }
         }
       )
       .subscribe();
 
     const savedPlacesChannel = supabase
-      .channel(`saved_places_${userId}`)
+      .channel(`saved_places_changes_${userId}_${channelId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'saved_places',
-          filter: `user_id=eq.${userId}`
+          table: 'saved_places'
         },
-        () => {
-          fetchCitiesAndCommon();
+        (payload) => {
+          // Check if the change is for this user
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          if (newRecord?.user_id === userId || oldRecord?.user_id === userId) {
+            fetchCitiesAndCommon();
+          }
         }
       )
       .subscribe();
