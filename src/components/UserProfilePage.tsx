@@ -217,11 +217,26 @@ const UserProfilePage = () => {
       </div>
 
       {/* Profile Header - Instagram Style */}
-      <div className="px-4 py-1">
+      <div className="px-4 py-2">
         {/* Avatar and Stats Row */}
-        <div className="flex gap-4 mb-2">
-          {/* Left side: Stats under username */}
-          <div className="flex-1 flex flex-col justify-center">
+        <div className="flex items-start gap-4 mb-3">
+          {/* Avatar on left */}
+          <div className="relative shrink-0">
+            <div className="w-20 h-20 rounded-full">
+              <Avatar className="w-full h-full">
+                <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
+                <AvatarFallback className="text-lg font-semibold">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+
+          {/* Right side: Username, Stats, Badges */}
+          <div className="flex-1 pt-1">
+            {/* Username */}
+            <h2 className="text-base font-semibold mb-1">{displayUsername}</h2>
+            
             {/* Stats Row - Followers, Following, Saved */}
             <div className="flex gap-3 text-sm mb-2">
               <button 
@@ -254,18 +269,6 @@ const UserProfilePage = () => {
               userId={userId} 
               onBadgesClick={() => setShowBadgesModal(true)} 
             />
-          </div>
-
-          {/* Avatar on right */}
-          <div className="relative shrink-0">
-            <div className="w-[72px] h-[72px] rounded-full">
-              <Avatar className="w-full h-full">
-                <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
-                <AvatarFallback className="text-base font-semibold">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
           </div>
         </div>
 
@@ -325,7 +328,7 @@ const UserProfilePage = () => {
             <Button 
               onClick={handleFollowToggle}
               variant={profile.is_following ? "secondary" : "default"}
-              className={`flex-1 rounded-lg font-medium h-9 text-sm ${profile.is_following ? 'bg-gray-300 dark:bg-secondary text-gray-700 dark:text-secondary-foreground' : ''}`}
+              className={`flex-1 rounded-lg font-medium h-9 text-sm ${profile.is_following ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}
             >
               {profile.is_following ? (
                 <>
@@ -339,7 +342,7 @@ const UserProfilePage = () => {
             <Button 
               variant="secondary"
               size="icon"
-              className="rounded-lg h-9 w-9 bg-gray-300 dark:bg-secondary text-gray-700 dark:text-secondary-foreground"
+              className="rounded-lg h-9 w-9 bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground"
               onClick={() => navigate('/messages', { state: { initialUserId: userId } })}
               title={t('userProfile.sendMessage', { ns: 'common' })}
             >
