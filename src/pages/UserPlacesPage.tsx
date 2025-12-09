@@ -8,6 +8,19 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import { Place } from '@/types/place';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
+import { normalizeCity } from '@/utils/cityNormalization';
+import saveTagAll from '@/assets/save-tag-all.png';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
+
+// Map filter categories to icons
+const filterCategoryIcons: Record<string, string> = {
+  'all': saveTagAll,
+  'been': saveTagBeen,
+  'to-try': saveTagToTry,
+  'favourite': saveTagFavourite,
+};
 
 interface SavedLocation {
   id: string;
@@ -147,11 +160,18 @@ const UserPlacesPage = () => {
           setLocations(allLocations);
         }
 
-        // Calculate cities from fetched locations
+        // Calculate cities from fetched locations - normalize to remove duplicates and map villages to cities
         const cityCount: Record<string, number> = {};
         allLocations.forEach(loc => {
           if (loc.city) {
-            cityCount[loc.city] = (cityCount[loc.city] || 0) + 1;
+            // Normalize city to avoid duplicates (e.g., "Torino" -> "Turin") 
+            // and map neighborhoods/villages to parent cities
+            const normalizedCityName = normalizeCity(loc.city);
+            if (normalizedCityName && normalizedCityName !== 'Unknown') {
+              cityCount[normalizedCityName] = (cityCount[normalizedCityName] || 0) + 1;
+              // Update the location's city to normalized version for filtering consistency
+              loc.city = normalizedCityName;
+            }
           }
         });
         const citiesArray = Object.entries(cityCount)
@@ -243,14 +263,25 @@ const UserPlacesPage = () => {
     return (
       <div className="flex flex-col h-screen bg-background">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-50">
-          <button onClick={() => navigate(-1)} className="p-0 hover:opacity-70 transition-opacity">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-bold">
-            {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-          </h1>
-          <div className="w-6" />
+        <div className="bg-background/80 backdrop-blur-md z-50 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button onClick={() => navigate(-1)} className="p-2 -m-2 hover:opacity-70 transition-opacity">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold">
+                {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+              </h1>
+              {filterCategoryIcons[filterCategory] && (
+                <img 
+                  src={filterCategoryIcons[filterCategory]} 
+                  alt="" 
+                  className="w-6 h-6"
+                />
+              )}
+            </div>
+            <div className="w-10" />
+          </div>
         </div>
 
         {/* Empty state */}
@@ -283,15 +314,26 @@ const UserPlacesPage = () => {
         </MapFilterProvider>
       </div>
 
-      {/* Header overlay - transparent with text shadow for visibility */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] z-[1000]">
-        <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity rounded-full bg-background/60 backdrop-blur-sm">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-lg font-bold px-3 py-1 rounded-full bg-background/60 backdrop-blur-sm">
-          {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-        </h1>
-        <div className="w-10" />
+      {/* Header overlay - full width blur background */}
+      <div className="absolute top-0 left-0 right-0 bg-background/60 backdrop-blur-md z-[1000] pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold">
+              {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+            </h1>
+            {filterCategoryIcons[filterCategory] && (
+              <img 
+                src={filterCategoryIcons[filterCategory]} 
+                alt="" 
+                className="w-6 h-6"
+              />
+            )}
+          </div>
+          <div className="w-10" />
+        </div>
       </div>
 
       {/* City pills at bottom - only show if multiple cities */}
