@@ -4,10 +4,9 @@ import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import { Place } from '@/types/place';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
 
 interface SavedLocation {
@@ -28,6 +27,7 @@ const UserPlacesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: currentUser } = useAuth();
+  const { location: userLocation } = useGeolocation();
   
   const initialFilterCategory = (location.state as any)?.filterCategory || 'all';
   const [filterCategory] = useState<string>(initialFilterCategory);
@@ -200,15 +200,25 @@ const UserPlacesPage = () => {
       visitors: []
     }));
 
-  // Calculate map center from locations
+  // Calculate map center - prioritize user's current location when no city selected
   const mapCenter = useMemo(() => {
+    // If user location is available and no city is selected, use user's location
+    if (userLocation && !selectedCity) {
+      return { lat: userLocation.latitude, lng: userLocation.longitude };
+    }
+    
+    // Otherwise, center on filtered locations
     const locsWithCoords = filteredLocations.filter(l => l.coordinates);
-    if (locsWithCoords.length === 0) return { lat: 53.3498, lng: -6.2603 }; // Default Dublin
+    if (locsWithCoords.length === 0) {
+      // Fallback to user location or default
+      if (userLocation) return { lat: userLocation.latitude, lng: userLocation.longitude };
+      return { lat: 53.3498, lng: -6.2603 }; // Default Dublin
+    }
     
     const avgLat = locsWithCoords.reduce((sum, l) => sum + l.coordinates!.lat, 0) / locsWithCoords.length;
     const avgLng = locsWithCoords.reduce((sum, l) => sum + l.coordinates!.lng, 0) / locsWithCoords.length;
     return { lat: avgLat, lng: avgLng };
-  }, [filteredLocations]);
+  }, [filteredLocations, userLocation, selectedCity]);
 
   const handlePinClick = (place: Place) => {
     setSelectedPlace(place);
@@ -257,138 +267,62 @@ const UserPlacesPage = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* If no city selected or single city - show full map with city pills */}
-      {!selectedCity || cities.length <= 1 ? (
-        <div className="flex-1 relative">
-          {/* Map taking full space - extends behind header */}
-          <div className="absolute inset-0">
-            <MapFilterProvider>
-              <LeafletMapSetup
-                places={places}
-                onPinClick={handlePinClick}
-                mapCenter={mapCenter}
-                selectedPlace={selectedPlace}
-                onCloseSelectedPlace={() => setSelectedPlace(null)}
-                onMapClick={() => setSelectedPlace(null)}
-                fullScreen={true}
-                preventCenterUpdate={false}
-              />
-            </MapFilterProvider>
-          </div>
+      {/* Full map view - extends behind header */}
+      <div className="flex-1 relative">
+        {/* Map taking full space - extends behind header */}
+        <div className="absolute inset-0">
+          <MapFilterProvider>
+            <LeafletMapSetup
+              places={places}
+              onPinClick={handlePinClick}
+              mapCenter={mapCenter}
+              selectedPlace={selectedPlace}
+              onCloseSelectedPlace={() => setSelectedPlace(null)}
+              onMapClick={() => setSelectedPlace(null)}
+              fullScreen={true}
+              preventCenterUpdate={false}
+            />
+          </MapFilterProvider>
+        </div>
 
-          {/* Header overlay */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-[1000]">
-            <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <h1 className="text-lg font-bold">
-              {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-            </h1>
-            <div className="w-6" />
-          </div>
+        {/* Header overlay - high z-index to stay above map */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-[1000] pointer-events-auto">
+          <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-lg font-bold">
+            {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+          </h1>
+          <div className="w-6" />
+        </div>
 
-          {/* City pills at bottom - only show if multiple cities */}
-          {cities.length > 1 && (
-            <div className="absolute bottom-6 left-0 right-0 z-[1000] px-4 pb-safe">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {cities.map(({ city, count }) => (
-                  <button
-                    key={city}
-                    onClick={() => handleCityClick(city)}
-                    className="flex items-center gap-1 px-4 py-2 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg shrink-0"
-                  >
-                    <span className="font-medium">{city}</span>
-                    <span className="text-xs text-muted-foreground">{count}</span>
-                  </button>
-                ))}
-              </div>
+        {/* City pills at bottom - only show if multiple cities */}
+        {cities.length > 1 && (
+          <div className="absolute bottom-6 left-0 right-0 z-[1000] px-4 pb-safe pointer-events-auto">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {cities.map(({ city, count }) => (
+                <button
+                  key={city}
+                  onClick={() => handleCityClick(city)}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-full backdrop-blur-sm border shadow-lg shrink-0 transition-all ${
+                    selectedCity === city 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background/90 border-border'
+                  }`}
+                >
+                  <span className="font-medium">{city}</span>
+                  <span className={`text-xs ${selectedCity === city ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{count}</span>
+                </button>
+              ))}
+            </div>
+            {!selectedCity && (
               <p className="text-center text-sm text-muted-foreground mt-2">
                 {t('userProfile.tapCityToSee', { ns: 'common' })}
               </p>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* City selected with multiple cities - 60/40 split view */
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] bg-background/80 backdrop-blur-sm z-50">
-            <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <h1 className="text-lg font-bold">
-              {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
-            </h1>
-            <div className="w-6" />
+            )}
           </div>
-
-          {/* City name */}
-          <div className="px-4 py-2 bg-background border-b border-border">
-            <h2 className="text-lg font-semibold">{selectedCity}</h2>
-          </div>
-
-          {/* Map - 55% */}
-          <div className="h-[55%] relative">
-            <MapFilterProvider>
-              <LeafletMapSetup
-                places={places}
-                onPinClick={handlePinClick}
-                mapCenter={mapCenter}
-                selectedPlace={selectedPlace}
-                onCloseSelectedPlace={() => setSelectedPlace(null)}
-                onMapClick={() => setSelectedPlace(null)}
-                fullScreen={false}
-                preventCenterUpdate={false}
-              />
-            </MapFilterProvider>
-          </div>
-
-          {/* Location list - 45% */}
-          <ScrollArea className="flex-1 bg-background">
-            <div className="p-4 space-y-3 pb-safe">
-              {filteredLocations.map(loc => (
-                <div
-                  key={loc.id}
-                  className="flex gap-3 p-3 rounded-xl bg-card border border-border cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => {
-                    const place = places.find(p => p.id === loc.id);
-                    if (place) handlePinClick(place);
-                  }}
-                >
-                  {/* Image or category icon */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    {loc.image_url ? (
-                      <img src={loc.image_url} alt={loc.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <CategoryIcon category={loc.category} className="w-10 h-10" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{loc.name}</h3>
-                    <p className="text-sm text-muted-foreground">{loc.category}</p>
-                    {loc.address && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{loc.address}</p>
-                    )}
-                    {loc.review && (
-                      <p className="text-sm text-foreground mt-2 line-clamp-2 italic">"{loc.review}"</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {filteredLocations.length === 0 && !loading && (
-                <div className="text-center py-8 text-muted-foreground">
-                  {t('userProfile.noLocationsInCity', { ns: 'common' })}
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
