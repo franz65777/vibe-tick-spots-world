@@ -109,61 +109,54 @@ const ProfileHeader = ({
   return (
     <div className="py-2 bg-background">
       <div className="flex gap-4 px-3">
-        {/* Profile Picture - Story feature hidden for now */}
-        <div className="relative shrink-0">
-          {hasMyStories ? (
-            <button
-              onClick={handleStoryClick}
-              className="relative flex-shrink-0"
-              aria-label="View your story"
-            >
-              <div className={cn(
-                "relative rounded-full p-[2px] border-2",
-                myStoriesAllViewed ? "border-gray-300 dark:border-gray-600" : "border-primary"
-              )}>
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={profile?.avatar_url} alt={displayUsername} />
-                  <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
-                    {getInitials()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              {/* Add story button hidden - keeping logic for later
+        {/* Left column: Avatar + Bio */}
+        <div className="flex flex-col shrink-0">
+          {/* Profile Picture */}
+          <div className="relative">
+            {hasMyStories ? (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsCreateStoryOpen(true);
-                }}
-                className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center hover:bg-primary/90 transition-colors"
-                aria-label="Add another story"
+                onClick={handleStoryClick}
+                className="relative flex-shrink-0"
+                aria-label="View your story"
               >
-                <Plus className="w-3 h-3 text-primary-foreground" />
+                <div className={cn(
+                  "relative rounded-full p-[2px] border-2",
+                  myStoriesAllViewed ? "border-gray-300 dark:border-gray-600" : "border-primary"
+                )}>
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={profile?.avatar_url} alt={displayUsername} />
+                    <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
               </button>
-              */}
-            </button>
-          ) : (
-            <div className="relative flex-shrink-0">
-              <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={displayUsername}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
-                )}
+            ) : (
+              <div className="relative flex-shrink-0">
+                <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={displayUsername}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
+                  )}
+                </div>
               </div>
-              {/* Create story button hidden - keeping logic for later
-              <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                <Plus className="w-3 h-3 text-primary-foreground" />
-              </div>
-              */}
-            </div>
+            )}
+          </div>
+
+          {/* Bio below avatar */}
+          {profile?.bio && (
+            <p className="text-sm text-foreground text-left line-clamp-2 mt-2 max-w-[80px]">
+              {profile.bio}
+            </p>
           )}
         </div>
 
-        {/* Stats and Info */}
+        {/* Right column: Name, Stats, Badges */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between mb-1">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -189,15 +182,8 @@ const ProfileHeader = ({
             </div>
           </div>
 
-          {/* Bio - only show if exists */}
-          {profile?.bio && (
-            <p className="text-sm text-foreground text-left line-clamp-2 mb-2">
-              {profile.bio}
-            </p>
-          )}
-
-          {/* Stats Row (without Posts) */}
-          <div className="flex gap-4">
+          {/* Stats Row */}
+          <div className="flex gap-4 mt-2">
             <button 
               className="text-center"
               onClick={onFollowersClick}
