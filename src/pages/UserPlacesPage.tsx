@@ -8,7 +8,7 @@ import LeafletMapSetup from '@/components/LeafletMapSetup';
 import { Place } from '@/types/place';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { MapFilterProvider } from '@/contexts/MapFilterContext';
 
 interface SavedLocation {
   id: string;
@@ -230,16 +230,18 @@ const UserPlacesPage = () => {
         <div className="flex-1 relative">
           {/* Map taking full space */}
           <div className="absolute inset-0">
-            <LeafletMapSetup
-              places={places}
-              onPinClick={handlePinClick}
-              mapCenter={mapCenter}
-              selectedPlace={selectedPlace}
-              onCloseSelectedPlace={() => setSelectedPlace(null)}
-              onMapClick={() => setSelectedPlace(null)}
-              fullScreen={true}
-              preventCenterUpdate={false}
-            />
+            <MapFilterProvider>
+              <LeafletMapSetup
+                places={places}
+                onPinClick={handlePinClick}
+                mapCenter={mapCenter}
+                selectedPlace={selectedPlace}
+                onCloseSelectedPlace={() => setSelectedPlace(null)}
+                onMapClick={() => setSelectedPlace(null)}
+                fullScreen={true}
+                preventCenterUpdate={false}
+              />
+            </MapFilterProvider>
           </div>
 
           {/* City pills at bottom */}
@@ -278,16 +280,18 @@ const UserPlacesPage = () => {
 
           {/* Map - 60% */}
           <div className="h-[55%] relative">
-            <LeafletMapSetup
-              places={places}
-              onPinClick={handlePinClick}
-              mapCenter={mapCenter}
-              selectedPlace={selectedPlace}
-              onCloseSelectedPlace={() => setSelectedPlace(null)}
-              onMapClick={() => setSelectedPlace(null)}
-              fullScreen={false}
-              preventCenterUpdate={false}
-            />
+            <MapFilterProvider>
+              <LeafletMapSetup
+                places={places}
+                onPinClick={handlePinClick}
+                mapCenter={mapCenter}
+                selectedPlace={selectedPlace}
+                onCloseSelectedPlace={() => setSelectedPlace(null)}
+                onMapClick={() => setSelectedPlace(null)}
+                fullScreen={false}
+                preventCenterUpdate={false}
+              />
+            </MapFilterProvider>
           </div>
 
           {/* Location list - 40% */}
