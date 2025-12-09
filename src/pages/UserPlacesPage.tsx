@@ -86,8 +86,10 @@ const UserPlacesPage = () => {
           .eq('user_id', userId);
 
         // Apply category filter at query level if not 'all'
+        // Handle both hyphen and underscore formats for save_tag
         if (filterCategory !== 'all' && filterCategory !== 'common') {
-          internalQuery = internalQuery.eq('save_tag', filterCategory);
+          const dbFilterCategory = filterCategory === 'to-try' ? 'to_try' : filterCategory;
+          internalQuery = internalQuery.eq('save_tag', dbFilterCategory);
         }
 
         const { data: internalLocs } = await internalQuery;
@@ -116,8 +118,10 @@ const UserPlacesPage = () => {
           .select('id, place_id, place_name, place_category, city, coordinates, save_tag')
           .eq('user_id', userId);
 
+        // Handle both hyphen and underscore formats for save_tag
         if (filterCategory !== 'all' && filterCategory !== 'common') {
-          savedPlacesQuery = savedPlacesQuery.eq('save_tag', filterCategory);
+          const dbFilterCategory = filterCategory === 'to-try' ? 'to_try' : filterCategory;
+          savedPlacesQuery = savedPlacesQuery.eq('save_tag', dbFilterCategory);
         }
 
         const { data: savedPlaces } = await savedPlacesQuery;
@@ -317,12 +321,12 @@ const UserPlacesPage = () => {
       {/* Blurred header overlay with gradient fade at bottom */}
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-auto">
         <div 
-          className="backdrop-blur-sm pt-[env(safe-area-inset-top)]"
+          className="backdrop-blur-[6px] pt-[env(safe-area-inset-top)]"
           style={{
-            background: 'linear-gradient(to bottom, hsl(var(--background) / 0.5) 0%, hsl(var(--background) / 0.3) 60%, transparent 100%)'
+            background: 'linear-gradient(to bottom, hsl(var(--background) / 0.35) 0%, hsl(var(--background) / 0.15) 70%, transparent 100%)'
           }}
         >
-          <div className="flex items-center justify-between px-4 py-3 pb-6">
+          <div className="flex items-center justify-between px-4 py-2">
             <button onClick={handleBack} className="p-2 -m-2 hover:opacity-70 transition-opacity">
               <ArrowLeft className="w-6 h-6" />
             </button>
