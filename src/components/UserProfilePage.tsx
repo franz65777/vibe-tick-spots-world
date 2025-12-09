@@ -222,7 +222,7 @@ const UserProfilePage = () => {
         <div className="flex items-start gap-3 mb-2">
           {/* Avatar on left */}
           <div className="relative shrink-0">
-            <div className="w-14 h-14 rounded-full">
+            <div className="w-16 h-16 rounded-full">
               <Avatar className="w-full h-full">
                 <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
                 <AvatarFallback className="text-sm font-semibold">
@@ -232,13 +232,13 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Right side: Username, Stats, Badges */}
-          <div className="flex-1">
+          {/* Middle: Username and Stats */}
+          <div className="flex-1 min-w-0">
             {/* Username */}
-            <h2 className="text-base font-semibold">{displayUsername}</h2>
+            <h2 className="text-base font-bold mt-2">{displayUsername}</h2>
             
             {/* Stats Row - Followers, Following, Saved */}
-            <div className="flex gap-3 text-sm mt-1">
+            <div className="flex gap-3 text-sm mt-2">
               <button 
                 onClick={() => openModal('followers')}
                 className="hover:opacity-70 transition-opacity"
@@ -263,14 +263,14 @@ const UserProfilePage = () => {
                 <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
               </button>
             </div>
+          </div>
 
-            {/* Badges */}
-            <div className="mt-1">
-              <BadgeDisplay 
-                userId={userId} 
-                onBadgesClick={() => setShowBadgesModal(true)} 
-              />
-            </div>
+          {/* Right: Badges */}
+          <div className="shrink-0">
+            <BadgeDisplay 
+              userId={userId} 
+              onBadgesClick={() => setShowBadgesModal(true)} 
+            />
           </div>
         </div>
 
