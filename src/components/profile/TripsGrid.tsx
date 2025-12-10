@@ -160,7 +160,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
             {folders.map(folder => (
               <div 
                 key={`folder-${folder.id}`} 
-                className="relative rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-pointer aspect-square"
+                className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-pointer aspect-[4/5]"
                 onClick={() => setViewingFolderId(folder.id)}
               >
                 {/* Background Image or Fallback */}
@@ -184,12 +184,17 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   </div>
                 )}
                 
-                {/* Title overlay at bottom with blur */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/40 backdrop-blur-md">
-                  <h3 className="font-semibold text-sm text-white truncate">
+                {/* Title overlay at bottom with soft blur */}
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/30 backdrop-blur-[8px]">
+                  <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight">
                     {folder.name}
                   </h3>
-                  <p className="text-xs text-white/80 mt-0.5">
+                  {folder.description && (
+                    <p className="text-xs text-white/70 mt-1 line-clamp-3 leading-tight">
+                      {folder.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-white/80 mt-1">
                     {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
                   </p>
                 </div>
@@ -211,7 +216,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
             {trips.map(trip => (
               <div 
                 key={trip.id} 
-                className="relative rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-square"
+                className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-[4/5]"
                 onClick={() => setSelectedTrip(trip)}
               >
                 {/* Background Image or Fallback */}
@@ -227,12 +232,17 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   </div>
                 )}
                 
-                {/* Title overlay at bottom with blur */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/40 backdrop-blur-md">
-                  <h3 className="font-semibold text-sm text-white truncate">
+                {/* Title overlay at bottom with soft blur */}
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/30 backdrop-blur-[8px]">
+                  <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight">
                     {trip.name}
                   </h3>
-                  <p className="text-xs text-white/80 mt-0.5">
+                  {trip.description && (
+                    <p className="text-xs text-white/70 mt-1 line-clamp-3 leading-tight">
+                      {trip.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-white/80 mt-1">
                     {trip.trip_locations?.length || 0} {(trip.trip_locations?.length || 0) === 1 ? t('place') : t('places')}
                   </p>
                 </div>

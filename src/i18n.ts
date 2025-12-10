@@ -2866,7 +2866,11 @@ const resources = {
         allLocations: 'tous',
         visitedLocations: 'visités',
         toTryLocations: 'à essayer',
-        favouriteLocations: 'favoris'
+        favouriteLocations: 'favoris',
+        places: 'lieux',
+        tapCityToSee: 'appuyez sur une ville pour voir les lieux',
+        allCities: 'Toutes les villes',
+        noLocationsInCity: 'Aucun lieu dans cette ville'
       }
     },
     navigation: {
@@ -3596,7 +3600,11 @@ const resources = {
         allLocations: 'alle',
         visitedLocations: 'besucht',
         toTryLocations: 'ausprobieren',
-        favouriteLocations: 'favoriten'
+        favouriteLocations: 'favoriten',
+        places: 'Orte',
+        tapCityToSee: 'tippen Sie auf eine Stadt, um die Orte zu sehen',
+        allCities: 'Alle Städte',
+        noLocationsInCity: 'Keine Orte in dieser Stadt'
       }
     },
     navigation: {
@@ -4264,7 +4272,11 @@ const resources = {
         allLocations: 'todos',
         visitedLocations: 'visitados',
         toTryLocations: 'experimentar',
-        favouriteLocations: 'favoritos'
+        favouriteLocations: 'favoritos',
+        places: 'lugares',
+        tapCityToSee: 'toque em uma cidade para ver os lugares',
+        allCities: 'Todas as cidades',
+        noLocationsInCity: 'Nenhum lugar nesta cidade'
       }
     },
     navigation: {
@@ -4879,6 +4891,14 @@ const resources = {
         enabled: '通知已启用',
         updateFailed: '更新通知设置失败'
       },
+      userProfile: {
+        followers: '关注者',
+        following: '关注中',
+        places: '地点',
+        tapCityToSee: '点击城市查看地点',
+        allCities: '所有城市',
+        noLocationsInCity: '该城市没有地点'
+      },
     },
     navigation: {
       explore: '探索',
@@ -5437,6 +5457,14 @@ const resources = {
         muted: '通知をミュートしました',
         enabled: '通知を有効にしました',
         updateFailed: '通知設定の更新に失敗しました'
+      },
+      userProfile: {
+        followers: 'フォロワー',
+        following: 'フォロー中',
+        places: '場所',
+        tapCityToSee: '都市をタップして場所を表示',
+        allCities: 'すべての都市',
+        noLocationsInCity: 'この都市には場所がありません'
       },
     },
     navigation: {
@@ -6040,7 +6068,11 @@ const resources = {
         allLocations: '전체',
         visitedLocations: '방문',
         toTryLocations: '가볼곳',
-        favouriteLocations: '즐겨찾기'
+        favouriteLocations: '즐겨찾기',
+        places: '장소',
+        tapCityToSee: '도시를 탭하여 장소 보기',
+        allCities: '모든 도시',
+        noLocationsInCity: '이 도시에 장소가 없습니다'
       }
     },
     navigation: {
@@ -6627,7 +6659,11 @@ const resources = {
         allLocations: 'الكل',
         visitedLocations: 'زيارة',
         toTryLocations: 'للتجربة',
-        favouriteLocations: 'المفضلة'
+        favouriteLocations: 'المفضلة',
+        places: 'أماكن',
+        tapCityToSee: 'اضغط على مدينة لرؤية الأماكن',
+        allCities: 'جميع المدن',
+        noLocationsInCity: 'لا توجد أماكن في هذه المدينة'
       }
     },
     navigation: {
@@ -7815,7 +7851,11 @@ const resources = {
         allLocations: 'все',
         visitedLocations: 'посещённые',
         toTryLocations: 'попробовать',
-        favouriteLocations: 'избранные'
+        favouriteLocations: 'избранные',
+        places: 'места',
+        tapCityToSee: 'нажмите на город, чтобы увидеть места',
+        allCities: 'Все города',
+        noLocationsInCity: 'В этом городе нет мест'
       }
     },
     navigation: {
