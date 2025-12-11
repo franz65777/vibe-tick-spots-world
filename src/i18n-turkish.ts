@@ -11,6 +11,7 @@ export const turkishTranslations = {
       searching: 'Aranıyor...',
       follow: 'Takip Et',
       following: 'Takip Ediliyor',
+      followingTab: 'Takip Edilenler',
       unfollowed: 'Takip Bırakıldı',
       followers: 'Takipçiler',
       mutual: 'karşılıklı',
