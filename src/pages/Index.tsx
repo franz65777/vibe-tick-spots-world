@@ -1,23 +1,36 @@
-
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import WelcomePage from '@/components/WelcomePage';
 import HomePage from '@/components/HomePage';
+import SplashScreen from '@/components/SplashScreen';
 
 const Index = () => {
   const { user, loading } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
+  
+  // Check if this is a fresh app load (not a page navigation)
+  useEffect(() => {
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    if (hasSeenSplash) {
+      setShowSplash(false);
+    }
+  }, []);
+  
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('hasSeenSplash', 'true');
+    setShowSplash(false);
+  };
   
   console.log('Index page: loading =', loading, 'user =', user?.email);
   
+  // Show splash screen on app load
+  if (showSplash && loading) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+  
   if (loading) {
     console.log('Index page: Still loading, showing spinner');
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   // Show welcome page if user is not authenticated

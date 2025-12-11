@@ -70,6 +70,8 @@ const SigninStart = () => {
           : (error.message || t('auth:cannotSignIn', { defaultValue: 'Cannot sign in' }))
         );
       } else {
+        // Clear splash flag so user sees splash on sign in
+        sessionStorage.removeItem('hasSeenSplash');
         toast.success(t('auth:welcomeBackMessage', { defaultValue: 'Welcome back!' }));
         navigate('/');
       }
