@@ -167,7 +167,14 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
 
       await Promise.all(promises);
       
-      toast.success(t('locationShared', { ns: 'common', defaultValue: 'Location condivisa!' }));
+      // Show appropriate success message based on share type
+      if (place.type === 'folder') {
+        toast.success(t('listShared', { ns: 'common' }));
+      } else if (place.type === 'trip') {
+        toast.success(t('tripShared', { ns: 'common' }));
+      } else {
+        toast.success(t('locationShared', { ns: 'common' }));
+      }
       onClose();
     } catch (error) {
       console.error('Error sending share:', error);
