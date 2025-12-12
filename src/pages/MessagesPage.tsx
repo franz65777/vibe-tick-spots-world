@@ -563,8 +563,9 @@ const MessagesPage = () => {
     if (selectedThread && view === 'chat') {
       const recipient = getOtherParticipant(selectedThread);
       if (recipient) {
+        setShowSavedPlacesModal(false);
         try {
-          await messageService.sendPlaceShare(recipient.id, {
+          const sentMessage = await messageService.sendPlaceShare(recipient.id, {
             name: place.name,
             category: place.category,
             address: place.address,
@@ -576,10 +577,11 @@ const MessagesPage = () => {
               lng: place.longitude
             }
           });
-          setShowSavedPlacesModal(false);
-          await loadMessages(recipient.id);
-          await loadThreads();
-          setTimeout(() => scrollToBottom('auto'), 100);
+          // Optimistically add message to UI immediately
+          if (sentMessage) {
+            setMessages(prev => [...prev, sentMessage]);
+            setTimeout(() => scrollToBottom('auto'), 50);
+          }
         } catch (error) {
           console.error('Error sharing place:', error);
         }
