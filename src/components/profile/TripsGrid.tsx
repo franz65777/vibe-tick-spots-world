@@ -58,12 +58,20 @@ const TripsGrid: React.FC<TripsGridProps> = ({
     if (!targetUserId) return;
     setFoldersLoading(true);
     try {
+      // For viewing other users, only load their public folders
+      // For own profile, load all folders
+      let query = supabase.from('saved_folders').select('*').eq('user_id', targetUserId);
+      
+      // If viewing another user's profile, filter to only public folders
+      if (!isOwnProfile) {
+        query = query.eq('is_private', false);
+      }
+      
       const {
         data,
         error
-      } = await supabase.from('saved_folders').select('*').eq('user_id', targetUserId).order('created_at', {
-        ascending: false
-      });
+      } = await query.order('created_at', { ascending: false });
+      
       if (error) throw error;
 
       // Get location counts for each folder
@@ -199,16 +207,18 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   </p>
                 </div>
                 
-                {/* Edit button */}
-                <button 
-                  onClick={e => {
-                    e.stopPropagation();
-                    navigate(`/create-list?folderId=${folder.id}`);
-                  }} 
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <Edit className="h-4 w-4 text-white" />
-                </button>
+                {/* Edit button - only show on own profile */}
+                {isOwnProfile && (
+                  <button 
+                    onClick={e => {
+                      e.stopPropagation();
+                      navigate(`/create-list?folderId=${folder.id}`);
+                    }} 
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Edit className="h-4 w-4 text-white" />
+                  </button>
+                )}
               </div>
             ))}
 
