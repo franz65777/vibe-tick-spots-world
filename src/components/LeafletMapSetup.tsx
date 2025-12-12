@@ -38,6 +38,7 @@ interface LeafletMapSetupProps {
   onMapMove?: (center: { lat: number; lng: number }, bounds: L.LatLngBounds) => void;
   onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
   filtersVisible?: boolean;
+  hideSharingControls?: boolean;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -58,6 +59,7 @@ const LeafletMapSetup = ({
   onMapMove,
   onCitySelect,
   filtersVisible = true,
+  hideSharingControls = false,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -811,14 +813,16 @@ const LeafletMapSetup = ({
       />
 
       {/* Location sharing controls - positioned at same height as filter dropdown, hidden when filter dropdown is open */}
-      <SharingControls 
-        userActiveShare={userActiveShare}
-        fullScreen={fullScreen}
-        handleEndSharing={handleEndSharing}
-        handleUpdateLocation={handleUpdateLocation}
-        t={t}
-        filtersVisible={filtersVisible}
-      />
+      {!hideSharingControls && (
+        <SharingControls 
+          userActiveShare={userActiveShare}
+          fullScreen={fullScreen}
+          handleEndSharing={handleEndSharing}
+          handleUpdateLocation={handleUpdateLocation}
+          t={t}
+          filtersVisible={filtersVisible}
+        />
+      )}
 
       <style>{`
         @keyframes bounce {
