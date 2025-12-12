@@ -558,7 +558,34 @@ const MessagesPage = () => {
       console.error('Error loading saved places:', error);
     }
   };
-  const handlePlaceClick = (place: any) => {
+  const handlePlaceClick = async (place: any) => {
+    // If we're in a chat, send directly to the current recipient
+    if (selectedThread && view === 'chat') {
+      const recipient = getOtherParticipant(selectedThread);
+      if (recipient) {
+        try {
+          await messageService.sendPlaceShare(recipient.id, {
+            name: place.name,
+            category: place.category,
+            address: place.address,
+            city: place.city,
+            google_place_id: place.google_place_id,
+            place_id: place.google_place_id,
+            coordinates: {
+              lat: place.latitude,
+              lng: place.longitude
+            }
+          });
+          setShowSavedPlacesModal(false);
+          await loadMessages(recipient.id);
+          await loadThreads();
+        } catch (error) {
+          console.error('Error sharing place:', error);
+        }
+        return;
+      }
+    }
+    // Fallback to user selection if not in a chat
     setSelectedPlaceToShare(place);
     setShowSavedPlacesModal(false);
     setShowUserSelectModal(true);
