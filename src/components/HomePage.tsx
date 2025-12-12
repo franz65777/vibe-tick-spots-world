@@ -76,10 +76,6 @@ const HomePage = memo(() => {
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
-  // Long press state
-  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-  const [isLongPressing, setIsLongPressing] = useState(false);
-
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
@@ -587,30 +583,6 @@ const HomePage = memo(() => {
         className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
         data-map-expanded={isMapExpanded}
         data-onboarding-open={showOnboarding}
-        onTouchStart={(e) => {
-          // Only trigger long press for single touch (not pinch/zoom)
-          if (e.touches.length === 1) {
-            longPressTimerRef.current = setTimeout(() => {
-              setIsLongPressing(true);
-              navigate('/share-location');
-            }, 800); // 800ms for long press
-          }
-        }}
-        onTouchEnd={() => {
-          // Cancel long press timer
-          if (longPressTimerRef.current) {
-            clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
-          }
-          setIsLongPressing(false);
-        }}
-        onTouchMove={(e) => {
-          // Cancel if user moves finger or uses multiple fingers (pinch)
-          if (longPressTimerRef.current && (e.touches.length > 1)) {
-            clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
-          }
-        }}
       >
         {/* Fixed Header - ~60px */}
         {!isCreateStoryModalOpen && !showOnboarding && (
