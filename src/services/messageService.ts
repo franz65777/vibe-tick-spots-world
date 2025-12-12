@@ -526,6 +526,20 @@ class MessageService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Record the share in folder_shares table to grant access to private folders
+      if (folderData.folder_id) {
+        await supabase
+          .from('folder_shares')
+          .upsert({
+            folder_id: folderData.folder_id,
+            shared_by_user_id: user.id,
+            shared_with_user_id: receiverId,
+          }, {
+            onConflict: 'folder_id,shared_with_user_id',
+            ignoreDuplicates: true
+          });
+      }
+
       const { data, error } = await supabase
         .from('direct_messages')
         .insert({

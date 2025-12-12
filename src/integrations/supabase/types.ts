@@ -799,6 +799,38 @@ export type Database = {
           },
         ]
       }
+      folder_shares: {
+        Row: {
+          created_at: string
+          folder_id: string
+          id: string
+          shared_by_user_id: string
+          shared_with_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id: string
+          id?: string
+          shared_by_user_id: string
+          shared_with_user_id: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string
+          id?: string
+          shared_by_user_id?: string
+          shared_with_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_shares_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "saved_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folder_views: {
         Row: {
           folder_id: string

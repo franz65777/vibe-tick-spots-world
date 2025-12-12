@@ -45,9 +45,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [touchStart, setTouchStart] = useState(0);
-  const [mouseStart, setMouseStart] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -121,39 +118,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
     loadFolders();
   };
 
-  // Swipe gesture handling
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const currentTouch = e.touches[0].clientX;
-    const diff = touchStart - currentTouch;
-    
-    if (diff > 50) {
-      onClose();
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setMouseStart(e.clientX);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const diff = mouseStart - e.clientX;
-    
-    if (diff > 50) {
-      setIsDragging(false);
-      onClose();
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
   return (
     <>
       {/* Backdrop */}
@@ -170,12 +134,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
         className={`fixed inset-0 bg-background transition-transform duration-300 z-[10001] flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
       >
           {/* Header */}
           <div className="flex items-center justify-between pl-1 pr-4 py-4 mt-2.5">
