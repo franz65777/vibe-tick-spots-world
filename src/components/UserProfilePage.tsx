@@ -209,7 +209,8 @@ const UserProfilePage = () => {
             {/* Message Button */}
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => navigate('/messages', {
           state: {
-            initialUserId: userId
+            initialUserId: userId,
+            fromProfileId: userId
           }
         })} title={t('userProfile.sendMessage', {
           ns: 'common'

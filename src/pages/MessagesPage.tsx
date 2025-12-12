@@ -65,6 +65,7 @@ const MessagesPage = () => {
   const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
   const [hasActiveStoryInThread, setHasActiveStoryInThread] = useState<Record<string, boolean>>({});
   const [storiesToShow, setStoriesToShow] = useState<any[]>([]);
+  const [openedFromProfileId, setOpenedFromProfileId] = useState<string | null>(null);
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -103,7 +104,11 @@ const MessagesPage = () => {
           data: userProfile,
           error
         } = await supabase.from('profiles').select('id, username, avatar_url, full_name').eq('id', state.initialUserId).single();
-        if (userProfile && !error) {
+      if (userProfile && !error) {
+          // Store fromProfileId before clearing state
+          if (state?.fromProfileId) {
+            setOpenedFromProfileId(state.fromProfileId);
+          }
           await handleUserSelect(userProfile);
           // Clear the state after using it
           navigate('/messages', {
@@ -274,6 +279,11 @@ const MessagesPage = () => {
   };
   const handleBack = () => {
     if (view === 'chat') {
+      // If chat was opened from a user profile, navigate back to that profile
+      if (openedFromProfileId) {
+        navigate(`/profile/${openedFromProfileId}`);
+        return;
+      }
       setView('threads');
       setSelectedThread(null);
       setMessages([]);
