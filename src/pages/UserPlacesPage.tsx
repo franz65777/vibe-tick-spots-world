@@ -52,27 +52,36 @@ const UserPlacesPage = () => {
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Get filter category label for title
-  const getFilterLabel = () => {
+  // Get page title with proper grammar for each language
+  const getPageTitle = () => {
+    if (!profile?.username) {
+      switch (filterCategory) {
+        case 'been':
+          return t('userProfile.beenPlaces', { ns: 'common' });
+        case 'to-try':
+          return t('userProfile.toTryPlaces', { ns: 'common' });
+        case 'favourite':
+          return t('userProfile.favouritePlaces', { ns: 'common' });
+        case 'common':
+          return t('userProfile.commonPlaces', { ns: 'common' });
+        default:
+          return t('userProfile.allPlaces', { ns: 'common' });
+      }
+    }
+    
+    // Use translation keys with username interpolation for proper grammar in each language
     switch (filterCategory) {
       case 'been':
-        return t('userProfile.beenPlaces', { ns: 'common' });
+        return t('userProfile.userBeenPlaces', { ns: 'common', username: profile.username });
       case 'to-try':
-        return t('userProfile.toTryPlaces', { ns: 'common' });
+        return t('userProfile.userToTryPlaces', { ns: 'common', username: profile.username });
       case 'favourite':
-        return t('userProfile.favouritePlaces', { ns: 'common' });
+        return t('userProfile.userFavouritePlaces', { ns: 'common', username: profile.username });
       case 'common':
-        return t('userProfile.commonPlaces', { ns: 'common' });
+        return t('userProfile.userCommonPlaces', { ns: 'common', username: profile.username });
       default:
-        return t('userProfile.allPlaces', { ns: 'common' });
+        return t('userProfile.userAllPlaces', { ns: 'common', username: profile.username });
     }
-  };
-
-  const getPageTitle = () => {
-    if (profile?.username) {
-      return `${profile.username}'s ${getFilterLabel()}`;
-    }
-    return getFilterLabel();
   };
 
   // Fetch user profile

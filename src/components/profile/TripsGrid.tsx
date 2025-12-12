@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MapPin, MoreVertical, Edit, Trash2, Folder } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import CreateTripModal from './CreateTripModal';
 import { useTranslation } from 'react-i18next';
 import tripsEmptyImage from '@/assets/trips-empty-state.png';
@@ -16,7 +16,7 @@ import FolderEditorPage from './FolderEditorPage';
 import FolderDetailModal from './FolderDetailModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
+import ColorfulGradientBackground from '@/components/common/ColorfulGradientBackground';
 interface TripsGridProps {
   userId?: string; // Optional userId prop to view another user's lists
 }
@@ -165,31 +165,21 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           
           <div className="grid grid-cols-2 gap-3 pb-4">
             {/* Folders (main lists) */}
-            {folders.map(folder => (
+            {folders.map((folder, index) => (
               <div 
                 key={`folder-${folder.id}`} 
                 className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-pointer aspect-[4/5]"
                 onClick={() => setViewingFolderId(folder.id)}
               >
-                {/* Background Image or Fallback */}
+                {/* Background Image or Colorful Gradient Fallback */}
                 {folder.cover_image_url ? (
                   <img 
                     src={folder.cover_image_url} 
                     alt={folder.name} 
                     className="w-full h-full object-cover"
                   />
-                ) : folder.location_categories.length > 0 ? (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/30 to-primary/10 flex flex-wrap gap-2 items-center justify-center p-4">
-                    {folder.location_categories.slice(0, 4).map((category: string, idx: number) => (
-                      <div key={idx} className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                        <CategoryIcon category={category} className="w-8 h-8" />
-                      </div>
-                    ))}
-                  </div>
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
-                    <Folder className="w-14 h-14 text-primary/50" />
-                  </div>
+                  <ColorfulGradientBackground seed={folder.id || index} />
                 )}
                 
                 {/* Title overlay at bottom with soft blur */}
@@ -197,11 +187,6 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight">
                     {folder.name}
                   </h3>
-                  {folder.description && (
-                    <p className="text-xs text-white/70 mt-1 line-clamp-3 leading-tight">
-                      {folder.description}
-                    </p>
-                  )}
                   <p className="text-xs text-white/80 mt-1">
                     {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
                   </p>
@@ -223,13 +208,13 @@ const TripsGrid: React.FC<TripsGridProps> = ({
             ))}
 
             {/* Trips */}
-            {trips.map(trip => (
+            {trips.map((trip, index) => (
               <div 
                 key={trip.id} 
                 className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-[4/5]"
                 onClick={() => setSelectedTrip(trip)}
               >
-                {/* Background Image or Fallback */}
+                {/* Background Image or Colorful Gradient Fallback */}
                 {trip.cover_image_url ? (
                   <img 
                     src={trip.cover_image_url} 
@@ -237,9 +222,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
-                    <MapPin className="w-14 h-14 text-primary/50" />
-                  </div>
+                  <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />
                 )}
                 
                 {/* Title overlay at bottom with soft blur */}
@@ -247,11 +230,6 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight">
                     {trip.name}
                   </h3>
-                  {trip.description && (
-                    <p className="text-xs text-white/70 mt-1 line-clamp-3 leading-tight">
-                      {trip.description}
-                    </p>
-                  )}
                   <p className="text-xs text-white/80 mt-1">
                     {trip.trip_locations?.length || 0} {(trip.trip_locations?.length || 0) === 1 ? t('place') : t('places')}
                   </p>
