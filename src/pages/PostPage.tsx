@@ -26,7 +26,7 @@ export default function PostPage() {
       isOpen={true}
       onClose={handleClose}
       showBackButton={true}
-      backLabel={fromNotifications ? t('notifications', { ns: 'common' }) : t('back', { ns: 'common' })}
+      backLabel={fromNotifications ? t('notifications.title', { ns: 'common' }) : t('back', { ns: 'common' })}
     />
   );
 }
