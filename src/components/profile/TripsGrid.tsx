@@ -184,13 +184,13 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                 
                 {/* Title overlay at bottom with gradient fade */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 p-3 pt-10"
+                  className="absolute bottom-0 left-0 right-0 p-3 pt-16"
                   style={{
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
                     backdropFilter: 'blur(4px)',
                     WebkitBackdropFilter: 'blur(4px)',
-                    maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
+                    maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
                   }}
                 >
                   <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight drop-shadow-sm">
@@ -236,13 +236,13 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                 
                 {/* Title overlay at bottom with gradient fade */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 p-3 pt-10"
+                  className="absolute bottom-0 left-0 right-0 p-3 pt-16"
                   style={{
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
                     backdropFilter: 'blur(4px)',
                     WebkitBackdropFilter: 'blur(4px)',
-                    maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
+                    maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
                   }}
                 >
                   <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight drop-shadow-sm">
