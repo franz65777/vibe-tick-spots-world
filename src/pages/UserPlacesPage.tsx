@@ -52,6 +52,29 @@ const UserPlacesPage = () => {
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // Get filter category label for title
+  const getFilterLabel = () => {
+    switch (filterCategory) {
+      case 'been':
+        return t('userProfile.beenPlaces', { ns: 'common' });
+      case 'to-try':
+        return t('userProfile.toTryPlaces', { ns: 'common' });
+      case 'favourite':
+        return t('userProfile.favouritePlaces', { ns: 'common' });
+      case 'common':
+        return t('userProfile.commonPlaces', { ns: 'common' });
+      default:
+        return t('userProfile.allPlaces', { ns: 'common' });
+    }
+  };
+
+  const getPageTitle = () => {
+    if (profile?.username) {
+      return `${profile.username}'s ${getFilterLabel()}`;
+    }
+    return getFilterLabel();
+  };
+
   // Fetch user profile
   useEffect(() => {
     const fetchProfile = async () => {
@@ -274,7 +297,7 @@ const UserPlacesPage = () => {
             </button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold">
-                {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+                {getPageTitle()}
               </h1>
               {filterCategoryIcons[filterCategory] && (
                 <img 
@@ -314,6 +337,7 @@ const UserPlacesPage = () => {
             onMapClick={() => setSelectedPlace(null)}
             fullScreen={true}
             preventCenterUpdate={false}
+            hideSharingControls={true}
           />
         </MapFilterProvider>
       </div>
@@ -332,7 +356,7 @@ const UserPlacesPage = () => {
             </button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold">
-                {profile?.username ? `${profile.username}'s ${t('userProfile.places', { ns: 'common' })}` : t('userProfile.places', { ns: 'common' })}
+                {getPageTitle()}
               </h1>
               {filterCategoryIcons[filterCategory] && (
                 <img 
