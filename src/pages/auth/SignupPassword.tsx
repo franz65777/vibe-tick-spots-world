@@ -137,8 +137,16 @@ const SignupPassword: React.FC = () => {
           toast.success(t('signup:accountCreated'));
           toast.info(t('signup:pleaseLogin') || 'Please log in with your new account');
           
-          // Clear session storage
-          sessionStorage.clear();
+          // Clear signup-related session storage (keep other app session keys)
+          sessionStorage.removeItem('signup_session');
+          sessionStorage.removeItem('signup_fullname');
+          sessionStorage.removeItem('signup_username');
+          sessionStorage.removeItem('signup_dob');
+          sessionStorage.removeItem('signup_gender');
+          sessionStorage.removeItem('signup_method');
+          sessionStorage.removeItem('signup_contact');
+          sessionStorage.removeItem('signup_password');
+          sessionStorage.removeItem('signup_language');
           navigate('/auth?mode=login');
           return;
         }
@@ -150,10 +158,18 @@ const SignupPassword: React.FC = () => {
         toast.success(t('signup:accountCreated'));
         toast.info(t('signup:pleaseLogin') || 'Please log in with your new account');
         
-        // Clear session storage
-        sessionStorage.clear();
-        navigate('/auth?mode=login');
-        return;
+         // Clear signup-related session storage (keep other app session keys)
+         sessionStorage.removeItem('signup_session');
+         sessionStorage.removeItem('signup_fullname');
+         sessionStorage.removeItem('signup_username');
+         sessionStorage.removeItem('signup_dob');
+         sessionStorage.removeItem('signup_gender');
+         sessionStorage.removeItem('signup_method');
+         sessionStorage.removeItem('signup_contact');
+         sessionStorage.removeItem('signup_password');
+         sessionStorage.removeItem('signup_language');
+         navigate('/auth?mode=login');
+         return;
       }
 
       // Clear session storage
