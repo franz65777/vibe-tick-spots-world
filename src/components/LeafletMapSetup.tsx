@@ -120,8 +120,8 @@ const LeafletMapSetup = ({
 
   // Sharing controls always at same height as expand button
   const baseControlPosition = fullScreen 
-    ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]'
-    : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]';
+    ? 'bottom-[calc(env(safe-area-inset-bottom)+4.5rem)]'
+    : 'bottom-[calc(6.5rem+env(safe-area-inset-bottom))]';
 
   // Keep latest handlers in refs to avoid re-initializing map on prop changes
   const onMapRightClickRef = useRef(onMapRightClick);
@@ -974,7 +974,7 @@ const SharingControls = ({
   
   return (
     <div 
-      className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[5.25rem]'} z-[1000] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+4.5rem)]' : 'bottom-[6.5rem]'} z-[1000] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       style={{ left: `${leftPosition}px` }}
     >
       <button

@@ -12,9 +12,13 @@ const config: CapacitorConfig = {
   bundledWebRuntime: false,
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 0,
       backgroundColor: "#ffffff",
       showSpinner: false
+    },
+    ScreenOrientation: {
+      allowOrientationChange: false,
+      orientation: "portrait"
     }
   }
 };

@@ -6,19 +6,28 @@ import SplashScreen from '@/components/SplashScreen';
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const [showSplash, setShowSplash] = useState(() => {
-    // Check if splash should be shown (not seen yet in this session)
-    return !sessionStorage.getItem('hasSeenSplash');
+  const [splashMode, setSplashMode] = useState<'initial' | 'auth' | null>(() => {
+    // If we've never seen splash this session, start in initial mode
+    if (!sessionStorage.getItem('hasSeenSplash')) return 'initial';
+    // If auth just completed, auth page will set this before navigating here
+    if (sessionStorage.getItem('playSplashAfterAuth') === 'true') return 'auth';
+    return null;
   });
+
+  useEffect(() => {
+    if (splashMode === 'auth') {
+      // Clear the flag as soon as we mount in auth splash mode
+      sessionStorage.removeItem('playSplashAfterAuth');
+    }
+  }, [splashMode]);
   
   const handleSplashComplete = () => {
     sessionStorage.setItem('hasSeenSplash', 'true');
-    setShowSplash(false);
+    setSplashMode(null);
   };
   
-  // Show splash screen when:
-  // 1. User hasn't seen splash this session AND (loading OR user just signed in)
-  if (showSplash) {
+  // Show splash screen when in either initial or auth mode
+  if (splashMode) {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
   
