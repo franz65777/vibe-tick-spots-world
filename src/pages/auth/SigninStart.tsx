@@ -70,7 +70,9 @@ const SigninStart = () => {
           : (error.message || t('auth:cannotSignIn', { defaultValue: 'Cannot sign in' }))
         );
       } else {
-        // Clear splash flag so user sees splash on sign in
+        // Mark that we should play splash once immediately after auth
+        sessionStorage.setItem('playSplashAfterAuth', 'true');
+        // Also clear the general hasSeenSplash flag so next mount always shows it
         sessionStorage.removeItem('hasSeenSplash');
         toast.success(t('auth:welcomeBackMessage', { defaultValue: 'Welcome back!' }));
         navigate('/');

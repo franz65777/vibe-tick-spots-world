@@ -120,9 +120,9 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col pt-[env(safe-area-inset-top)]">
+    <div className="h-screen flex flex-col bg-background">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4 sticky top-0 z-10">
+      <div className="flex items-center gap-3 p-4 pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background">
         <button
           onClick={() => navigate('/profile')}
           className="p-2 hover:bg-muted rounded-full transition-colors"

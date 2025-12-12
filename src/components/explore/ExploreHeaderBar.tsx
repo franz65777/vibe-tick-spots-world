@@ -27,8 +27,8 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
   } = props;
 
   return (
-    <div className="bg-background pt-safe">
-      <div className="px-4 py-4 pt-2">
+    <div className="bg-background">
+      <div className="px-4 py-4 pt-[env(safe-area-inset-top)]">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
           {/* AI Assistant Button - Hidden when search is active */}
