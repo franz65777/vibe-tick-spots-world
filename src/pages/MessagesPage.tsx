@@ -579,6 +579,7 @@ const MessagesPage = () => {
           setShowSavedPlacesModal(false);
           await loadMessages(recipient.id);
           await loadThreads();
+          setTimeout(() => scrollToBottom('auto'), 100);
         } catch (error) {
           console.error('Error sharing place:', error);
         }
@@ -692,7 +693,7 @@ const MessagesPage = () => {
                 setShowStories(true);
               }
             }} className="flex-shrink-0 relative">
-                  <Avatar className={`w-8 h-8 ${convertedStories && convertedStories.length > 0 ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}`}>
+                  <Avatar className={`w-10 h-10 ${convertedStories && convertedStories.length > 0 ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}`}>
                     <AvatarImage src={otherParticipant.avatar_url} />
                     <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
                   </Avatar>
