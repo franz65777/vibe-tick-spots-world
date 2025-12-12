@@ -4,13 +4,20 @@ import WelcomePage from '@/components/WelcomePage';
 import HomePage from '@/components/HomePage';
 import SplashScreen from '@/components/SplashScreen';
 
+let hasPlayedSplashThisRuntime = false;
+
 const Index = () => {
   const { user, loading } = useAuth();
   const [splashMode, setSplashMode] = useState<'initial' | 'auth' | null>(() => {
-    // If we've never seen splash this session, start in initial mode
-    if (!sessionStorage.getItem('hasSeenSplash')) return 'initial';
-    // If auth just completed, auth page will set this before navigating here
+    // Highest priority: explicit auth splash right after sign-in
     if (sessionStorage.getItem('playSplashAfterAuth') === 'true') return 'auth';
+
+    // Prevent re-playing the intro within the same app runtime
+    if (hasPlayedSplashThisRuntime) return null;
+
+    // Show intro once when the app is first opened in this browser session
+    if (!sessionStorage.getItem('hasSeenSplash')) return 'initial';
+
     return null;
   });
 
@@ -22,6 +29,7 @@ const Index = () => {
   }, [splashMode]);
   
   const handleSplashComplete = () => {
+    hasPlayedSplashThisRuntime = true;
     sessionStorage.setItem('hasSeenSplash', 'true');
     setSplashMode(null);
   };
