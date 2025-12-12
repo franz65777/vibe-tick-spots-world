@@ -281,7 +281,7 @@ const MessagesPage = () => {
     if (view === 'chat') {
       // If chat was opened from a user profile, navigate back to that profile
       if (openedFromProfileId) {
-        navigate(`/profile/${openedFromProfileId}`);
+        navigate(`/profile/${openedFromProfileId}`, { replace: true });
         return;
       }
       setView('threads');
