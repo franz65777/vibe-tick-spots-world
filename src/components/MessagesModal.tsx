@@ -408,10 +408,11 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                                   placeData={message.shared_content}
                                   onViewPlace={(placeData) => {
                                     onClose();
-                                    navigate('/explore', { 
+                                    navigate('/', { 
                                       state: { 
-                                        sharedPlace: {
-                                          id: placeData.place_id || placeData.google_place_id || '',
+                                        showLocationCard: true,
+                                        locationData: {
+                                          id: placeData.id || placeData.place_id || placeData.google_place_id || '',
                                           google_place_id: placeData.google_place_id || placeData.place_id || '',
                                           name: placeData.name || '',
                                           category: placeData.category || 'place',

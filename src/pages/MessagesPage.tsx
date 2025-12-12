@@ -1066,10 +1066,11 @@ const MessagesPage = () => {
                               {message.message_type === 'place_share' && <PlaceMessageCard placeData={message.shared_content} onViewPlace={placeData => {
                           // Get the other user ID from the message
                           const otherUserId = message.sender_id === user?.id ? message.receiver_id : message.sender_id;
-                          navigate('/explore', {
+                          navigate('/', {
                             state: {
-                              sharedPlace: {
-                                id: placeData.place_id || placeData.google_place_id || '',
+                              showLocationCard: true,
+                              locationData: {
+                                id: placeData.id || placeData.place_id || placeData.google_place_id || '',
                                 google_place_id: placeData.google_place_id || placeData.place_id || '',
                                 name: placeData.name || '',
                                 category: placeData.category || 'place',

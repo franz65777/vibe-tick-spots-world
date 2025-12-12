@@ -35,9 +35,10 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
       return;
     }
     // Fallback navigation if no handler is provided
-    navigate('/explore', { 
+    navigate('/', { 
       state: { 
-        sharedPlace: placeData,
+        showLocationCard: true,
+        locationData: placeData,
         fromMessages: true
       } 
     });
