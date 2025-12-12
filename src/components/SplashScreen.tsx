@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import introVideo from '@/assets/intro.mp4';
+import introVideo from '@/assets/intro_finale.mp4';
 
 interface SplashScreenProps {
   onComplete: () => void;
