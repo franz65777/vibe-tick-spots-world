@@ -182,12 +182,21 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   <ColorfulGradientBackground seed={folder.id || index} />
                 )}
                 
-                {/* Title overlay at bottom with soft blur */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/30 backdrop-blur-[8px]">
-                  <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight">
+                {/* Title overlay at bottom with gradient fade */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 p-3 pt-10"
+                  style={{
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
+                    maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
+                  }}
+                >
+                  <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight drop-shadow-sm">
                     {folder.name}
                   </h3>
-                  <p className="text-xs text-white/80 mt-1">
+                  <p className="text-xs text-white/80 mt-1 drop-shadow-sm">
                     {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
                   </p>
                 </div>
@@ -225,12 +234,21 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />
                 )}
                 
-                {/* Title overlay at bottom with soft blur */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/30 backdrop-blur-[8px]">
-                  <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight">
+                {/* Title overlay at bottom with gradient fade */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 p-3 pt-10"
+                  style={{
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
+                    maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
+                  }}
+                >
+                  <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight drop-shadow-sm">
                     {trip.name}
                   </h3>
-                  <p className="text-xs text-white/80 mt-1">
+                  <p className="text-xs text-white/80 mt-1 drop-shadow-sm">
                     {trip.trip_locations?.length || 0} {(trip.trip_locations?.length || 0) === 1 ? t('place') : t('places')}
                   </p>
                 </div>
