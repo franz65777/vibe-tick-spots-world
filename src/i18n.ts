@@ -232,7 +232,7 @@ const resources = {
         userBeenPlaces: "{{username}}'s visited places",
         userToTryPlaces: "{{username}}'s to try places",
         userFavouritePlaces: "{{username}}'s favourite places",
-        userCommonPlaces: "{{username}}'s common places",
+        userCommonPlaces: "Places in common with {{username}}",
         tapCityToSee: 'tap on any of the cities above to see the places there',
         allCities: 'All cities',
         noLocationsInCity: 'No locations in this city'
@@ -1165,7 +1165,7 @@ const resources = {
         userBeenPlaces: 'Lugares visitados de {{username}}',
         userToTryPlaces: 'Lugares por probar de {{username}}',
         userFavouritePlaces: 'Lugares favoritos de {{username}}',
-        userCommonPlaces: 'Lugares en común de {{username}}',
+        userCommonPlaces: 'Lugares en común con {{username}}',
         tapCityToSee: 'toca cualquier ciudad para ver los lugares',
         allCities: 'Todas las ciudades',
         noLocationsInCity: 'No hay lugares en esta ciudad'
@@ -2054,7 +2054,7 @@ const resources = {
         userBeenPlaces: 'Luoghi visitati di {{username}}',
         userToTryPlaces: 'Luoghi da provare di {{username}}',
         userFavouritePlaces: 'Luoghi preferiti di {{username}}',
-        userCommonPlaces: 'Luoghi in comune di {{username}}',
+        userCommonPlaces: 'Luoghi in comune con {{username}}',
         tapCityToSee: 'tocca una città per vedere i luoghi',
         allCities: 'Tutte le città',
         noLocationsInCity: 'Nessun luogo in questa città'
@@ -2921,7 +2921,7 @@ const resources = {
         userBeenPlaces: 'Lieux visités de {{username}}',
         userToTryPlaces: 'Lieux à essayer de {{username}}',
         userFavouritePlaces: 'Lieux favoris de {{username}}',
-        userCommonPlaces: 'Lieux en commun de {{username}}',
+        userCommonPlaces: 'Lieux en commun avec {{username}}',
         tapCityToSee: 'appuyez sur une ville pour voir les lieux',
         allCities: 'Toutes les villes',
         noLocationsInCity: 'Aucun lieu dans cette ville'
@@ -3669,7 +3669,7 @@ const resources = {
         userBeenPlaces: 'Besuchte Orte von {{username}}',
         userToTryPlaces: 'Orte zum Ausprobieren von {{username}}',
         userFavouritePlaces: 'Lieblingsorte von {{username}}',
-        userCommonPlaces: 'Gemeinsame Orte von {{username}}',
+        userCommonPlaces: 'Gemeinsame Orte mit {{username}}',
         tapCityToSee: 'tippen Sie auf eine Stadt, um die Orte zu sehen',
         allCities: 'Alle Städte',
         noLocationsInCity: 'Keine Orte in dieser Stadt'
@@ -4355,7 +4355,7 @@ const resources = {
         userBeenPlaces: 'Lugares visitados de {{username}}',
         userToTryPlaces: 'Lugares para experimentar de {{username}}',
         userFavouritePlaces: 'Lugares favoritos de {{username}}',
-        userCommonPlaces: 'Lugares em comum de {{username}}',
+        userCommonPlaces: 'Lugares em comum com {{username}}',
         tapCityToSee: 'toque em uma cidade para ver os lugares',
         allCities: 'Todas as cidades',
         noLocationsInCity: 'Nenhum lugar nesta cidade'
@@ -5014,7 +5014,7 @@ const resources = {
         userBeenPlaces: '{{username}}已访问的地点',
         userToTryPlaces: '{{username}}想去的地点',
         userFavouritePlaces: '{{username}}收藏的地点',
-        userCommonPlaces: '{{username}}共同地点',
+        userCommonPlaces: '与{{username}}的共同地点',
         tapCityToSee: '点击上方任意城市查看当地地点',
         allCities: '所有城市',
         noLocationsInCity: '该城市没有地点'
@@ -8041,6 +8041,11 @@ const resources = {
         toTryPlaces: 'места для посещения',
         favouritePlaces: 'избранные места',
         commonPlaces: 'общие места',
+        userAllPlaces: 'Все места {{username}}',
+        userBeenPlaces: 'Посещённые места {{username}}',
+        userToTryPlaces: 'Места для посещения {{username}}',
+        userFavouritePlaces: 'Избранные места {{username}}',
+        userCommonPlaces: 'Общие места с {{username}}',
         tapCityToSee: 'нажмите на город, чтобы увидеть места',
         allCities: 'Все города',
         noLocationsInCity: 'В этом городе нет мест'
