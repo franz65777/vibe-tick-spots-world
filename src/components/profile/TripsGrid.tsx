@@ -186,6 +186,12 @@ const TripsGrid: React.FC<TripsGridProps> = ({
       setEditingTrip(null);
     }
   };
+
+  const handleFolderSaveStatusChange = () => {
+    if (isOwnProfile) {
+      loadFolders();
+    }
+  };
   const handleDeleteTrip = async (tripId: string) => {
     if (confirm(t('confirmDelete', 'Are you sure you want to delete this list?'))) {
       await deleteTrip(tripId);
@@ -196,12 +202,13 @@ const TripsGrid: React.FC<TripsGridProps> = ({
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>;
   }
-  const allLists = [...folders, ...trips];
 
   // Only show saved folders row on own profile
   const hasSavedFolders = isOwnProfile && savedFolders.length > 0;
+  const hasAnyContent = folders.length > 0 || trips.length > 0 || hasSavedFolders;
+
   return <div className="px-4 pt-4">
-      {allLists.length === 0 ? <div className="flex flex-col items-center justify-center py-4 text-center">
+      {!hasAnyContent ? <div className="flex flex-col items-center justify-center py-4 text-center">
           {isOwnProfile && <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
               
             </div>}
@@ -386,7 +393,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           folderId={viewingFolderId}
           isOpen={!!viewingFolderId}
           onClose={() => setViewingFolderId(null)}
-          onSaveStatusChange={loadFolders}
+          onSaveStatusChange={handleFolderSaveStatusChange}
         />
       )}
 
