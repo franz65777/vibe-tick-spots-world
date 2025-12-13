@@ -538,21 +538,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-base text-foreground truncate">{locationDetails?.name || place.name}</h3>
-                  {/* Pin Count & Rating */}
-                  {!statsLoading && (
+                  {/* Rating Badge */}
+                  {!statsLoading && stats.averageRating && (
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {stats.totalSaves > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSavedByOpen(true);
-                          }}
-                          className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
-                        >
-                          <Bookmark className="w-3 h-3 fill-primary text-primary" />
-                          <span className="text-xs font-semibold text-primary">{stats.totalSaves}</span>
-                        </button>
-                      )}
                       {stats.averageRating && (
                         <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
                           {(() => {
@@ -756,6 +744,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               <OpeningHoursDisplay 
                 coordinates={place.coordinates} 
                 placeName={place.name}
+                googlePlaceId={place.id}
                 className="flex-1 min-w-0"
               />
               

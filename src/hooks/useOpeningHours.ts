@@ -27,11 +27,22 @@ const parseOpeningHours = (openingHoursString: string): Map<number, DayHours[]> 
   };
 
   try {
+    // Handle "24/7" format
+    if (openingHoursString.toLowerCase().includes('24/7')) {
+      for (let i = 0; i < 7; i++) {
+        dayMap.set(i, [{ open: '00:00', close: '23:59' }]);
+      }
+      return dayMap;
+    }
+
     // Simple parser for common formats like "Mo-Fr 09:00-18:00; Sa 09:00-14:00"
     const rules = openingHoursString.toLowerCase().split(';').map(r => r.trim());
     
     for (const rule of rules) {
       if (!rule) continue;
+      
+      // Handle "off" days
+      if (rule.includes('off') || rule.includes('closed')) continue;
       
       // Match patterns like "Mo-Fr 09:00-18:00" or "Sa 09:00-14:00" or "Mo,Tu,We 08:00-20:00"
       const match = rule.match(/^([a-z,\-\s]+)\s+(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/);
@@ -64,10 +75,16 @@ const parseOpeningHours = (openingHoursString: string): Map<number, DayHours[]> 
           }
         }
         
+        // Normalize time format
+        const normalizeTime = (time: string) => {
+          const [h, m] = time.split(':');
+          return `${h.padStart(2, '0')}:${m}`;
+        };
+        
         // Add hours to each day
         for (const day of days) {
           const existing = dayMap.get(day) || [];
-          existing.push({ open: openTime, close: closeTime });
+          existing.push({ open: normalizeTime(openTime), close: normalizeTime(closeTime) });
           dayMap.set(day, existing);
         }
       }
@@ -80,7 +97,7 @@ const parseOpeningHours = (openingHoursString: string): Map<number, DayHours[]> 
 };
 
 // Convert 24h time to 12h format
-const formatTime = (time24: string, use24h: boolean = false): string => {
+const formatTime = (time24: string, use24h: boolean = true): string => {
   if (use24h) return time24;
   
   const [hours, minutes] = time24.split(':').map(Number);
@@ -127,7 +144,8 @@ const isCurrentlyOpen = (hoursMap: Map<number, DayHours[]>): { isOpen: boolean; 
 
 export const useOpeningHours = (
   coordinates: { lat: number; lng: number } | null | undefined,
-  placeName?: string
+  placeName?: string,
+  googlePlaceId?: string | null
 ): OpeningHoursData => {
   const [data, setData] = useState<OpeningHoursData>({
     isOpen: null,
@@ -147,11 +165,19 @@ export const useOpeningHours = (
 
     const fetchOpeningHours = async () => {
       try {
-        // Use Overpass API to get opening hours from OSM
-        const radius = 50; // 50 meters radius
+        // Use Overpass API to get opening hours from OSM with larger radius and better matching
+        const radius = 100; // 100 meters radius for better matching
+        
+        // Create a query that prioritizes exact name matches
+        const nameFilter = placeName 
+          ? `["name"~"${placeName.replace(/['"]/g, '').substring(0, 30)}",i]` 
+          : '';
+        
         const query = `
           [out:json][timeout:10];
           (
+            node["opening_hours"]${nameFilter}(around:${radius},${coordinates.lat},${coordinates.lng});
+            way["opening_hours"]${nameFilter}(around:${radius},${coordinates.lat},${coordinates.lng});
             node["opening_hours"](around:${radius},${coordinates.lat},${coordinates.lng});
             way["opening_hours"](around:${radius},${coordinates.lat},${coordinates.lng});
           );
@@ -173,14 +199,30 @@ export const useOpeningHours = (
         const result = await response.json();
         
         // Find best match by name if provided
-        let bestMatch = result.elements?.[0];
+        let bestMatch = null;
         
-        if (placeName && result.elements?.length > 1) {
+        if (placeName && result.elements?.length > 0) {
           const normalizedPlaceName = placeName.toLowerCase().trim();
+          
+          // First try exact match
           bestMatch = result.elements.find((el: any) => 
-            el.tags?.name?.toLowerCase().includes(normalizedPlaceName) ||
-            normalizedPlaceName.includes(el.tags?.name?.toLowerCase() || '')
-          ) || result.elements[0];
+            el.tags?.name?.toLowerCase().trim() === normalizedPlaceName
+          );
+          
+          // Then try partial match
+          if (!bestMatch) {
+            bestMatch = result.elements.find((el: any) => {
+              const name = el.tags?.name?.toLowerCase() || '';
+              return name.includes(normalizedPlaceName) || normalizedPlaceName.includes(name);
+            });
+          }
+          
+          // Fallback to first result
+          if (!bestMatch) {
+            bestMatch = result.elements[0];
+          }
+        } else if (result.elements?.length > 0) {
+          bestMatch = result.elements[0];
         }
 
         const openingHoursString = bestMatch?.tags?.opening_hours;
@@ -242,7 +284,7 @@ export const useOpeningHours = (
     };
 
     fetchOpeningHours();
-  }, [coordinates?.lat, coordinates?.lng, placeName]);
+  }, [coordinates?.lat, coordinates?.lng, placeName, googlePlaceId]);
 
   return data;
 };
