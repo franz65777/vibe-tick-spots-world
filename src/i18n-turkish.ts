@@ -25,6 +25,8 @@ export const turkishTranslations = {
       comment: 'Yorum',
       like: 'Beğen',
       likes: 'Beğeniler',
+      noLikesYet: 'Henüz beğeni yok',
+      saveAs: 'Farklı kaydet',
       posts: 'gönderiler',
       locations: 'konumlar',
       vibes: 'Atmosfer',
