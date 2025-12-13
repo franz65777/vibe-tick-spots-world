@@ -21,6 +21,7 @@ interface FolderDetailModalProps {
   folderId: string;
   isOpen: boolean;
   onClose: () => void;
+  onSaveStatusChange?: () => void;
 }
 
 const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: () => void }) => {
@@ -91,7 +92,7 @@ const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: 
   );
 };
 
-const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps) => {
+const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: FolderDetailModalProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -281,6 +282,8 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
         setIsSaved(true);
         toast.success(t('profile:folderSaved', { defaultValue: 'Lista salvata' }));
       }
+      // Notify parent to refresh the lists
+      onSaveStatusChange?.();
     } catch (error) {
       console.error('Error toggling folder save:', error);
       toast.error(t('common:error', { defaultValue: 'Errore' }));
