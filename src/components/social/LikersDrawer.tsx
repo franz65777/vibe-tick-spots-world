@@ -1,33 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, UserCheck, UserPlus } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 
 interface Liker {
   user_id: string;
   username: string;
+  full_name: string | null;
   avatar_url: string | null;
   is_followed: boolean;
 }
 
-interface LikersModalProps {
+interface LikersDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   postId: string;
 }
 
-export const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, postId }) => {
+export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, postId }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [likers, setLikers] = useState<Liker[]>([]);
+  const [filteredLikers, setFilteredLikers] = useState<Liker[]>([]);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -35,22 +39,42 @@ export const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, postI
     }
   }, [isOpen, postId]);
 
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      setFilteredLikers(likers.filter(l => 
+        l.username.toLowerCase().includes(query) ||
+        (l.full_name && l.full_name.toLowerCase().includes(query))
+      ));
+    } else {
+      setFilteredLikers(likers);
+    }
+  }, [searchQuery, likers]);
+
   const loadLikers = async () => {
     setLoading(true);
     try {
       // Get all likes for this post with user profiles
-      const { data: likes } = await supabase
+      const { data: likes, error } = await supabase
         .from('post_likes')
         .select(`
           user_id,
           profiles:user_id (
             id,
             username,
+            full_name,
             avatar_url
           )
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching likes:', error);
+        setLikers([]);
+        setLoading(false);
+        return;
+      }
 
       if (!likes || likes.length === 0) {
         setLikers([]);
@@ -77,6 +101,7 @@ export const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, postI
           return {
             user_id: like.user_id,
             username: profile.username || 'User',
+            full_name: profile.full_name || null,
             avatar_url: profile.avatar_url || null,
             is_followed: followingIds.has(like.user_id)
           };
@@ -136,39 +161,60 @@ export const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, postI
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm max-h-[70vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{t('likes', { ns: 'common', defaultValue: 'Likes' })}</DialogTitle>
-        </DialogHeader>
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerContent className="max-h-[70vh]">
+        <DrawerHeader className="border-b-0 pb-2">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-2" />
+          <DrawerTitle className="text-center">
+            "{t('likes', { ns: 'common', defaultValue: 'Likes' })}"
+          </DrawerTitle>
+        </DrawerHeader>
         
-        <div className="flex-1 overflow-y-auto py-2">
+        {/* Search bar */}
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t('search', { ns: 'common', defaultValue: 'Search' })}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-muted/50 border-0"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pb-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : likers.length === 0 ? (
+          ) : filteredLikers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {t('noLikesYet', { ns: 'common', defaultValue: 'No likes yet' })}
+              {searchQuery ? t('noResults', { ns: 'common', defaultValue: 'No results' }) : t('noLikesYet', { ns: 'common', defaultValue: 'No likes yet' })}
             </div>
           ) : (
-            <div className="space-y-2">
-              {likers.map((liker) => (
+            <div className="space-y-0">
+              {filteredLikers.map((liker) => (
                 <div 
                   key={liker.user_id}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between py-3"
                 >
                   <button
                     onClick={() => handleUserClick(liker.user_id)}
                     className="flex items-center gap-3 flex-1 text-left"
                   >
-                    <Avatar className="w-10 h-10">
+                    <Avatar className="w-12 h-12">
                       <AvatarImage src={liker.avatar_url || undefined} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-muted text-muted-foreground text-lg">
                         {liker.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium text-sm truncate">{liker.username}</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">{liker.username}</span>
+                      {liker.full_name && (
+                        <span className="text-sm text-muted-foreground">{liker.full_name}</span>
+                      )}
+                    </div>
                   </button>
                   
                   {user?.id && liker.user_id !== user.id && (
@@ -177,14 +223,18 @@ export const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, postI
                       size="sm"
                       onClick={() => handleFollowToggle(liker.user_id)}
                       disabled={followLoading === liker.user_id}
-                      className="ml-2"
+                      className={`rounded-lg px-6 ${
+                        liker.is_followed 
+                          ? 'bg-muted hover:bg-muted/80' 
+                          : 'bg-primary hover:bg-primary/90'
+                      }`}
                     >
                       {followLoading === liker.user_id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : liker.is_followed ? (
-                        <UserCheck className="w-4 h-4" />
+                        t('following', { ns: 'common', defaultValue: 'Following' })
                       ) : (
-                        <UserPlus className="w-4 h-4" />
+                        t('follow', { ns: 'common', defaultValue: 'Follow' })
                       )}
                     </Button>
                   )}
@@ -193,7 +243,7 @@ export const LikersModal: React.FC<LikersModalProps> = ({ isOpen, onClose, postI
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 };
