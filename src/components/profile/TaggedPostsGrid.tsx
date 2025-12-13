@@ -66,9 +66,14 @@ const TaggedPostsGrid = ({ userId }: TaggedPostsGridProps) => {
   }
 
   if (posts.length === 0) {
+    const isOwnProfile = !userId || userId === user?.id;
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-        <p className="text-muted-foreground">{t('profile:noTaggedPosts')}</p>
+        <p className="text-muted-foreground">
+          {isOwnProfile
+            ? t('profile:noTaggedPostsSelf')
+            : t('profile:noTaggedPostsOther')}
+        </p>
       </div>
     );
   }
