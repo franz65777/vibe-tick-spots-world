@@ -215,14 +215,13 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                     <Edit className="h-4 w-4 text-white" />
                   </button>
                 )}
-                
                 {/* Privacy indicator - only show on own profile */}
                 {isOwnProfile && (
                   <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
                     <img 
                       src={folder.is_private ? iconPrivate : iconPublic} 
                       alt={folder.is_private ? "Private" : "Public"} 
-                      className="h-4 w-4" 
+                      className="h-5 w-auto" 
                     />
                   </div>
                 )}
