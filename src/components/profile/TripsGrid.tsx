@@ -54,11 +54,9 @@ const TripsGrid: React.FC<TripsGridProps> = ({
   const targetUserId = propUserId || user?.id;
   const isOwnProfile = !propUserId || propUserId === user?.id;
   const [savedFolders, setSavedFolders] = useState<any[]>([]);
-
   useEffect(() => {
     loadFolders();
   }, [targetUserId, user?.id]);
-
   const loadFolders = async () => {
     if (!targetUserId) return;
     setFoldersLoading(true);
@@ -66,17 +64,17 @@ const TripsGrid: React.FC<TripsGridProps> = ({
       // For viewing other users, only load their public folders
       // For own profile, load all folders
       let query = supabase.from('saved_folders').select('*').eq('user_id', targetUserId);
-      
+
       // If viewing another user's profile, filter to only public folders
       if (!isOwnProfile) {
         query = query.eq('is_private', false);
       }
-      
       const {
         data,
         error
-      } = await query.order('created_at', { ascending: false });
-      
+      } = await query.order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
 
       // Get location counts for each folder
@@ -116,52 +114,41 @@ const TripsGrid: React.FC<TripsGridProps> = ({
 
       // For own profile, also fetch folders saved from other users via folder_saves
       if (isOwnProfile && user?.id) {
-        const { data: savedFolderIds } = await supabase
-          .from('folder_saves')
-          .select('folder_id')
-          .eq('user_id', user.id);
-
+        const {
+          data: savedFolderIds
+        } = await supabase.from('folder_saves').select('folder_id').eq('user_id', user.id);
         if (savedFolderIds && savedFolderIds.length > 0) {
           const folderIds = savedFolderIds.map(sf => sf.folder_id);
           // Filter out folders I own
-          const { data: otherFolders } = await supabase
-            .from('saved_folders')
-            .select('*')
-            .in('id', folderIds)
-            .neq('user_id', user.id);
-
+          const {
+            data: otherFolders
+          } = await supabase.from('saved_folders').select('*').in('id', folderIds).neq('user_id', user.id);
           if (otherFolders) {
             const savedWithCounts = await Promise.all(otherFolders.map(async (folder: any) => {
-              const { count } = await supabase
-                .from('folder_locations')
-                .select('*', { count: 'exact', head: true })
-                .eq('folder_id', folder.id);
-
-              const { data: folderLocs } = await supabase
-                .from('folder_locations')
-                .select('location_id')
-                .eq('folder_id', folder.id)
-                .limit(4);
-
+              const {
+                count
+              } = await supabase.from('folder_locations').select('*', {
+                count: 'exact',
+                head: true
+              }).eq('folder_id', folder.id);
+              const {
+                data: folderLocs
+              } = await supabase.from('folder_locations').select('location_id').eq('folder_id', folder.id).limit(4);
               let coverImage: string | null = null;
               if (folderLocs && folderLocs.length > 0) {
                 const locationIds = folderLocs.map((fl: any) => fl.location_id);
-                const { data: locs } = await supabase
-                  .from('locations')
-                  .select('image_url')
-                  .in('id', locationIds);
+                const {
+                  data: locs
+                } = await supabase.from('locations').select('image_url').in('id', locationIds);
                 if (locs) {
                   coverImage = locs[0]?.image_url || null;
                 }
               }
 
               // Get creator profile
-              const { data: creatorProfile } = await supabase
-                .from('profiles')
-                .select('username, avatar_url')
-                .eq('id', folder.user_id)
-                .single();
-
+              const {
+                data: creatorProfile
+              } = await supabase.from('profiles').select('username, avatar_url').eq('id', folder.user_id).single();
               return {
                 ...folder,
                 locations_count: count || 0,
@@ -216,10 +203,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
   return <div className="px-4 pt-4">
       {allLists.length === 0 ? <div className="flex flex-col items-center justify-center py-4 text-center">
           {isOwnProfile && <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
-              <button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-                <Plus className="w-5 h-5" />
-                {t('createButton')}
-              </button>
+              
             </div>}
           
           <div className="mb-6 relative w-full max-w-xs aspect-[4/3]">
@@ -231,41 +215,23 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           </p>
         </div> : <>
           {/* For own profile: Show horizontal scroll rows */}
-          {isOwnProfile ? (
-            <>
+          {isOwnProfile ? <>
               {/* Row 1: My Lists (created by user) */}
-              {folders.length > 0 && (
-                <div className="mb-4">
+              {folders.length > 0 && <div className="mb-4">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">
                     {t('myLists', 'My Lists')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {folders.map((folder, index) => (
-                      <div 
-                        key={`folder-${folder.id}`} 
-                        className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-pointer shrink-0 w-36 aspect-[4/5]"
-                        onClick={() => setViewingFolderId(folder.id)}
-                      >
-                        {folder.cover_image_url ? (
-                          <img 
-                            src={folder.cover_image_url} 
-                            alt={folder.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ColorfulGradientBackground seed={folder.id || index} />
-                        )}
+                    {folders.map((folder, index) => <div key={`folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-pointer shrink-0 w-36 aspect-[4/5]" onClick={() => setViewingFolderId(folder.id)}>
+                        {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                         
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 p-2 pt-12"
-                          style={{
-                            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
-                            backdropFilter: 'blur(4px)',
-                            WebkitBackdropFilter: 'blur(4px)',
-                            maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
-                            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
-                          }}
-                        >
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12" style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
+              }}>
                           <h3 className="font-bold text-xs text-white line-clamp-2 leading-tight drop-shadow-sm">
                             {folder.name}
                           </h3>
@@ -274,110 +240,63 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                           </p>
                         </div>
                         
-                        <button 
-                          onClick={e => {
-                            e.stopPropagation();
-                            navigate(`/create-list?folderId=${folder.id}`);
-                          }} 
-                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors opacity-0 group-hover:opacity-100"
-                        >
+                        <button onClick={e => {
+                e.stopPropagation();
+                navigate(`/create-list?folderId=${folder.id}`);
+              }} className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors opacity-0 group-hover:opacity-100">
                           <Edit className="h-3 w-3 text-white" />
                         </button>
                         <div className="absolute bottom-1.5 right-1.5 p-1 rounded-full bg-black/30 backdrop-blur-sm">
-                          <img 
-                            src={folder.is_private ? iconPrivate : iconPublic} 
-                            alt={folder.is_private ? "Private" : "Public"} 
-                            className="h-4 w-auto" 
-                          />
+                          <img src={folder.is_private ? iconPrivate : iconPublic} alt={folder.is_private ? "Private" : "Public"} className="h-4 w-auto" />
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Row 2: Saved Lists (from other users) - only on own profile */}
-              {hasSavedFolders && (
-                <div className="mb-4">
+              {hasSavedFolders && <div className="mb-4">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">
                     {t('savedLists', 'Saved Lists')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {savedFolders.map((folder, index) => (
-                      <div 
-                        key={`saved-folder-${folder.id}`} 
-                        className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer shrink-0 w-36 aspect-[4/5]"
-                        onClick={() => setViewingFolderId(folder.id)}
-                      >
-                        {folder.cover_image_url ? (
-                          <img 
-                            src={folder.cover_image_url} 
-                            alt={folder.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ColorfulGradientBackground seed={folder.id || index} />
-                        )}
+                    {savedFolders.map((folder, index) => <div key={`saved-folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer shrink-0 w-36 aspect-[4/5]" onClick={() => setViewingFolderId(folder.id)}>
+                        {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                         
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 p-2 pt-12"
-                          style={{
-                            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
-                            backdropFilter: 'blur(4px)',
-                            WebkitBackdropFilter: 'blur(4px)',
-                            maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
-                            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
-                          }}
-                        >
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12" style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
+              }}>
                           <h3 className="font-bold text-xs text-white line-clamp-2 leading-tight drop-shadow-sm">
                             {folder.name}
                           </h3>
                           <p className="text-[10px] text-white/80 mt-0.5 drop-shadow-sm">
                             {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
-                            {folder.creator?.username && (
-                              <span className="ml-1">• @{folder.creator.username}</span>
-                            )}
+                            {folder.creator?.username && <span className="ml-1">• @{folder.creator.username}</span>}
                           </p>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Trips */}
-              {trips.length > 0 && (
-                <div className="mb-4">
+              {trips.length > 0 && <div className="mb-4">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">
                     {t('trips', 'Trips')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {trips.map((trip, index) => (
-                      <div 
-                        key={trip.id} 
-                        className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer shrink-0 w-36 aspect-[4/5]"
-                        onClick={() => setSelectedTrip(trip)}
-                      >
-                        {trip.cover_image_url ? (
-                          <img 
-                            src={trip.cover_image_url} 
-                            alt={trip.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />
-                        )}
+                    {trips.map((trip, index) => <div key={trip.id} className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer shrink-0 w-36 aspect-[4/5]" onClick={() => setSelectedTrip(trip)}>
+                        {trip.cover_image_url ? <img src={trip.cover_image_url} alt={trip.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />}
                         
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 p-2 pt-12"
-                          style={{
-                            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
-                            backdropFilter: 'blur(4px)',
-                            WebkitBackdropFilter: 'blur(4px)',
-                            maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
-                            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
-                          }}
-                        >
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12" style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
+              }}>
                           <h3 className="font-bold text-xs text-white line-clamp-2 leading-tight drop-shadow-sm">
                             {trip.name}
                           </h3>
@@ -395,57 +314,37 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={e => {
-                                e.stopPropagation();
-                                handleEditTrip(trip);
-                              }}>
+                      e.stopPropagation();
+                      handleEditTrip(trip);
+                    }}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 {t('edit', 'Edit')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={e => {
-                                e.stopPropagation();
-                                handleDeleteTrip(trip.id);
-                              }} className="text-destructive">
+                      e.stopPropagation();
+                      handleDeleteTrip(trip.id);
+                    }} className="text-destructive">
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 {t('delete', 'Delete')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
-                </div>
-              )}
-            </>
-          ) : (
-            /* For other users' profiles: Show grid layout */
-            <div className="grid grid-cols-2 gap-3 pb-4">
-              {folders.map((folder, index) => (
-                <div 
-                  key={`folder-${folder.id}`} 
-                  className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-[4/5]"
-                  onClick={() => setViewingFolderId(folder.id)}
-                >
-                  {folder.cover_image_url ? (
-                    <img 
-                      src={folder.cover_image_url} 
-                      alt={folder.name} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ColorfulGradientBackground seed={folder.id || index} />
-                  )}
+                </div>}
+            </> : (/* For other users' profiles: Show grid layout */
+      <div className="grid grid-cols-2 gap-3 pb-4">
+              {folders.map((folder, index) => <div key={`folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-[4/5]" onClick={() => setViewingFolderId(folder.id)}>
+                  {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                   
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 p-3 pt-16"
-                    style={{
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
-                      backdropFilter: 'blur(4px)',
-                      WebkitBackdropFilter: 'blur(4px)',
-                      maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
-                    }}
-                  >
+                  <div className="absolute bottom-0 left-0 right-0 p-3 pt-16" style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
+          }}>
                     <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight drop-shadow-sm">
                       {folder.name}
                     </h3>
@@ -453,35 +352,18 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                       {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
                     </p>
                   </div>
-                </div>
-              ))}
+                </div>)}
 
-              {trips.map((trip, index) => (
-                <div 
-                  key={trip.id} 
-                  className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-[4/5]"
-                  onClick={() => setSelectedTrip(trip)}
-                >
-                  {trip.cover_image_url ? (
-                    <img 
-                      src={trip.cover_image_url} 
-                      alt={trip.name} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />
-                  )}
+              {trips.map((trip, index) => <div key={trip.id} className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer aspect-[4/5]" onClick={() => setSelectedTrip(trip)}>
+                  {trip.cover_image_url ? <img src={trip.cover_image_url} alt={trip.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />}
                   
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 p-3 pt-16"
-                    style={{
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
-                      backdropFilter: 'blur(4px)',
-                      WebkitBackdropFilter: 'blur(4px)',
-                      maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
-                    }}
-                  >
+                  <div className="absolute bottom-0 left-0 right-0 p-3 pt-16" style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 75%, transparent 100%)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            maskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 40%, transparent 100%)'
+          }}>
                     <h3 className="font-bold text-sm text-white line-clamp-2 leading-tight drop-shadow-sm">
                       {trip.name}
                     </h3>
@@ -489,10 +371,8 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                       {trip.trip_locations?.length || 0} {(trip.trip_locations?.length || 0) === 1 ? t('place') : t('places')}
                     </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </div>)}
+            </div>)}
         </>}
 
       <CreateTripModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreateTrip={handleCreateTrip} />
