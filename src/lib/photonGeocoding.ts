@@ -61,43 +61,57 @@ function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory |
   const key = osmKey.toLowerCase();
   const value = osmValue.toLowerCase();
   
-  // Restaurant mappings
-  if (value === 'restaurant' || value === 'fast_food' || value === 'food_court' || value === 'biergarten') {
+  // Restaurant mappings (expanded)
+  if (value === 'restaurant' || value === 'fast_food' || value === 'food_court' || 
+      value === 'biergarten' || value === 'pizza' || value === 'sushi' ||
+      value === 'kebab' || value === 'burger' || value === 'diner' ||
+      value === 'steakhouse' || value === 'seafood' || value === 'bbq') {
     return 'restaurant';
   }
   
-  // Bar mappings
-  if (value === 'bar' || value === 'pub') {
+  // Bar mappings (expanded)
+  if (value === 'bar' || value === 'pub' || value === 'wine_bar' || 
+      value === 'cocktail_bar' || value === 'beer_garden' || value === 'lounge') {
     return 'bar';
   }
   
-  // Cafe mappings
-  if (value === 'cafe' || value === 'coffee_shop' || value === 'ice_cream') {
+  // Cafe mappings (expanded)
+  if (value === 'cafe' || value === 'coffee_shop' || value === 'ice_cream' ||
+      value === 'tea' || value === 'bubble_tea' || value === 'juice_bar') {
     return 'cafe';
   }
   
-  // Bakery mappings
-  if (value === 'bakery' || value === 'pastry') {
+  // Bakery mappings (expanded with pastry shops)
+  if (value === 'bakery' || value === 'pastry' || value === 'confectionery' ||
+      value === 'chocolate' || value === 'patisserie' || value === 'cake' ||
+      value === 'dessert' || value === 'deli' || value === 'pastry_shop') {
     return 'bakery';
   }
   
-  // Hotel mappings
-  if (value === 'hotel' || value === 'hostel' || value === 'guest_house' || value === 'motel' || value === 'chalet' || value === 'apartment') {
+  // Hotel mappings (expanded)
+  if (value === 'hotel' || value === 'hostel' || value === 'guest_house' || 
+      value === 'motel' || value === 'chalet' || value === 'apartment' ||
+      value === 'resort' || value === 'bed_and_breakfast' || value === 'lodge') {
     return 'hotel';
   }
   
-  // Museum mappings
-  if (value === 'museum' || value === 'gallery' || value === 'artwork' || value === 'arts_centre') {
+  // Museum mappings (expanded)
+  if (value === 'museum' || value === 'gallery' || value === 'artwork' || 
+      value === 'arts_centre' || value === 'exhibition' || value === 'memorial') {
     return 'museum';
   }
   
-  // Entertainment mappings
+  // Entertainment mappings (expanded)
   if (value === 'nightclub' || value === 'theatre' || value === 'cinema' || 
       value === 'park' || value === 'playground' || value === 'garden' ||
       value === 'sports_centre' || value === 'stadium' || value === 'water_park' ||
       value === 'amusement_arcade' || value === 'bowling_alley' || value === 'theme_park' ||
       value === 'zoo' || value === 'aquarium' || value === 'attraction' ||
-      value === 'miniature_golf' || value === 'dance' || value === 'music_venue') {
+      value === 'miniature_golf' || value === 'dance' || value === 'music_venue' ||
+      value === 'disco' || value === 'club' || value === 'karaoke' ||
+      value === 'escape_game' || value === 'laser_tag' || value === 'spa' ||
+      value === 'fitness_centre' || value === 'gym' || value === 'pool' ||
+      value === 'beach' || value === 'marina' || value === 'casino') {
     return 'entertainment';
   }
   
@@ -109,6 +123,16 @@ function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory |
   // Leisure venues default to entertainment
   if (key === 'leisure') {
     return 'entertainment';
+  }
+  
+  // Shop types that match our categories
+  if (key === 'shop') {
+    if (value === 'bakery' || value === 'pastry' || value === 'confectionery' || value === 'chocolate') {
+      return 'bakery';
+    }
+    if (value === 'coffee' || value === 'tea') {
+      return 'cafe';
+    }
   }
   
   return null;

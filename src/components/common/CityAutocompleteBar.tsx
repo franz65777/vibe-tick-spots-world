@@ -88,7 +88,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 
     debounceTimer.current = setTimeout(() => {
       performSearch(searchQuery);
-    }, 400);
+    }, 250);
 
     return () => {
       if (debounceTimer.current) {
@@ -104,41 +104,35 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     try {
       const userLocation = location ? { lat: location.latitude, lng: location.longitude } : undefined;
       
-      // Search both cities and locations in parallel
-      const [nominatimResults, photonResults] = await Promise.all([
-        nominatimGeocoding.searchPlace(query, i18n.language),
-        searchPhoton(query, userLocation, 10)
-      ]);
-      
-      if (selectionRef.current || !inputRef.current || document.activeElement !== inputRef.current || latestQueryRef.current !== query) {
+      // Search locations first (Photon is faster) - show results immediately
+      searchPhoton(query, userLocation, 15).then(photonResults => {
+        if (selectionRef.current || latestQueryRef.current !== query) return;
+        
+        // No distance filter - allow global search
+        setLocationResults(photonResults.slice(0, 10));
+        setShowResults(true);
         setIsLoading(false);
-        return;
-      }
+      }).catch(() => {});
       
-      const cities: CityResult[] = nominatimResults.map((result) => ({
-        name: result.city || result.displayName.split(',')[0],
-        displayName: result.displayName,
-        lat: result.lat,
-        lng: result.lng,
-      }));
-
-      // Filter locations to only show nearby ones (within 500km if user location available)
-      let filteredLocations = photonResults;
-      if (userLocation && photonResults.length > 0) {
-        filteredLocations = photonResults.filter(loc => {
-          const distance = calculateDistance(userLocation.lat, userLocation.lng, loc.lat, loc.lng);
-          return distance <= 500;
-        });
-      }
-
-      setCityResults(cities.slice(0, 5));
-      setLocationResults(filteredLocations.slice(0, 8));
-      setShowResults(true);
+      // Search cities in background (Nominatim is slower)
+      nominatimGeocoding.searchPlace(query, i18n.language).then(nominatimResults => {
+        if (selectionRef.current || latestQueryRef.current !== query) return;
+        
+        const cities: CityResult[] = nominatimResults.map((result) => ({
+          name: result.city || result.displayName.split(',')[0],
+          displayName: result.displayName,
+          lat: result.lat,
+          lng: result.lng,
+        }));
+        
+        setCityResults(cities.slice(0, 5));
+        setShowResults(true);
+      }).catch(() => {});
+      
     } catch (error) {
       console.error('Search error:', error);
       setCityResults([]);
       setLocationResults([]);
-    } finally {
       setIsLoading(false);
     }
   };
