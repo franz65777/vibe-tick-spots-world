@@ -30,6 +30,8 @@ interface MapSectionProps {
   onClearInitialPlace?: () => void;
   recenterToken?: number;
   onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
+  fromMessages?: boolean;
+  onBackToMessages?: () => void;
 }
 
 const MapSection = ({ 
@@ -41,6 +43,8 @@ const MapSection = ({
   onClearInitialPlace,
   recenterToken,
   onCitySelect,
+  fromMessages,
+  onBackToMessages,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
@@ -271,6 +275,8 @@ const MapSection = ({
               container.setAttribute('data-has-sharing', String(hasSharing && !isExpanded));
             }
           }}
+          fromMessages={fromMessages}
+          onBackToMessages={onBackToMessages}
         />
         )}
 

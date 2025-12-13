@@ -144,6 +144,10 @@ const HomePage = memo(() => {
 
   // State for return navigation from save-location page
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  
+  // State for navigation back to messages
+  const [fromMessages, setFromMessages] = useState(false);
+  const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
@@ -171,7 +175,7 @@ const HomePage = memo(() => {
         setInitialPinToShow(placeToShow);
         usedState = true;
       }
-      // Handle location card from SaveLocationPage
+      // Handle location card from SaveLocationPage or Messages
       if (state?.showLocationCard && state?.locationData) {
         const locData = state.locationData;
         const placeToShow: Place = {
@@ -193,6 +197,13 @@ const HomePage = memo(() => {
         setInitialPinToShow(placeToShow);
         if (state.returnTo) {
           setReturnTo(state.returnTo);
+        }
+        // Track if opened from messages for back navigation
+        if (state.fromMessages) {
+          setFromMessages(true);
+          if (state.returnToUserId) {
+            setReturnToUserId(state.returnToUserId);
+          }
         }
         usedState = true;
       }
@@ -663,6 +674,9 @@ const HomePage = memo(() => {
                 initialSelectedPlace={initialPinToShow}
                 onClearInitialPlace={() => {
                   setInitialPinToShow(null);
+                  // Reset messages navigation state
+                  setFromMessages(false);
+                  setReturnToUserId(null);
                   if (returnTo) {
                     navigate(returnTo);
                     setReturnTo(null);
@@ -670,6 +684,15 @@ const HomePage = memo(() => {
                 }}
                 recenterToken={recenterToken}
                 onCitySelect={handleCityChange}
+                fromMessages={fromMessages}
+                returnToUserId={returnToUserId}
+                onBackToMessages={() => {
+                  setInitialPinToShow(null);
+                  setFromMessages(false);
+                  const userId = returnToUserId;
+                  setReturnToUserId(null);
+                  navigate('/messages', { state: { initialUserId: userId } });
+                }}
               />
             </Suspense>
           </div>
