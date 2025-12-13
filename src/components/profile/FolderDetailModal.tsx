@@ -129,6 +129,51 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
     };
   }, [isOpen, initialLoadComplete]);
 
+  // Real-time subscription for save count and share count
+  useEffect(() => {
+    if (!folderId || !isOpen) return;
+
+    const channel = supabase
+      .channel(`folder-stats-${folderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'folder_saves',
+          filter: `folder_id=eq.${folderId}`
+        },
+        async () => {
+          const { count } = await supabase
+            .from('folder_saves')
+            .select('id', { count: 'exact', head: true })
+            .eq('folder_id', folderId);
+          setRealSaveCount(count || 0);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'folder_shares',
+          filter: `folder_id=eq.${folderId}`
+        },
+        async () => {
+          const { count } = await supabase
+            .from('folder_shares')
+            .select('id', { count: 'exact', head: true })
+            .eq('folder_id', folderId);
+          setShareCount(count || 0);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [folderId, isOpen]);
+
   const handleScroll = (e: any) => {
     const scrollTop = e.target.scrollTop;
     setScrolled(scrollTop > 50);
