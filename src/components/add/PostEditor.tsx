@@ -92,7 +92,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   return (
     <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-background px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
           className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -100,7 +100,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-semibold">{t('newPost', { ns: 'add' })}</h1>
-        <div className="w-9" /> {/* Spacer for centering */}
       </div>
 
       {/* Content */}

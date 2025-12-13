@@ -35,12 +35,11 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             onPlaceSelect={onLocationSelect}
             placeholder={t('searchForPlace', { ns: 'add' })}
             className="w-full"
-            disabled={disabled}
           />
           <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              {disabled ? t('postingToBusinessLocation', { ns: 'add' }) : t('youMustTagLocation', { ns: 'add' })}
+              {t('youMustTagLocation', { ns: 'add' })}
             </p>
           </div>
         </div>

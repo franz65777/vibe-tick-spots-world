@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus, Instagram } from 'lucide-react';
+import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus, Instagram, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
@@ -102,73 +102,38 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
         <SocialImportTutorial open={showSocialImport} onClose={() => setShowSocialImport(false)} />
       </div>;
   }
-  // First 2 items in grid, rest in horizontal scroll
-  const gridItems = previewUrls.slice(0, 2);
-  const scrollItems = previewUrls.slice(2);
-  
   return <div className="space-y-3" data-photo-selection="false">
-      {/* First 2 items in grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {gridItems.map((url, index) => {
-          const file = selectedFiles[index];
-          const isVideo = file?.type.startsWith('video/');
-          return <div key={index} className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-            {isVideo ? <video src={url} className="w-full h-full object-cover" controls={false} /> : <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />}
-            
-            {isVideo && <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
-                <Video className="w-6 h-6 text-white" />
-              </div>
-            </div>}
-            
-            <button onClick={() => onRemoveFile(index)} className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors">
-              <X className="w-5 h-5 text-white" />
-            </button>
-          </div>;
-        })}
-        
-        {/* Add more button - only show in grid if less than 2 items */}
-        {selectedFiles.length < 2 && selectedFiles.length < maxFiles && (
-          <button onClick={handleClick} className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors">
-            <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">{t('addMore', { ns: 'add' })}</span>
-          </button>
-        )}
-      </div>
-
-      {/* Additional items in horizontal scroll */}
-      {(scrollItems.length > 0 || selectedFiles.length >= 2) && (
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex gap-3">
-            {scrollItems.map((url, scrollIndex) => {
-              const index = scrollIndex + 2;
-              const file = selectedFiles[index];
-              const isVideo = file?.type.startsWith('video/');
-              return <div key={index} className="relative w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
-                {isVideo ? <video src={url} className="w-full h-full object-cover" controls={false} /> : <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />}
-                
-                {isVideo && <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
-                    <Video className="w-5 h-5 text-white" />
-                  </div>
-                </div>}
-                
-                <button onClick={() => onRemoveFile(index)} className="absolute top-2 right-2 w-7 h-7 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors">
-                  <X className="w-4 h-4 text-white" />
-                </button>
-              </div>;
-            })}
-            
-            {/* Add more button in scroll area */}
-            {selectedFiles.length >= 2 && selectedFiles.length < maxFiles && (
-              <button onClick={handleClick} className="w-32 h-32 flex-shrink-0 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors">
-                <ImageIcon className="w-6 h-6 text-muted-foreground mb-1" />
-                <span className="text-xs text-muted-foreground">{t('addMore', { ns: 'add' })}</span>
+      {/* All items in horizontal scroll */}
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-3">
+          {previewUrls.map((url, index) => {
+            const file = selectedFiles[index];
+            const isVideo = file?.type.startsWith('video/');
+            return <div key={index} className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
+              {isVideo ? <video src={url} className="w-full h-full object-cover" controls={false} /> : <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />}
+              
+              {isVideo && <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+                  <Video className="w-5 h-5 text-white" />
+                </div>
+              </div>}
+              
+              <button onClick={() => onRemoveFile(index)} className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors">
+                <X className="w-5 h-5 text-white" />
               </button>
-            )}
-          </div>
+            </div>;
+          })}
+          
+          {/* Add more button - simple + circle */}
+          {selectedFiles.length < maxFiles && (
+            <button onClick={handleClick} className="w-40 h-40 flex-shrink-0 border-2 border-dashed border-primary/30 rounded-xl flex items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors">
+              <div className="w-12 h-12 rounded-full border-2 border-primary flex items-center justify-center">
+                <Plus className="w-6 h-6 text-primary" />
+              </div>
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={e => e.target.files && onFilesSelect(e.target.files)} className="hidden" />
     </div>;
