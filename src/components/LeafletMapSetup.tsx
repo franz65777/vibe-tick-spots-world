@@ -596,49 +596,54 @@ const LeafletMapSetup = ({
   useEffect(() => {
     const map = mapRef.current;
     const clusterGroup = markerClusterGroupRef.current;
-    if (!map || !clusterGroup) return;
+    const mapContainer = containerRef.current;
+    if (!map || !clusterGroup || !mapContainer) return;
 
     if (selectedPlace) {
-      // Hide all markers except the selected one
-      markersRef.current.forEach((marker, id) => {
-        const el = marker.getElement();
-        if (el) {
-          if (id === selectedPlace.id) {
-            el.style.opacity = '1';
-            el.style.pointerEvents = 'auto';
-          } else {
-            el.style.opacity = '0';
-            el.style.pointerEvents = 'none';
+      // Add a CSS class to container for hiding all markers except selected
+      mapContainer.classList.add('pin-selected-mode');
+      mapContainer.setAttribute('data-selected-place-id', selectedPlace.id);
+      
+      // Inject CSS if not already present
+      let styleEl = document.getElementById('pin-selected-styles');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'pin-selected-styles';
+        styleEl.innerHTML = `
+          .pin-selected-mode .leaflet-marker-icon,
+          .pin-selected-mode .marker-cluster {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transition: opacity 0.2s ease;
           }
+          .pin-selected-mode .leaflet-marker-icon.selected-pin {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
+      
+      // Mark the selected marker with a class
+      const selectedMarker = markersRef.current.get(selectedPlace.id);
+      if (selectedMarker) {
+        const el = selectedMarker.getElement();
+        if (el) {
+          el.classList.add('selected-pin');
         }
-      });
-      // Hide cluster icons via DOM query
-      const mapContainer = containerRef.current;
-      if (mapContainer) {
-        const clusters = mapContainer.querySelectorAll('.marker-cluster');
-        clusters.forEach((cluster) => {
-          (cluster as HTMLElement).style.opacity = '0';
-          (cluster as HTMLElement).style.pointerEvents = 'none';
-        });
       }
     } else {
-      // Show all markers again
+      // Remove the hide mode
+      mapContainer.classList.remove('pin-selected-mode');
+      mapContainer.removeAttribute('data-selected-place-id');
+      
+      // Remove selected-pin class from all markers
       markersRef.current.forEach((marker) => {
         const el = marker.getElement();
         if (el) {
-          el.style.opacity = '1';
-          el.style.pointerEvents = 'auto';
+          el.classList.remove('selected-pin');
         }
       });
-      // Show clusters again
-      const mapContainer = containerRef.current;
-      if (mapContainer) {
-        const clusters = mapContainer.querySelectorAll('.marker-cluster');
-        clusters.forEach((cluster) => {
-          (cluster as HTMLElement).style.opacity = '1';
-          (cluster as HTMLElement).style.pointerEvents = 'auto';
-        });
-      }
     }
   }, [selectedPlace]);
 
