@@ -4,22 +4,22 @@ import WelcomePage from '@/components/WelcomePage';
 import HomePage from '@/components/HomePage';
 import SplashScreen from '@/components/SplashScreen';
 
-// Track if splash was shown in THIS runtime instance (not persisted)
+// Track if splash was shown and if initial auth check ran in THIS runtime instance (not persisted)
 let splashShownThisSession = false;
+let initialAuthCheckDone = false;
 
 const Index = () => {
   const { user, loading } = useAuth();
   const [showSplash, setShowSplash] = useState(false);
   const previousUserRef = useRef<string | null>(null);
-  const initialLoadComplete = useRef(false);
 
   useEffect(() => {
     // Case 1: App just opened (first mount, auth loading complete)
-    // Show splash ONLY on very first app open, not on subsequent navigations
-    if (!loading && !initialLoadComplete.current) {
-      initialLoadComplete.current = true;
+    // Show splash ONLY on very first app open after JS load, not on route remounts
+    if (!loading && !initialAuthCheckDone) {
+      initialAuthCheckDone = true;
       
-      // Check if this is a fresh app open (not already shown this session)
+      // Check if this is a fresh auth event in this runtime
       if (!splashShownThisSession) {
         // Check if user just signed in (flag set by SigninStart)
         const justSignedIn = sessionStorage.getItem('playSplashAfterAuth') === 'true';
@@ -42,7 +42,7 @@ const Index = () => {
 
   // Case 2: Detect sign-in transition (user was null, now has value)
   useEffect(() => {
-    if (!loading && user && previousUserRef.current === null && initialLoadComplete.current) {
+    if (!loading && user && previousUserRef.current === null && initialAuthCheckDone) {
       // User just signed in after being on welcome page
       const justSignedIn = sessionStorage.getItem('playSplashAfterAuth') === 'true';
       if (justSignedIn && !splashShownThisSession) {

@@ -223,11 +223,10 @@ const FeedPage = memo(() => {
 
   const handleCommentClick = async (postId: string) => {
     setCommentPostId(postId);
-    setCommentDrawerOpen(true);
-    
-    // Load comments
+    // Load comments before opening to avoid temporary empty state
     const postComments = await getPostComments(postId);
     setComments(postComments);
+    setCommentDrawerOpen(true);
   };
 
   const handleAddComment = async (content: string) => {
