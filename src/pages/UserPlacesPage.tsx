@@ -293,8 +293,13 @@ const UserPlacesPage = () => {
       // Go back to city selection if there are multiple cities
       setSelectedCity(null);
     } else {
-      // Navigate back to previous page
-      navigate(-1);
+      // Navigate back to the user's profile page
+      const isOwnProfile = currentUser?.id === userId;
+      if (isOwnProfile) {
+        navigate('/profile', { replace: true });
+      } else {
+        navigate(`/profile/${userId}`, { replace: true });
+      }
     }
   };
 
@@ -305,7 +310,14 @@ const UserPlacesPage = () => {
         {/* Header */}
         <div className="bg-background/80 backdrop-blur-md z-50 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between px-4 py-3">
-            <button onClick={() => navigate(-1)} className="p-2 -m-2 hover:opacity-70 transition-opacity">
+            <button onClick={() => {
+              const isOwnProfile = currentUser?.id === userId;
+              if (isOwnProfile) {
+                navigate('/profile', { replace: true });
+              } else {
+                navigate(`/profile/${userId}`, { replace: true });
+              }
+            }} className="p-2 -m-2 hover:opacity-70 transition-opacity">
               <ArrowLeft className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2">
