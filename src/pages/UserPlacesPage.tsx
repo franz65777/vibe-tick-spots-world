@@ -174,6 +174,7 @@ const UserPlacesPage = () => {
         }
 
         // For "common" filter, get intersection with current user's saves
+        let finalLocations = allLocations;
         if (filterCategory === 'common' && currentUser && currentUser.id !== userId) {
           const { data: myInternal } = await supabase
             .from('user_saved_locations')
@@ -190,24 +191,27 @@ const UserPlacesPage = () => {
             ...(mySaved?.map(p => p.place_id) || [])
           ]);
 
-          const commonLocs = allLocations.filter(loc => myIds.has(loc.id));
-          setLocations(commonLocs);
-        } else {
-          setLocations(allLocations);
+          // Filter to only locations that BOTH users have saved
+          finalLocations = allLocations.filter(loc => myIds.has(loc.id));
         }
-
-        // Calculate cities from fetched locations - normalize to remove duplicates and map villages to cities
-        const cityCount: Record<string, number> = {};
-        allLocations.forEach(loc => {
+        
+        // Normalize city names for consistency
+        finalLocations.forEach(loc => {
           if (loc.city) {
-            // Normalize city to avoid duplicates (e.g., "Torino" -> "Turin") 
-            // and map neighborhoods/villages to parent cities
             const normalizedCityName = normalizeCity(loc.city);
             if (normalizedCityName && normalizedCityName !== 'Unknown') {
-              cityCount[normalizedCityName] = (cityCount[normalizedCityName] || 0) + 1;
-              // Update the location's city to normalized version for filtering consistency
               loc.city = normalizedCityName;
             }
+          }
+        });
+        
+        setLocations(finalLocations);
+
+        // Calculate cities from FINAL filtered locations (common only if common filter)
+        const cityCount: Record<string, number> = {};
+        finalLocations.forEach(loc => {
+          if (loc.city) {
+            cityCount[loc.city] = (cityCount[loc.city] || 0) + 1;
           }
         });
         const citiesArray = Object.entries(cityCount)
