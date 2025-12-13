@@ -332,9 +332,9 @@ const CreateListPage = () => {
 
   const handleClose = () => {
     if (isEditMode) {
-      navigate('/profile?tab=trips');
+      navigate('/profile?tab=trips', { replace: true });
     } else {
-      navigate('/add');
+      navigate('/add', { replace: true });
     }
   };
 
