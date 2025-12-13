@@ -9,6 +9,7 @@ interface MapLocation {
   category: string;
   address?: string;
   city?: string;
+  google_place_id?: string;
   coordinates: {
     lat: number;
     lng: number;
@@ -172,6 +173,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             category: share.location?.category || 'Unknown',
             address: share.location?.address,
             city: share.location?.city,
+            google_place_id: (share.location as any)?.google_place_id || undefined,
             coordinates: {
               lat: Number(share.latitude) || 0,
               lng: Number(share.longitude) || 0
@@ -240,6 +242,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               category: loc.category,
               address: loc.address,
               city: loc.city,
+              google_place_id: loc.google_place_id,
               coordinates: {
                 lat: Number(loc.latitude) || 0,
                 lng: Number(loc.longitude) || 0,
@@ -273,6 +276,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   category: sp.place_category || 'Unknown',
                   address: undefined,
                   city: sp.city || undefined,
+                  google_place_id: sp.place_id,
                   coordinates: {
                     lat: Number(coords.lat) || 0,
                     lng: Number(coords.lng) || 0,
@@ -302,6 +306,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               category: row.category,
               address: row.address,
               city: row.city,
+              google_place_id: row.google_place_id,
               coordinates: {
                 lat: Number(row.latitude) || 0,
                 lng: Number(row.longitude) || 0,
@@ -413,6 +418,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               category: loc.category,
               address: loc.address,
               city: loc.city,
+              google_place_id: loc.google_place_id,
               coordinates: {
                 lat: Number(loc.latitude) || 0,
                 lng: Number(loc.longitude) || 0,
@@ -487,6 +493,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 category: loc.category || 'Unknown',
                 address: loc.address,
                 city: loc.city,
+                google_place_id: loc.google_place_id,
                 coordinates: { lat, lng },
                 isSaved: true,
                 user_id: loc.created_by || user.id,
@@ -549,6 +556,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 category: sp.place_category || 'Unknown',
                 address: undefined,
                 city: sp.city || 'Unknown',
+                google_place_id: sp.place_id,
                 coordinates: { lat, lng },
                 isSaved: true,
                 user_id: sp.user_id,
