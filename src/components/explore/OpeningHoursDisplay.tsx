@@ -30,7 +30,7 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     todayHours,
     dayName,
     loading
-  } = useOpeningHours(coordinates, placeName, googlePlaceId);
+  } = useOpeningHours(coordinates, placeName);
 
   // Don't show anything if we couldn't get hours or still loading
   if (loading || isOpen === null) {
