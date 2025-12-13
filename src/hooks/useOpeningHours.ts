@@ -9,8 +9,15 @@ interface OpeningHoursData {
   error: string | null;
 }
 
+interface UseOpeningHoursParams {
+  coordinates?: { lat: number; lng: number } | null;
+  placeName?: string;
+  locationId?: string;
+  googlePlaceId?: string;
+}
+
 export const useOpeningHours = (
-  coordinates: { lat: number; lng: number } | null | undefined,
+  coordinatesOrParams: { lat: number; lng: number } | null | undefined | UseOpeningHoursParams,
   placeName?: string
 ): OpeningHoursData => {
   const [data, setData] = useState<OpeningHoursData>({
@@ -21,6 +28,14 @@ export const useOpeningHours = (
     error: null
   });
 
+  // Normalize params for backwards compatibility
+  const params: UseOpeningHoursParams = coordinatesOrParams && 'lat' in coordinatesOrParams
+    ? { coordinates: coordinatesOrParams, placeName }
+    : (coordinatesOrParams as UseOpeningHoursParams) || {};
+
+  const { coordinates, locationId, googlePlaceId } = params;
+  const name = params.placeName || placeName;
+
   useEffect(() => {
     if (!coordinates?.lat || !coordinates?.lng) {
       setData(prev => ({ ...prev, loading: false }));
@@ -29,13 +44,15 @@ export const useOpeningHours = (
 
     const fetchOpeningHours = async () => {
       try {
-        console.log(`Fetching hours for ${placeName} at ${coordinates.lat}, ${coordinates.lng}`);
+        console.log(`Fetching hours for ${name} at ${coordinates.lat}, ${coordinates.lng}`);
         
         const { data: result, error } = await supabase.functions.invoke('get-place-hours', {
           body: {
             lat: coordinates.lat,
             lng: coordinates.lng,
-            name: placeName
+            name,
+            locationId,
+            googlePlaceId
           }
         });
 
@@ -84,7 +101,7 @@ export const useOpeningHours = (
     };
 
     fetchOpeningHours();
-  }, [coordinates?.lat, coordinates?.lng, placeName]);
+  }, [coordinates?.lat, coordinates?.lng, name, locationId, googlePlaceId]);
 
   return data;
 };
