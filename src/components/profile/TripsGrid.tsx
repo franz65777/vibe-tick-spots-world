@@ -207,7 +207,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
   const hasSavedFolders = isOwnProfile && savedFolders.length > 0;
   const hasAnyContent = folders.length > 0 || trips.length > 0 || hasSavedFolders;
 
-  return <div className="px-4 pt-4">
+  return <div className="px-4 pt-1">
       {!hasAnyContent ? <div className="flex flex-col items-center justify-center py-4 text-center">
           {isOwnProfile && <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
               
@@ -226,8 +226,8 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           {/* For own profile: Show horizontal scroll rows */}
           {isOwnProfile ? <>
               {/* Row 1: My Lists (created by user) */}
-              {folders.length > 0 && <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">
+              {folders.length > 0 && <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-1.5">
                     {t('myLists', 'My Lists')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -263,8 +263,8 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                 </div>}
 
               {/* Row 2: Saved Lists (from other users) - only on own profile */}
-              {hasSavedFolders && <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">
+              {hasSavedFolders && <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-1">
                     {t('savedLists', 'Saved Lists')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
