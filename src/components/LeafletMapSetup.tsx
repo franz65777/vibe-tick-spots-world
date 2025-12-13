@@ -619,19 +619,33 @@ const LeafletMapSetup = ({
       }
     });
 
-    // Hide/show cluster icons (the aggregated "2", "3" bubbles)
-    const clusterIcons = mapContainer.querySelectorAll('.marker-cluster');
-    clusterIcons.forEach((cluster) => {
-      const el = cluster as HTMLElement;
-      if (selectedId) {
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-      } else {
-        el.style.opacity = '1';
-        el.style.pointerEvents = 'auto';
-      }
-    });
+    // Hide/show cluster icons using CSS class for reliability
+    if (selectedId) {
+      mapContainer.classList.add('hide-clusters');
+    } else {
+      mapContainer.classList.remove('hide-clusters');
+    }
   }, [selectedPlace]);
+
+  // Inject CSS for hiding clusters
+  useEffect(() => {
+    let styleEl = document.getElementById('cluster-hide-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'cluster-hide-styles';
+      styleEl.innerHTML = `
+        .hide-clusters .marker-cluster {
+          opacity: 0 !important;
+          pointer-events: none !important;
+          visibility: hidden !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+    return () => {
+      // Don't remove on cleanup - keep for future use
+    };
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
