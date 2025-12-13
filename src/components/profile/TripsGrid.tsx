@@ -211,7 +211,9 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           </div>
           
           <p className="text-foreground text-base font-medium max-w-xs">
-            {t('planWithFriends')}
+            {isOwnProfile
+              ? t('planWithFriends')
+              : t('noListsOther')}
           </p>
         </div> : <>
           {/* For own profile: Show horizontal scroll rows */}
@@ -379,34 +381,15 @@ const TripsGrid: React.FC<TripsGridProps> = ({
 
       {selectedTrip && <TripDetailModal trip={selectedTrip} isOpen={!!selectedTrip} onClose={() => setSelectedTrip(null)} />}
 
-      {viewingFolderId && <FolderDetailModal folderId={viewingFolderId} isOpen={!!viewingFolderId} onClose={() => setViewingFolderId(null)} onSaveStatusChange={() => {
-        // Refresh saved folders only without affecting current modal
-        if (isOwnProfile && user?.id) {
-          supabase.from('folder_saves').select('folder_id').eq('user_id', user.id).then(async ({ data: savedFolderIds }) => {
-            if (savedFolderIds && savedFolderIds.length > 0) {
-              const folderIds = savedFolderIds.map(sf => sf.folder_id);
-              const { data: otherFolders } = await supabase.from('saved_folders').select('*').in('id', folderIds).neq('user_id', user.id);
-              if (otherFolders) {
-                const savedWithCounts = await Promise.all(otherFolders.map(async (folder: any) => {
-                  const { count } = await supabase.from('folder_locations').select('*', { count: 'exact', head: true }).eq('folder_id', folder.id);
-                  const { data: folderLocs } = await supabase.from('folder_locations').select('location_id').eq('folder_id', folder.id).limit(4);
-                  let coverImage: string | null = null;
-                  if (folderLocs && folderLocs.length > 0) {
-                    const locationIds = folderLocs.map((fl: any) => fl.location_id);
-                    const { data: locs } = await supabase.from('locations').select('image_url').in('id', locationIds);
-                    if (locs) coverImage = locs[0]?.image_url || null;
-                  }
-                  const { data: creatorProfile } = await supabase.from('profiles').select('username, avatar_url').eq('id', folder.user_id).single();
-                  return { ...folder, locations_count: count || 0, cover_image_url: folder.cover_image_url || coverImage, creator: creatorProfile };
-                }));
-                setSavedFolders(savedWithCounts);
-              }
-            } else {
-              setSavedFolders([]);
-            }
-          });
-        }
-      }} />}
+      {viewingFolderId && (
+        <FolderDetailModal
+          folderId={viewingFolderId}
+          isOpen={!!viewingFolderId}
+          onClose={() => setViewingFolderId(null)}
+          onSaveStatusChange={loadFolders}
+        />
+      )}
+
 
       {editingFolderId && <FolderEditorPage isOpen={!!editingFolderId} onClose={() => setEditingFolderId(null)} folderId={editingFolderId} onFolderSaved={() => {
       loadFolders();
