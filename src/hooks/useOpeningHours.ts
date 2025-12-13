@@ -11,8 +11,7 @@ interface OpeningHoursData {
 
 export const useOpeningHours = (
   coordinates: { lat: number; lng: number } | null | undefined,
-  placeName?: string,
-  googlePlaceId?: string | null
+  placeName?: string
 ): OpeningHoursData => {
   const [data, setData] = useState<OpeningHoursData>({
     isOpen: null,
@@ -23,25 +22,29 @@ export const useOpeningHours = (
   });
 
   useEffect(() => {
-    if (!coordinates?.lat && !googlePlaceId) {
+    if (!coordinates?.lat || !coordinates?.lng) {
       setData(prev => ({ ...prev, loading: false }));
       return;
     }
 
     const fetchOpeningHours = async () => {
       try {
+        console.log(`Fetching hours for ${placeName} at ${coordinates.lat}, ${coordinates.lng}`);
+        
         const { data: result, error } = await supabase.functions.invoke('get-place-hours', {
           body: {
-            googlePlaceId,
-            lat: coordinates?.lat,
-            lng: coordinates?.lng,
+            lat: coordinates.lat,
+            lng: coordinates.lng,
             name: placeName
           }
         });
 
         if (error) {
+          console.error('Edge function error:', error);
           throw error;
         }
+
+        console.log('Opening hours result:', result);
 
         if (!result?.openingHours) {
           setData({
@@ -61,19 +64,9 @@ export const useOpeningHours = (
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayName = dayNames[now.getDay()];
 
-        // Extract hours from weekday text if available (more accurate)
-        let todayHours = openingHours.todayHours;
-        if (openingHours.weekdayText) {
-          // weekdayText format: "Saturday: 1:00 PM – 12:30 AM"
-          const hoursMatch = openingHours.weekdayText.match(/:\s*(.+)$/);
-          if (hoursMatch) {
-            todayHours = hoursMatch[1];
-          }
-        }
-
         setData({
           isOpen: openingHours.isOpen,
-          todayHours,
+          todayHours: openingHours.todayHours,
           dayName,
           loading: false,
           error: null
@@ -91,7 +84,7 @@ export const useOpeningHours = (
     };
 
     fetchOpeningHours();
-  }, [coordinates?.lat, coordinates?.lng, placeName, googlePlaceId]);
+  }, [coordinates?.lat, coordinates?.lng, placeName]);
 
   return data;
 };
