@@ -49,12 +49,20 @@ const ProfilePage = memo(() => {
     }
   }, [location.state]);
 
-  // Reset state when user changes - prevents showing stale data
+  // Reset state when user or URL tab changes - prevents showing stale data
   useEffect(() => {
-    setActiveTab('posts');
+    const params = new URLSearchParams(location.search);
+    const urlTab = params.get('tab');
+
+    if (urlTab === 'posts' || urlTab === 'trips' || urlTab === 'badges' || urlTab === 'tagged') {
+      setActiveTab(urlTab);
+    } else {
+      setActiveTab('posts');
+    }
+
     setModalState({ isOpen: false, type: null });
     setIsLocationsListOpen(false);
-  }, [user?.id]);
+  }, [user?.id, location.search]);
 
   // Track new badges
   useEffect(() => {

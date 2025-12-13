@@ -359,9 +359,9 @@ const CreateListPage = () => {
           title={isPrivate ? t('privateList', 'Private') : t('publicList', 'Public')}
         >
           {isPrivate ? (
-            <img src={iconPrivate} alt="Private" className="h-6 w-6" />
+            <img src={iconPrivate} alt="Private" className="h-8 w-auto" />
           ) : (
-            <img src={iconPublic} alt="Public" className="h-6 w-6" />
+            <img src={iconPublic} alt="Public" className="h-8 w-auto" />
           )}
         </button>
       </div>
@@ -462,9 +462,9 @@ const CreateListPage = () => {
               {/* Privacy Status */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 {isPrivate ? (
-                  <img src={iconPrivate} alt="Private" className="h-6 w-6" />
+                  <img src={iconPrivate} alt="Private" className="h-7 w-auto" />
                 ) : (
-                  <img src={iconPublic} alt="Public" className="h-6 w-6" />
+                  <img src={iconPublic} alt="Public" className="h-7 w-auto" />
                 )}
                 <span className="text-sm">
                   {isPrivate ? t('privateList', 'Only you can see this list') : t('publicList', 'Everyone can see this list')}
