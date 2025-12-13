@@ -594,59 +594,28 @@ const LeafletMapSetup = ({
 
   // Hide other markers when a place is selected, show only the selected pin
   useEffect(() => {
-    const map = mapRef.current;
     const clusterGroup = markerClusterGroupRef.current;
-    const mapContainer = containerRef.current;
-    if (!map || !clusterGroup || !mapContainer) return;
+    if (!clusterGroup) return;
 
-    if (selectedPlace) {
-      // Add a CSS class to container for hiding all markers except selected
-      mapContainer.classList.add('pin-selected-mode');
-      mapContainer.setAttribute('data-selected-place-id', selectedPlace.id);
-      
-      // Inject CSS if not already present
-      let styleEl = document.getElementById('pin-selected-styles');
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'pin-selected-styles';
-        styleEl.innerHTML = `
-          .pin-selected-mode .leaflet-marker-icon,
-          .pin-selected-mode .marker-cluster {
-            opacity: 0 !important;
-            pointer-events: none !important;
-            transition: opacity 0.2s ease;
-          }
-          .pin-selected-mode .leaflet-marker-icon.selected-pin {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-          }
-        `;
-        document.head.appendChild(styleEl);
+    const selectedId = selectedPlace?.id;
+    const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
+
+    clusterGroup.eachLayer((layer: any) => {
+      const isSelected = selectedMarker && layer === selectedMarker;
+      const hasSelection = !!selectedId;
+      const opacity = hasSelection ? (isSelected ? 1 : 0) : 1;
+
+      if (typeof layer.setOpacity === 'function') {
+        layer.setOpacity(opacity);
       }
-      
-      // Mark the selected marker with a class - use setTimeout to ensure DOM is ready
-      setTimeout(() => {
-        const selectedMarker = markersRef.current.get(selectedPlace.id);
-        if (selectedMarker) {
-          const el = selectedMarker.getElement();
-          if (el) {
-            el.classList.add('selected-pin');
-          }
-        }
-      }, 50);
-    } else {
-      // Remove the hide mode
-      mapContainer.classList.remove('pin-selected-mode');
-      mapContainer.removeAttribute('data-selected-place-id');
-      
-      // Remove selected-pin class from all markers
-      markersRef.current.forEach((marker) => {
-        const el = marker.getElement();
+
+      if (typeof layer.getElement === 'function') {
+        const el = layer.getElement();
         if (el) {
-          el.classList.remove('selected-pin');
+          el.style.pointerEvents = hasSelection ? (isSelected ? 'auto' : 'none') : 'auto';
         }
-      });
-    }
+      }
+    });
   }, [selectedPlace]);
 
   useEffect(() => {
