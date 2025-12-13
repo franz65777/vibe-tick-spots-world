@@ -85,31 +85,6 @@ export const NewAddPage = () => {
         const url = URL.createObjectURL(file);
         setPreviewUrls(prev => [...prev, url]);
       });
-
-      // Try to extract location from first image EXIF
-      if (!selectedLocation && newFiles[0]?.type.startsWith('image/')) {
-        try {
-          const exifr = await import('exifr');
-          const gps = await exifr.gps(newFiles[0]);
-          if (gps?.latitude && gps?.longitude) {
-            const { nominatimGeocoding } = await import('@/lib/nominatimGeocoding');
-            const result = await nominatimGeocoding.reverseGeocode(gps.latitude, gps.longitude);
-            if (result) {
-              toast.success('Location detected from photo!');
-              handleLocationSelect({
-                id: `gps_${Date.now()}`,
-                name: result.city || result.address.split(',')[0],
-                address: result.address,
-                lat: result.lat,
-                lng: result.lng,
-                types: ['locality']
-              });
-            }
-          }
-        } catch (err) {
-          console.log('No GPS data in image');
-        }
-      }
     }
   };
 

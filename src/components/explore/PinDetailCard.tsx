@@ -792,7 +792,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                             <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="text-foreground">
-                            {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
+                            {list.list_name}
                           </span>
                         </button>
                       ))}
