@@ -2777,7 +2777,7 @@ const resources = {
       following: 'Abonné',
       followingTab: 'Abonnements',
       unfollowed: 'Désabonné',
-      followers: 'abonnés',
+      followers: 'Abonnés',
       mutual: 'mutuels',
       savedPlaces: 'lieux enregistrés',
       save: 'Enregistrer',
