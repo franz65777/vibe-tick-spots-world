@@ -21,10 +21,8 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   onRemoveFile,
   maxFiles = 5
 }) => {
-  const {
-    t
-  } = useTranslation();
-  const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showSocialImport, setShowSocialImport] = useState(false);
   const handleClick = () => {
@@ -69,23 +67,32 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           </div>
 
           <div className="space-y-3 w-full">
-            <Button onClick={handleClick} size="lg" className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm">
-              <ImageIcon className="w-5 h-5 mr-2 text-primary" />
-              {t('chooseFromLibrary', {
-              ns: 'add'
-            })}
-            </Button>
-
-            {/* Import from Instagram */}
-            
-
-            <Button onClick={() => navigate('/create-list')} size="lg" className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm">
-              <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-              <span className="whitespace-nowrap">{t('createList', {
-                ns: 'add'
-              })}</span>
-            </Button>
-          </div>
+             <div className="flex gap-3 w-full">
+               <Button
+                 onClick={handleClick}
+                 size="lg"
+                 className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
+               >
+                 <ImageIcon className="w-5 h-5 mr-2 text-primary" />
+                 <span className="whitespace-nowrap">
+                   {i18n.language.startsWith('it')
+                     ? 'Crea un post'
+                     : t('chooseFromLibrary', { ns: 'add' })}
+                 </span>
+               </Button>
+ 
+               <Button
+                 onClick={() => navigate('/create-list')}
+                 size="lg"
+                 className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
+               >
+                 <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                 <span className="whitespace-nowrap">
+                   {t('createList', { ns: 'add' })}
+                 </span>
+               </Button>
+             </div>
+           </div>
 
           <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={e => e.target.files && onFilesSelect(e.target.files)} className="hidden" />
         </div>
