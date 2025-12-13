@@ -192,6 +192,21 @@ const resources = {
         10: 'Nov',
         11: 'Dec'
       },
+      days: {
+        sunday: 'Sunday',
+        monday: 'Monday',
+        tuesday: 'Tuesday',
+        wednesday: 'Wednesday',
+        thursday: 'Thursday',
+        friday: 'Friday',
+        saturday: 'Saturday'
+      },
+      openingHours: {
+        open: 'Open',
+        closed: 'Closed',
+        opensAt: 'Opens at {{time}}',
+        closesAt: 'Closes at {{time}}'
+      },
       week: 'week',
       weeks: 'weeks',
       leaderboard: 'Leaderboard',
@@ -1136,6 +1151,21 @@ const resources = {
         10: 'Nov',
         11: 'Dic'
       },
+      days: {
+        sunday: 'Domingo',
+        monday: 'Lunes',
+        tuesday: 'Martes',
+        wednesday: 'Miércoles',
+        thursday: 'Jueves',
+        friday: 'Viernes',
+        saturday: 'Sábado'
+      },
+      openingHours: {
+        open: 'Abierto',
+        closed: 'Cerrado',
+        opensAt: 'Abre a las {{time}}',
+        closesAt: 'Cierra a las {{time}}'
+      },
       week: 'semana',
       weeks: 'semanas',
       leaderboard: 'Tabla de Clasificación',
@@ -2031,6 +2061,21 @@ const resources = {
         10: 'Nov',
         11: 'Dic'
       },
+      days: {
+        sunday: 'Domenica',
+        monday: 'Lunedì',
+        tuesday: 'Martedì',
+        wednesday: 'Mercoledì',
+        thursday: 'Giovedì',
+        friday: 'Venerdì',
+        saturday: 'Sabato'
+      },
+      openingHours: {
+        open: 'Aperto',
+        closed: 'Chiuso',
+        opensAt: 'Apre alle {{time}}',
+        closesAt: 'Chiude alle {{time}}'
+      },
       week: 'settimana',
       weeks: 'settimane',
       leaderboard: 'Classifica',
@@ -2904,6 +2949,21 @@ const resources = {
         10: 'Nov',
         11: 'Déc'
       },
+      days: {
+        sunday: 'Dimanche',
+        monday: 'Lundi',
+        tuesday: 'Mardi',
+        wednesday: 'Mercredi',
+        thursday: 'Jeudi',
+        friday: 'Vendredi',
+        saturday: 'Samedi'
+      },
+      openingHours: {
+        open: 'Ouvert',
+        closed: 'Fermé',
+        opensAt: 'Ouvre à {{time}}',
+        closesAt: 'Ferme à {{time}}'
+      },
       week: 'semaine',
       weeks: 'semaines',
       leaderboard: 'Classement',
@@ -3657,6 +3717,21 @@ const resources = {
         10: 'November',
         11: 'Dezember'
       },
+      days: {
+        sunday: 'Sonntag',
+        monday: 'Montag',
+        tuesday: 'Dienstag',
+        wednesday: 'Mittwoch',
+        thursday: 'Donnerstag',
+        friday: 'Freitag',
+        saturday: 'Samstag'
+      },
+      openingHours: {
+        open: 'Geöffnet',
+        closed: 'Geschlossen',
+        opensAt: 'Öffnet um {{time}}',
+        closesAt: 'Schließt um {{time}}'
+      },
       week: 'Woche',
       weeks: 'Wochen',
       leaderboard: 'Bestenliste',
@@ -4347,6 +4422,21 @@ const resources = {
         9: 'Out',
         10: 'Nov',
         11: 'Dez'
+      },
+      days: {
+        sunday: 'Domingo',
+        monday: 'Segunda-feira',
+        tuesday: 'Terça-feira',
+        wednesday: 'Quarta-feira',
+        thursday: 'Quinta-feira',
+        friday: 'Sexta-feira',
+        saturday: 'Sábado'
+      },
+      openingHours: {
+        open: 'Aberto',
+        closed: 'Fechado',
+        opensAt: 'Abre às {{time}}',
+        closesAt: 'Fecha às {{time}}'
       },
       week: 'semana',
       weeks: 'semanas',
