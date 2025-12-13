@@ -173,29 +173,35 @@ const OpenStreetMapAutocomplete = ({
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg max-h-[300px] overflow-y-auto scrollbar-hide">
-          {results.map((result) => (
-            <button
-              key={result.id}
-              onClick={() => handleSelect(result)}
-              className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
-            >
-              <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground truncate">
-                  {result.name}
-                </div>
-                <div className="text-sm text-muted-foreground truncate">
-                  {result.address}
-                </div>
-                {result.source === 'database' && (
-                  <div className="text-xs text-primary mt-1">
-                    {t('inYourNetwork', { ns: 'add' })}
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg max-h-[200px] overflow-y-auto scrollbar-hide pb-safe">
+          {results.map((result) => {
+            // Format address: City, street, number (no name repetition)
+            const addressParts = result.address.split(',').map(p => p.trim());
+            const filteredParts = addressParts.filter(p => 
+              p.toLowerCase() !== result.name.toLowerCase()
+            );
+            const formattedAddress = result.city 
+              ? `${result.city}, ${filteredParts.slice(0, 2).join(', ')}`
+              : filteredParts.slice(0, 3).join(', ');
+            
+            return (
+              <button
+                key={result.id}
+                onClick={() => handleSelect(result)}
+                className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
+              >
+                <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-foreground truncate">
+                    {result.name}
                   </div>
-                )}
-              </div>
-            </button>
-          ))}
+                  <div className="text-sm text-muted-foreground truncate">
+                    {formattedAddress}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 

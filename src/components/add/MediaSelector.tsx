@@ -126,9 +126,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           
           {/* Add more button - simple + circle */}
           {selectedFiles.length < maxFiles && (
-            <button onClick={handleClick} className="w-40 h-40 flex-shrink-0 border-2 border-dashed border-primary/30 rounded-xl flex items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors">
-              <div className="w-12 h-12 rounded-full border-2 border-primary flex items-center justify-center">
-                <Plus className="w-6 h-6 text-primary" />
+            <button onClick={handleClick} className="w-10 h-40 flex-shrink-0 flex items-center justify-center ml-1">
+              <div className="w-8 h-8 rounded-full border-2 border-primary/50 flex items-center justify-center hover:border-primary hover:bg-primary/10 transition-colors">
+                <Plus className="w-4 h-4 text-primary" />
               </div>
             </button>
           )}
