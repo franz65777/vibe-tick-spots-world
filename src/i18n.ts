@@ -335,6 +335,11 @@ const resources = {
         sendMessage: 'Send a message...',
         addLocation: 'Add Location',
         likes: 'Likes',
+        myLists: 'My Lists',
+        savedLists: 'Saved Lists',
+        trips: 'Trips',
+        place: 'place',
+        places: 'places',
       },
       ai: {
         title: 'AI Travel Assistant',
@@ -910,7 +915,10 @@ const resources = {
       tripCreated: 'Trip created successfully',
       errorCreatingTrip: 'Error creating trip',
       addedToTrip: 'added to trip',
-      createTrip: 'Create Trip'
+      createTrip: 'Create Trip',
+      myLists: 'My Lists',
+      savedLists: 'Saved Lists',
+      trips: 'Trips'
     },
     ai: {
       title: 'AI Travel Assistant',
@@ -1798,7 +1806,10 @@ const resources = {
       tripCreated: 'Viaje creado exitosamente',
       errorCreatingTrip: 'Error al crear el viaje',
       addedToTrip: 'añadido al viaje',
-      createTrip: 'Crear Viaje'
+      createTrip: 'Crear Viaje',
+      myLists: 'Mis Listas',
+      savedLists: 'Listas Guardadas',
+      trips: 'Viajes'
     },
     ai: {
       title: 'Asistente de Viajes IA',
@@ -2700,7 +2711,10 @@ const resources = {
       tripCreated: 'Viaggio creato con successo',
       errorCreatingTrip: 'Errore nella creazione del viaggio',
       addedToTrip: 'è stato aggiunto al viaggio',
-      createTrip: 'Crea viaggio'
+      createTrip: 'Crea viaggio',
+      myLists: 'Le Mie Liste',
+      savedLists: 'Liste Salvate',
+      trips: 'Viaggi'
     },
     ai: {
       title: 'Assistente di Viaggio IA',
@@ -3462,7 +3476,10 @@ const resources = {
       createButton: 'Créer un Nouveau Voyage',
       planWithFriends: 'Planifiez des voyages avec vos amis',
       places: 'lieux',
-      place: 'lieu'
+      place: 'lieu',
+      myLists: 'Mes Listes',
+      savedLists: 'Listes Sauvegardées',
+      trips: 'Voyages'
     },
     ai: {
       title: 'Assistant de Voyage IA',
@@ -4145,7 +4162,10 @@ const resources = {
       tripCreated: 'Reise erfolgreich erstellt',
       errorCreatingTrip: 'Fehler beim Erstellen der Reise',
       addedToTrip: 'zur Reise hinzugefügt',
-      createTrip: 'Reise Erstellen'
+      createTrip: 'Reise Erstellen',
+      myLists: 'Meine Listen',
+      savedLists: 'Gespeicherte Listen',
+      trips: 'Reisen'
     },
     ai: {
       title: 'KI-Assistent',
@@ -4853,7 +4873,10 @@ const resources = {
       tripCreated: 'Viagem criada com sucesso',
       errorCreatingTrip: 'Erro ao criar viagem',
       addedToTrip: 'adicionado à viagem',
-      createTrip: 'Criar Viagem'
+      createTrip: 'Criar Viagem',
+      myLists: 'Minhas Listas',
+      savedLists: 'Listas Salvas',
+      trips: 'Viagens'
     },
     ai: {
       title: 'Assistente de Viagem IA',
