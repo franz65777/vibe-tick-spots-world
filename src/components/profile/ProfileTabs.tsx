@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Award, MapPin, Grid3X3, Tag, Megaphone } from 'lucide-react';
+import { Award, List, Grid3X3, Tag, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +49,7 @@ const ProfileTabs = ({
                 : "text-muted-foreground"
             )}
           >
-            <MapPin className="w-4 h-4" />
+            <List className="w-4 h-4" />
             <span className="hidden sm:inline">{t('trips', { ns: 'profile' })}</span>
           </button>
         )}
