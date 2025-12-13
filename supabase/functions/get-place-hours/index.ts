@@ -190,7 +190,7 @@ serve(async (req) => {
     if (locationId) {
       const { data } = await supabase
         .from('locations')
-        .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source')
+        .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source, google_place_id')
         .eq('id', locationId)
         .maybeSingle();
 
