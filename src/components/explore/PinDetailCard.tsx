@@ -99,6 +99,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
+  const [snap, setSnap] = useState<string | number | null>(0.35);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Check if onboarding is active on map-guide step
@@ -276,6 +277,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     setReviews([]);
     setPostsPage(1);
     setHasMorePosts(true);
+    setSnap(0.35); // Reset to collapsed state
     
     checkInteractions();
     fetchPosts();
@@ -499,6 +501,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         open={!savedByOpen && !isListOpen}
         modal={false}
         dismissible={true}
+        snapPoints={[0.35, 0.9]}
+        activeSnapPoint={snap}
+        setActiveSnapPoint={setSnap}
         onOpenChange={(open) => { 
           if (!open && !shareOpen && !reviewOpen) {
             if (onBack) {
@@ -509,11 +514,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           }
         }}
       >
-        <DrawerContent data-pin-detail-card="true" className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${onBack ? 'z-[10020]' : 'z-[2000]'}`}>
-          {/* Draggable Header - Compact and Draggable */}
-          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
-            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
-            <div className="flex items-center gap-3 pb-2">
+        <DrawerContent 
+          data-pin-detail-card="true" 
+          showHandle={false}
+          className={`transition-all duration-300 ${onBack ? 'z-[10020]' : 'z-[2000]'}`}
+        >
+          {/* Compact Draggable Header */}
+          <div className="bg-background px-4 pt-2 pb-2 cursor-grab active:cursor-grabbing">
+            <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-2" />
+            <div className="flex items-center gap-3">
               {(sourcePostId || onBack) && (
                 <Button
                   onClick={(e) => {
@@ -579,165 +588,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
           </div>
 
-          {/* Action Buttons - Hidden when scrolling down or when dropdown is open */}
-          <div 
-            className={`relative z-10 bg-background px-4 pb-4 transition-all duration-300 ${
-              showActionButtons || dropdownOpen ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
-            }`}
-          >
-            {!dropdownOpen ? (
-              <div className="flex items-center gap-1.5">
-                <div className="grid grid-cols-4 gap-1.5 flex-1">
-                  {/* Save Button - with sparkle effect during onboarding */}
-                  <div className="relative">
-                    {isOnboardingMapStep && !isSaved && !dropdownOpen && (
-                      <>
-                        {/* Sparkle effects - only when dropdown is closed */}
-                        <span className="absolute -top-2 -left-1 text-lg animate-bounce z-20" style={{ animationDelay: '0ms' }}>✨</span>
-                        <span className="absolute -top-1 -right-1 text-lg animate-bounce z-20" style={{ animationDelay: '200ms' }}>⭐</span>
-                        <span className="absolute -bottom-1 -left-2 text-sm animate-bounce z-20" style={{ animationDelay: '400ms' }}>✨</span>
-                        <span className="absolute -bottom-2 right-0 text-sm animate-bounce z-20" style={{ animationDelay: '300ms' }}>🌟</span>
-                      </>
-                    )}
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDropdownOpen(true);
-                      }}
-                      disabled={loading}
-                      variant="secondary"
-                      size="sm"
-                      className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full"
-                    >
-                      <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                       {isSaved ? (
-                         <img src={TAG_ICONS[currentSaveTag] || saveTagBeen} alt="" className="h-5 w-5 object-contain" />
-                       ) : (
-                         <Bookmark className="h-5 w-5" />
-                       )}
-                      <span className="text-xs">
-                        {isSaved 
-                          ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
-                          : t('save', { ns: 'common', defaultValue: 'Save' })
-                        }
-                      </span>
-                    </Button>
-                  </div>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setReviewOpen(true);
-                    }}
-                    size="sm"
-                    variant="secondary"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
-                  >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    <Star className="w-5 h-5" />
-                    <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
-                  </Button>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDirections();
-                    }}
-                    size="sm"
-                    variant="secondary"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
-                  >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    <Navigation className="w-5 h-5" />
-                    <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
-                  </Button>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShareOpen(true);
-                    }}
-                    size="sm"
-                    variant="secondary"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
-                  >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    <Share2 className="w-5 h-5" />
-                    <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
-                  </Button>
-                </div>
-
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
-                    if (isMuted) {
-                      unmuteLocation(place.id);
-                    } else {
-                      muteLocation(place.id);
-                    }
-                  }}
-                  disabled={isMuting}
-                  size="icon"
-                  variant="secondary"
-                  className={`h-10 w-10 rounded-full flex-shrink-0 ${
-                    mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
-                  }`}
-                >
-                  {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                </Button>
-              </div>
-            ) : (
-              <>
-                {/* Invisible click-away layer to close dropdown (no visual overlay) */}
-                <div 
-                  className="fixed inset-0 z-40"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDropdownOpen(false);
-                  }}
-                />
-                
-                {/* Dropdown positioned absolutely */}
-                <div className="absolute left-4 top-0 w-auto z-50">
-                  <div className="w-56 bg-muted/10 backdrop-blur-md border border-border/10 rounded-2xl shadow-lg">
-                    {isSaved && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUnsave();
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent text-destructive transition-colors min-h-[44px]"
-                      >
-                        <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
-                        <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
-                      </button>
-                    )}
-                    {SAVE_TAG_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSaveWithTag(option.value);
-                          setDropdownOpen(false);
-                        }}
-                        className={`w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent transition-colors min-h-[44px] ${
-                          option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
-                        }`}
-                      >
-                        <img src={TAG_ICONS[option.value]} alt="" className="h-4 w-4 object-contain flex-shrink-0" />
-                        <span className="text-sm font-medium text-left flex-1">
-                          {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Opening Hours and Saved By Users Row */}
+          {/* Opening Hours and Saved By Users Row - Always visible */}
           <div className="px-4 pb-3">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
@@ -776,7 +627,168 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
           </div>
 
-          {/* Marketing Campaign - Expandable Section */}
+          {/* Expanded Content - Only visible when drawer is expanded */}
+          {snap === 0.9 && (
+            <>
+              {/* Action Buttons - Hidden when scrolling down or when dropdown is open */}
+              <div 
+                className={`relative z-10 bg-background px-4 pb-4 transition-all duration-300 ${
+                  showActionButtons || dropdownOpen ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
+                }`}
+              >
+                {!dropdownOpen ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="grid grid-cols-4 gap-1.5 flex-1">
+                      {/* Save Button - with sparkle effect during onboarding */}
+                      <div className="relative">
+                        {isOnboardingMapStep && !isSaved && !dropdownOpen && (
+                          <>
+                            {/* Sparkle effects - only when dropdown is closed */}
+                            <span className="absolute -top-2 -left-1 text-lg animate-bounce z-20" style={{ animationDelay: '0ms' }}>✨</span>
+                            <span className="absolute -top-1 -right-1 text-lg animate-bounce z-20" style={{ animationDelay: '200ms' }}>⭐</span>
+                            <span className="absolute -bottom-1 -left-2 text-sm animate-bounce z-20" style={{ animationDelay: '400ms' }}>✨</span>
+                            <span className="absolute -bottom-2 right-0 text-sm animate-bounce z-20" style={{ animationDelay: '300ms' }}>🌟</span>
+                          </>
+                        )}
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDropdownOpen(true);
+                          }}
+                          disabled={loading}
+                          variant="secondary"
+                          size="sm"
+                          className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full"
+                        >
+                          <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                           {isSaved ? (
+                             <img src={TAG_ICONS[currentSaveTag] || saveTagBeen} alt="" className="h-5 w-5 object-contain" />
+                           ) : (
+                             <Bookmark className="h-5 w-5" />
+                           )}
+                          <span className="text-xs">
+                            {isSaved 
+                              ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
+                              : t('save', { ns: 'common', defaultValue: 'Save' })
+                            }
+                          </span>
+                        </Button>
+                      </div>
+
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReviewOpen(true);
+                        }}
+                        size="sm"
+                        variant="secondary"
+                        className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
+                      >
+                        <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                        <Star className="w-5 h-5" />
+                        <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
+                      </Button>
+
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDirections();
+                        }}
+                        size="sm"
+                        variant="secondary"
+                        className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
+                      >
+                        <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                        <Navigation className="w-5 h-5" />
+                        <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
+                      </Button>
+
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShareOpen(true);
+                        }}
+                        size="sm"
+                        variant="secondary"
+                        className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
+                      >
+                        <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                        <Share2 className="w-5 h-5" />
+                        <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
+                      </Button>
+                    </div>
+
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
+                        if (isMuted) {
+                          unmuteLocation(place.id);
+                        } else {
+                          muteLocation(place.id);
+                        }
+                      }}
+                      disabled={isMuting}
+                      size="icon"
+                      variant="secondary"
+                      className={`h-10 w-10 rounded-full flex-shrink-0 ${
+                        mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
+                      }`}
+                    >
+                      {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Invisible click-away layer to close dropdown (no visual overlay) */}
+                    <div 
+                      className="fixed inset-0 z-40"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDropdownOpen(false);
+                      }}
+                    />
+                    
+                    {/* Dropdown positioned absolutely */}
+                    <div className="absolute left-4 top-0 w-auto z-50">
+                      <div className="w-56 bg-muted/10 backdrop-blur-md border border-border/10 rounded-2xl shadow-lg">
+                        {isSaved && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnsave();
+                            }}
+                            className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent text-destructive transition-colors min-h-[44px]"
+                          >
+                            <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
+                            <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
+                          </button>
+                        )}
+                        {SAVE_TAG_OPTIONS.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSaveWithTag(option.value);
+                              setDropdownOpen(false);
+                            }}
+                            className={`w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent transition-colors min-h-[44px] ${
+                              option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
+                            }`}
+                          >
+                            <img src={TAG_ICONS[option.value]} alt="" className="h-4 w-4 object-contain flex-shrink-0" />
+                            <span className="text-sm font-medium text-left flex-1">
+                              {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Marketing Campaign - Expandable Section */}
           {campaign && (
             <div className="px-4 pb-2">
               <button
@@ -1023,6 +1035,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               )}
             </div>
           </div>
+          </>
+          )}
         </DrawerContent>
       </Drawer>
 
