@@ -592,7 +592,56 @@ const LeafletMapSetup = ({
     fetchCampaigns();
   }, [places, isDarkMode, onPinClick, trackEvent, shares, user]);
 
-  // City labels - show when zoomed out
+  // Hide other markers when a place is selected, show only the selected pin
+  useEffect(() => {
+    const map = mapRef.current;
+    const clusterGroup = markerClusterGroupRef.current;
+    if (!map || !clusterGroup) return;
+
+    if (selectedPlace) {
+      // Hide all markers except the selected one
+      markersRef.current.forEach((marker, id) => {
+        const el = marker.getElement();
+        if (el) {
+          if (id === selectedPlace.id) {
+            el.style.opacity = '1';
+            el.style.pointerEvents = 'auto';
+          } else {
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
+          }
+        }
+      });
+      // Hide cluster icons via DOM query
+      const mapContainer = containerRef.current;
+      if (mapContainer) {
+        const clusters = mapContainer.querySelectorAll('.marker-cluster');
+        clusters.forEach((cluster) => {
+          (cluster as HTMLElement).style.opacity = '0';
+          (cluster as HTMLElement).style.pointerEvents = 'none';
+        });
+      }
+    } else {
+      // Show all markers again
+      markersRef.current.forEach((marker) => {
+        const el = marker.getElement();
+        if (el) {
+          el.style.opacity = '1';
+          el.style.pointerEvents = 'auto';
+        }
+      });
+      // Show clusters again
+      const mapContainer = containerRef.current;
+      if (mapContainer) {
+        const clusters = mapContainer.querySelectorAll('.marker-cluster');
+        clusters.forEach((cluster) => {
+          (cluster as HTMLElement).style.opacity = '1';
+          (cluster as HTMLElement).style.pointerEvents = 'auto';
+        });
+      }
+    }
+  }, [selectedPlace]);
+
   useEffect(() => {
     const map = mapRef.current;
     const clusterGroup = markerClusterGroupRef.current;
