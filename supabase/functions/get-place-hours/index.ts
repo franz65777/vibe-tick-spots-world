@@ -189,28 +189,26 @@ serve(async (req) => {
         .eq('id', locationId)
         .single();
 
-      if (cachedLocation?.opening_hours_data && cachedLocation?.opening_hours_fetched_at) {
-        const fetchedAt = new Date(cachedLocation.opening_hours_fetched_at);
-        const daysSinceFetch = (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60 * 24);
+      if (cachedLocation?.opening_hours_data) {
+        console.log('Using cached opening hours from database');
+        const cached = cachedLocation.opening_hours_data as any;
         
-        // Use cached data if less than 30 days old
-        if (daysSinceFetch < 30) {
-          console.log('Using cached opening hours from database');
-          const cached = cachedLocation.opening_hours_data as any;
-          
-          // Recalculate isOpen based on current time
-          let isOpen = cached.isOpen;
-          if (cached.periods) {
-            const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
-            isOpen = parsed.isOpen;
-          }
-          
-          return new Response(
-            JSON.stringify({
-              openingHours: {
-                isOpen,
-                todayHours: cached.todayHours,
-                source: cachedLocation.opening_hours_source || 'cached'
+        // Recalculate isOpen and todayHours based on current time
+        let isOpen = cached.isOpen;
+        let todayHours = cached.todayHours;
+        
+        if (cached.periods) {
+          const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
+          isOpen = parsed.isOpen;
+          todayHours = parsed.todayHours;
+        }
+        
+        return new Response(
+          JSON.stringify({
+            openingHours: {
+              isOpen,
+              todayHours,
+              source: cachedLocation.opening_hours_source || 'cached'
               }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
