@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Search, Trash2, Plus, MapPin, Upload } from 'lucide-react';
-import lockIcon from '@/assets/lock-icon.png';
-import eyeIcon from '@/assets/eye-icon.png';
+import iconPublic from '@/assets/icon-public.png';
+import iconPrivate from '@/assets/icon-private.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
@@ -334,17 +334,25 @@ const CreateListPage = () => {
     place.city?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleClose = () => {
+    if (isEditMode) {
+      navigate('/profile?tab=trips');
+    } else {
+      navigate('/add');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[10001] flex flex-col bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 pt-safe border-b border-border/50">
+      <div className="flex items-center justify-between px-4 py-4 pt-safe">
         <button
-          onClick={() => navigate('/add')}
+          onClick={handleClose}
           className="p-2 hover:bg-accent rounded-full transition-colors"
         >
           <X className="h-6 w-6" />
         </button>
-        <h2 className="text-lg font-semibold">
+        <h2 className="flex-1 text-lg font-semibold text-left ml-2">
           {isEditMode
             ? t('editList', 'Edit List')
             : t('createNewList', 'Create New List')}
@@ -355,9 +363,9 @@ const CreateListPage = () => {
           title={isPrivate ? t('privateList', 'Private') : t('publicList', 'Public')}
         >
           {isPrivate ? (
-            <img src={lockIcon} alt="Private" className="h-5 w-5" />
+            <img src={iconPrivate} alt="Private" className="h-6 w-6" />
           ) : (
-            <img src={eyeIcon} alt="Public" className="h-5 w-8" />
+            <img src={iconPublic} alt="Public" className="h-6 w-6" />
           )}
         </button>
       </div>
@@ -472,9 +480,9 @@ const CreateListPage = () => {
               {/* Privacy Status */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 {isPrivate ? (
-                  <img src={lockIcon} alt="Private" className="h-5 w-5" />
+                  <img src={iconPrivate} alt="Private" className="h-6 w-6" />
                 ) : (
-                  <img src={eyeIcon} alt="Public" className="h-5 w-7" />
+                  <img src={iconPublic} alt="Public" className="h-6 w-6" />
                 )}
                 <span className="text-sm">
                   {isPrivate ? t('privateList', 'Only you can see this list') : t('publicList', 'Everyone can see this list')}
