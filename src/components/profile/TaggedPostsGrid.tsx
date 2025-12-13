@@ -3,12 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import PostDetailModal from '../explore/PostDetailModal';
+import { useTranslation } from 'react-i18next';
 
 interface TaggedPostsGridProps {
   userId?: string;
 }
 
 const TaggedPostsGrid = ({ userId }: TaggedPostsGridProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const targetUserId = userId || user?.id;
   const [posts, setPosts] = useState<any[]>([]);
@@ -66,7 +68,7 @@ const TaggedPostsGrid = ({ userId }: TaggedPostsGridProps) => {
   if (posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-        <p className="text-muted-foreground">No posts where you're tagged yet</p>
+        <p className="text-muted-foreground">{t('profile:noTaggedPosts')}</p>
       </div>
     );
   }
