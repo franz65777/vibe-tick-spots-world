@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus, Instagram } from 'lucide-react';
+import { Image as ImageIcon, Video, X, FolderPlus, Instagram } from 'lucide-react';
 import addPostButton from '@/assets/add-post-button.png';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -79,21 +79,12 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             {/* Import from Instagram */}
             
 
-            <div className="flex gap-3 w-full">
-              <Button onClick={() => navigate('/save-location')} size="lg" className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3">
-                <Map className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                <span className="whitespace-nowrap">{t('addLocation', {
-                  ns: 'add'
-                })}</span>
-              </Button>
-
-              <Button onClick={() => navigate('/create-list')} size="lg" className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm px-3">
-                <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                <span className="whitespace-nowrap">{t('createList', {
-                  ns: 'add'
-                })}</span>
-              </Button>
-            </div>
+            <Button onClick={() => navigate('/create-list')} size="lg" className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm">
+              <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+              <span className="whitespace-nowrap">{t('createList', {
+                ns: 'add'
+              })}</span>
+            </Button>
           </div>
 
           <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={e => e.target.files && onFilesSelect(e.target.files)} className="hidden" />
