@@ -758,7 +758,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   }}
                   className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity"
                 >
-                  {savedByUsers.slice(0, 3).map((savedUser) => (
+                  {savedByUsers.slice(0, 2).map((savedUser) => (
                     <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background">
                       <AvatarImage src={savedUser.avatar_url || undefined} />
                       <AvatarFallback className="text-xs bg-primary/20 text-primary">
@@ -766,9 +766,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       </AvatarFallback>
                     </Avatar>
                   ))}
-                  {savedByTotalCount > 3 && (
+                  {savedByTotalCount > 2 && (
                     <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                      <span className="text-[10px] font-medium text-muted-foreground">+{savedByTotalCount - 3}</span>
+                      <span className="text-[10px] font-medium text-muted-foreground">+{savedByTotalCount - 2}</span>
                     </div>
                   )}
                 </button>
