@@ -12,6 +12,46 @@ interface OpeningHoursResult {
   source: string;
 }
 
+// Validate if a Google Place ID is real (not fake OSM-generated)
+function isValidGooglePlaceId(placeId: string | null | undefined): boolean {
+  if (!placeId || typeof placeId !== 'string') return false;
+  // Real Google Place IDs start with "ChIJ" 
+  // Fake IDs often start with "osm-", "osm_", "photon-", or coordinates
+  if (placeId.startsWith('ChIJ')) return true;
+  return false;
+}
+
+// Use Google Find Place API to get a Place ID from name + coordinates
+async function findGooglePlaceId(
+  name: string,
+  lat: number,
+  lng: number,
+  apiKey: string
+): Promise<string | null> {
+  try {
+    // Use Find Place from Text with location bias
+    const input = encodeURIComponent(name);
+    const locationBias = `point:${lat},${lng}`;
+    const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${input}&inputtype=textquery&locationbias=${locationBias}&fields=place_id&key=${apiKey}`;
+    
+    console.log(`Find Place API call for: ${name}`);
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status === 'OK' && data.candidates && data.candidates.length > 0) {
+      const placeId = data.candidates[0].place_id;
+      console.log(`Find Place API found: ${placeId}`);
+      return placeId;
+    }
+    
+    console.log(`Find Place API no results: ${data.status}`);
+    return null;
+  } catch (error) {
+    console.error('Find Place API error:', error);
+    return null;
+  }
+}
+
 // Parse Google Places opening hours
 function parseGoogleHours(periods: any[], weekdayText: string[]): OpeningHoursResult {
   const now = new Date();
@@ -165,7 +205,7 @@ serve(async (req) => {
   }
 
   try {
-    const { lat, lng, name, locationId, googlePlaceId } = await req.json();
+    const { lat, lng, name, locationId, googlePlaceId: requestedPlaceId } = await req.json();
 
     if (!lat || !lng) {
       return new Response(
@@ -174,72 +214,92 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching hours for ${name} at ${lat}, ${lng}, locationId: ${locationId}, googlePlaceId: ${googlePlaceId}`);
+    console.log(`Fetching hours for ${name} at ${lat}, ${lng}, locationId: ${locationId}, googlePlaceId: ${requestedPlaceId}`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Step 1: Check database cache first
     const googleApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     let openingHours: OpeningHoursResult | null = null;
     let cacheData: any = null;
     let cachedLocation: any = null;
 
+    // Step 1: Check database cache and get existing google_place_id
     if (locationId) {
       const { data } = await supabase
         .from('locations')
-        .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source, google_place_id')
+        .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source, google_place_id, name')
         .eq('id', locationId)
         .maybeSingle();
 
       cachedLocation = data;
+      console.log(`DB location: google_place_id=${cachedLocation?.google_place_id}, source=${cachedLocation?.opening_hours_source}`);
+    }
 
-      if (cachedLocation?.opening_hours_data) {
-        console.log('Found cached opening hours in database');
-        const cached = cachedLocation.opening_hours_data as any;
+    // Step 2: Determine the best Google Place ID to use
+    // Priority: 1) Valid ID from request, 2) Valid ID from database
+    let googlePlaceId: string | null = null;
+    
+    if (isValidGooglePlaceId(requestedPlaceId)) {
+      googlePlaceId = requestedPlaceId;
+      console.log(`Using valid Google Place ID from request: ${googlePlaceId}`);
+    } else if (isValidGooglePlaceId(cachedLocation?.google_place_id)) {
+      googlePlaceId = cachedLocation.google_place_id;
+      console.log(`Using valid Google Place ID from database: ${googlePlaceId}`);
+    }
 
-        const isGoogleSource = cachedLocation.opening_hours_source === 'google';
-        const canUseGoogle = !!(googleApiKey && googlePlaceId);
+    // Step 3: If we have cached Google data, use it immediately
+    if (cachedLocation?.opening_hours_data && cachedLocation?.opening_hours_source === 'google') {
+      console.log('Using cached Google opening hours');
+      const cached = cachedLocation.opening_hours_data as any;
+      
+      let isOpen = cached.isOpen ?? null;
+      let todayHours = cached.todayHours ?? null;
 
-        // If cache already comes from Google OR we cannot call Google,
-        // immediately return the cached values (no external API calls).
-        if (isGoogleSource || !canUseGoogle) {
-          // Recalculate isOpen and todayHours based on current time
-          let isOpen = cached.isOpen ?? null;
-          let todayHours = cached.todayHours ?? null;
+      if (cached.periods) {
+        const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
+        isOpen = parsed.isOpen;
+        todayHours = parsed.todayHours;
+      }
 
-          if (cached.periods) {
-            const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
-            isOpen = parsed.isOpen;
-            todayHours = parsed.todayHours;
+      return new Response(
+        JSON.stringify({
+          openingHours: { isOpen, todayHours, source: 'google' }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Step 4: If no valid Google Place ID, try to find one using Find Place API
+    if (!googlePlaceId && googleApiKey && name) {
+      console.log('No valid Google Place ID, trying Find Place API...');
+      const foundPlaceId = await findGooglePlaceId(name, lat, lng, googleApiKey);
+      
+      if (foundPlaceId) {
+        googlePlaceId = foundPlaceId;
+        
+        // Save the found Google Place ID to the database
+        if (locationId) {
+          try {
+            await supabase
+              .from('locations')
+              .update({ google_place_id: foundPlaceId })
+              .eq('id', locationId);
+            console.log(`Saved new Google Place ID to database: ${foundPlaceId}`);
+          } catch (err) {
+            console.error('Failed to save Google Place ID:', err);
           }
-
-          return new Response(
-            JSON.stringify({
-              openingHours: {
-                isOpen,
-                todayHours,
-                source: cachedLocation.opening_hours_source || 'cached'
-              }
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
         }
-
-        // If cache is from a non-Google source but we DO have a Google Place ID,
-        // we'll try to refresh from Google below while keeping this cache as fallback.
       }
     }
 
-    // Step 2: Try Google Places API (only for opening hours)
-
+    // Step 5: Try Google Places Details API for opening hours
     if (googleApiKey && googlePlaceId) {
       try {
-        console.log('Fetching from Google Places API...');
+        console.log(`Fetching opening hours from Google Places API for: ${googlePlaceId}`);
         
-        // Use Place Details API with only opening_hours field to minimize cost
         const googleUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${googlePlaceId}&fields=opening_hours&key=${googleApiKey}`;
         
         const googleResponse = await fetch(googleUrl);
@@ -249,7 +309,6 @@ serve(async (req) => {
           const hours = googleData.result.opening_hours;
           openingHours = parseGoogleHours(hours.periods || [], hours.weekday_text || []);
           
-          // Store periods for future recalculation
           cacheData = {
             periods: hours.periods,
             weekdayText: hours.weekday_text,
@@ -259,19 +318,19 @@ serve(async (req) => {
           
           console.log('Google Places API success:', openingHours);
         } else {
-          console.log('Google Places API returned no opening hours:', googleData.status);
+          console.log('Google Places API returned no opening hours:', googleData.status, googleData.error_message);
         }
       } catch (googleError) {
         console.error('Google Places API error:', googleError);
       }
     }
 
-    // Step 3: Fallback to OSM Overpass API
+    // Step 6: Fallback to OSM Overpass API
     if (!openingHours) {
       try {
         console.log('Falling back to OSM Overpass API...');
         
-        const radius = 50; // meters
+        const radius = 50;
         const query = `
           [out:json][timeout:10];
           (
@@ -291,7 +350,6 @@ serve(async (req) => {
         const osmData = await overpassResponse.json();
 
         if (osmData.elements && osmData.elements.length > 0) {
-          // Find best match by name if provided
           let bestMatch = osmData.elements[0];
           
           if (name) {
@@ -321,8 +379,7 @@ serve(async (req) => {
       }
     }
 
-    // If external APIs did not return anything but we have cached data,
-    // fall back to the existing cached opening hours.
+    // If external APIs failed but we have cached data, use it as fallback
     if (!openingHours && cachedLocation?.opening_hours_data) {
       console.log('Using existing cached opening hours as fallback');
       const cached = cachedLocation.opening_hours_data as any;
@@ -349,7 +406,7 @@ serve(async (req) => {
       }
     }
 
-    // Step 4: Save to database cache if we got results
+    // Step 7: Save to database cache if we got new results
     if (openingHours && cacheData && locationId) {
       try {
         await supabase
