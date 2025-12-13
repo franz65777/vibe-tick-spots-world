@@ -70,9 +70,21 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
 
   const formattedHours = formatTodayHoursForLocale(todayHours, i18n.language || 'en');
 
-  // Don't show anything if we couldn't get hours or still loading
-  if (loading || isOpen === null) {
+  // Show "Hours not available" if we couldn't get hours
+  if (loading) {
     return null;
+  }
+
+  // No opening hours data available
+  if (isOpen === null && !todayHours) {
+    return (
+      <div className={cn("flex items-center gap-2 text-sm", className)}>
+        <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        <span className="text-muted-foreground">
+          {t('openingHours.notAvailable', { defaultValue: 'Hours not available' })}
+        </span>
+      </div>
+    );
   }
 
   const translatedDayName = getDayName(dayName, t);

@@ -205,7 +205,8 @@ const resources = {
         open: 'Open',
         closed: 'Closed',
         opensAt: 'Opens at {{time}}',
-        closesAt: 'Closes at {{time}}'
+        closesAt: 'Closes at {{time}}',
+        notAvailable: 'Hours not available'
       },
       week: 'week',
       weeks: 'weeks',
@@ -1164,7 +1165,8 @@ const resources = {
         open: 'Abierto',
         closed: 'Cerrado',
         opensAt: 'Abre a las {{time}}',
-        closesAt: 'Cierra a las {{time}}'
+        closesAt: 'Cierra a las {{time}}',
+        notAvailable: 'Horario no disponible'
       },
       week: 'semana',
       weeks: 'semanas',
@@ -2074,7 +2076,8 @@ const resources = {
         open: 'Aperto',
         closed: 'Chiuso',
         opensAt: 'Apre alle {{time}}',
-        closesAt: 'Chiude alle {{time}}'
+        closesAt: 'Chiude alle {{time}}',
+        notAvailable: 'Orari non disponibili'
       },
       week: 'settimana',
       weeks: 'settimane',
@@ -2962,7 +2965,8 @@ const resources = {
         open: 'Ouvert',
         closed: 'Fermé',
         opensAt: 'Ouvre à {{time}}',
-        closesAt: 'Ferme à {{time}}'
+        closesAt: 'Ferme à {{time}}',
+        notAvailable: 'Horaires non disponibles'
       },
       week: 'semaine',
       weeks: 'semaines',
@@ -3730,7 +3734,8 @@ const resources = {
         open: 'Geöffnet',
         closed: 'Geschlossen',
         opensAt: 'Öffnet um {{time}}',
-        closesAt: 'Schließt um {{time}}'
+        closesAt: 'Schließt um {{time}}',
+        notAvailable: 'Öffnungszeiten nicht verfügbar'
       },
       week: 'Woche',
       weeks: 'Wochen',
@@ -4436,7 +4441,8 @@ const resources = {
         open: 'Aberto',
         closed: 'Fechado',
         opensAt: 'Abre às {{time}}',
-        closesAt: 'Fecha às {{time}}'
+        closesAt: 'Fecha às {{time}}',
+        notAvailable: 'Horário não disponível'
       },
       week: 'semana',
       weeks: 'semanas',
@@ -5118,7 +5124,8 @@ const resources = {
         open: '营业中',
         closed: '已关门',
         opensAt: '{{time}} 开门',
-        closesAt: '{{time}} 关门'
+        closesAt: '{{time}} 关门',
+        notAvailable: '营业时间不可用'
       },
       userProfile: {
         followers: '关注者',
@@ -5740,7 +5747,8 @@ const resources = {
         open: '営業中',
         closed: '閉店',
         opensAt: '{{time}} に開店',
-        closesAt: '{{time}} に閉店'
+        closesAt: '{{time}} に閉店',
+        notAvailable: '営業時間不明'
       },
       userProfile: {
         followers: 'フォロワー',
@@ -6357,7 +6365,8 @@ const resources = {
         open: '영업 중',
         closed: '영업 종료',
         opensAt: '{{time}} 오픈',
-        closesAt: '{{time}} 마감'
+        closesAt: '{{time}} 마감',
+        notAvailable: '영업시간 정보 없음'
       },
       week: '주',
       weeks: '주',
@@ -6979,7 +6988,8 @@ const resources = {
         open: 'مفتوح',
         closed: 'مغلق',
         opensAt: 'يفتح الساعة {{time}}',
-        closesAt: 'يغلق الساعة {{time}}'
+        closesAt: 'يغلق الساعة {{time}}',
+        notAvailable: 'أوقات العمل غير متوفرة'
       },
       week: 'أسبوع',
       weeks: 'أسابيع',
@@ -7599,7 +7609,8 @@ const resources = {
         open: 'खुला',
         closed: 'बंद',
         opensAt: '{{time}} पर खुलता है',
-        closesAt: '{{time}} पर बंद होता है'
+        closesAt: '{{time}} पर बंद होता है',
+        notAvailable: 'समय उपलब्ध नहीं'
       },
       all: 'सभी',
       weeks: 'सप्ताह',
@@ -8236,7 +8247,8 @@ const resources = {
         open: 'Открыто',
         closed: 'Закрыто',
         opensAt: 'Откроется в {{time}}',
-        closesAt: 'Закроется в {{time}}'
+        closesAt: 'Закроется в {{time}}',
+        notAvailable: 'Часы работы недоступны'
       },
       week: 'неделя',
       weeks: 'недели',
