@@ -4,6 +4,8 @@ import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import CreateTripModal from './CreateTripModal';
 import { useTranslation } from 'react-i18next';
 import tripsEmptyImage from '@/assets/trips-empty-state.png';
+import iconPublic from '@/assets/icon-public.png';
+import iconPrivate from '@/assets/icon-private.png';
 import { useTrips } from '@/hooks/useTrips';
 import TripDetailModal from './TripDetailModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -212,6 +214,17 @@ const TripsGrid: React.FC<TripsGridProps> = ({
                   >
                     <Edit className="h-4 w-4 text-white" />
                   </button>
+                )}
+                
+                {/* Privacy indicator - only show on own profile */}
+                {isOwnProfile && (
+                  <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
+                    <img 
+                      src={folder.is_private ? iconPrivate : iconPublic} 
+                      alt={folder.is_private ? "Private" : "Public"} 
+                      className="h-4 w-4" 
+                    />
+                  </div>
                 )}
               </div>
             ))}
