@@ -44,6 +44,13 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Sync activeTab when initialTab changes (e.g., when modal opens with different tab)
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
+
   useEffect(() => {
     const fetchFollowData = async () => {
       if (!targetUserId) {
@@ -247,7 +254,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
+      <div 
+        className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Header with Back Button and Username */}
         <div className="flex items-center gap-4 p-4">
           <button onClick={onClose} className="p-2 -ml-2">
@@ -308,9 +320,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         <ScrollArea className="flex-1">
           <div 
             className="p-4 space-y-4"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
           >
             {loading ? (
               <div className="flex items-center justify-center py-8">
