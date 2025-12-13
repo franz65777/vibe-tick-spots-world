@@ -634,7 +634,8 @@ const LeafletMapSetup = ({
       styleEl = document.createElement('style');
       styleEl.id = 'cluster-hide-styles';
       styleEl.innerHTML = `
-        .hide-clusters .marker-cluster {
+        .hide-clusters .marker-cluster,
+        .hide-clusters .custom-cluster-icon {
           opacity: 0 !important;
           pointer-events: none !important;
           visibility: hidden !important;
