@@ -75,16 +75,16 @@ function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory |
     return 'bar';
   }
   
-  // Cafe mappings (expanded)
+  // Cafe mappings (expanded - includes pastry shops that serve coffee)
   if (value === 'cafe' || value === 'coffee_shop' || value === 'ice_cream' ||
-      value === 'tea' || value === 'bubble_tea' || value === 'juice_bar') {
+      value === 'tea' || value === 'bubble_tea' || value === 'juice_bar' ||
+      value === 'confectionery' || value === 'pastry' || value === 'patisserie' ||
+      value === 'chocolate' || value === 'dessert') {
     return 'cafe';
   }
   
-  // Bakery mappings (expanded with pastry shops)
-  if (value === 'bakery' || value === 'pastry' || value === 'confectionery' ||
-      value === 'chocolate' || value === 'patisserie' || value === 'cake' ||
-      value === 'dessert' || value === 'deli' || value === 'pastry_shop') {
+  // Bakery mappings (bread-focused)
+  if (value === 'bakery' || value === 'deli') {
     return 'bakery';
   }
   
@@ -127,7 +127,10 @@ function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory |
   
   // Shop types that match our categories
   if (key === 'shop') {
-    if (value === 'bakery' || value === 'pastry' || value === 'confectionery' || value === 'chocolate') {
+    if (value === 'confectionery' || value === 'chocolate' || value === 'pastry') {
+      return 'cafe';
+    }
+    if (value === 'bakery') {
       return 'bakery';
     }
     if (value === 'coffee' || value === 'tea') {

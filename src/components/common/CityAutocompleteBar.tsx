@@ -61,10 +61,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     console.log('📍 New location detected:', location.city);
     processedLocationRef.current = locationKey;
     
-    // Update the search query to show the city name
-    onSearchChange(location.city);
-    
-    // Call city select to update map and state
+    // Call city select to update map and state - DON'T update search query to avoid triggering dropdown
     onCitySelect(location.city, { 
       lat: location.latitude, 
       lng: location.longitude 
