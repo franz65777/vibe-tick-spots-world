@@ -8,6 +8,8 @@ import { getCategoryImage } from '@/utils/categoryIcons';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { searchPhoton } from '@/lib/photonGeocoding';
+import { searchOverpass } from '@/lib/overpassGeocoding';
 import noResultsIcon from '@/assets/no-results-pin.png';
 
 interface UnifiedSearchOverlayProps {
@@ -234,21 +236,27 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         }
       });
 
-      // If no results from database/popular, search Nominatim for cities and locations
-      if (allCities.length === 0 || mappedLocations.length < 3) {
+      // If few results from database, search multiple FREE APIs in parallel
+      if (allCities.length === 0 || mappedLocations.length < 5) {
         const userLoc = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : undefined;
-        const nominatimResults = await nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc);
+        
+        // Search all free APIs in parallel for maximum coverage
+        const [nominatimResults, photonResults, overpassResults] = await Promise.all([
+          nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc).catch(() => []),
+          searchPhoton(queryLower, userLoc, 20).catch(() => []),
+          userLoc ? searchOverpass(queryLower, userLoc, 15).catch(() => []) : Promise.resolve([]),
+        ]);
+        
+        // Track existing coordinates to avoid duplicates
+        const existingCoords = new Set(mappedLocations.map(l => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
         
         // Extract cities from Nominatim results - ONLY actual cities, not suburbs/neighborhoods
         const nominatimCities = new Map<string, CityResult>();
         nominatimResults.forEach(result => {
-          // Only accept results that are explicitly cities/towns (class: place, type: city/town)
-          // Skip villages, suburbs, neighborhoods, etc.
           if (result.class === 'place' && ['city', 'town'].includes(result.type || '')) {
             const cityName = result.name || result.displayName.split(',')[0];
             let cityEnglish = reverseTranslateCityName(cityName).toLowerCase();
             
-            // Skip if it's a known suburb
             if (suburbToCity[cityEnglish]) return;
             
             if (!nominatimCities.has(cityEnglish) && !citiesFromLocations.has(cityEnglish)) {
@@ -261,32 +269,70 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
           }
         });
         
-        // Add Nominatim cities to results
         nominatimCities.forEach(city => allCities.push(city));
         
-        // Extract locations (POIs) from Nominatim - filter to relevant types
+        // Add Nominatim POI locations
         const allowedOsmTypes = ['restaurant', 'cafe', 'bar', 'pub', 'bakery', 'hotel', 'museum', 'nightclub', 'cinema', 'theatre', 'park'];
-        const nominatimLocations: LocationResult[] = nominatimResults
+        nominatimResults
           .filter(r => r.type && allowedOsmTypes.includes(r.type))
-          .map((result, idx) => ({
-            id: `nominatim-${idx}`,
-            name: result.name || result.displayName.split(',')[0],
-            city: result.city,
-            address: result.streetName ? `${result.city}, ${result.streetName}${result.streetNumber ? ' ' + result.streetNumber : ''}` : result.city,
-            lat: result.lat,
-            lng: result.lng,
-            category: mapOsmTypeToCategory(result.type),
-          }));
+          .forEach((result, idx) => {
+            const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
+            if (!existingCoords.has(coordKey)) {
+              mappedLocations.push({
+                id: `nominatim-${idx}`,
+                name: result.name || result.displayName.split(',')[0],
+                city: result.city,
+                address: result.streetName ? `${result.city}, ${result.streetName}${result.streetNumber ? ' ' + result.streetNumber : ''}` : result.city,
+                lat: result.lat,
+                lng: result.lng,
+                category: mapOsmTypeToCategory(result.type),
+              });
+              existingCoords.add(coordKey);
+            }
+          });
         
-        // Merge with database locations, avoiding duplicates
-        const existingCoords = new Set(mappedLocations.map(l => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
-        nominatimLocations.forEach(loc => {
-          const coordKey = `${loc.lat.toFixed(4)},${loc.lng.toFixed(4)}`;
+        // Add Photon results (fast autocomplete API with good POI coverage)
+        photonResults.forEach((result) => {
+          const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
           if (!existingCoords.has(coordKey)) {
-            mappedLocations.push(loc);
+            mappedLocations.push({
+              id: result.id,
+              name: result.name,
+              city: result.city,
+              address: result.displayAddress,
+              lat: result.lat,
+              lng: result.lng,
+              category: result.category,
+            });
             existingCoords.add(coordKey);
           }
         });
+        
+        // Add Overpass results (direct OSM queries for nearby POIs)
+        overpassResults.forEach((result) => {
+          const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
+          if (!existingCoords.has(coordKey)) {
+            mappedLocations.push({
+              id: result.id,
+              name: result.name,
+              city: result.city,
+              address: result.address,
+              lat: result.lat,
+              lng: result.lng,
+              category: result.category,
+            });
+            existingCoords.add(coordKey);
+          }
+        });
+        
+        // Re-sort all locations by distance if user location available
+        if (userLoc && mappedLocations.length > 1) {
+          mappedLocations.sort((a, b) => {
+            const distA = calculateDistance(userLoc.lat, userLoc.lng, a.lat, a.lng);
+            const distB = calculateDistance(userLoc.lat, userLoc.lng, b.lat, b.lng);
+            return distA - distB;
+          });
+        }
       }
 
       // Cache results
