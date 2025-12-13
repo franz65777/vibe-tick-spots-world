@@ -1,45 +1,71 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import WelcomePage from '@/components/WelcomePage';
 import HomePage from '@/components/HomePage';
 import SplashScreen from '@/components/SplashScreen';
 
-let hasPlayedSplashThisRuntime = false;
+// Track if splash was shown in THIS runtime instance (not persisted)
+let splashShownThisSession = false;
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const [splashMode, setSplashMode] = useState<'initial' | 'auth' | null>(() => {
-    // Highest priority: explicit auth splash right after sign-in
-    if (sessionStorage.getItem('playSplashAfterAuth') === 'true') return 'auth';
-
-    // Prevent re-playing the intro within the same app runtime
-    if (hasPlayedSplashThisRuntime) return null;
-
-    // Show intro once when the app is first opened in this browser session
-    if (!sessionStorage.getItem('hasSeenSplash')) return 'initial';
-
-    return null;
-  });
+  const [showSplash, setShowSplash] = useState(false);
+  const previousUserRef = useRef<string | null>(null);
+  const initialLoadComplete = useRef(false);
 
   useEffect(() => {
-    if (splashMode === 'auth') {
-      // Clear the flag as soon as we mount in auth splash mode
-      sessionStorage.removeItem('playSplashAfterAuth');
+    // Case 1: App just opened (first mount, auth loading complete)
+    // Show splash ONLY on very first app open, not on subsequent navigations
+    if (!loading && !initialLoadComplete.current) {
+      initialLoadComplete.current = true;
+      
+      // Check if this is a fresh app open (not already shown this session)
+      if (!splashShownThisSession) {
+        // Check if user just signed in (flag set by SigninStart)
+        const justSignedIn = sessionStorage.getItem('playSplashAfterAuth') === 'true';
+        
+        if (justSignedIn) {
+          // Case 2: User just signed in
+          sessionStorage.removeItem('playSplashAfterAuth');
+          setShowSplash(true);
+          return;
+        }
+        
+        // Case 1: Fresh app open - show splash only if authenticated
+        // (unauthenticated users go straight to welcome page)
+        if (user) {
+          setShowSplash(true);
+        }
+      }
     }
-  }, [splashMode]);
-  
+  }, [loading, user]);
+
+  // Case 2: Detect sign-in transition (user was null, now has value)
+  useEffect(() => {
+    if (!loading && user && previousUserRef.current === null && initialLoadComplete.current) {
+      // User just signed in after being on welcome page
+      const justSignedIn = sessionStorage.getItem('playSplashAfterAuth') === 'true';
+      if (justSignedIn && !splashShownThisSession) {
+        sessionStorage.removeItem('playSplashAfterAuth');
+        setShowSplash(true);
+      }
+    }
+    
+    // Track previous user state
+    previousUserRef.current = user?.id ?? null;
+  }, [user, loading]);
+
   const handleSplashComplete = () => {
-    hasPlayedSplashThisRuntime = true;
-    sessionStorage.setItem('hasSeenSplash', 'true');
-    setSplashMode(null);
+    splashShownThisSession = true;
+    setShowSplash(false);
   };
-  
-  // Show splash screen when in either initial or auth mode
-  if (splashMode) {
+
+  // Show splash screen
+  if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
-  
-  // After splash, show loading state if still loading auth
+
+  // Show loading state while auth is being determined
   if (loading) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center">
