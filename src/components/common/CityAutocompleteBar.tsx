@@ -248,67 +248,9 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         </button>
       </div>
 
-      {/* Results dropdown */}
-      {showResults && hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg max-h-[400px] overflow-y-auto">
-          {/* Cities Section */}
-          {cityResults.length > 0 && (
-            <div>
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30">
-                {t('cities', { ns: 'common', defaultValue: 'Cities' })}
-              </div>
-              {cityResults.map((result, idx) => (
-                <button
-                  key={`city-${idx}`}
-                  onClick={() => handleSelectCity(result)}
-                  className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
-                >
-                  <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground">
-                      {result.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {result.displayName}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Results dropdown disabled per latest UX request */}
+      {/* Dropdown results (cities and locations) intentionally hidden to keep UI clean */}
 
-          {/* Locations Section */}
-          {locationResults.length > 0 && (
-            <div>
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/30">
-                {t('locations', { ns: 'common', defaultValue: 'Locations' })}
-              </div>
-              {locationResults.map((result, idx) => {
-                const CategoryIcon = getCategoryIcon(result.category);
-                return (
-                  <button
-                    key={`loc-${idx}`}
-                    onClick={() => handleSelectLocation(result)}
-                    className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <CategoryIcon className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground">
-                        {result.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {result.displayAddress || result.city}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
