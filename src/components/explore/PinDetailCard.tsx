@@ -36,6 +36,8 @@ import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import { toast } from 'sonner';
+import { OpeningHoursDisplay } from './OpeningHoursDisplay';
+import { useSavedByUsers } from '@/hooks/useSavedByUsers';
 
 // Map tag values to imported icons
 const TAG_ICONS: Record<string, string> = {
@@ -164,6 +166,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     googlePlaceIdForEngagement
   );
   const { campaign } = useMarketingCampaign(place.id, place.google_place_id);
+  const { users: savedByUsers, totalCount: savedByTotalCount, loading: savedByLoading } = useSavedByUsers(
+    locationIdForEngagement,
+    googlePlaceIdForEngagement,
+    4
+  );
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   const fetchPosts = async (page: number = 1) => {
@@ -740,6 +747,43 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               </>
             )}
+          </div>
+
+          {/* Opening Hours and Saved By Users Row */}
+          <div className="px-4 pb-3">
+            <div className="flex items-center justify-between gap-4">
+              {/* Opening Hours */}
+              <OpeningHoursDisplay 
+                coordinates={place.coordinates} 
+                placeName={place.name}
+                className="flex-1 min-w-0"
+              />
+              
+              {/* Saved By Users Avatars */}
+              {!savedByLoading && savedByUsers.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSavedByOpen(true);
+                  }}
+                  className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity"
+                >
+                  {savedByUsers.slice(0, 3).map((savedUser) => (
+                    <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background">
+                      <AvatarImage src={savedUser.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                        {savedUser.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {savedByTotalCount > 3 && (
+                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                      <span className="text-[10px] font-medium text-muted-foreground">+{savedByTotalCount - 3}</span>
+                    </div>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Marketing Campaign - Expandable Section */}
