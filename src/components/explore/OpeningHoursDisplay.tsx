@@ -28,8 +28,6 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   const {
     isOpen,
     todayHours,
-    closingTime,
-    openingTime,
     dayName,
     loading
   } = useOpeningHours(coordinates, placeName, googlePlaceId);
@@ -54,18 +52,6 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
       {todayHours && (
         <span className="text-muted-foreground truncate">
           {translatedDayName}: {todayHours}
-        </span>
-      )}
-      
-      {!isOpen && openingTime && !todayHours && (
-        <span className="text-muted-foreground truncate">
-          {t('openingHours.opensAt', { time: openingTime })}
-        </span>
-      )}
-      
-      {isOpen && closingTime && !todayHours && (
-        <span className="text-muted-foreground truncate">
-          {t('openingHours.closesAt', { time: closingTime })}
         </span>
       )}
     </div>
