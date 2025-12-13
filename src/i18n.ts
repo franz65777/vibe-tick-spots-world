@@ -5105,6 +5105,21 @@ const resources = {
         enabled: '通知已启用',
         updateFailed: '更新通知设置失败'
       },
+      days: {
+        sunday: '星期日',
+        monday: '星期一',
+        tuesday: '星期二',
+        wednesday: '星期三',
+        thursday: '星期四',
+        friday: '星期五',
+        saturday: '星期六'
+      },
+      openingHours: {
+        open: '营业中',
+        closed: '已关门',
+        opensAt: '{{time}} 开门',
+        closesAt: '{{time}} 关门'
+      },
       userProfile: {
         followers: '关注者',
         following: '关注中',
@@ -5712,6 +5727,21 @@ const resources = {
         enabled: '通知を有効にしました',
         updateFailed: '通知設定の更新に失敗しました'
       },
+      days: {
+        sunday: '日曜日',
+        monday: '月曜日',
+        tuesday: '火曜日',
+        wednesday: '水曜日',
+        thursday: '木曜日',
+        friday: '金曜日',
+        saturday: '土曜日'
+      },
+      openingHours: {
+        open: '営業中',
+        closed: '閉店',
+        opensAt: '{{time}} に開店',
+        closesAt: '{{time}} に閉店'
+      },
       userProfile: {
         followers: 'フォロワー',
         following: 'フォロー中',
@@ -6313,6 +6343,21 @@ const resources = {
         muted: '알림 음소거됨',
         enabled: '알림 활성화됨',
         updateFailed: '알림 설정 업데이트 실패'
+      },
+      days: {
+        sunday: '일요일',
+        monday: '월요일',
+        tuesday: '화요일',
+        wednesday: '수요일',
+        thursday: '목요일',
+        friday: '금요일',
+        saturday: '토요일'
+      },
+      openingHours: {
+        open: '영업 중',
+        closed: '영업 종료',
+        opensAt: '{{time}} 오픈',
+        closesAt: '{{time}} 마감'
       },
       week: '주',
       weeks: '주',
@@ -6921,6 +6966,21 @@ const resources = {
         enabled: 'تم تفعيل الإشعارات',
         updateFailed: 'فشل تحديث إعدادات الإشعارات'
       },
+      days: {
+        sunday: 'الأحد',
+        monday: 'الإثنين',
+        tuesday: 'الثلاثاء',
+        wednesday: 'الأربعاء',
+        thursday: 'الخميس',
+        friday: 'الجمعة',
+        saturday: 'السبت'
+      },
+      openingHours: {
+        open: 'مفتوح',
+        closed: 'مغلق',
+        opensAt: 'يفتح الساعة {{time}}',
+        closesAt: 'يغلق الساعة {{time}}'
+      },
       week: 'أسبوع',
       weeks: 'أسابيع',
       leaderboard: 'لوحة المتصدرين',
@@ -7525,6 +7585,21 @@ const resources = {
         muted: 'सूचनाएं म्यूट हैं',
         enabled: 'सूचनाएं सक्षम हैं',
         updateFailed: 'सूचना सेटिंग्स अपडेट करने में विफल'
+      },
+      days: {
+        sunday: 'रविवार',
+        monday: 'सोमवार',
+        tuesday: 'मंगलवार',
+        wednesday: 'बुधवार',
+        thursday: 'गुरुवार',
+        friday: 'शुक्रवार',
+        saturday: 'शनिवार'
+      },
+      openingHours: {
+        open: 'खुला',
+        closed: 'बंद',
+        opensAt: '{{time}} पर खुलता है',
+        closesAt: '{{time}} पर बंद होता है'
       },
       all: 'सभी',
       weeks: 'सप्ताह',
@@ -8147,6 +8222,21 @@ const resources = {
         muted: 'Уведомления отключены',
         enabled: 'Уведомления включены',
         updateFailed: 'Не удалось обновить настройки уведомлений'
+      },
+      days: {
+        sunday: 'Воскресенье',
+        monday: 'Понедельник',
+        tuesday: 'Вторник',
+        wednesday: 'Среда',
+        thursday: 'Четверг',
+        friday: 'Пятница',
+        saturday: 'Суббота'
+      },
+      openingHours: {
+        open: 'Открыто',
+        closed: 'Закрыто',
+        opensAt: 'Откроется в {{time}}',
+        closesAt: 'Закроется в {{time}}'
       },
       week: 'неделя',
       weeks: 'недели',

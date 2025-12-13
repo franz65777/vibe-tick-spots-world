@@ -61,7 +61,22 @@ export const turkishTranslations = {
       searchPeople: 'Kişi ara...',
       you: 'Sen',
       globally: 'Küresel olarak',
-      cities: 'şehirler'
+      cities: 'şehirler',
+      days: {
+        sunday: 'Pazar',
+        monday: 'Pazartesi',
+        tuesday: 'Salı',
+        wednesday: 'Çarşamba',
+        thursday: 'Perşembe',
+        friday: 'Cuma',
+        saturday: 'Cumartesi'
+      },
+      openingHours: {
+        open: 'Açık',
+        closed: 'Kapalı',
+        opensAt: '{{time}} açılır',
+        closesAt: '{{time}} kapanır'
+      }
     },
     home: {
       filters: {
