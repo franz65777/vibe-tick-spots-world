@@ -289,17 +289,11 @@ const UserPlacesPage = () => {
   };
 
   const handleBack = () => {
-    if (selectedCity && cities.length > 1) {
-      // Go back to city selection if there are multiple cities
-      setSelectedCity(null);
+    const isOwnProfile = currentUser?.id === userId;
+    if (isOwnProfile) {
+      navigate('/profile', { replace: true });
     } else {
-      // Navigate back to the user's profile page
-      const isOwnProfile = currentUser?.id === userId;
-      if (isOwnProfile) {
-        navigate('/profile', { replace: true });
-      } else {
-        navigate(`/profile/${userId}`, { replace: true });
-      }
+      navigate(`/profile/${userId}`, { replace: true });
     }
   };
 
