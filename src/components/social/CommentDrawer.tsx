@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { X, Send, Heart } from 'lucide-react';
+import { Send, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -189,14 +189,6 @@ export const CommentDrawer = ({
           {/* Header */}
           <div className="flex items-center justify-center px-4 py-3 shrink-0 relative">
             <h3 className="font-semibold text-base">{t('comments.title', 'Commenti')}</h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8 rounded-full absolute right-2"
-            >
-              <X className="h-5 w-5" />
-            </Button>
           </div>
 
           {/* Comments List */}
