@@ -187,7 +187,7 @@ serve(async (req) => {
         .from('locations')
         .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source')
         .eq('id', locationId)
-        .single();
+        .maybeSingle();
 
       if (cachedLocation?.opening_hours_data) {
         console.log('Using cached opening hours from database');
@@ -209,11 +209,10 @@ serve(async (req) => {
               isOpen,
               todayHours,
               source: cachedLocation.opening_hours_source || 'cached'
-              }
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     }
 
