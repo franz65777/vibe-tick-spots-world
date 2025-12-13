@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { LikersModal } from '@/components/social/LikersModal';
+import { LikersDrawer } from '@/components/social/LikersDrawer';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
@@ -314,7 +314,7 @@ export const PostActions = ({
         }}
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
-        <MessageCircle className="w-5 h-5" />
+        <MessageCircle className="w-6 h-6" />
         <span className="text-sm font-semibold">{localCommentsCount || 0}</span>
       </button>
 
@@ -369,8 +369,8 @@ export const PostActions = ({
         )}
       </div>
 
-      {/* Likers Modal */}
-      <LikersModal
+      {/* Likers Drawer */}
+      <LikersDrawer
         isOpen={showLikersModal}
         onClose={() => setShowLikersModal(false)}
         postId={postId}
