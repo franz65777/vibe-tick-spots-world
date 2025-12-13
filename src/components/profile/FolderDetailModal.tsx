@@ -1,4 +1,4 @@
-import { X, MapPin, Eye, Bookmark, Share2, MoreVertical, Users, Folder, BookmarkCheck, Star, Utensils } from 'lucide-react';
+import { X, MapPin, Bookmark, Share2, MoreVertical, Users, Folder, BookmarkCheck, Star, Utensils, Send } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -107,6 +107,8 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
   const [showShareModal, setShowShareModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [realSaveCount, setRealSaveCount] = useState(0);
+  const [shareCount, setShareCount] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -136,8 +138,8 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
     if (!folderId || !isOpen) return;
     
     try {
-      // Fetch folder and locations in parallel for faster loading
-      const [folderResult, folderLocsResult] = await Promise.all([
+      // Fetch folder, locations, save count and share count in parallel
+      const [folderResult, folderLocsResult, saveCountResult, shareCountResult] = await Promise.all([
         supabase
           .from('saved_folders')
           .select(`
@@ -153,6 +155,14 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
         supabase
           .from('folder_locations')
           .select('location_id')
+          .eq('folder_id', folderId),
+        supabase
+          .from('folder_saves')
+          .select('id', { count: 'exact', head: true })
+          .eq('folder_id', folderId),
+        supabase
+          .from('folder_shares')
+          .select('id', { count: 'exact', head: true })
           .eq('folder_id', folderId)
       ]);
 
@@ -162,8 +172,10 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
       const folderData = folderResult.data;
       const folderLocs = folderLocsResult.data;
 
-      // Set folder immediately to show content faster
+      // Set folder and counts immediately to show content faster
       setFolder(folderData);
+      setRealSaveCount(saveCountResult.count || 0);
+      setShareCount(shareCountResult.count || 0);
       setLoading(false);
       setInitialLoadComplete(true);
 
@@ -410,11 +422,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
                     className="flex items-center gap-1.5 hover:text-foreground transition-colors"
                   >
                     <Bookmark className="h-4 w-4" />
-                    <span className="font-medium">{folder.save_count || 0}</span>
+                    <span className="font-medium">{realSaveCount}</span>
                   </button>
                   <div className="flex items-center gap-1.5">
-                    <Eye className="h-4 w-4" />
-                    <span className="font-medium">{folder.view_count || 0}</span>
+                    <Send className="h-4 w-4" />
+                    <span className="font-medium">{shareCount}</span>
                   </div>
                 </div>
 
