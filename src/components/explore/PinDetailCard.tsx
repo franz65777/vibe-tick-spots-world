@@ -99,7 +99,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
-  const [snap, setSnap] = useState<string | number | null>(0.35);
+  const [isExpanded, setIsExpanded] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Check if onboarding is active on map-guide step
@@ -277,7 +277,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     setReviews([]);
     setPostsPage(1);
     setHasMorePosts(true);
-    setSnap(0.35); // Reset to collapsed state
+    setIsExpanded(false); // Reset to collapsed state
     
     checkInteractions();
     fetchPosts();
@@ -501,9 +501,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         open={!savedByOpen && !isListOpen}
         modal={false}
         dismissible={true}
-        snapPoints={[0.35, 0.9]}
-        activeSnapPoint={snap}
-        setActiveSnapPoint={setSnap}
         onOpenChange={(open) => { 
           if (!open && !shareOpen && !reviewOpen) {
             if (onBack) {
@@ -517,10 +514,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         <DrawerContent 
           data-pin-detail-card="true" 
           showHandle={false}
-          className={`transition-all duration-300 ${onBack ? 'z-[10020]' : 'z-[2000]'}`}
+          className={`transition-all duration-300 ${isExpanded ? 'max-h-[90vh]' : 'max-h-[35vh]'} ${onBack ? 'z-[10020]' : 'z-[2000]'}`}
         >
-          {/* Compact Draggable Header */}
-          <div className="bg-background px-4 pt-2 pb-2 cursor-grab active:cursor-grabbing">
+          {/* Compact Draggable Header - Click to expand */}
+          <div 
+            className="bg-background px-4 pt-2 pb-2 cursor-pointer"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
             <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-2" />
             <div className="flex items-center gap-3">
               {(sourcePostId || onBack) && (
@@ -628,7 +628,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Expanded Content - Only visible when drawer is expanded */}
-          {snap === 0.9 && (
+          {isExpanded && (
             <>
               {/* Action Buttons - Hidden when scrolling down or when dropdown is open */}
               <div 
