@@ -45,29 +45,26 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="p-4 bg-primary/10 border-2 border-primary/20 rounded-xl space-y-2">
-            <div className="flex items-start gap-2">
+          <div className="p-4 bg-primary/10 border-2 border-primary/20 rounded-xl">
+            <div className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-primary shrink-0 mt-1" />
-              <div className="flex-1">
-                <p className="font-semibold text-foreground">{selectedLocation.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address || selectedLocation.address}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground truncate">{selectedLocation.name}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {selectedLocation.city ? `${selectedLocation.city}, ` : ''}
+                  {selectedLocation.formatted_address || selectedLocation.address}
+                </p>
               </div>
-            </div>
-            {disabled ? (
-              <p className="text-xs text-primary font-medium">
-                {t('postingToYourLocation', { ns: 'add' })}
-              </p>
-            ) : (
               <button
                 onClick={() => {
                   onLocationSelect(null);
                   onCategoryChange('');
                 }}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-primary hover:text-primary/80 transition-colors font-medium shrink-0"
               >
                 {t('changeLocation', { ns: 'add' })}
               </button>
-            )}
+            </div>
           </div>
         </div>
       )}
