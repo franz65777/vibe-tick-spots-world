@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 interface OpeningHoursDisplayProps {
   coordinates: { lat: number; lng: number } | null | undefined;
   placeName?: string;
+  locationId?: string;
   googlePlaceId?: string | null;
   className?: string;
 }
@@ -20,6 +21,7 @@ const getDayName = (dayName: string, t: (key: string, options?: any) => string):
 export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   coordinates,
   placeName,
+  locationId,
   googlePlaceId,
   className
 }) => {
@@ -30,7 +32,12 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     todayHours,
     dayName,
     loading
-  } = useOpeningHours(coordinates, placeName);
+  } = useOpeningHours({
+    coordinates,
+    placeName,
+    locationId,
+    googlePlaceId: googlePlaceId || undefined
+  });
 
   // Don't show anything if we couldn't get hours or still loading
   if (loading || isOpen === null) {
