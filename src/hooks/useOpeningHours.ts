@@ -76,10 +76,9 @@ export const useOpeningHours = (
 
         const { openingHours } = result;
         
-        // Get day name
+        // Get localized day name using browser locale
         const now = new Date();
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const dayName = dayNames[now.getDay()];
+        const dayName = now.toLocaleDateString(navigator.language || 'en', { weekday: 'long' });
 
         setData({
           isOpen: openingHours.isOpen,
