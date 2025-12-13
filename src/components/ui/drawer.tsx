@@ -34,18 +34,19 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
 interface DrawerContentProps extends React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {
   showHandle?: boolean;
+  hideOverlay?: boolean;
 }
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   DrawerContentProps
->(({ className, children, showHandle = true, ...props }, ref) => (
+>(({ className, children, showHandle = true, hideOverlay = false, ...props }, ref) => (
   <DrawerPortal>
-    <DrawerOverlay />
+    {!hideOverlay && <DrawerOverlay />}
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background overflow-hidden",
         className
       )}
       {...props}

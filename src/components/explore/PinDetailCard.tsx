@@ -514,6 +514,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         <DrawerContent 
           data-pin-detail-card="true" 
           showHandle={false}
+          hideOverlay={true}
           className={`transition-all duration-300 rounded-t-3xl ${isExpanded ? 'max-h-[90vh]' : 'max-h-[35vh]'} ${onBack ? 'z-[10020]' : 'z-[2000]'}`}
         >
           {/* Compact Draggable Header - Click to expand */}
