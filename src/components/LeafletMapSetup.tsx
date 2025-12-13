@@ -592,14 +592,16 @@ const LeafletMapSetup = ({
     fetchCampaigns();
   }, [places, isDarkMode, onPinClick, trackEvent, shares, user]);
 
-  // Hide other markers when a place is selected, show only the selected pin
+  // Hide other markers and clusters when a place is selected
   useEffect(() => {
     const clusterGroup = markerClusterGroupRef.current;
-    if (!clusterGroup) return;
+    const mapContainer = containerRef.current;
+    if (!clusterGroup || !mapContainer) return;
 
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 
+    // Hide/show individual markers
     clusterGroup.eachLayer((layer: any) => {
       const isSelected = selectedMarker && layer === selectedMarker;
       const hasSelection = !!selectedId;
@@ -614,6 +616,19 @@ const LeafletMapSetup = ({
         if (el) {
           el.style.pointerEvents = hasSelection ? (isSelected ? 'auto' : 'none') : 'auto';
         }
+      }
+    });
+
+    // Hide/show cluster icons (the aggregated "2", "3" bubbles)
+    const clusterIcons = mapContainer.querySelectorAll('.marker-cluster');
+    clusterIcons.forEach((cluster) => {
+      const el = cluster as HTMLElement;
+      if (selectedId) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+      } else {
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
       }
     });
   }, [selectedPlace]);
