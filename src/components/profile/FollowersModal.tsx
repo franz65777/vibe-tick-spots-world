@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
@@ -41,8 +41,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   // Sync activeTab when initialTab changes (e.g., when modal opens with different tab)
   useEffect(() => {
@@ -227,27 +227,35 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+  const handleTouchMove = (_e: React.TouchEvent) => {
+    // We only care about the final position on touch end
   };
 
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-    
-    if (isLeftSwipe && activeTab === 'followers') {
-      setActiveTab('following');
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+
+    const touch = e.changedTouches[0];
+    const dx = touchStartX.current - touch.clientX;
+    const dy = touchStartY.current - touch.clientY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    const minDistance = 30;
+
+    if (absDx > absDy && absDx > minDistance) {
+      if (dx > 0 && activeTab === 'followers') {
+        setActiveTab('following');
+      } else if (dx < 0 && activeTab === 'following') {
+        setActiveTab('followers');
+      }
     }
-    if (isRightSwipe && activeTab === 'following') {
-      setActiveTab('followers');
-    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   if (!isOpen) return null;
