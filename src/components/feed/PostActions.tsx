@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Heart, MessageCircle, Share2, Pin } from 'lucide-react';
 import { useSocialEngagement } from '@/hooks/useSocialEngagement';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { LikersModal } from '@/components/social/LikersModal';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
+
+const TAG_ICONS: Record<SaveTag, string> = {
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
+};
 
 interface PostActionsProps {
   postId: string;
@@ -31,11 +42,17 @@ export const PostActions = ({
 }: PostActionsProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { isLiked, likeCount, toggleLike } = useSocialEngagement(postId);
+  const { isLiked, likeCount, toggleLike, comments } = useSocialEngagement(postId);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+  const [localCommentsCount, setLocalCommentsCount] = useState(commentsCount);
   const [isLocationSaved, setIsLocationSaved] = useState(false);
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
+  const [showLikersModal, setShowLikersModal] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Sync like count
   useEffect(() => {
     if (likeCount !== undefined) {
       setLocalLikesCount(likeCount);
@@ -44,6 +61,16 @@ export const PostActions = ({
     }
   }, [likeCount, likesCount]);
 
+  // Sync comments count
+  useEffect(() => {
+    if (comments?.length !== undefined) {
+      setLocalCommentsCount(comments.length);
+    } else if (commentsCount !== undefined) {
+      setLocalCommentsCount(commentsCount);
+    }
+  }, [comments?.length, commentsCount]);
+
+  // Load location save status
   useEffect(() => {
     const loadStatus = async () => {
       if (!locationId || !user) return;
@@ -60,24 +87,31 @@ export const PostActions = ({
       // Check internal saves
       const { data: internalSave } = await supabase
         .from('user_saved_locations')
-        .select('id')
+        .select('id, save_tag')
         .eq('user_id', user.id)
         .eq('location_id', locationId)
         .maybeSingle();
 
       // Check saved_places if we have a Google Place ID
       let googleSaved = false;
+      let googleSaveTag: SaveTag | null = null;
       if (gpId) {
         const { data: sp } = await supabase
           .from('saved_places')
-          .select('id')
+          .select('id, save_tag')
           .eq('user_id', user.id)
           .eq('place_id', gpId)
           .maybeSingle();
         googleSaved = !!sp;
+        if (sp?.save_tag) googleSaveTag = sp.save_tag as SaveTag;
       }
 
       setIsLocationSaved(!!internalSave || googleSaved);
+      if (internalSave?.save_tag) {
+        setCurrentSaveTag(internalSave.save_tag as SaveTag);
+      } else if (googleSaveTag) {
+        setCurrentSaveTag(googleSaveTag);
+      }
     };
 
     loadStatus();
@@ -93,6 +127,7 @@ export const PostActions = ({
         (payload) => {
           if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
             setIsLocationSaved(true);
+            if (payload.new.save_tag) setCurrentSaveTag(payload.new.save_tag as SaveTag);
           } else if (payload.eventType === 'DELETE' && payload.old.user_id === user.id) {
             setIsLocationSaved(false);
           }
@@ -111,6 +146,7 @@ export const PostActions = ({
           (payload) => {
             if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
               setIsLocationSaved(true);
+              if (payload.new.save_tag) setCurrentSaveTag(payload.new.save_tag as SaveTag);
             } else if (payload.eventType === 'DELETE' && payload.old.user_id === user.id) {
               setIsLocationSaved(false);
             }
@@ -128,9 +164,10 @@ export const PostActions = ({
   // Listen for global save changes
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
-      const { locationId: changedLocationId, isSaved } = event.detail;
+      const { locationId: changedLocationId, isSaved, saveTag } = event.detail;
       if (changedLocationId === locationId) {
         setIsLocationSaved(isSaved);
+        if (saveTag) setCurrentSaveTag(saveTag);
       }
     };
     
@@ -139,6 +176,22 @@ export const PostActions = ({
       window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
     };
   }, [locationId]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    if (showCategoryDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCategoryDropdown]);
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -149,96 +202,111 @@ export const PostActions = ({
     }
   };
 
-  const handlePinClick = async (e: React.MouseEvent) => {
+  const handleLikeCountClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (localLikesCount > 0) {
+      setShowLikersModal(true);
+    }
+  };
+
+  const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!locationId || !user) {
-      toast({
-        title: t('common:error'),
-        description: 'No location associated with this post',
-        variant: 'destructive',
-      });
+      toast.error(t('noLocationAssociated', { ns: 'common', defaultValue: 'No location associated with this post' }));
       return;
     }
     
     if (isLocationSaved) {
-      // Unsave location
-      try {
+      // Unsave location directly
+      handleUnsaveLocation();
+    } else {
+      // Show category dropdown to choose save tag
+      setShowCategoryDropdown(true);
+    }
+  };
+
+  const handleUnsaveLocation = async () => {
+    if (!locationId || !user) return;
+    
+    try {
+      await supabase
+        .from('user_saved_locations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('location_id', locationId);
+
+      // Also remove from saved_places if it was saved via Google Places
+      if (googlePlaceId) {
         await supabase
-          .from('user_saved_locations')
+          .from('saved_places')
           .delete()
           .eq('user_id', user.id)
-          .eq('location_id', locationId);
+          .eq('place_id', googlePlaceId);
+      }
+      
+      setIsLocationSaved(false);
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId, isSaved: false } 
+      }));
+      toast.success(t('locationRemoved', { ns: 'common' }));
+    } catch (error) {
+      console.error('Error removing location:', error);
+      toast.error(t('failedToRemove', { ns: 'common', defaultValue: 'Failed to remove location' }));
+    }
+  };
 
-        // Also remove from saved_places if it was saved via Google Places
-        if (googlePlaceId) {
-          await supabase
-            .from('saved_places')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('place_id', googlePlaceId);
-        }
-        
-        setIsLocationSaved(false);
-        // Emit global event
-        window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId, isSaved: false } 
-        }));
-        toast({
-          title: 'Removed',
-          description: `${locationName || 'Location'} removed from saved`,
+  const handleSaveWithCategory = async (tag: SaveTag) => {
+    if (!locationId || !user) return;
+    
+    setShowCategoryDropdown(false);
+    
+    try {
+      await supabase
+        .from('user_saved_locations')
+        .insert({
+          user_id: user.id,
+          location_id: locationId,
+          save_tag: tag
         });
-      } catch (error) {
-        console.error('Error removing location:', error);
-        toast({
-          title: t('common:error'),
-          description: 'Failed to remove location',
-          variant: 'destructive',
-        });
-      }
-    } else {
-      // Save location
-      try {
-        await supabase
-          .from('user_saved_locations')
-          .insert({
-            user_id: user.id,
-            location_id: locationId
-          });
-        
-        setIsLocationSaved(true);
-        // Emit global event
-        window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId, isSaved: true } 
-        }));
-        toast({
-          title: t('common:save'),
-          description: `${locationName || 'Location'} saved successfully!`,
-        });
-      } catch (error) {
-        console.error('Error saving location:', error);
-        toast({
-          title: t('common:error'),
-          description: 'Failed to save location',
-          variant: 'destructive',
-        });
-      }
+      
+      setIsLocationSaved(true);
+      setCurrentSaveTag(tag);
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId, isSaved: true, saveTag: tag } 
+      }));
+      toast.success(t('locationSaved', { ns: 'common' }));
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error(t('failedToSave', { ns: 'common' }));
     }
   };
 
   return (
-    <div className="flex items-center gap-1.5 mt-1 pt-0">
+    <div className="flex items-center gap-1.5 mt-1 pt-0 relative">
+      {/* Like button */}
       <button
         onClick={handleLikeClick}
         className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all font-medium ${
           isLiked
-            ? 'bg-red-50 text-red-600 hover:bg-red-100'
+            ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30'
             : 'hover:bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
         <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-        <span className="text-sm font-semibold">{localLikesCount || 0}</span>
+      </button>
+      
+      {/* Clickable like count */}
+      <button
+        onClick={handleLikeCountClick}
+        className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        disabled={localLikesCount === 0}
+      >
+        {localLikesCount || 0}
       </button>
 
+      {/* Comment button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -247,9 +315,10 @@ export const PostActions = ({
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <MessageCircle className="w-5 h-5" />
-        <span className="text-sm font-semibold">{commentsCount || 0}</span>
+        <span className="text-sm font-semibold">{localCommentsCount || 0}</span>
       </button>
 
+      {/* Share button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -261,17 +330,51 @@ export const PostActions = ({
         <span className="text-sm font-semibold">{sharesCount || 0}</span>
       </button>
 
-      <button
-        onClick={handlePinClick}
-        className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all ml-auto font-medium ${
-          isLocationSaved
-            ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-        }`}
-        disabled={!locationId}
-      >
-        <Pin className={`w-5 h-5 ${isLocationSaved ? 'fill-current' : ''}`} />
-      </button>
+      {/* Pin/Save button with dropdown */}
+      <div className="relative ml-auto" ref={dropdownRef}>
+        <button
+          onClick={handlePinClick}
+          className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all font-medium ${
+            isLocationSaved
+              ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30'
+              : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+          }`}
+          disabled={!locationId}
+        >
+          <Pin className={`w-5 h-5 ${isLocationSaved ? 'fill-current' : ''}`} />
+        </button>
+
+        {/* Category dropdown */}
+        {showCategoryDropdown && (
+          <div className="absolute bottom-full right-0 mb-2 bg-background border border-border rounded-xl shadow-lg p-2 min-w-[140px] z-50">
+            <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
+              {t('saveAs', { ns: 'common', defaultValue: 'Save as' })}
+            </div>
+            {SAVE_TAG_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveWithCategory(option.value);
+                }}
+                className="flex items-center gap-2 w-full px-2 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <img src={TAG_ICONS[option.value]} alt="" className="h-5 w-5 object-contain" />
+                <span className="text-sm font-medium">
+                  {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Likers Modal */}
+      <LikersModal
+        isOpen={showLikersModal}
+        onClose={() => setShowLikersModal(false)}
+        postId={postId}
+      />
     </div>
   );
 };
