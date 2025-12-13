@@ -43,7 +43,6 @@ const CreateListPage = () => {
   const folderId = searchParams.get('folderId');
   
   const [folderName, setFolderName] = useState('');
-  const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,7 +111,6 @@ const CreateListPage = () => {
       if (folderError) throw folderError;
 
       setFolderName(folderData.name);
-      setDescription(folderData.description || '');
       setIsPrivate(folderData.is_private || false);
       setCoverImageUrl(folderData.cover_image_url || '');
 
@@ -145,7 +143,6 @@ const CreateListPage = () => {
           .from('saved_folders')
           .update({
             name: folderName.trim(),
-            description: description.trim() || null,
             is_private: isPrivate,
             cover_image_url: coverImageUrl || null,
           })
@@ -182,7 +179,6 @@ const CreateListPage = () => {
           .insert({
             user_id: user.id,
             name: folderName.trim(),
-            description: description.trim() || null,
             color: randomColor,
             icon: 'folder',
             is_private: isPrivate,
@@ -421,20 +417,6 @@ const CreateListPage = () => {
                 />
               </div>
 
-              {/* Description */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  {t('description', 'Description (optional)')}
-                </label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('descriptionPlaceholder', 'Add a description...')}
-                  maxLength={200}
-                  className="h-11 rounded-lg"
-                />
-              </div>
-
               {/* Cover Image */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
@@ -610,13 +592,13 @@ const CreateListPage = () => {
       </ScrollArea>
 
       {/* Footer Actions */}
-      <div className="p-4 pb-safe flex gap-3 border-t border-border/50">
+      <div className="p-4 pb-safe flex gap-3">
         {isEditMode ? (
           <>
             <Button
               onClick={handleDelete}
               variant="outline"
-              className="flex-1 h-12 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              className="flex-1 h-12 rounded-2xl text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
               disabled={saving}
             >
               <Trash2 className="h-5 w-5 mr-2" />
@@ -625,7 +607,7 @@ const CreateListPage = () => {
             <Button
               onClick={handleSave}
               disabled={saving || !folderName.trim()}
-              className="flex-1 h-12 rounded-lg"
+              className="flex-1 h-12 rounded-2xl"
             >
               {saving ? t('saving', 'Saving...') : t('save', 'Save')}
             </Button>
@@ -634,7 +616,7 @@ const CreateListPage = () => {
           <Button
             onClick={handleSave}
             disabled={saving || !folderName.trim()}
-            className="w-full h-12 rounded-lg"
+            className="w-full h-12 rounded-2xl"
           >
             {saving ? t('creating', 'Creating...') : t('create', 'Create')}
           </Button>
