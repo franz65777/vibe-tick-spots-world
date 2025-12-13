@@ -624,14 +624,16 @@ const LeafletMapSetup = ({
         document.head.appendChild(styleEl);
       }
       
-      // Mark the selected marker with a class
-      const selectedMarker = markersRef.current.get(selectedPlace.id);
-      if (selectedMarker) {
-        const el = selectedMarker.getElement();
-        if (el) {
-          el.classList.add('selected-pin');
+      // Mark the selected marker with a class - use setTimeout to ensure DOM is ready
+      setTimeout(() => {
+        const selectedMarker = markersRef.current.get(selectedPlace.id);
+        if (selectedMarker) {
+          const el = selectedMarker.getElement();
+          if (el) {
+            el.classList.add('selected-pin');
+          }
         }
-      }
+      }, 50);
     } else {
       // Remove the hide mode
       mapContainer.classList.remove('pin-selected-mode');
