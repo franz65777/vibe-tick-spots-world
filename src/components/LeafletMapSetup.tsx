@@ -39,6 +39,8 @@ interface LeafletMapSetupProps {
   onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
   filtersVisible?: boolean;
   hideSharingControls?: boolean;
+  fromMessages?: boolean;
+  onBackToMessages?: () => void;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -60,6 +62,8 @@ const LeafletMapSetup = ({
   onCitySelect,
   filtersVisible = true,
   hideSharingControls = false,
+  fromMessages = false,
+  onBackToMessages,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -868,6 +872,7 @@ const LeafletMapSetup = ({
           }}
           onClose={() => onCloseSelectedPlace?.()}
           onPostSelected={(postId) => setSelectedPostFromPin(postId)}
+          onBack={fromMessages && onBackToMessages ? onBackToMessages : undefined}
         />
       )}
 
