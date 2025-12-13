@@ -1,5 +1,5 @@
 import { X, MapPin, Eye, Bookmark, Share2, MoreVertical, Users, Folder, BookmarkCheck, Star, Utensils } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { LocationShareModal } from '@/components/explore/LocationShareModal';
 import { cn } from '@/lib/utils';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useLocationSavers } from '@/hooks/useLocationSavers';
+import ColorfulGradientBackground from '@/components/common/ColorfulGradientBackground';
 
 interface FolderDetailModalProps {
   folderId: string;
@@ -96,7 +97,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
   const navigate = useNavigate();
   const [folder, setFolder] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showStories, setShowStories] = useState(false);
   const [creatorStories, setCreatorStories] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
@@ -104,73 +105,87 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
   const [showSavedBy, setShowSavedBy] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       document.body.setAttribute('data-folder-modal-open', 'true');
+      // Reset loading state when opening
+      if (!initialLoadComplete) {
+        setLoading(true);
+      }
     } else {
       document.body.removeAttribute('data-folder-modal-open');
+      // Reset state when closing
+      setInitialLoadComplete(false);
+      setFolder(null);
+      setLocations([]);
     }
     return () => {
       document.body.removeAttribute('data-folder-modal-open');
     };
-  }, [isOpen]);
+  }, [isOpen, initialLoadComplete]);
 
   const handleScroll = (e: any) => {
     const scrollTop = e.target.scrollTop;
     setScrolled(scrollTop > 50);
   };
 
-  useEffect(() => {
-    const fetchFolder = async () => {
-      if (!folderId || !isOpen) return;
-      
-      setLoading(true);
-      try {
-        // Fetch all data in parallel for better performance
-        const [folderResult, folderLocsResult] = await Promise.all([
-          supabase
-            .from('saved_folders')
-            .select(`
-              *,
-              profiles!saved_folders_user_id_fkey (
-                id,
-                username,
-                avatar_url
-              )
-            `)
-            .eq('id', folderId)
-            .single(),
-          supabase
-            .from('folder_locations')
-            .select('location_id')
-            .eq('folder_id', folderId)
-        ]);
+  const fetchFolder = useCallback(async () => {
+    if (!folderId || !isOpen) return;
+    
+    try {
+      // Fetch folder and locations in parallel for faster loading
+      const [folderResult, folderLocsResult] = await Promise.all([
+        supabase
+          .from('saved_folders')
+          .select(`
+            *,
+            profiles!saved_folders_user_id_fkey (
+              id,
+              username,
+              avatar_url
+            )
+          `)
+          .eq('id', folderId)
+          .single(),
+        supabase
+          .from('folder_locations')
+          .select('location_id')
+          .eq('folder_id', folderId)
+      ]);
 
-        if (folderResult.error) throw folderResult.error;
-        if (folderLocsResult.error) throw folderLocsResult.error;
+      if (folderResult.error) throw folderResult.error;
+      if (folderLocsResult.error) throw folderLocsResult.error;
 
-        const folderData = folderResult.data;
-        const folderLocs = folderLocsResult.data;
+      const folderData = folderResult.data;
+      const folderLocs = folderLocsResult.data;
 
-        let locationsData: any[] = [];
+      // Set folder immediately to show content faster
+      setFolder(folderData);
+      setLoading(false);
+      setInitialLoadComplete(true);
 
-        if (folderLocs && folderLocs.length > 0) {
-          const locationIds = folderLocs.map((fl: any) => fl.location_id);
-          const { data: locs, error: locationsError } = await supabase
-            .from('locations')
-            .select('id, name, category, city, image_url, latitude, longitude, address, google_place_id')
-            .in('id', locationIds);
+      // Fetch locations in background
+      let locationsData: any[] = [];
+      if (folderLocs && folderLocs.length > 0) {
+        const locationIds = folderLocs.map((fl: any) => fl.location_id);
+        const { data: locs, error: locationsError } = await supabase
+          .from('locations')
+          .select('id, name, category, city, image_url, latitude, longitude, address, google_place_id')
+          .in('id', locationIds);
 
-          if (locationsError) throw locationsError;
+        if (!locationsError) {
           locationsData = locs || [];
         }
+      }
+      setLocations(locationsData);
 
-        setFolder(folderData);
-        setLocations(locationsData);
-
-        // Check folder save status
-        if (user && folderData.user_id !== user.id) {
+      // Check folder save status and fetch stories in parallel (non-blocking)
+      const backgroundTasks: (() => Promise<void>)[] = [];
+      
+      if (user && folderData.user_id !== user.id) {
+        backgroundTasks.push(async () => {
           const { data: savedData } = await supabase
             .from('folder_saves')
             .select('id')
@@ -178,9 +193,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
             .eq('user_id', user.id)
             .maybeSingle();
           setIsSaved(!!savedData);
-        }
+        });
+      }
 
-        // Fetch creator's active stories
+      // Fetch creator's active stories
+      backgroundTasks.push(async () => {
         const { data: storiesData } = await supabase
           .from('stories')
           .select(`
@@ -200,7 +217,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           .eq('user_id', folderData.user_id)
           .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false });
-
+          
         const formattedStories = (storiesData || []).map((story: any) => ({
           id: story.id,
           userId: story.user_id,
@@ -216,23 +233,29 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           isViewed: false
         }));
         setCreatorStories(formattedStories);
+      });
 
-        // Track folder view (non-blocking)
-        if (user) {
-          supabase.from('folder_views').insert({
-            folder_id: folderId,
-            user_id: user.id
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching folder:', error);
-      } finally {
-        setLoading(false);
+      // Track folder view (non-blocking)
+      if (user) {
+        supabase.from('folder_views').insert({
+          folder_id: folderId,
+          user_id: user.id
+        }).then(() => {});
       }
-    };
 
-    fetchFolder();
+      // Execute background tasks
+      Promise.all(backgroundTasks.map(task => task())).catch(console.error);
+    } catch (error) {
+      console.error('Error fetching folder:', error);
+      setLoading(false);
+    }
   }, [folderId, isOpen, user]);
+
+  useEffect(() => {
+    if (isOpen && folderId) {
+      fetchFolder();
+    }
+  }, [folderId, isOpen, fetchFolder]);
 
   const handleSaveFolder = async () => {
     if (!user || !folderId) return;
@@ -305,10 +328,19 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
   };
 
   if (!isOpen) return null;
-  if (loading) {
+  
+  // Show skeleton loading state instead of spinner for smoother UX
+  if (loading && !folder) {
     return (
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 animate-in fade-in duration-200">
+        <div className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
+          <div className="relative aspect-[4/3] bg-muted animate-pulse" />
+          <div className="p-6 space-y-4">
+            <div className="h-8 w-2/3 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+            <div className="h-12 bg-muted rounded-xl animate-pulse" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -344,7 +376,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Folder className="w-16 h-16 text-primary/40" />
+              <ColorfulGradientBackground seed={folderId} />
             )}
             <button
               onClick={handleClose}
