@@ -18,6 +18,35 @@ const getDayName = (dayName: string, t: (key: string, options?: any) => string):
   return t(`days.${dayKey}`, { defaultValue: dayName }) as string;
 };
 
+// Format hours string based on current language (12h vs 24h)
+const formatTodayHoursForLocale = (todayHours: string | null, language: string): string | null => {
+  if (!todayHours) return null;
+
+  const lang = language.toLowerCase();
+  const uses12HourClock = lang.startsWith('en'); // English uses 12h, others 24h
+
+  if (uses12HourClock) {
+    return todayHours;
+  }
+
+  // For non-English languages, convert "9:00 AM – 4:00 PM" style to 24h.
+  if (!/(am|pm)/i.test(todayHours)) {
+    return todayHours;
+  }
+
+  return todayHours.replace(/(\d{1,2}):(\d{2})\s*(AM|PM)/gi, (_match, h, m, period) => {
+    let hour = parseInt(h, 10);
+    const minutes = m as string;
+    const upper = (period as string).toUpperCase();
+
+    if (upper === 'PM' && hour < 12) hour += 12;
+    if (upper === 'AM' && hour === 12) hour = 0;
+
+    const hourStr = hour.toString().padStart(2, '0');
+    return `${hourStr}:${minutes}`;
+  });
+};
+
 export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   coordinates,
   placeName,
@@ -25,7 +54,7 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   googlePlaceId,
   className
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const {
     isOpen,
@@ -38,6 +67,8 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     locationId,
     googlePlaceId: googlePlaceId || undefined
   });
+
+  const formattedHours = formatTodayHoursForLocale(todayHours, i18n.language || 'en');
 
   // Don't show anything if we couldn't get hours or still loading
   if (loading || isOpen === null) {
@@ -56,9 +87,9 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
         {isOpen ? t('openingHours.open') : t('openingHours.closed')}
       </span>
       
-      {todayHours && (
+      {formattedHours && (
         <span className="text-muted-foreground truncate">
-          {translatedDayName}: {todayHours}
+          {translatedDayName}: {formattedHours}
         </span>
       )}
     </div>
