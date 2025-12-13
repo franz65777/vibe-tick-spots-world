@@ -182,44 +182,58 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Step 1: Check database cache first
+    const googleApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    let openingHours: OpeningHoursResult | null = null;
+    let cacheData: any = null;
+    let cachedLocation: any = null;
+
     if (locationId) {
-      const { data: cachedLocation } = await supabase
+      const { data } = await supabase
         .from('locations')
         .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source')
         .eq('id', locationId)
         .maybeSingle();
 
+      cachedLocation = data;
+
       if (cachedLocation?.opening_hours_data) {
-        console.log('Using cached opening hours from database');
+        console.log('Found cached opening hours in database');
         const cached = cachedLocation.opening_hours_data as any;
-        
-        // Recalculate isOpen and todayHours based on current time
-        let isOpen = cached.isOpen;
-        let todayHours = cached.todayHours;
-        
-        if (cached.periods) {
-          const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
-          isOpen = parsed.isOpen;
-          todayHours = parsed.todayHours;
+
+        const isGoogleSource = cachedLocation.opening_hours_source === 'google';
+        const canUseGoogle = !!(googleApiKey && googlePlaceId);
+
+        // If cache already comes from Google OR we cannot call Google,
+        // immediately return the cached values (no external API calls).
+        if (isGoogleSource || !canUseGoogle) {
+          // Recalculate isOpen and todayHours based on current time
+          let isOpen = cached.isOpen ?? null;
+          let todayHours = cached.todayHours ?? null;
+
+          if (cached.periods) {
+            const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
+            isOpen = parsed.isOpen;
+            todayHours = parsed.todayHours;
+          }
+
+          return new Response(
+            JSON.stringify({
+              openingHours: {
+                isOpen,
+                todayHours,
+                source: cachedLocation.opening_hours_source || 'cached'
+              }
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
-        
-        return new Response(
-          JSON.stringify({
-            openingHours: {
-              isOpen,
-              todayHours,
-              source: cachedLocation.opening_hours_source || 'cached'
-            }
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+
+        // If cache is from a non-Google source but we DO have a Google Place ID,
+        // we'll try to refresh from Google below while keeping this cache as fallback.
       }
     }
 
-    // Step 2: Try Google Places API
-    const googleApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
-    let openingHours: OpeningHoursResult | null = null;
-    let cacheData: any = null;
+    // Step 2: Try Google Places API (only for opening hours)
 
     if (googleApiKey && googlePlaceId) {
       try {
@@ -304,6 +318,34 @@ serve(async (req) => {
         }
       } catch (osmError) {
         console.error('OSM Overpass API error:', osmError);
+      }
+    }
+
+    // If external APIs did not return anything but we have cached data,
+    // fall back to the existing cached opening hours.
+    if (!openingHours && cachedLocation?.opening_hours_data) {
+      console.log('Using existing cached opening hours as fallback');
+      const cached = cachedLocation.opening_hours_data as any;
+
+      if (cached.periods) {
+        const parsed = parseGoogleHours(cached.periods, cached.weekdayText || []);
+        openingHours = {
+          isOpen: parsed.isOpen,
+          todayHours: parsed.todayHours,
+          source: cachedLocation.opening_hours_source || 'cached',
+        };
+      } else if (cached.osmHours) {
+        const parsed = parseOsmHours(cached.osmHours);
+        openingHours = {
+          ...parsed,
+          source: cachedLocation.opening_hours_source || parsed.source,
+        };
+      } else {
+        openingHours = {
+          isOpen: cached.isOpen ?? null,
+          todayHours: cached.todayHours ?? null,
+          source: cachedLocation.opening_hours_source || 'cached',
+        };
       }
     }
 

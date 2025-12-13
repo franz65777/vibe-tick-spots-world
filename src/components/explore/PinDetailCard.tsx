@@ -744,7 +744,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               <OpeningHoursDisplay 
                 coordinates={place.coordinates} 
                 placeName={place.name}
-                googlePlaceId={place.id}
+                locationId={place.id}
+                googlePlaceId={place.google_place_id || undefined}
                 className="flex-1 min-w-0"
               />
               
