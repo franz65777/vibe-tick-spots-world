@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus, Instagram, Plus } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus, Instagram } from 'lucide-react';
+import addPostButton from '@/assets/add-post-button.png';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
@@ -102,10 +103,22 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
         <SocialImportTutorial open={showSocialImport} onClose={() => setShowSocialImport(false)} />
       </div>;
   }
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to show add button when new photo is added
+  useEffect(() => {
+    if (selectedFiles.length >= 2 && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        left: scrollContainerRef.current.scrollWidth,
+        behavior: 'smooth'
+      });
+    }
+  }, [selectedFiles.length]);
+
   return <div className="space-y-3" data-photo-selection="false">
       {/* All items in horizontal scroll */}
-      <div className="overflow-x-auto scrollbar-hide">
-        <div className="flex gap-3">
+      <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 items-center">
           {previewUrls.map((url, index) => {
             const file = selectedFiles[index];
             const isVideo = file?.type.startsWith('video/');
@@ -124,12 +137,10 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             </div>;
           })}
           
-          {/* Add more button - simple + circle */}
+          {/* Add more button - green + icon */}
           {selectedFiles.length < maxFiles && (
-            <button onClick={handleClick} className="w-10 h-40 flex-shrink-0 flex items-center justify-center ml-1">
-              <div className="w-8 h-8 rounded-full border-2 border-primary/50 flex items-center justify-center hover:border-primary hover:bg-primary/10 transition-colors">
-                <Plus className="w-4 h-4 text-primary" />
-              </div>
+            <button onClick={handleClick} className="flex-shrink-0 ml-1">
+              <img src={addPostButton} alt="Add" className="w-12 h-12 object-contain" />
             </button>
           )}
         </div>

@@ -147,7 +147,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               onClick={onSubmit}
               disabled={!canSubmit}
               variant="default"
-              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-sm"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl shadow-sm"
               size="lg"
             >
               {isUploading ? (
