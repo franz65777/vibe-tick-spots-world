@@ -65,8 +65,8 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-md max-h-[90vh] sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center pt-[env(safe-area-inset-top)]">
+      <div className="bg-background w-full max-w-md max-h-[90vh] sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
           <Button
