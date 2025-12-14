@@ -102,6 +102,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [isExpanded, setIsExpanded] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
+  // Touch/drag gesture tracking for swipe to expand/collapse
+  const touchStartY = useRef<number | null>(null);
+  const touchStartTime = useRef<number>(0);
+  const isDragging = useRef(false);
+  
   // Check if onboarding is active on map-guide step
   const [isOnboardingMapStep, setIsOnboardingMapStep] = useState(false);
   
@@ -517,12 +522,93 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           hideOverlay={true}
           className={`transition-all duration-300 rounded-t-3xl ${isExpanded ? 'max-h-[90vh]' : 'max-h-[35vh]'} ${onBack ? 'z-[10020]' : 'z-[2000]'}`}
         >
-          {/* Compact Draggable Header - Click to expand */}
+          {/* Compact Draggable Header - Swipe to expand/collapse */}
           <div 
-            className="bg-background px-4 pt-2 pb-2 cursor-pointer"
-            onClick={() => setIsExpanded(!isExpanded)}
+            className="bg-background px-4 pt-2 pb-2 cursor-grab active:cursor-grabbing touch-none"
+            onTouchStart={(e) => {
+              touchStartY.current = e.touches[0].clientY;
+              touchStartTime.current = Date.now();
+              isDragging.current = true;
+            }}
+            onTouchMove={(e) => {
+              // Prevent default to stop page scroll while dragging the handle
+              if (isDragging.current) {
+                e.preventDefault();
+              }
+            }}
+            onTouchEnd={(e) => {
+              if (touchStartY.current === null || !isDragging.current) return;
+              
+              const touchEndY = e.changedTouches[0].clientY;
+              const deltaY = touchStartY.current - touchEndY;
+              const deltaTime = Date.now() - touchStartTime.current;
+              
+              // Calculate velocity (pixels per ms)
+              const velocity = Math.abs(deltaY) / deltaTime;
+              
+              // Swipe threshold: either moved enough distance OR fast swipe
+              const minSwipeDistance = 30;
+              const minSwipeVelocity = 0.3;
+              
+              if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
+                if (deltaY > 0) {
+                  // Swiped up - expand
+                  setIsExpanded(true);
+                } else {
+                  // Swiped down - collapse or close
+                  if (isExpanded) {
+                    setIsExpanded(false);
+                  } else {
+                    // Already collapsed, close the card
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      onClose();
+                    }
+                  }
+                }
+              }
+              
+              touchStartY.current = null;
+              isDragging.current = false;
+            }}
+            onMouseDown={(e) => {
+              touchStartY.current = e.clientY;
+              touchStartTime.current = Date.now();
+              isDragging.current = true;
+            }}
+            onMouseUp={(e) => {
+              if (touchStartY.current === null || !isDragging.current) return;
+              
+              const deltaY = touchStartY.current - e.clientY;
+              const deltaTime = Date.now() - touchStartTime.current;
+              const velocity = Math.abs(deltaY) / deltaTime;
+              
+              const minSwipeDistance = 30;
+              const minSwipeVelocity = 0.3;
+              
+              if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
+                if (deltaY > 0) {
+                  setIsExpanded(true);
+                } else {
+                  if (isExpanded) {
+                    setIsExpanded(false);
+                  } else {
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      onClose();
+                    }
+                  }
+                }
+              }
+              
+              touchStartY.current = null;
+              isDragging.current = false;
+            }}
           >
-            <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-2" />
+            {/* Handle indicator - more prominent for drag affordance */}
+            <div className="w-12 h-1.5 bg-muted-foreground/40 rounded-full mx-auto mb-2" />
             <div className="flex items-center gap-3">
               {(sourcePostId || onBack) && (
                 <Button
