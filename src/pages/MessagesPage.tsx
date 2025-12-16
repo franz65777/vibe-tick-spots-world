@@ -184,23 +184,50 @@ const MessagesPage = () => {
       const data = await messageService.getMessageThreads(false);
       setThreads(data || []);
 
-      // Load unread counts and check for active stories for each thread
-      const counts: Record<string, number> = {};
-      const storyStatus: Record<string, boolean> = {};
-      for (const thread of data || []) {
-        const otherUser = getOtherParticipant(thread);
-        if (otherUser) {
-          const count = await messageService.getUnreadCount(otherUser.id);
-          counts[otherUser.id] = count;
+      // Collect all other user IDs for batch queries
+      const otherUserIds = (data || [])
+        .map(thread => getOtherParticipant(thread)?.id)
+        .filter((id): id is string => !!id);
 
-          // Check if user has active stories
-          const {
-            data: stories
-          } = await supabase.from('stories').select('id').eq('user_id', otherUser.id).gt('expires_at', new Date().toISOString()).limit(1);
-          storyStatus[otherUser.id] = !!stories && stories.length > 0;
+      if (otherUserIds.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Batch fetch unread counts and story status in parallel
+      const [unreadResults, storiesResult] = await Promise.all([
+        // Batch unread counts - single query
+        supabase
+          .from('direct_messages')
+          .select('sender_id')
+          .in('sender_id', otherUserIds)
+          .eq('receiver_id', user.id)
+          .eq('is_read', false),
+        // Batch active stories check - single query
+        supabase
+          .from('stories')
+          .select('user_id')
+          .in('user_id', otherUserIds)
+          .gt('expires_at', new Date().toISOString())
+      ]);
+
+      // Process unread counts
+      const counts: Record<string, number> = {};
+      if (unreadResults.data) {
+        for (const msg of unreadResults.data) {
+          counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1;
         }
       }
       setUnreadCounts(counts);
+
+      // Process story status
+      const storyStatus: Record<string, boolean> = {};
+      if (storiesResult.data) {
+        const usersWithStories = new Set(storiesResult.data.map(s => s.user_id));
+        for (const userId of otherUserIds) {
+          storyStatus[userId] = usersWithStories.has(userId);
+        }
+      }
       setHasActiveStoryInThread(storyStatus);
     } catch (error) {
       console.error('Error loading threads:', error);
@@ -374,10 +401,34 @@ const MessagesPage = () => {
     }
   };
   useEffect(() => {
-    // Load reactions for all messages
-    messages.forEach(message => {
-      loadMessageReactions(message.id);
-    });
+    // Batch load reactions for all messages
+    const loadAllReactions = async () => {
+      if (messages.length === 0) return;
+      const messageIds = messages.map(m => m.id);
+      try {
+        const { data } = await supabase
+          .from('message_reactions')
+          .select('message_id, emoji, user_id')
+          .in('message_id', messageIds);
+        
+        if (data) {
+          const reactionsMap: Record<string, { emoji: string; user_id: string }[]> = {};
+          for (const reaction of data) {
+            if (!reactionsMap[reaction.message_id]) {
+              reactionsMap[reaction.message_id] = [];
+            }
+            reactionsMap[reaction.message_id].push({
+              emoji: reaction.emoji,
+              user_id: reaction.user_id
+            });
+          }
+          setMessageReactions(reactionsMap);
+        }
+      } catch (error) {
+        console.error('Error loading reactions:', error);
+      }
+    };
+    loadAllReactions();
   }, [messages.length]);
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -1134,7 +1185,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+8px)]">
+          <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+24px)]">
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
