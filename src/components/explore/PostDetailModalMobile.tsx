@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import { usePostEngagementCounts } from '@/hooks/usePostEngagementCounts';
 
 interface PostDetailModalMobileProps {
   postId: string;
@@ -64,6 +65,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
   const [currentMediaIndexes, setCurrentMediaIndexes] = useState<Record<string, number>>({});
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const { counts } = usePostEngagementCounts(posts.map((p) => p.id));
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -557,9 +559,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
                 <PostActions
                   postId={post.id}
-                  likesCount={post.likes_count || 0}
-                  commentsCount={post.comments_count || 0}
-                  sharesCount={post.shares_count || 0}
+                  likesCount={counts[post.id]?.likes ?? post.likes_count ?? 0}
+                  commentsCount={counts[post.id]?.comments ?? post.comments_count ?? 0}
+                  sharesCount={counts[post.id]?.shares ?? post.shares_count ?? 0}
                   locationId={post.location_id}
                   locationName={post.locations?.name}
                   onCommentClick={handleCommentClick}

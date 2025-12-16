@@ -66,12 +66,13 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   const loadLikers = async () => {
     setLoading(true);
     try {
-      // Get all likes for this post
+      // Get all likes for this post (cap to prevent UI lock on very popular posts)
       const { data: likes, error } = await supabase
         .from('post_likes')
         .select('user_id, created_at')
         .eq('post_id', postId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (error) {
         console.error('Error fetching likes:', error);
@@ -184,6 +185,8 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   return (
     <Drawer
       open={isOpen}
+      modal={false}
+      shouldScaleBackground={false}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
