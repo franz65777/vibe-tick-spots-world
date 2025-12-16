@@ -752,10 +752,15 @@ const LeafletMapSetup = ({
     });
 
     // Hide/show cluster icons using CSS class for reliability
-    if (selectedId || isFromPost) {
+    if (isFromPost) {
       mapContainer.classList.add('hide-clusters');
+      mapContainer.classList.add('hide-all-pins');
+    } else if (selectedId) {
+      mapContainer.classList.add('hide-clusters');
+      mapContainer.classList.remove('hide-all-pins');
     } else {
       mapContainer.classList.remove('hide-clusters');
+      mapContainer.classList.remove('hide-all-pins');
     }
     
     // Also hide temp marker if from post
@@ -776,7 +781,10 @@ const LeafletMapSetup = ({
       styleEl.id = 'cluster-hide-styles';
       styleEl.innerHTML = `
         .hide-clusters .marker-cluster,
-        .hide-clusters .custom-cluster-icon {
+        .hide-clusters .custom-cluster-icon,
+        .hide-all-pins .leaflet-marker-icon,
+        .hide-all-pins .leaflet-marker-pane > *,
+        .hide-all-pins .marker-cluster {
           opacity: 0 !important;
           pointer-events: none !important;
           visibility: hidden !important;
