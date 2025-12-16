@@ -64,18 +64,36 @@ const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
+      // Always start from local preference so UI switches instantly
+      const stored = normalizeLanguage(localStorage.getItem('i18nextLng') || 'en');
+      setLanguage(stored);
+      if (i18n.language !== stored) {
+        try {
+          await i18n.changeLanguage(stored);
+        } catch {
+          // ignore
+        }
+      }
+
       if (!user?.id) return;
-      const { data } = await supabase
+
+      const { data, error } = await supabase
         .from('profiles')
         .select('language')
         .eq('id', user.id)
         .single();
-      const langFromDb = data?.language || 'en';
-      const normalizedLang = normalizeLanguage(langFromDb);
+
+      // If read fails or language is missing, do NOT force English.
+      if (error || !data?.language) return;
+
+      const normalizedLang = normalizeLanguage(data.language);
       setLanguage(normalizedLang);
       localStorage.setItem('i18nextLng', normalizedLang);
-      i18n.changeLanguage(normalizedLang);
+      if (i18n.language !== normalizedLang) {
+        await i18n.changeLanguage(normalizedLang);
+      }
     };
+
     load();
   }, [user?.id]);
 
