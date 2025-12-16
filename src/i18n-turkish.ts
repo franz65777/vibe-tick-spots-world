@@ -84,6 +84,7 @@ export const turkishTranslations = {
       you: 'Sen',
       globally: 'Küresel olarak',
       cities: 'şehirler',
+      featuredInLists: 'Listelerde Yer Aldı',
       days: {
         sunday: 'Pazar',
         monday: 'Pazartesi',

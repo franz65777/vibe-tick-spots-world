@@ -1142,6 +1142,7 @@ const resources = {
       noFrequentContacts: 'Ainda não há contatos frequentes',
       noSuggestedContacts: 'Siga pessoas para ver sugestões aqui',
       followPeoplePrompt: 'Comece a seguir pessoas para se conectar e conversar',
+      featuredInLists: 'Destacado en listas',
     },
     business: {
       businessOverview: 'Visão Geral do Negócio',
@@ -1330,6 +1331,7 @@ const resources = {
       noPostsYet: '暂无帖子',
       coordinatesNotAvailable: '坐标不可用',
       chooseMapApp: '选择您喜欢的地图应用',
+      featuredInLists: '收录于列表',
       forYou: '为你推荐',
       promotions: '促销',
       forYouDesc: '你关注的人的帖子',
@@ -1962,6 +1964,7 @@ const resources = {
       noPostsYet: 'まだ投稿がありません',
       coordinatesNotAvailable: '座標が利用できません',
       chooseMapApp: 'お好みの地図アプリを選択してください',
+      featuredInLists: 'リストに掲載',
       forYou: 'おすすめ',
       promotions: 'プロモーション',
       forYouDesc: 'フォロー中の投稿',
@@ -2589,6 +2592,7 @@ const resources = {
       noPostsYet: '아직 게시물이 없습니다',
       coordinatesNotAvailable: '좌표를 사용할 수 없습니다',
       chooseMapApp: '선호하는 지도 앱을 선택하세요',
+      featuredInLists: '리스트에 수록됨',
       forYou: '추천',
       promotions: '프로모션',
       forYouDesc: '팔로우하는 사람들의 게시물',
@@ -3221,6 +3225,7 @@ const resources = {
       noPostsYet: 'لا توجد منشورات بعد',
       coordinatesNotAvailable: 'الإحداثيات غير متاحة',
       chooseMapApp: 'اختر تطبيق الخرائط المفضل لديك',
+      featuredInLists: 'مميز في القوائم',
       forYou: 'لك',
       promotions: 'عروض ترويجية',
       forYouDesc: 'منشورات من تتابعهم',
@@ -3843,6 +3848,7 @@ const resources = {
       noPostsYet: 'अभी तक कोई पोस्ट नहीं',
       coordinatesNotAvailable: 'निर्देशांक उपलब्ध नहीं',
       chooseMapApp: 'अपना पसंदीदा मैप ऐप चुनें',
+      featuredInLists: 'सूचियों में शामिल',
       forYou: 'आपके लिए',
       promotions: 'प्रचार',
       forYouDesc: 'आप जिन्हें फॉलो करते हैं उनकी पोस्ट',
@@ -4489,6 +4495,7 @@ const resources = {
       noPostsYet: 'Пока нет постов',
       coordinatesNotAvailable: 'Координаты недоступны',
       chooseMapApp: 'Выберите предпочитаемое приложение для карт',
+      featuredInLists: 'Представлено в списках',
       forYou: 'Для вас',
       promotions: 'Акции',
       forYouDesc: 'Посты от тех, на кого вы подписаны',
@@ -5088,6 +5095,7 @@ const resources = {
       copyLinkError: 'Impossibile copiare il link',
       addToStory: 'Aggiungi alla storia',
       whatsAppShareText: 'Guarda questo post su Spott: {{url}}',
+      featuredInLists: 'In evidenza nelle liste',
     },
   },
   fr: {
@@ -5138,6 +5146,7 @@ const resources = {
       copyLinkError: 'Impossible de copier le lien',
       addToStory: "Ajouter à l'histoire",
       whatsAppShareText: 'Regardez ce post sur Spott : {{url}}',
+      featuredInLists: 'Présent dans les listes',
     },
   },
   de: {
@@ -5188,6 +5197,7 @@ const resources = {
       copyLinkError: 'Link konnte nicht kopiert werden',
       addToStory: 'Zur Story hinzufügen',
       whatsAppShareText: 'Schau dir diesen Post auf Spott an: {{url}}',
+      featuredInLists: 'In Listen vorgestellt',
     },
   },
   pt: {
@@ -5238,6 +5248,7 @@ const resources = {
       copyLinkError: 'Não foi possível copiar o link',
       addToStory: 'Adicionar ao story',
       whatsAppShareText: 'Veja este post no Spott: {{url}}',
+      featuredInLists: 'Destaque em listas',
     },
   }
 };
