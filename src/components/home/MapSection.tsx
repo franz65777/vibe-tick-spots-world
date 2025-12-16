@@ -186,10 +186,9 @@ const MapSection = ({
     if (selectedPlace) setSelectedPlace(null);
   };
 
-  // Mobile-friendly tap - just close any open place
+  // Mobile-friendly tap - disabled to prevent trending section jumping
   const handleMapClick = (coords: { lat: number; lng: number }) => {
-    // If a place is open, close it
-    if (selectedPlace) setSelectedPlace(null);
+    // Do nothing on single tap - double tap will handle zoom
   };
 
   const handlePinClick = (place: Place) => {
