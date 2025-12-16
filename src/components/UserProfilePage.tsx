@@ -442,11 +442,11 @@ const UserProfilePage = () => {
       <ShareProfileModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} profileId={userId || ''} profileUsername={displayUsername} />
 
       {showBadgesModal && <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden">
+          <div className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))]">
             <Achievements userId={userId} />
             <div className="p-4">
               <Button onClick={() => setShowBadgesModal(false)} variant="secondary" className="w-full">
-                {t('common.close')}
+                {t('close', { ns: 'common' })}
               </Button>
             </div>
           </div>
