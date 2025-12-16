@@ -602,6 +602,43 @@ const LeafletMapSetup = ({
   const selectedMarkerRef = useRef<L.Marker | null>(null);
   const selectedMarkerOriginalClusterRef = useRef<boolean>(false);
   const tempMarkerRef = useRef<L.Marker | null>(null);
+  const tempMarkerSavedRef = useRef<boolean>(false);
+  
+  // Listen for location save events to update temp marker
+  useEffect(() => {
+    const handleSaveChange = (e: CustomEvent<{ locationId: string; isSaved: boolean; saveTag?: string }>) => {
+      const map = mapRef.current;
+      if (!map || !tempMarkerRef.current || !selectedPlace) return;
+      
+      // Check if this save event is for our temp location
+      const isForTempLocation = 
+        selectedPlace.id === e.detail.locationId ||
+        selectedPlace.isTemporary;
+      
+      if (isForTempLocation && e.detail.isSaved) {
+        tempMarkerSavedRef.current = true;
+        
+        // Update the temp marker icon to show it's saved
+        const newIcon = createLeafletCustomMarker({
+          category: selectedPlace.category || 'attraction',
+          isSaved: true,
+          isRecommended: false,
+          recommendationScore: 0,
+          friendAvatars: [],
+          isDarkMode,
+          hasCampaign: false,
+          sharedByUsers: undefined,
+        });
+        
+        tempMarkerRef.current.setIcon(newIcon);
+      }
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChange as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChange as EventListener);
+    };
+  }, [selectedPlace, isDarkMode]);
   
   // Hide other markers and clusters when a place is selected
   useEffect(() => {
@@ -613,8 +650,8 @@ const LeafletMapSetup = ({
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 
-    // Clean up previous temporary marker if exists
-    if (tempMarkerRef.current) {
+    // Only clean up temp marker if selectedPlace is null AND it wasn't saved
+    if (!selectedPlace && tempMarkerRef.current && !tempMarkerSavedRef.current) {
       try {
         map.removeLayer(tempMarkerRef.current);
       } catch (e) {
@@ -636,7 +673,9 @@ const LeafletMapSetup = ({
     }
 
     // If selected place exists but has no marker (new/temporary location), create a temporary marker
-    if (selectedPlace && selectedPlace.coordinates?.lat && selectedPlace.coordinates?.lng && !selectedMarker) {
+    if (selectedPlace && selectedPlace.coordinates?.lat && selectedPlace.coordinates?.lng && !selectedMarker && !tempMarkerRef.current) {
+      tempMarkerSavedRef.current = false; // Reset saved state for new temp markers
+      
       const icon = createLeafletCustomMarker({
         category: selectedPlace.category || 'attraction',
         isSaved: false,
@@ -714,18 +753,6 @@ const LeafletMapSetup = ({
     } else {
       mapContainer.classList.remove('hide-clusters');
     }
-    
-    // Cleanup temp marker when selectedPlace changes or becomes null
-    return () => {
-      if (tempMarkerRef.current && !selectedPlace) {
-        try {
-          map.removeLayer(tempMarkerRef.current);
-        } catch (e) {
-          // Ignore
-        }
-        tempMarkerRef.current = null;
-      }
-    };
   }, [selectedPlace, isDarkMode]);
 
   // Inject CSS for hiding clusters

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,38 @@ import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
 import { searchOverpass } from '@/lib/overpassGeocoding';
 import noResultsIcon from '@/assets/no-results-pin.png';
+
+// Category icons for loading animation
+const CATEGORY_LIST: AllowedCategory[] = ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'entertainment'];
+
+// Animated category loading component
+const CategoryLoadingCarousel = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % CATEGORY_LIST.length);
+    }, 300);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="flex items-center justify-center">
+      <div className="relative w-6 h-6">
+        {CATEGORY_LIST.map((category, idx) => (
+          <img
+            key={category}
+            src={getCategoryImage(category)}
+            alt=""
+            className={`absolute inset-0 w-6 h-6 object-contain transition-opacity duration-200 ${
+              idx === currentIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
@@ -117,9 +149,10 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     }
     
     setLoading(true);
+    // Reduced debounce for faster response
     const timer = setTimeout(() => {
       searchAll(queryTrimmed);
-    }, 150);
+    }, 80);
 
     return () => clearTimeout(timer);
   }, [query, i18n.language]);
@@ -156,16 +189,28 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         console.error('Location search error:', error);
       }
 
-      // Map to LocationResult format
-      const mappedLocations: LocationResult[] = (locations || []).map(loc => ({
-        id: loc.id,
-        name: loc.name,
-        city: loc.city || '',
-        address: loc.address || '',
-        lat: loc.latitude!,
-        lng: loc.longitude!,
-        category: (loc.category || 'restaurant') as AllowedCategory,
-      }));
+      // Map to LocationResult format with deduplication by normalized name + coordinates
+      const seenLocations = new Map<string, LocationResult>();
+      (locations || []).forEach(loc => {
+        const normalizedName = loc.name.toLowerCase().trim();
+        const coordKey = `${loc.latitude!.toFixed(4)},${loc.longitude!.toFixed(4)}`;
+        // Use name+coord combination for dedup, keep first occurrence
+        const dedupeKey = `${normalizedName}-${coordKey}`;
+        
+        if (!seenLocations.has(dedupeKey)) {
+          seenLocations.set(dedupeKey, {
+            id: loc.id,
+            name: loc.name,
+            city: loc.city || '',
+            address: loc.address || '',
+            lat: loc.latitude!,
+            lng: loc.longitude!,
+            category: (loc.category || 'restaurant') as AllowedCategory,
+          });
+        }
+      });
+      
+      const mappedLocations: LocationResult[] = Array.from(seenLocations.values());
 
       // Sort by proximity if user location available
       if (userLocation && mappedLocations.length > 0) {
@@ -247,8 +292,20 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
           userLoc ? searchOverpass(queryLower, userLoc, 15).catch(() => []) : Promise.resolve([]),
         ]);
         
-        // Track existing coordinates to avoid duplicates
+        // Track existing coordinates AND names to avoid duplicates
         const existingCoords = new Set(mappedLocations.map(l => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
+        const existingNames = new Set(mappedLocations.map(l => l.name.toLowerCase().trim()));
+        
+        // Helper to check if name is similar to existing
+        const isNameDuplicate = (name: string) => {
+          const normalized = name.toLowerCase().trim();
+          if (existingNames.has(normalized)) return true;
+          // Check for very similar names (>85% match)
+          for (const existing of existingNames) {
+            if (normalized.includes(existing) || existing.includes(normalized)) return true;
+          }
+          return false;
+        };
         
         // Extract cities from Nominatim results - ONLY actual cities, not suburbs/neighborhoods
         const nominatimCities = new Map<string, CityResult>();
@@ -277,10 +334,11 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
           .filter(r => r.type && allowedOsmTypes.includes(r.type))
           .forEach((result, idx) => {
             const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
-            if (!existingCoords.has(coordKey)) {
+            const resultName = result.name || result.displayName.split(',')[0];
+            if (!existingCoords.has(coordKey) && !isNameDuplicate(resultName)) {
               mappedLocations.push({
                 id: `nominatim-${idx}`,
-                name: result.name || result.displayName.split(',')[0],
+                name: resultName,
                 city: result.city,
                 address: result.streetName ? `${result.city}, ${result.streetName}${result.streetNumber ? ' ' + result.streetNumber : ''}` : result.city,
                 lat: result.lat,
@@ -288,13 +346,14 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
                 category: mapOsmTypeToCategory(result.type),
               });
               existingCoords.add(coordKey);
+              existingNames.add(resultName.toLowerCase().trim());
             }
           });
         
         // Add Photon results (fast autocomplete API with good POI coverage)
         photonResults.forEach((result) => {
           const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
-          if (!existingCoords.has(coordKey)) {
+          if (!existingCoords.has(coordKey) && !isNameDuplicate(result.name)) {
             mappedLocations.push({
               id: result.id,
               name: result.name,
@@ -305,13 +364,14 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
               category: result.category,
             });
             existingCoords.add(coordKey);
+            existingNames.add(result.name.toLowerCase().trim());
           }
         });
         
         // Add Overpass results (direct OSM queries for nearby POIs)
         overpassResults.forEach((result) => {
           const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
-          if (!existingCoords.has(coordKey)) {
+          if (!existingCoords.has(coordKey) && !isNameDuplicate(result.name)) {
             mappedLocations.push({
               id: result.id,
               name: result.name,
@@ -322,6 +382,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
               category: result.category,
             });
             existingCoords.add(coordKey);
+            existingNames.add(result.name.toLowerCase().trim());
           }
         });
         
@@ -408,7 +469,9 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
             className="w-full pl-10 pr-24 py-3 text-base bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
           />
           {loading && (
-            <Loader2 className="absolute right-16 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-spin" />
+            <div className="absolute right-16 top-1/2 -translate-y-1/2">
+              <CategoryLoadingCarousel />
+            </div>
           )}
           {isFocused && (
             <button
