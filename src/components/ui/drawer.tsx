@@ -49,6 +49,7 @@ const DrawerContent = React.forwardRef<
         "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background",
         className
       )}
+      style={{ borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
       {...props}
     >
       {showHandle && <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />}
