@@ -99,13 +99,19 @@ const SettingsPage: React.FC = () => {
 
   const handleLanguageChange = async (newLanguage: string) => {
     const normalized = normalizeLanguage(newLanguage);
+
+    // Switch UI immediately (don't block on DB)
     setLanguage(normalized);
+    localStorage.setItem('i18nextLng', normalized);
+    try {
+      await i18n.changeLanguage(normalized);
+    } catch {
+      // ignore
+    }
 
     const tForLang = i18n.getFixedT(normalized, 'settings');
-    
+
     if (!user?.id) {
-      localStorage.setItem('i18nextLng', normalized);
-      await i18n.changeLanguage(normalized);
       toast.success(tForLang('languageSaved'));
       return;
     }
@@ -117,10 +123,9 @@ const SettingsPage: React.FC = () => {
         .update({ language: normalized })
         .eq('id', user.id);
       if (error) throw error;
-      localStorage.setItem('i18nextLng', normalized);
-      await i18n.changeLanguage(normalized);
       toast.success(tForLang('languageSaved'));
     } catch (e: any) {
+      // Keep the local language, just warn that persistence failed
       toast.error(e?.message || tForLang('failedToSave'));
     } finally {
       setSaving(false);

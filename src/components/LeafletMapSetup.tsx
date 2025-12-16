@@ -1055,7 +1055,13 @@ const LeafletMapSetup = ({
           }}
           onClose={() => onCloseSelectedPlace?.()}
           onPostSelected={(postId) => setSelectedPostFromPin(postId)}
-          onBack={fromMessages && onBackToMessages ? onBackToMessages : undefined}
+          onBack={
+            fromMessages && onBackToMessages
+              ? onBackToMessages
+              : (selectedPlace as any).sourcePostId
+                ? () => navigate('/feed', { state: { restorePostId: (selectedPlace as any).sourcePostId } })
+                : undefined
+          }
         />
       )}
 

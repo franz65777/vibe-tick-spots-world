@@ -1,11 +1,11 @@
-import React, { useEffect, useState, memo, lazy, Suspense } from 'react';
+import React, { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronDown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useStories } from '@/hooks/useStories';
@@ -25,6 +25,7 @@ const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
 const FeedPage = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   
@@ -292,7 +293,30 @@ const FeedPage = memo(() => {
       return false;
     }
   };
+  const feedScrollRef = useRef<HTMLDivElement | null>(null);
 
+  // Restore scroll position to the post that opened the pin card
+  useEffect(() => {
+    const restorePostId = (location.state as any)?.restorePostId as string | undefined;
+    if (!restorePostId) return;
+
+    const scrollToPost = () => {
+      const container = feedScrollRef.current;
+      const postEl = container?.querySelector?.(`[data-post-id="${restorePostId}"]`) as HTMLElement | null;
+      if (postEl) {
+        postEl.scrollIntoView({ behavior: 'instant' as any, block: 'start' });
+      }
+      // Clear router state so it doesn't re-scroll on future renders
+      navigate(location.pathname, { replace: true });
+    };
+
+    const t1 = window.setTimeout(scrollToPost, 50);
+    const t2 = window.setTimeout(scrollToPost, 250);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [location.state, location.pathname, navigate]);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
@@ -337,7 +361,7 @@ const FeedPage = memo(() => {
         </div>
 
         {/* Feed Content */}
-        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+        <div ref={feedScrollRef} className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
           {feedItems.length === 0 && loading ? (
             <div className="py-4 w-full">
               {[1,2,3].map((i) => (

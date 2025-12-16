@@ -157,7 +157,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
   };
 
   return (
-    <article className="post-compact bg-background">
+    <article className="post-compact bg-background" data-post-id={postId}>
       {/* Post Header */}
       <div className="post-compact-header flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
