@@ -24,7 +24,8 @@ import TripDetailModal from '../profile/TripDetailModal';
 import FolderDetailModal from '../profile/FolderDetailModal';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
-import { formatDistanceToNow, Locale } from 'date-fns';
+import { Locale } from 'date-fns';
+import { formatPostDate } from '@/utils/dateFormatter';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { PostDetailModalMobile } from './PostDetailModalMobile';
 import { cn } from '@/lib/utils';
@@ -1115,7 +1116,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                               <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
                             )}
                             <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: currentLocale })}
+                              {formatPostDate(review.created_at, t)}
                             </p>
                           </div>
                         </div>
