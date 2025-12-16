@@ -188,7 +188,7 @@ const FeedPage = memo(() => {
     }
   };
 
-  const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
+  const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, category: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
     navigate('/', {
       state: {
@@ -203,6 +203,7 @@ const FeedPage = memo(() => {
           name: locationName || '',
           lat: latitude,
           lng: longitude,
+          category: category || 'restaurant',
           sourcePostId: postId
         }
       }
