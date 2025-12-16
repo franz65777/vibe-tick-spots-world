@@ -528,17 +528,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         >
           {/* Compact Draggable Header - Swipe to expand/collapse */}
           <div 
-            className="bg-background px-4 pt-2 pb-2 cursor-grab active:cursor-grabbing touch-none"
+            className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing touch-pan-y select-none"
+            style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               touchStartY.current = e.touches[0].clientY;
               touchStartTime.current = Date.now();
               isDragging.current = true;
             }}
             onTouchMove={(e) => {
-              // Prevent default to stop page scroll while dragging the handle
-              if (isDragging.current) {
-                e.preventDefault();
-              }
+              // Allow natural scrolling but track the movement
+              if (!isDragging.current) return;
             }}
             onTouchEnd={(e) => {
               if (touchStartY.current === null || !isDragging.current) return;
@@ -550,9 +549,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               // Calculate velocity (pixels per ms)
               const velocity = Math.abs(deltaY) / deltaTime;
               
-              // Swipe threshold: either moved enough distance OR fast swipe
-              const minSwipeDistance = 30;
-              const minSwipeVelocity = 0.3;
+              // Lower thresholds for easier swiping
+              const minSwipeDistance = 20;
+              const minSwipeVelocity = 0.2;
               
               if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
                 if (deltaY > 0) {
@@ -612,7 +611,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             }}
           >
             {/* Handle indicator - more prominent for drag affordance */}
-            <div className="w-12 h-1.5 bg-muted-foreground/40 rounded-full mx-auto mb-2" />
+            <div className="w-14 h-1.5 bg-muted-foreground/50 rounded-full mx-auto mb-3" />
             <div className="flex items-center gap-3">
               {(sourcePostId || onBack) && (
                 <Button
@@ -838,7 +837,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Opening Hours and Saved By Users Row - Always visible */}
-          <div className="px-4 pt-1 pb-3">
+          <div className="px-4 pb-2">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
