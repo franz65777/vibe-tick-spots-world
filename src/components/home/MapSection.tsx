@@ -303,22 +303,36 @@ const MapSection = ({
 
         {/* Map Filter Dropdown and Sharing Controls - Bottom Left */}
         {!isListViewOpen && (
-          <div className={cn(
-            "left-3 z-[1000] transition-opacity duration-300 flex items-center gap-2",
-            isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
-            filtersVisible ? "opacity-100" : "opacity-0"
-          )}>
+          <div 
+            className={cn(
+              "left-3 z-[1000] transition-opacity duration-300 flex items-center gap-2",
+              isExpanded ? 'fixed' : 'absolute',
+              filtersVisible ? "opacity-100" : "opacity-0"
+            )}
+            style={{
+              bottom: isExpanded 
+                ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
+                : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+            }}
+          >
             <MapFilterDropdown />
           </div>
         )}
 
         {/* Map Controls - List View and Expand Toggle - Inside map - Always render but hide when dropdowns open */}
         {!isListViewOpen && (
-        <div className={cn(
-          "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-all duration-150",
-          isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
-          filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
-        )} data-has-sharing={false}>
+        <div 
+          className={cn(
+            "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-all duration-150",
+            isExpanded ? 'fixed' : 'absolute',
+            filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
+          )} 
+          style={{
+            bottom: isExpanded 
+              ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
+              : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+          }}
+          data-has-sharing={false}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <button
