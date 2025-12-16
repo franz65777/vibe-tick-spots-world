@@ -9,13 +9,19 @@ interface OpeningHoursDisplayProps {
   placeName?: string;
   locationId?: string;
   googlePlaceId?: string | null;
+  cachedOpeningHours?: any;
   className?: string;
 }
 
-// Day name translations
-const getDayName = (dayName: string, t: (key: string, options?: any) => string): string => {
-  const dayKey = dayName.toLowerCase();
-  return t(`days.${dayKey}`, { defaultValue: dayName }) as string;
+// Map day index (0=Sunday) to translation key
+const dayIndexToKey: Record<number, string> = {
+  0: 'sunday',
+  1: 'monday',
+  2: 'tuesday',
+  3: 'wednesday',
+  4: 'thursday',
+  5: 'friday',
+  6: 'saturday'
 };
 
 // Format hours string based on current language (12h vs 24h)
@@ -52,6 +58,7 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   placeName,
   locationId,
   googlePlaceId,
+  cachedOpeningHours,
   className
 }) => {
   const { t, i18n } = useTranslation();
@@ -59,18 +66,19 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   const {
     isOpen,
     todayHours,
-    dayName,
+    dayIndex,
     loading
   } = useOpeningHours({
     coordinates,
     placeName,
     locationId,
-    googlePlaceId: googlePlaceId || undefined
+    googlePlaceId: googlePlaceId || undefined,
+    cachedOpeningHours
   });
 
   const formattedHours = formatTodayHoursForLocale(todayHours, i18n.language || 'en');
 
-  // Show "Hours not available" if we couldn't get hours
+  // Show nothing while loading
   if (loading) {
     return null;
   }
@@ -87,7 +95,9 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     );
   }
 
-  const translatedDayName = getDayName(dayName, t);
+  // Get translated day name using dayIndex
+  const dayKey = dayIndexToKey[dayIndex] || 'monday';
+  const translatedDayName = t(`days.${dayKey}`, { defaultValue: dayKey.charAt(0).toUpperCase() + dayKey.slice(1) });
   
   return (
     <div className={cn("flex items-center gap-2 text-sm", className)}>
