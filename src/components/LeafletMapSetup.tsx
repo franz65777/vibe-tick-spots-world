@@ -212,8 +212,14 @@ const LeafletMapSetup = ({
     map.on('contextmenu', (e: L.LeafletMouseEvent) => {
       onMapRightClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      onMapClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
+    
+    // Remove single tap handler to prevent trending section jumping
+    // Single click does nothing now
+    
+    // Double tap/click to zoom in
+    map.on('dblclick', (e: L.LeafletMouseEvent) => {
+      e.originalEvent.preventDefault();
+      map.setView(e.latlng, map.getZoom() + 1, { animate: true });
     });
 
     // Map move event for dynamic loading
