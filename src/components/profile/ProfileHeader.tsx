@@ -126,7 +126,7 @@ const ProfileHeader = ({
             <button
               onClick={handleStoryClick}
               className="relative flex-shrink-0"
-              aria-label="View your story"
+              aria-label={t('viewYourStory', { ns: 'common' })}
             >
               <div className={cn(
                 "relative rounded-full p-[2px] border-2",
@@ -195,7 +195,7 @@ const ProfileHeader = ({
             className="h-10 w-10 p-0"
             onClick={() => navigate('/settings')}
           >
-            <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />
+            <img src={settingsIcon} alt={t('settingsAlt', { ns: 'common' })} className="w-9 h-9 object-contain" />
           </Button>
         </div>
       </div>
