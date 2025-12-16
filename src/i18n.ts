@@ -9,6 +9,7 @@ import { turkishTranslations } from './i18n-turkish';
 import { signupTranslations } from './i18n-signup';
 import { createListTranslations } from './i18n-create-list';
 import { guidedTourTranslations } from './i18n-guided-tour';
+import { coreUiTranslations } from './i18n-core-ui';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -5341,6 +5342,13 @@ const ensureNamespace = (lang: string, ns: string, values: Record<string, any>) 
     },
   } as any;
 };
+
+// Backfill core UI namespaces for it/es/fr/de/pt/tr (Profile, BottomNav, Filters, Settings)
+Object.entries(coreUiTranslations).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces as Record<string, any>).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
 
 // Minimal, high-impact strings that appear in screenshots and core UI
 // SETTINGS

@@ -138,7 +138,7 @@ const SettingsPage: React.FC = () => {
       navigate('/auth');
     } catch (error) {
       console.error('Error logging out:', error);
-      toast.error('Failed to logout');
+      toast.error(t('logoutFailed', { ns: 'settings' }));
     }
   };
 
@@ -279,9 +279,9 @@ const SettingsPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 text-muted-foreground" />
                   <div className="text-left">
-                    <div className="font-medium">Admin Analytics</div>
+                    <div className="font-medium">{t('adminAnalyticsTitle', { ns: 'settings' })}</div>
                     <div className="text-sm text-muted-foreground">
-                      View retention metrics and data management
+                      {t('adminAnalyticsDesc', { ns: 'settings' })}
                     </div>
                   </div>
                 </div>
