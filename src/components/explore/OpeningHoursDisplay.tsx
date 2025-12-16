@@ -78,7 +78,25 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     cachedOpeningHours
   });
 
+  // All hooks must be called before any conditional returns
+  const textRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
   const formattedHours = formatTodayHoursForLocale(todayHours, i18n.language || 'en');
+  const dayKey = dayIndexToKey[dayIndex] || 'monday';
+  const translatedDayName = t(`days.${dayKey}`, { defaultValue: dayKey.charAt(0).toUpperCase() + dayKey.slice(1) });
+
+  useEffect(() => {
+    const checkTruncation = () => {
+      if (textRef.current && containerRef.current) {
+        setIsTruncated(textRef.current.scrollWidth > containerRef.current.clientWidth);
+      }
+    };
+    checkTruncation();
+    window.addEventListener('resize', checkTruncation);
+    return () => window.removeEventListener('resize', checkTruncation);
+  }, [formattedHours, translatedDayName]);
 
   // Show nothing while loading
   if (loading) {
@@ -96,26 +114,6 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
       </div>
     );
   }
-
-  // Get translated day name using dayIndex
-  const dayKey = dayIndexToKey[dayIndex] || 'monday';
-  const translatedDayName = t(`days.${dayKey}`, { defaultValue: dayKey.charAt(0).toUpperCase() + dayKey.slice(1) });
-  
-  // Check if text is truncated and needs scrolling
-  const textRef = useRef<HTMLSpanElement>(null);
-  const containerRef = useRef<HTMLSpanElement>(null);
-  const [isTruncated, setIsTruncated] = useState(false);
-
-  useEffect(() => {
-    const checkTruncation = () => {
-      if (textRef.current && containerRef.current) {
-        setIsTruncated(textRef.current.scrollWidth > containerRef.current.clientWidth);
-      }
-    };
-    checkTruncation();
-    window.addEventListener('resize', checkTruncation);
-    return () => window.removeEventListener('resize', checkTruncation);
-  }, [formattedHours, translatedDayName]);
   
   return (
     <div className={cn("flex items-center gap-2 text-sm", className)}>
