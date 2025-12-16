@@ -82,7 +82,7 @@ function AppContent() {
     const loadLang = async () => {
       if (!user?.id) return;
 
-      // Prefer whatever the user already chose locally; only override if DB returns a value.
+      // Priority: localStorage first (instant, never overridden by DB in this session)
       const stored = localStorage.getItem('i18nextLng');
       if (stored && i18n.language !== stored) {
         try {
@@ -92,13 +92,15 @@ function AppContent() {
         }
       }
 
+      // Only use DB as a fallback when there's no local preference yet (e.g. fresh device)
+      if (stored) return;
+
       const { data, error } = await supabase
         .from('profiles')
         .select('language')
         .eq('id', user.id)
         .single();
 
-      // If we can't read the profile language, don't force English.
       if (error || !data?.language) return;
 
       const lang = data.language;
