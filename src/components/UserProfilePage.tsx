@@ -13,7 +13,7 @@ import { useNotificationMuting } from '@/hooks/useNotificationMuting';
 import { useUserBlocking } from '@/hooks/useUserBlocking';
 import { useUserSavedCities } from '@/hooks/useUserSavedCities';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ProfileTabs from './profile/ProfileTabs';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
@@ -23,61 +23,35 @@ import Achievements from './profile/Achievements';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import ShareProfileModal from './profile/ShareProfileModal';
-import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 const UserProfilePage = () => {
-  const {
-    t
-  } = useTranslation();
-  const {
-    userId
-  } = useParams<{
-    userId: string;
-  }>();
+  const { t } = useTranslation();
+  const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    user: currentUser
-  } = useAuth();
-  const {
-    profile,
-    loading,
-    error,
-    followUser,
-    unfollowUser
-  } = useUserProfile(userId);
-  const {
-    mutualFollowers,
-    totalCount
-  } = useMutualFollowers(userId);
-  const {
-    isMuted,
-    toggleMute
-  } = useNotificationMuting(userId);
-  const {
-    isBlocked,
-    blockUser,
-    unblockUser
-  } = useUserBlocking(userId);
-  const {
-    cities,
-    commonLocations,
-    categoryCounts
-  } = useUserSavedCities(userId);
+  const { user: currentUser } = useAuth();
+
+  const { profile, loading, error, followUser, unfollowUser } = useUserProfile(userId);
+  const { mutualFollowers, totalCount } = useMutualFollowers(userId);
+  const { isMuted, toggleMute } = useNotificationMuting(userId);
+  const { isBlocked, blockUser, unblockUser } = useUserBlocking(userId);
+  const { cities, commonLocations, categoryCounts } = useUserSavedCities(userId);
+
   const [activeTab, setActiveTab] = useState('posts');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    type: 'followers' | 'following' | null;
-  }>({
+  const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
-    type: null
+    type: null,
   });
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
   const [initialFolderId, setInitialFolderId] = useState<string | undefined>(undefined);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
+
+  const badgesSheetRef = useRef<HTMLDivElement | null>(null);
+  const dragStartYRef = useRef<number | null>(null);
+  const dragDeltaYRef = useRef<number>(0);
 
   // Handle initial folder opening from navigation state
   useEffect(() => {
@@ -441,53 +415,62 @@ const UserProfilePage = () => {
 
       <ShareProfileModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} profileId={userId || ''} profileUsername={displayUsername} />
 
-      {showBadgesModal && <div 
-          className="fixed inset-0 bg-black/50 z-50 flex items-end"
-          onClick={() => setShowBadgesModal(false)}
-        >
-          <div 
+      {showBadgesModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowBadgesModal(false)}>
+          <div
+            ref={badgesSheetRef}
             className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))]"
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => {
-              const touch = e.touches[0];
-              const target = e.currentTarget as HTMLDivElement;
-              target.dataset.startY = String(touch.clientY);
-              target.dataset.dragging = 'true';
-            }}
-            onTouchMove={(e) => {
-              const target = e.currentTarget as HTMLDivElement;
-              if (target.dataset.dragging !== 'true') return;
-              const touch = e.touches[0];
-              const startY = Number(target.dataset.startY || 0);
-              const deltaY = touch.clientY - startY;
-              if (deltaY > 0) {
-                target.style.transform = `translateY(${deltaY}px)`;
-                target.style.transition = 'none';
-              }
-            }}
-            onTouchEnd={(e) => {
-              const target = e.currentTarget as HTMLDivElement;
-              target.dataset.dragging = 'false';
-              const startY = Number(target.dataset.startY || 0);
-              const endY = e.changedTouches[0].clientY;
-              const deltaY = endY - startY;
-              if (deltaY > 80) {
-                target.style.transition = 'transform 0.2s ease-out';
-                target.style.transform = 'translateY(100%)';
-                setTimeout(() => setShowBadgesModal(false), 200);
-              } else {
-                target.style.transition = 'transform 0.2s ease-out';
-                target.style.transform = 'translateY(0)';
-              }
-            }}
           >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-2 pb-1">
+            {/* Drag handle (drag from here) */}
+            <div
+              className="flex justify-center pt-2 pb-1 touch-none"
+              onPointerDown={(e) => {
+                dragStartYRef.current = e.clientY;
+                dragDeltaYRef.current = 0;
+                (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+                const sheet = badgesSheetRef.current;
+                if (sheet) sheet.style.transition = 'none';
+              }}
+              onPointerMove={(e) => {
+                if (dragStartYRef.current == null) return;
+                const delta = e.clientY - dragStartYRef.current;
+                if (delta <= 0) return;
+                dragDeltaYRef.current = delta;
+                const sheet = badgesSheetRef.current;
+                if (sheet) sheet.style.transform = `translateY(${delta}px)`;
+              }}
+              onPointerUp={() => {
+                const sheet = badgesSheetRef.current;
+                const delta = dragDeltaYRef.current;
+                dragStartYRef.current = null;
+
+                if (!sheet) return;
+                sheet.style.transition = 'transform 0.2s ease-out';
+
+                if (delta > 80) {
+                  sheet.style.transform = 'translateY(100%)';
+                  window.setTimeout(() => setShowBadgesModal(false), 200);
+                } else {
+                  sheet.style.transform = 'translateY(0)';
+                }
+              }}
+              onPointerCancel={() => {
+                dragStartYRef.current = null;
+                dragDeltaYRef.current = 0;
+                const sheet = badgesSheetRef.current;
+                if (!sheet) return;
+                sheet.style.transition = 'transform 0.2s ease-out';
+                sheet.style.transform = 'translateY(0)';
+              }}
+            >
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
             </div>
+
             <Achievements userId={userId} />
           </div>
-        </div>}
+        </div>
+      )}
     </div>;
 };
 export default UserProfilePage;
