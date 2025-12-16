@@ -446,33 +446,43 @@ const UserProfilePage = () => {
           onClick={() => setShowBadgesModal(false)}
         >
           <div 
-            className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))] touch-pan-y"
+            className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))]"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={(e) => {
               const touch = e.touches[0];
-              (e.currentTarget as any).startY = touch.clientY;
+              const target = e.currentTarget as HTMLDivElement;
+              target.dataset.startY = String(touch.clientY);
+              target.dataset.dragging = 'true';
             }}
             onTouchMove={(e) => {
+              const target = e.currentTarget as HTMLDivElement;
+              if (target.dataset.dragging !== 'true') return;
               const touch = e.touches[0];
-              const startY = (e.currentTarget as any).startY;
+              const startY = Number(target.dataset.startY || 0);
               const deltaY = touch.clientY - startY;
               if (deltaY > 0) {
-                e.currentTarget.style.transform = `translateY(${deltaY}px)`;
+                target.style.transform = `translateY(${deltaY}px)`;
+                target.style.transition = 'none';
               }
             }}
             onTouchEnd={(e) => {
-              const startY = (e.currentTarget as any).startY;
+              const target = e.currentTarget as HTMLDivElement;
+              target.dataset.dragging = 'false';
+              const startY = Number(target.dataset.startY || 0);
               const endY = e.changedTouches[0].clientY;
               const deltaY = endY - startY;
-              if (deltaY > 100) {
-                setShowBadgesModal(false);
+              if (deltaY > 80) {
+                target.style.transition = 'transform 0.2s ease-out';
+                target.style.transform = 'translateY(100%)';
+                setTimeout(() => setShowBadgesModal(false), 200);
               } else {
-                e.currentTarget.style.transform = 'translateY(0)';
+                target.style.transition = 'transform 0.2s ease-out';
+                target.style.transform = 'translateY(0)';
               }
             }}
           >
             {/* Drag handle */}
-            <div className="flex justify-center py-3">
+            <div className="flex justify-center pt-2 pb-1">
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
             </div>
             <Achievements userId={userId} />
