@@ -40,14 +40,15 @@ interface UseMapLocationsProps {
 
 // Cache for map locations to avoid redundant queries
 const locationCache = new Map<string, { data: MapLocation[]; timestamp: number }>();
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [], selectedSaveTags = [], mapBounds }: UseMapLocationsProps) => {
   const [locations, setLocations] = useState<MapLocation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Start with false - only true for actual fetches
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialFetchDoneRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
@@ -55,14 +56,16 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       return;
     }
     
-    // Debounce fetch to avoid too many calls
+    // Debounce fetch - use shorter delay for initial fetch
     if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
     }
     
+    const delay = initialFetchDoneRef.current ? 200 : 50; // Faster initial fetch
     fetchTimeoutRef.current = setTimeout(() => {
       fetchLocations();
-    }, 300); // 300ms debounce
+      initialFetchDoneRef.current = true;
+    }, delay);
     
     // Set up realtime subscription for map updates with debouncing
     let refreshTimeout: NodeJS.Timeout | null = null;
@@ -95,18 +98,18 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
     if (!user) return;
     
     // Generate cache key
-    const boundsKey = mapBounds ? `${mapBounds.north},${mapBounds.south},${mapBounds.east},${mapBounds.west}` : '';
+    const boundsKey = mapBounds ? `${mapBounds.north.toFixed(4)},${mapBounds.south.toFixed(4)},${mapBounds.east.toFixed(4)},${mapBounds.west.toFixed(4)}` : '';
     const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}-${boundsKey}`;
     
-    // Check cache first
+    // Check cache first - if valid, return immediately without loading state
     const cached = locationCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
-      console.log('🗺️ Using cached locations');
+      console.log('🗺️ Using cached locations (instant)');
       setLocations(cached.data);
-      setLoading(false);
       return;
     }
     
+    // Only show loading for non-cached requests
     setLoading(true);
     setError(null);
 

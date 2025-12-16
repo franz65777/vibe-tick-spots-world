@@ -1185,7 +1185,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+24px)]">
+          <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+40px)]">
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
