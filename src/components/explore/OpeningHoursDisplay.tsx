@@ -35,12 +35,19 @@ const formatTodayHoursForLocale = (todayHours: string | null, language: string):
     return todayHours;
   }
 
-  // For non-English languages, convert all 12h formats to 24h
-  // Handle formats like "9:00 AM", "9 AM", "9:00AM", "9AM"
-  let result = todayHours;
-  
-  // Pattern to match times with AM/PM (with or without minutes, with or without space)
-  result = result.replace(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/gi, (_match, h, m, period) => {
+  // If the string mixes 24h and 12h (e.g. "12:00 – 15:00, 6:00 – 11:00 PM"),
+  // propagate the AM/PM to the start time when missing.
+  let result = todayHours.replace(
+    /(\d{1,2}(?::\d{2})?)\s*[–-]\s*(\d{1,2}(?::\d{2})?)\s*(AM|PM)\b/gi,
+    (_m, start, end, period) => {
+      const hasPeriodInStart = /(am|pm)/i.test(String(start));
+      const startWithPeriod = hasPeriodInStart ? String(start) : `${String(start)} ${String(period)}`;
+      return `${startWithPeriod} – ${String(end)} ${String(period)}`;
+    }
+  );
+
+  // Convert any 12h times to 24h. Handles: "9:00 PM", "9 PM", "9:00PM", "9PM"
+  result = result.replace(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\b/gi, (_match, h, m, period) => {
     let hour = parseInt(h, 10);
     const minutes = m || '00';
     const upper = (period as string).toUpperCase();
@@ -48,8 +55,7 @@ const formatTodayHoursForLocale = (todayHours: string | null, language: string):
     if (upper === 'PM' && hour < 12) hour += 12;
     if (upper === 'AM' && hour === 12) hour = 0;
 
-    const hourStr = hour.toString().padStart(2, '0');
-    return `${hourStr}:${minutes}`;
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
   });
 
   return result;
@@ -90,13 +96,16 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   useEffect(() => {
     const checkTruncation = () => {
       if (textRef.current && containerRef.current) {
-        setIsTruncated(textRef.current.scrollWidth > containerRef.current.clientWidth);
+        const overflow = Math.max(0, textRef.current.scrollWidth - containerRef.current.clientWidth);
+        setIsTruncated(overflow > 0);
+        textRef.current.style.setProperty('--marquee-distance', `${overflow}px`);
       }
     };
+
     checkTruncation();
     window.addEventListener('resize', checkTruncation);
     return () => window.removeEventListener('resize', checkTruncation);
-  }, [formattedHours, translatedDayName]);
+  }, [formattedHours]);
 
   // Show nothing while loading
   if (loading) {
@@ -124,26 +133,27 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
       )}>
         {isOpen ? t('openingHours.open') : t('openingHours.closed')}
       </span>
-      
+
       {formattedHours && (
-        <span 
-          ref={containerRef}
-          className="text-muted-foreground overflow-hidden flex-1 min-w-0"
-        >
-          <span
-            ref={textRef}
-            className={cn(
-              "inline-block whitespace-nowrap",
-              isTruncated && "animate-marquee"
-            )}
-            style={isTruncated ? {
-              animation: 'marquee 8s linear infinite',
-              animationDelay: '2s'
-            } : undefined}
-          >
-            {translatedDayName}: {formattedHours}
+        <>
+          <span className="text-muted-foreground flex-shrink-0">
+            {translatedDayName}:
           </span>
-        </span>
+          <span
+            ref={containerRef}
+            className="text-muted-foreground overflow-hidden flex-1 min-w-0"
+          >
+            <span
+              ref={textRef}
+              className={cn(
+                "inline-block whitespace-nowrap",
+                isTruncated && "animate-marquee"
+              )}
+            >
+              {formattedHours}
+            </span>
+          </span>
+        </>
       )}
     </div>
   );

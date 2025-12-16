@@ -355,7 +355,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (!currentUser) {
           toast.error(t('auth_required'));
-          setLoading(false);
           return;
         }
 
@@ -377,7 +376,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         if (createError || !newLocation) {
           console.error('Error creating location:', createError);
           toast.error(t('save_failed'));
-          setLoading(false);
           return;
         }
 
@@ -392,7 +390,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         place.isTemporary = false;
       }
 
-      await locationInteractionService.saveLocation(locationId, locationData, tag);
+      const ok = await locationInteractionService.saveLocation(locationId, locationData, tag);
+      if (!ok) {
+        toast.error(t('save_failed'));
+        return;
+      }
+
       setIsSaved(true);
       setCurrentSaveTag(tag);
       toast.success(t('locationSaved'));
