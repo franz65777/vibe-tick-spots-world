@@ -66,18 +66,10 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   const loadLikers = async () => {
     setLoading(true);
     try {
-      // Get all likes for this post with user profiles
+      // Get all likes for this post
       const { data: likes, error } = await supabase
         .from('post_likes')
-        .select(`
-          user_id,
-          profiles:user_id (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('user_id, created_at')
         .eq('post_id', postId)
         .order('created_at', { ascending: false });
 
@@ -94,6 +86,20 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         return;
       }
 
+      // Get profiles for all likers
+      const userIds = likes.map(l => l.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setLikers([]);
+        setLoading(false);
+        return;
+      }
+
       // Get current user's follows
       let followingIds = new Set<string>();
       if (user?.id) {
@@ -104,10 +110,13 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         followingIds = new Set(follows?.map(f => f.following_id) || []);
       }
 
-      // Map likes to Liker format
+      // Create a map for quick profile lookup
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Map likes to Liker format (preserving order from likes query)
       const likersList = likes
         .map(like => {
-          const profile = like.profiles as any;
+          const profile = profileMap.get(like.user_id);
           if (!profile) return null;
           
           return {
