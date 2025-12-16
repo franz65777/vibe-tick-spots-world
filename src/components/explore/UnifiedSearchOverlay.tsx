@@ -26,15 +26,23 @@ const CategoryLoadingCarousel = () => {
     return () => clearInterval(interval);
   }, []);
   
+  // Restaurant and hotel icons need larger size due to their design
+  const getIconSize = (category: AllowedCategory) => {
+    if (category === 'restaurant' || category === 'hotel') {
+      return 'w-8 h-8';
+    }
+    return 'w-6 h-6';
+  };
+  
   return (
     <div className="flex items-center justify-center">
-      <div className="relative w-6 h-6">
+      <div className="relative w-8 h-8">
         {CATEGORY_LIST.map((category, idx) => (
           <img
             key={category}
             src={getCategoryImage(category)}
             alt=""
-            className={`absolute inset-0 w-6 h-6 object-contain transition-opacity duration-200 ${
+            className={`absolute inset-0 m-auto ${getIconSize(category)} object-contain transition-opacity duration-200 ${
               idx === currentIndex ? 'opacity-100' : 'opacity-0'
             }`}
           />
@@ -456,23 +464,25 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
       <div className="bg-background px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 shadow-lg border-b border-border" onClick={(e) => e.stopPropagation()}>
-        <div className="relative w-full">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Search cities and places...' })}
-            className="w-full pl-10 pr-24 py-3 text-base bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
-          />
-          {loading && (
-            <div className="absolute right-16 top-1/2 -translate-y-1/2">
-              <CategoryLoadingCarousel />
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Search cities and places...' })}
+              className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+            />
+            {loading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <CategoryLoadingCarousel />
+              </div>
+            )}
+          </div>
           {isFocused && (
             <button
               onMouseDown={(e) => {
@@ -480,7 +490,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
                 inputRef.current?.blur();
                 onClose();
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
             >
               {t('cancel', { ns: 'common' })}
             </button>
