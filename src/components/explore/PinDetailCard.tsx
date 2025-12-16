@@ -520,7 +520,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           data-pin-detail-card="true" 
           showHandle={false}
           hideOverlay={true}
-          className={`transition-all duration-300 rounded-t-3xl ${isExpanded ? 'max-h-[90vh]' : 'max-h-[35vh]'} ${onBack ? 'z-[10020]' : 'z-[2000]'}`}
+          className={`transition-all duration-300 rounded-t-3xl ${isExpanded ? 'max-h-[90vh]' : 'max-h-[35vh]'} ${onBack ? 'z-[10020]' : 'z-[2000]'} ${dropdownOpen ? '!overflow-visible' : ''}`}
         >
           {/* Compact Draggable Header - Swipe to expand/collapse */}
           <div 
@@ -677,13 +677,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
           {/* Action Buttons - Always visible */}
           <div 
-            className={`relative z-10 bg-background px-4 pb-4 transition-all duration-300 ${
+            className={`relative z-10 bg-background px-3 pb-4 transition-all duration-300 ${
               showActionButtons || dropdownOpen ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
-            }`}
+            } ${dropdownOpen ? 'overflow-visible' : ''}`}
           >
             {!dropdownOpen ? (
               <div className="flex items-center gap-1.5">
-                <div className="grid grid-cols-4 gap-1.5 flex-1">
+                <div className="grid grid-cols-4 gap-2 flex-1">
                   {/* Save Button - with sparkle effect during onboarding */}
                   <div className="relative">
                     {isOnboardingMapStep && !isSaved && !dropdownOpen && (
