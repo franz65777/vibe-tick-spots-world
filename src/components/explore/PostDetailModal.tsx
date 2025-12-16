@@ -16,6 +16,7 @@ import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
+import { LikersDrawer } from '@/components/social/LikersDrawer';
 import { ReviewModal } from './ReviewModal';
 import { getPostReviews, type PostReview } from '@/services/reviewService';
 import { getLocationRanking } from '@/services/locationRankingService';
@@ -79,6 +80,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
   const [mediaAspectRatio, setMediaAspectRatio] = useState<'vertical' | 'horizontal'>('vertical');
   const [sharesCount, setSharesCount] = useState<number>(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [likersOpen, setLikersOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviews, setReviews] = useState<PostReview[]>([]);
   const [locationRanking, setLocationRanking] = useState<number | null>(null);
@@ -489,7 +491,16 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                     <button onClick={handleLikePost} disabled={likingPost}>
                       <Heart className={`w-5 h-5 ${engagement.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                     </button>
-                    <span className="text-sm font-medium">{engagement.likeCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if ((engagement.likeCount ?? 0) > 0) setLikersOpen(true);
+                      }}
+                      className="text-sm font-medium"
+                      disabled={(engagement.likeCount ?? 0) === 0}
+                    >
+                      {engagement.likeCount}
+                    </button>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setCommentsDrawerOpen(true)}>
@@ -544,6 +555,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         onShare={engagement.sharePost}
+        postId={postId}
+      />
+
+      {/* Likers Drawer */}
+      <LikersDrawer
+        isOpen={likersOpen}
+        onClose={() => setLikersOpen(false)}
+        postId={postId}
       />
 
       {/* Review Modal */}

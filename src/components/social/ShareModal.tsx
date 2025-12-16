@@ -123,7 +123,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-[3100]" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[3101] bg-background rounded-t-3xl flex flex-col max-h-[50vh] outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[3101] bg-background rounded-t-3xl flex flex-col max-h-[75vh] outline-none pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
           <style>{`
             [data-vaul-drawer-wrapper] { z-index: 3101 !important; }
             body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
@@ -136,7 +136,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
             {showUserList ? (
             <>
               {/* User selection view */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <div className="flex items-center justify-between px-4 py-3 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -169,42 +169,42 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                 ) : (
                   <>
                     {/* Frequent Contacts Section */}
-                    {!query && frequentContacts.length > 0 && (
-                      <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            Contatti frequenti
-                          </h4>
+                      {!query && frequentContacts.length > 0 && (
+                        <div className="mb-6">
+                          <div className="flex items-center gap-2 mb-3 px-1">
+                            <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Contatti frequenti
+                            </h4>
+                          </div>
+                          <div className="grid grid-cols-4 gap-4 pb-2">
+                            {frequentContacts.slice(0, 4).map((contact) => (
+                              <button
+                                key={contact.id}
+                                onClick={() => toggle(contact.id)}
+                                className="flex flex-col items-center gap-2"
+                              >
+                                <div className="relative">
+                                  <Avatar className="w-14 h-14 ring-2 ring-background">
+                                    <AvatarImage src={contact.avatar_url || ''} />
+                                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                                      {contact.username?.[0]?.toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {selected.has(contact.id) && (
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                                      <svg className="w-3.5 h-3.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs font-medium truncate w-full text-center">{contact.username}</p>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                         <div className="grid grid-cols-4 gap-4 pb-4 border-b border-border">
-                           {frequentContacts.slice(0, 4).map((contact) => (
-                            <button
-                              key={contact.id}
-                              onClick={() => toggle(contact.id)}
-                              className="flex flex-col items-center gap-2"
-                            >
-                               <div className="relative">
-                                 <Avatar className="w-14 h-14 ring-2 ring-background">
-                                  <AvatarImage src={contact.avatar_url || ''} />
-                                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                                    {contact.username?.[0]?.toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {selected.has(contact.id) && (
-                                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                                    <svg className="w-3.5 h-3.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  </div>
-                                )}
-                              </div>
-                              <p className="text-xs font-medium truncate w-full text-center">{contact.username}</p>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* All Users or Search Results */}
                     {filteredUsers.length === 0 ? (
@@ -276,7 +276,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
               </ScrollArea>
 
               {selected.size > 0 && (
-                <div className="p-4 border-t shrink-0">
+                <div className="p-4 shrink-0">
                   <Button
                     onClick={handleSend}
                     disabled={sending}
