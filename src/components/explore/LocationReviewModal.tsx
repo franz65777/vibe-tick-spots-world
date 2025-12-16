@@ -155,8 +155,8 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl z-[20000]">
-        <div className="flex items-center justify-between mb-6">
+      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl z-[20000] !top-auto !bottom-4 !translate-y-0">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold">
             {t('reviewLocation', { ns: 'explore', location: location.name, defaultValue: `Review ${location.name}` })}
           </h2>
@@ -165,37 +165,40 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
           </button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Rating */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <label className="text-sm font-medium">
               {t('ratingOptional', { ns: 'explore', defaultValue: 'Rating (optional)' })}
             </label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap justify-center">
               {[...Array(10)].map((_, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setRating(rating === i + 1 ? undefined : i + 1)}
-                  className={`w-12 h-12 rounded-2xl font-semibold transition-all ${
+                  className={`w-12 h-12 rounded-2xl font-semibold transition-all relative overflow-hidden ${
                     rating && rating >= i + 1
-                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'text-white shadow-sm'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
+                  style={rating && rating >= i + 1 ? {
+                    background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))'
+                  } : undefined}
                 >
                   {i + 1}
                 </button>
               ))}
             </div>
             {rating && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground text-center">
                 {t('youRatedThis', { ns: 'explore', rating, defaultValue: `You rated this ${rating}/10` })}
               </p>
             )}
           </div>
 
           {/* Comment */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <label className="text-sm font-medium">
               {t('commentOptional', { ns: 'explore', defaultValue: 'Comment (optional)' })}
             </label>
@@ -203,7 +206,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder={t('shareYourExperience', { ns: 'explore', defaultValue: 'Share your experience...' })}
-              className="min-h-[120px] rounded-2xl resize-none"
+              className="min-h-[100px] rounded-2xl resize-none"
               maxLength={500}
             />
             <p className="text-xs text-muted-foreground">
