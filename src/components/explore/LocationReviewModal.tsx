@@ -14,15 +14,45 @@ const reviewSchema = z.object({
   rating: z.number().min(1).max(10).optional()
 });
 
-// Get background color based on rating value
-const getRatingBgColor = (value: number): string => {
-  if (value <= 3) {
-    return '#ef4444'; // red-500
-  } else if (value <= 6) {
-    return '#f97316'; // orange-500
-  } else {
-    return '#22c55e'; // green-500
-  }
+// Get gradient background based on rating value (smooth transition red→orange→green)
+const getRatingGradient = (rating: number): string => {
+  // Interpolate colors based on rating 1-10
+  const getColor = (value: number): { r: number; g: number; b: number } => {
+    if (value <= 3) {
+      // Red: rgb(239, 68, 68) to Orange transition
+      const t = (value - 1) / 2;
+      return {
+        r: Math.round(239 + (249 - 239) * t),
+        g: Math.round(68 + (115 - 68) * t),
+        b: Math.round(68 + (22 - 68) * t)
+      };
+    } else if (value <= 6) {
+      // Orange: rgb(249, 115, 22) area
+      const t = (value - 3) / 3;
+      return {
+        r: Math.round(249 - (249 - 234) * t),
+        g: Math.round(115 + (179 - 115) * t),
+        b: Math.round(22 + (8 - 22) * t)
+      };
+    } else {
+      // Green: rgb(34, 197, 94)
+      const t = (value - 6) / 4;
+      return {
+        r: Math.round(234 - (234 - 34) * t),
+        g: Math.round(179 + (197 - 179) * t),
+        b: Math.round(8 + (94 - 8) * t)
+      };
+    }
+  };
+  
+  const color = getColor(rating);
+  const lighterColor = {
+    r: Math.min(255, color.r + 30),
+    g: Math.min(255, color.g + 30),
+    b: Math.min(255, color.b + 30)
+  };
+  
+  return `linear-gradient(135deg, rgb(${lighterColor.r}, ${lighterColor.g}, ${lighterColor.b}), rgb(${color.r}, ${color.g}, ${color.b}))`;
 };
 
 interface LocationReviewModalProps {
@@ -166,7 +196,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl z-[20000] !top-auto !bottom-4 !translate-y-0 pb-4">
+      <DialogContent className="bg-background max-w-md rounded-t-3xl rounded-b-none sm:rounded-t-3xl sm:rounded-b-none z-[20000] !top-auto !bottom-0 !translate-y-0 pb-0">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold">
             {t('reviewLocation', { ns: 'explore', location: location.name, defaultValue: `Review ${location.name}` })}
@@ -176,7 +206,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 pb-6">
           {/* Rating */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
@@ -197,7 +227,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                     style={isSelected && rating ? {
-                      backgroundColor: getRatingBgColor(rating)
+                      background: getRatingGradient(rating)
                     } : undefined}
                   >
                     {value}
