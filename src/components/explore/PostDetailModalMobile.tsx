@@ -7,6 +7,7 @@ import { formatPostDate } from '@/utils/dateFormatter';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
+import { LikersDrawer } from '@/components/social/LikersDrawer';
 import { PostActions } from '@/components/feed/PostActions';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { getPostComments, addPostComment, deletePostComment, type Comment } from '@/services/socialEngagementService';
@@ -60,6 +61,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [loading, setLoading] = useState(true);
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [likersOpen, setLikersOpen] = useState(false);
+  const [likersPostId, setLikersPostId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
   const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
@@ -600,6 +603,18 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           onClose={() => setShareOpen(false)}
           onShare={async () => true}
           postId={posts[0].id}
+        />
+      )}
+
+      {/* Likers Drawer */}
+      {likersPostId && (
+        <LikersDrawer
+          isOpen={likersOpen}
+          onClose={() => {
+            setLikersOpen(false);
+            setLikersPostId(null);
+          }}
+          postId={likersPostId}
         />
       )}
     </>
