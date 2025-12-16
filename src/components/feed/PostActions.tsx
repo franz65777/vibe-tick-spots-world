@@ -45,6 +45,7 @@ export const PostActions = ({
   const { isLiked, likeCount, toggleLike, comments } = useSocialEngagement(postId);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
   const [localCommentsCount, setLocalCommentsCount] = useState(commentsCount);
+  const [localSharesCount, setLocalSharesCount] = useState(sharesCount);
   const [isLocationSaved, setIsLocationSaved] = useState(false);
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
   const [showLikersModal, setShowLikersModal] = useState(false);
@@ -69,6 +70,30 @@ export const PostActions = ({
       setLocalCommentsCount(commentsCount);
     }
   }, [comments?.length, commentsCount]);
+
+  // Real-time subscription for shares
+  useEffect(() => {
+    if (!postId) return;
+
+    const sharesChannel = supabase
+      .channel(`post-shares-${postId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_shares', filter: `post_id=eq.${postId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setLocalSharesCount(prev => prev + 1);
+          } else if (payload.eventType === 'DELETE') {
+            setLocalSharesCount(prev => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sharesChannel);
+    };
+  }, [postId]);
 
   // Load location save status
   useEffect(() => {
@@ -327,7 +352,7 @@ export const PostActions = ({
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <Share2 className="w-5 h-5" />
-        <span className="text-sm font-semibold">{sharesCount || 0}</span>
+        <span className="text-sm font-semibold">{localSharesCount || 0}</span>
       </button>
 
       {/* Pin/Save button with dropdown */}
