@@ -5330,6 +5330,69 @@ Object.keys(guidedTourTranslations).forEach(lang => {
   }
 });
 
+// Ensure Settings namespace exists for all supported languages (prevents "stuck in English" when switching)
+const ensureSettings = (lang: string, settings: Record<string, string>) => {
+  if (!resources[lang]) return;
+  resources[lang] = {
+    ...resources[lang],
+    settings: {
+      // keep existing keys if present
+      ...(resources[lang] as any).settings,
+      ...settings,
+    },
+  } as any;
+};
+
+// Minimal, high-impact settings strings used in SettingsPage + LanguageModal
+ensureSettings('it', {
+  title: 'Impostazioni',
+  editProfile: 'Modifica profilo',
+  editProfileDesc: 'Aggiorna le tue informazioni',
+  language: 'Lingua',
+  languageSaved: 'Preferenza lingua salvata',
+  failedToSave: 'Salvataggio non riuscito',
+});
+ensureSettings('es', {
+  title: 'Configuración',
+  editProfile: 'Editar perfil',
+  editProfileDesc: 'Actualiza tu información',
+  language: 'Idioma',
+  languageSaved: 'Preferencia de idioma guardada',
+  failedToSave: 'Error al guardar',
+});
+ensureSettings('fr', {
+  title: 'Paramètres',
+  editProfile: 'Modifier le profil',
+  editProfileDesc: 'Mettre à jour vos informations',
+  language: 'Langue',
+  languageSaved: 'Préférence de langue enregistrée',
+  failedToSave: 'Échec de l’enregistrement',
+});
+ensureSettings('de', {
+  title: 'Einstellungen',
+  editProfile: 'Profil bearbeiten',
+  editProfileDesc: 'Deine Infos aktualisieren',
+  language: 'Sprache',
+  languageSaved: 'Sprache gespeichert',
+  failedToSave: 'Speichern fehlgeschlagen',
+});
+ensureSettings('pt', {
+  title: 'Configurações',
+  editProfile: 'Editar perfil',
+  editProfileDesc: 'Atualize suas informações',
+  language: 'Idioma',
+  languageSaved: 'Idioma salvo',
+  failedToSave: 'Falha ao salvar',
+});
+ensureSettings('tr', {
+  title: 'Ayarlar',
+  editProfile: 'Profili düzenle',
+  editProfileDesc: 'Bilgilerini güncelle',
+  language: 'Dil',
+  languageSaved: 'Dil tercihi kaydedildi',
+  failedToSave: 'Kaydetme başarısız',
+});
+
 // Add Chinese (zh) as the 12th language
 // Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
 /* resources.zh = {
