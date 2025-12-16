@@ -79,7 +79,7 @@ export const usePostCreation = () => {
           }
         }
 
-        // STRATEGY 3: Check by exact name match (fallback) - use limit(1) instead of maybeSingle to avoid errors with duplicates
+        // STRATEGY 3: Check by exact name match (fallback) - ALWAYS try this
         if (!existingLocation) {
           console.log('🔍 Checking by name match...');
           
@@ -87,7 +87,7 @@ export const usePostCreation = () => {
             .from('locations')
             .select('id, name, address, latitude, longitude')
             .ilike('name', location.name)
-            .not('latitude', 'is', null) // Prefer locations with coordinates
+            .not('latitude', 'is', null) // CRITICAL: Only use locations WITH coordinates
             .limit(1);
 
           if (nameError) {
@@ -98,13 +98,43 @@ export const usePostCreation = () => {
           }
         }
 
+        // STRATEGY 4: Check by name WITHOUT coordinate filter (last resort - find ANY match)
+        if (!existingLocation) {
+          console.log('🔍 Checking by name (any location)...');
+          
+          const { data: anyNameLocations, error: anyNameError } = await supabase
+            .from('locations')
+            .select('id, name, address, latitude, longitude')
+            .ilike('name', location.name)
+            .limit(1);
+
+          if (anyNameError) {
+            console.error('❌ Error checking by name (any):', anyNameError);
+          } else if (anyNameLocations && anyNameLocations.length > 0) {
+            // Only use if it has coordinates, otherwise warn
+            const foundLoc = anyNameLocations[0];
+            if (foundLoc.latitude && foundLoc.longitude) {
+              existingLocation = foundLoc;
+              console.log('✅ FOUND by name (any):', existingLocation.name);
+            } else {
+              console.warn('⚠️ Found location by name but it has no coordinates:', foundLoc.name);
+            }
+          }
+        }
+
         if (existingLocation) {
           // EXISTING LOCATION FOUND - USE IT
           console.log('✅ REUSING LOCATION ID:', existingLocation.id);
           locationId = existingLocation.id;
         } else {
-          // CREATE NEW LOCATION
-          console.log('🆕 CREATING NEW LOCATION');
+          // CREATE NEW LOCATION - BUT ONLY IF WE HAVE VALID COORDINATES
+          if (!location.latitude || !location.longitude) {
+            console.error('❌ CANNOT CREATE LOCATION WITHOUT COORDINATES!');
+            console.error('Location data:', location);
+            throw new Error('Cannot create post: location must have valid coordinates. Please select a different location.');
+          }
+          
+          console.log('🆕 CREATING NEW LOCATION with coordinates:', location.latitude, location.longitude);
           
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
