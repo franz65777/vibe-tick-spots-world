@@ -14,6 +14,17 @@ const reviewSchema = z.object({
   rating: z.number().min(1).max(10).optional()
 });
 
+// Get background color based on rating value
+const getRatingBgColor = (value: number): string => {
+  if (value <= 3) {
+    return '#ef4444'; // red-500
+  } else if (value <= 6) {
+    return '#f97316'; // orange-500
+  } else {
+    return '#22c55e'; // green-500
+  }
+};
+
 interface LocationReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -155,7 +166,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl z-[20000] !top-auto !bottom-4 !translate-y-0">
+      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl z-[20000] !top-auto !bottom-4 !translate-y-0 pb-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold">
             {t('reviewLocation', { ns: 'explore', location: location.name, defaultValue: `Review ${location.name}` })}
@@ -172,23 +183,27 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
               {t('ratingOptional', { ns: 'explore', defaultValue: 'Rating (optional)' })}
             </label>
             <div className="flex gap-2 flex-wrap justify-center">
-              {[...Array(10)].map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setRating(rating === i + 1 ? undefined : i + 1)}
-                  className={`w-12 h-12 rounded-2xl font-semibold transition-all relative overflow-hidden ${
-                    rating && rating >= i + 1
-                      ? 'text-white shadow-sm'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                  style={rating && rating >= i + 1 ? {
-                    background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))'
-                  } : undefined}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {[...Array(10)].map((_, i) => {
+                const value = i + 1;
+                const isSelected = rating && rating >= value;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setRating(rating === value ? undefined : value)}
+                    className={`w-12 h-12 rounded-2xl font-semibold transition-all ${
+                      isSelected
+                        ? 'text-white shadow-sm'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                    style={isSelected && rating ? {
+                      backgroundColor: getRatingBgColor(rating)
+                    } : undefined}
+                  >
+                    {value}
+                  </button>
+                );
+              })}
             </div>
             {rating && (
               <p className="text-xs text-muted-foreground text-center">
