@@ -472,15 +472,17 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                       className="w-full" 
                       gutter={false}
                       setApi={(api) => {
-                        setCarouselApis(prev => ({ ...prev, [post.id]: api }));
-                        if (api) {
-                          api.on('select', () => {
-                            setCurrentMediaIndexes(prev => ({ 
-                              ...prev, 
-                              [post.id]: api.selectedScrollSnap() 
-                            }));
-                          });
-                        }
+                        if (!api || carouselApis[post.id] === api) return;
+                        setCarouselApis(prev => {
+                          if (prev[post.id] === api) return prev;
+                          return { ...prev, [post.id]: api };
+                        });
+                        api.on('select', () => {
+                          setCurrentMediaIndexes(prev => ({ 
+                            ...prev, 
+                            [post.id]: api.selectedScrollSnap() 
+                          }));
+                        });
                       }}
                     >
                       <CarouselContent className="-ml-0">
