@@ -592,16 +592,58 @@ const LeafletMapSetup = ({
     fetchCampaigns();
   }, [places, isDarkMode, onPinClick, trackEvent, shares, user]);
 
+  // Keep selected marker visible outside clusters
+  const selectedMarkerRef = useRef<L.Marker | null>(null);
+  const selectedMarkerOriginalClusterRef = useRef<boolean>(false);
+  
   // Hide other markers and clusters when a place is selected
   useEffect(() => {
+    const map = mapRef.current;
     const clusterGroup = markerClusterGroupRef.current;
     const mapContainer = containerRef.current;
-    if (!clusterGroup || !mapContainer) return;
+    if (!clusterGroup || !mapContainer || !map) return;
 
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 
-    // Hide/show individual markers
+    // Restore previous selected marker to cluster if exists
+    if (selectedMarkerRef.current && selectedMarkerOriginalClusterRef.current) {
+      try {
+        map.removeLayer(selectedMarkerRef.current);
+        clusterGroup.addLayer(selectedMarkerRef.current);
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+      selectedMarkerRef.current = null;
+      selectedMarkerOriginalClusterRef.current = false;
+    }
+
+    // If we have a selected marker, remove it from cluster and add directly to map
+    if (selectedMarker && selectedId) {
+      try {
+        // Check if marker is in cluster
+        const isInCluster = clusterGroup.hasLayer(selectedMarker);
+        if (isInCluster) {
+          clusterGroup.removeLayer(selectedMarker);
+          map.addLayer(selectedMarker);
+          selectedMarkerRef.current = selectedMarker;
+          selectedMarkerOriginalClusterRef.current = true;
+          
+          // Ensure it's visible and on top
+          selectedMarker.setZIndexOffset(5000);
+          const el = selectedMarker.getElement();
+          if (el) {
+            el.style.opacity = '1';
+            el.style.pointerEvents = 'auto';
+            el.style.zIndex = '5000';
+          }
+        }
+      } catch (e) {
+        console.warn('Error managing selected marker:', e);
+      }
+    }
+
+    // Hide/show other individual markers
     clusterGroup.eachLayer((layer: any) => {
       const isSelected = selectedMarker && layer === selectedMarker;
       const hasSelection = !!selectedId;

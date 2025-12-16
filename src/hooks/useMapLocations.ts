@@ -10,6 +10,7 @@ interface MapLocation {
   address?: string;
   city?: string;
   google_place_id?: string;
+  opening_hours_data?: any;
   coordinates: {
     lat: number;
     lng: number;
@@ -338,7 +339,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           // Fetch ONLY from locations table to avoid duplicates
           let locationsQuery = supabase
             .from('locations')
-            .select('id, name, category, address, city, latitude, longitude, created_by, created_at, google_place_id')
+            .select('id, name, category, address, city, latitude, longitude, created_by, created_at, google_place_id, opening_hours_data')
             .not('latitude', 'is', null)
             .not('longitude', 'is', null);
 
@@ -419,6 +420,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               address: loc.address,
               city: loc.city,
               google_place_id: loc.google_place_id,
+              opening_hours_data: loc.opening_hours_data,
               coordinates: {
                 lat: Number(loc.latitude) || 0,
                 lng: Number(loc.longitude) || 0,
@@ -453,7 +455,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               save_tag,
               created_at,
               location:locations (
-                id, name, category, address, city, latitude, longitude, created_by, google_place_id
+                id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data
               )
             `)
             .eq('user_id', user.id)
