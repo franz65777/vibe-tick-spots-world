@@ -53,6 +53,10 @@ interface PopularSpotsProps {
   onSpotSelect?: (spot: PopularSpot) => void;
   onCitySelect?: (city: string) => void;
 }
+// Cache for popular spots to avoid redundant queries
+const spotsCache = new Map<string, { spots: PopularSpot[]; cities: CitySpot[]; timestamp: number }>();
+const SPOTS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 const PopularSpots = ({
   currentCity,
   onLocationClick,
@@ -68,7 +72,7 @@ const PopularSpots = ({
   } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [citySpots, setCitySpots] = useState<CitySpot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false
   const [filterType, setFilterType] = useState<FilterType>('most_saved');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -91,6 +95,15 @@ const PopularSpots = ({
       setLoading(false);
       return;
     }
+    
+    const cacheKey = `${currentCity}-${filterType}`;
+    const cached = spotsCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < SPOTS_CACHE_DURATION)) {
+      setPopularSpots(cached.spots);
+      setCitySpots(cached.cities);
+      return; // Instant return from cache
+    }
+    
     try {
       setLoading(true);
       const normalizedCity = currentCity.trim().toLowerCase();
@@ -138,6 +151,7 @@ const PopularSpots = ({
           }));
           setPopularSpots(locationSpots);
           setCitySpots([]);
+          spotsCache.set(cacheKey, { spots: locationSpots, cities: [], timestamp: Date.now() });
           setLoading(false);
           return;
         }
@@ -186,6 +200,7 @@ const PopularSpots = ({
         })).sort((a, b) => b.locationCount - a.locationCount).slice(0, 10);
         setCitySpots(cities);
         setPopularSpots([]);
+        spotsCache.set(cacheKey, { spots: [], cities, timestamp: Date.now() });
       } else {
         // Original logic for trending filter
         const locationsQuery = supabase.from('locations').select('id, name, category, city, address, google_place_id, latitude, longitude').or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`).limit(200);
@@ -242,6 +257,8 @@ const PopularSpots = ({
         const topSpots = Array.from(locationMap.values()).sort((a, b) => b.savesCount - a.savesCount).slice(0, 10);
         setPopularSpots(topSpots);
         setCitySpots([]);
+        // Cache the result
+        spotsCache.set(cacheKey, { spots: topSpots, cities: [], timestamp: Date.now() });
       }
     } catch (error) {
       console.error('Error fetching popular spots:', error);
