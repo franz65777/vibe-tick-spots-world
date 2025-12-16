@@ -838,7 +838,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Opening Hours and Saved By Users Row - Always visible */}
-          <div className="px-4 pb-1">
+          <div className="px-4 pt-1 pb-3">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
@@ -900,9 +900,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
           {/* Featured in Lists Section */}
           {!listsLoading && featuredLists.length > 0 && (
-            <div className="px-4 pb-0">
+            <div className="px-4 pt-2 pb-1">
               <h4 className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-left">
-                📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
+                📌 {t('featuredInLists', { defaultValue: 'Featured in Lists' })}
               </h4>
               <div className="overflow-x-auto scrollbar-hide">
                 <div className="flex gap-2">

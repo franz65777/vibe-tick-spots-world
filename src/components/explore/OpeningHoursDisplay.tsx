@@ -24,14 +24,18 @@ const dayIndexToKey: Record<number, string> = {
   6: 'saturday'
 };
 
+// Languages that use 12-hour clock format (AM/PM)
+const TWELVE_HOUR_LANGUAGES = ['en', 'fil', 'tl']; // English, Filipino, Tagalog
+
 // Format hours string based on current language (12h vs 24h)
 const formatTodayHoursForLocale = (todayHours: string | null, language: string): string | null => {
   if (!todayHours) return null;
 
-  const lang = language.toLowerCase();
-  const uses12HourClock = lang.startsWith('en'); // English uses 12h, others 24h
+  const lang = language.toLowerCase().split('-')[0]; // Get base language code
+  const uses12HourClock = TWELVE_HOUR_LANGUAGES.includes(lang);
 
   if (uses12HourClock) {
+    // Return as-is if already has AM/PM, otherwise ensure proper 12h format
     return todayHours;
   }
 
