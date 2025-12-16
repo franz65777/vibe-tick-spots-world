@@ -53,6 +53,9 @@ export const PostActions = ({
   const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Unique suffix per PostActions instance to avoid channel-name collisions.
+  const channelSuffixRef = useRef(Math.random().toString(36).slice(2));
+
   // Sync like count
   useEffect(() => {
     if (likeCount !== undefined) {
@@ -75,16 +78,18 @@ export const PostActions = ({
   useEffect(() => {
     if (!postId) return;
 
+    const suffix = channelSuffixRef.current;
+
     const sharesChannel = supabase
-      .channel(`post-shares-${postId}`)
+      .channel(`post-shares-${postId}-${suffix}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'post_shares', filter: `post_id=eq.${postId}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setLocalSharesCount(prev => prev + 1);
+            setLocalSharesCount((prev) => prev + 1);
           } else if (payload.eventType === 'DELETE') {
-            setLocalSharesCount(prev => Math.max(0, prev - 1));
+            setLocalSharesCount((prev) => Math.max(0, prev - 1));
           }
         }
       )
@@ -143,9 +148,11 @@ export const PostActions = ({
 
     if (!locationId || !user) return;
 
+    const suffix = channelSuffixRef.current;
+
     // Realtime for internal saves
     const chInternal = supabase
-      .channel(`location-saves-${locationId}-${postId}`)
+      .channel(`location-saves-${locationId}-${postId}-${suffix}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'user_saved_locations', filter: `location_id=eq.${locationId}` },
@@ -164,7 +171,7 @@ export const PostActions = ({
     let chGoogle: ReturnType<typeof supabase.channel> | undefined;
     if (googlePlaceId) {
       chGoogle = supabase
-        .channel(`saved-places-${googlePlaceId}-${postId}`)
+        .channel(`saved-places-${googlePlaceId}-${postId}-${suffix}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'saved_places', filter: `place_id=eq.${googlePlaceId}` },
@@ -195,7 +202,7 @@ export const PostActions = ({
         if (saveTag) setCurrentSaveTag(saveTag);
       }
     };
-    
+
     window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
     return () => {
       window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
@@ -240,7 +247,7 @@ export const PostActions = ({
       toast.error(t('noLocationAssociated', { ns: 'common', defaultValue: 'No location associated with this post' }));
       return;
     }
-    
+
     if (isLocationSaved) {
       // Unsave location directly
       handleUnsaveLocation();
@@ -252,7 +259,7 @@ export const PostActions = ({
 
   const handleUnsaveLocation = async () => {
     if (!locationId || !user) return;
-    
+
     try {
       await supabase
         .from('user_saved_locations')
@@ -268,11 +275,11 @@ export const PostActions = ({
           .eq('user_id', user.id)
           .eq('place_id', googlePlaceId);
       }
-      
+
       setIsLocationSaved(false);
       // Emit global event
-      window.dispatchEvent(new CustomEvent('location-save-changed', { 
-        detail: { locationId, isSaved: false } 
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId, isSaved: false },
       }));
       toast.success(t('locationRemoved', { ns: 'common' }));
     } catch (error) {
@@ -283,23 +290,21 @@ export const PostActions = ({
 
   const handleSaveWithCategory = async (tag: SaveTag) => {
     if (!locationId || !user) return;
-    
+
     setShowCategoryDropdown(false);
-    
+
     try {
-      await supabase
-        .from('user_saved_locations')
-        .insert({
-          user_id: user.id,
-          location_id: locationId,
-          save_tag: tag
-        });
-      
+      await supabase.from('user_saved_locations').insert({
+        user_id: user.id,
+        location_id: locationId,
+        save_tag: tag,
+      });
+
       setIsLocationSaved(true);
       setCurrentSaveTag(tag);
       // Emit global event
-      window.dispatchEvent(new CustomEvent('location-save-changed', { 
-        detail: { locationId, isSaved: true, saveTag: tag } 
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId, isSaved: true, saveTag: tag },
       }));
       toast.success(t('locationSaved', { ns: 'common' }));
     } catch (error) {
@@ -321,7 +326,7 @@ export const PostActions = ({
       >
         <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
       </button>
-      
+
       {/* Clickable like count */}
       <button
         onClick={handleLikeCountClick}
@@ -395,11 +400,7 @@ export const PostActions = ({
       </div>
 
       {/* Likers Drawer */}
-      <LikersDrawer
-        isOpen={showLikersModal}
-        onClose={() => setShowLikersModal(false)}
-        postId={postId}
-      />
+      <LikersDrawer isOpen={showLikersModal} onClose={() => setShowLikersModal(false)} postId={postId} />
     </div>
   );
 };

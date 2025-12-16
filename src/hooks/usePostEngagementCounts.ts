@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type PostEngagementCounts = {
@@ -18,6 +18,10 @@ function buildCountsMap(postIds: string[]) {
 }
 
 export function usePostEngagementCounts(postIdsInput: string[]) {
+  // Unique suffix per hook instance to avoid Supabase channel-name collisions across the app.
+  // (supabase.channel(name) returns the same channel instance if the name matches)
+  const channelSuffixRef = useRef(Math.random().toString(36).slice(2));
+
   const postIds = useMemo(() => normalizeIds(postIdsInput), [postIdsInput.join(",")]);
   const [counts, setCounts] = useState<Record<string, PostEngagementCounts>>({});
 
@@ -70,8 +74,10 @@ export function usePostEngagementCounts(postIdsInput: string[]) {
         });
       };
 
+    const suffix = channelSuffixRef.current;
+
     const likesChannel = supabase
-      .channel(`counts-post-likes-${postIds.join("-")}`)
+      .channel(`counts-post-likes-${suffix}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "post_likes", filter },
@@ -85,7 +91,7 @@ export function usePostEngagementCounts(postIdsInput: string[]) {
       .subscribe();
 
     const commentsChannel = supabase
-      .channel(`counts-post-comments-${postIds.join("-")}`)
+      .channel(`counts-post-comments-${suffix}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "post_comments", filter },
@@ -99,7 +105,7 @@ export function usePostEngagementCounts(postIdsInput: string[]) {
       .subscribe();
 
     const sharesChannel = supabase
-      .channel(`counts-post-shares-${postIds.join("-")}`)
+      .channel(`counts-post-shares-${suffix}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "post_shares", filter },
