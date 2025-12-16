@@ -441,14 +441,41 @@ const UserProfilePage = () => {
 
       <ShareProfileModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} profileId={userId || ''} profileUsername={displayUsername} />
 
-      {showBadgesModal && <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))]">
-            <Achievements userId={userId} />
-            <div className="p-4">
-              <Button onClick={() => setShowBadgesModal(false)} variant="secondary" className="w-full">
-                {t('close', { ns: 'common' })}
-              </Button>
+      {showBadgesModal && <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-end"
+          onClick={() => setShowBadgesModal(false)}
+        >
+          <div 
+            className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom))] touch-pan-y"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              (e.currentTarget as any).startY = touch.clientY;
+            }}
+            onTouchMove={(e) => {
+              const touch = e.touches[0];
+              const startY = (e.currentTarget as any).startY;
+              const deltaY = touch.clientY - startY;
+              if (deltaY > 0) {
+                e.currentTarget.style.transform = `translateY(${deltaY}px)`;
+              }
+            }}
+            onTouchEnd={(e) => {
+              const startY = (e.currentTarget as any).startY;
+              const endY = e.changedTouches[0].clientY;
+              const deltaY = endY - startY;
+              if (deltaY > 100) {
+                setShowBadgesModal(false);
+              } else {
+                e.currentTarget.style.transform = 'translateY(0)';
+              }
+            }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center py-3">
+              <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
             </div>
+            <Achievements userId={userId} />
           </div>
         </div>}
     </div>;
