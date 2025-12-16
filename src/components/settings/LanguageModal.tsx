@@ -23,8 +23,8 @@ const languages = [
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
   { code: 'ko', label: '한국어', flag: '🇰🇷' },
   { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
 ];
 
 const LanguageModal: React.FC<LanguageModalProps> = ({
@@ -60,8 +60,8 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
           {languages.map((lang) => (
             <button
               key={lang.code}
-              onClick={() => {
-                onLanguageChange(lang.code);
+              onClick={async () => {
+                await onLanguageChange(lang.code);
                 onOpenChange(false);
               }}
               disabled={saving}

@@ -19,7 +19,7 @@ interface FeedPostItemProps {
   expandedCaptions: Set<string>;
   isPromotionFeed?: boolean;
   onAvatarClick: (userId: string, isBusiness: boolean, e: React.MouseEvent) => void;
-  onLocationClick: (postId: string, locationId: string, lat: number, lng: number, name: string | null, e: React.MouseEvent) => void;
+  onLocationClick: (postId: string, locationId: string, lat: number, lng: number, name: string | null, category: string | null, e: React.MouseEvent) => void;
   onCommentClick: (postId: string) => void;
   onShareClick: (postId: string) => void;
   onToggleCaption: (postId: string) => void;
@@ -185,7 +185,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             {/* Show address only in promotion feed, otherwise show location name */}
             {isPromotionFeed && location && (
               <button
-                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
+                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, location.category, e)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
               >
                 <MapPin className="w-3 h-3 shrink-0" />
@@ -198,7 +198,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             )}
             {!isPromotionFeed && locationName && locationId && location?.latitude && location?.longitude && (
               <button
-                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
+                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, location.category, e)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
               >
                 <MapPin className="w-3 h-3 shrink-0" />
