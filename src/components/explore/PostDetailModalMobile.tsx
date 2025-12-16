@@ -364,8 +364,26 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   if (loading || posts.length === 0) {
     return (
-      <div className="fixed inset-0 z-[3000] bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 z-[3000] bg-background">
+        {/* Header with iOS safe area during loading */}
+        <div className="bg-background sticky top-0 z-20 flex items-center px-4 pt-safe pb-3">
+          {(locationId || userId || showBackButton) && (
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              <span className="font-semibold">
+                {backLabel || (locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' }))}
+              </span>
+            </button>
+          )}
+        </div>
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
       </div>
     );
   }
