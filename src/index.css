@@ -41,6 +41,23 @@
     }
   }
   
+  @keyframes marquee {
+    0%, 15% {
+      transform: translateX(0);
+    }
+    50%, 65% {
+      transform: translateX(calc(-100% + 100px));
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-marquee {
+    animation: marquee 8s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+  
   /* Glass morphism effect for cards */
   .glass-card {
     background: hsl(var(--background) / 0.8);
