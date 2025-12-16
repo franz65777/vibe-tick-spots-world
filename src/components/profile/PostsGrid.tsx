@@ -118,6 +118,13 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const photoPosts = posts.filter((post: any) => post.media_urls && post.media_urls.length > 0);
   const reviewPosts = posts.filter((post: any) => post.rating !== null && post.rating !== undefined);
 
+  const photoPostIds = React.useMemo(() => {
+    if (postFilter !== 'photos') return [] as string[];
+    return photoPosts.map((p: any) => p.id as string);
+  }, [postFilter, photoPosts]);
+
+  const { counts: photoCounts } = usePostEngagementCounts(photoPostIds);
+
   const isOwnProfile = user?.id === targetUserId;
 
   console.log('PostsGrid - Current user:', user?.id, 'Target user:', targetUserId, 'Is own profile:', isOwnProfile);
