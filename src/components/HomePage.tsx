@@ -393,6 +393,12 @@ const HomePage = memo(() => {
   const handleLocationSelect = (location: { id: string; name: string; city: string; address: string; lat: number; lng: number; category: string }) => {
     console.log('📍 Location selected from search:', location.name);
     
+    // Check if this is a new/external location (ID starts with nominatim-, photon-, overpass-, or is not a valid UUID)
+    const isExternalLocation = location.id.startsWith('nominatim-') || 
+                                location.id.startsWith('photon-') || 
+                                location.id.startsWith('overpass-') ||
+                                !location.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    
     // Create a temporary place object from the location result
     const placeToShow: Place = {
       id: location.id,
@@ -402,7 +408,8 @@ const HomePage = memo(() => {
       address: location.address || '',
       city: location.city,
       isFollowing: false,
-      isNew: false,
+      isNew: isExternalLocation,
+      isTemporary: isExternalLocation, // Mark as temporary if it's from external API
       likes: 0,
       visitors: []
     };

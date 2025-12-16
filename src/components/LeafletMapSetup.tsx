@@ -601,6 +601,7 @@ const LeafletMapSetup = ({
   // Keep selected marker visible outside clusters
   const selectedMarkerRef = useRef<L.Marker | null>(null);
   const selectedMarkerOriginalClusterRef = useRef<boolean>(false);
+  const tempMarkerRef = useRef<L.Marker | null>(null);
   
   // Hide other markers and clusters when a place is selected
   useEffect(() => {
@@ -611,6 +612,16 @@ const LeafletMapSetup = ({
 
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
+
+    // Clean up previous temporary marker if exists
+    if (tempMarkerRef.current) {
+      try {
+        map.removeLayer(tempMarkerRef.current);
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+      tempMarkerRef.current = null;
+    }
 
     // Restore previous selected marker to cluster if exists
     if (selectedMarkerRef.current && selectedMarkerOriginalClusterRef.current) {
@@ -624,7 +635,37 @@ const LeafletMapSetup = ({
       selectedMarkerOriginalClusterRef.current = false;
     }
 
-    // If we have a selected marker, remove it from cluster and add directly to map
+    // If selected place exists but has no marker (new/temporary location), create a temporary marker
+    if (selectedPlace && selectedPlace.coordinates?.lat && selectedPlace.coordinates?.lng && !selectedMarker) {
+      const icon = createLeafletCustomMarker({
+        category: selectedPlace.category || 'attraction',
+        isSaved: false,
+        isRecommended: false,
+        recommendationScore: 0,
+        friendAvatars: [],
+        isDarkMode,
+        hasCampaign: false,
+        sharedByUsers: undefined,
+      });
+
+      const tempMarker = L.marker([selectedPlace.coordinates.lat, selectedPlace.coordinates.lng], {
+        icon,
+        zIndexOffset: 5000,
+      });
+      
+      tempMarker.addTo(map);
+      tempMarkerRef.current = tempMarker;
+      
+      // Ensure it's visible
+      const el = tempMarker.getElement();
+      if (el) {
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+        el.style.zIndex = '5000';
+      }
+    }
+
+    // If we have a selected marker (from places array), remove it from cluster and add directly to map
     if (selectedMarker && selectedId) {
       try {
         // Check if marker is in cluster
@@ -673,7 +714,19 @@ const LeafletMapSetup = ({
     } else {
       mapContainer.classList.remove('hide-clusters');
     }
-  }, [selectedPlace]);
+    
+    // Cleanup temp marker when selectedPlace changes or becomes null
+    return () => {
+      if (tempMarkerRef.current && !selectedPlace) {
+        try {
+          map.removeLayer(tempMarkerRef.current);
+        } catch (e) {
+          // Ignore
+        }
+        tempMarkerRef.current = null;
+      }
+    };
+  }, [selectedPlace, isDarkMode]);
 
   // Inject CSS for hiding clusters
   useEffect(() => {
