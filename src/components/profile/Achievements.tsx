@@ -63,24 +63,10 @@ const Achievements = ({ userId }: AchievementsProps) => {
               }`}
               title={badge.description}
             >
-              <div className="text-xl mb-1 relative">
+              <div className="text-2xl mb-1">
                 <span className={badge.earned ? 'filter-none' : 'filter grayscale opacity-60'}>
                   {badge.icon}
                 </span>
-                {badge.earned && (
-                  <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center shadow-sm ${
-                    badge.level === 'bronze' ? 'bg-orange-500' :
-                    badge.level === 'silver' ? 'bg-gray-400' :
-                    badge.level === 'gold' ? 'bg-yellow-500' : 
-                    'bg-purple-500'
-                  }`}>
-                    <span className="text-[10px] font-bold text-white">
-                      {badge.level === 'bronze' ? 'B' : 
-                       badge.level === 'silver' ? 'S' : 
-                       badge.level === 'gold' ? 'G' : 'P'}
-                    </span>
-                  </div>
-                )}
               </div>
               <span className={`text-xs font-medium text-center leading-tight line-clamp-2 ${
                 badge.earned ? 'text-white' : 'text-muted-foreground'

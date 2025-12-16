@@ -56,8 +56,34 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
   const progressValue = badge.progress ?? 0;
   const progressPercentage = displayLevel ? Math.min(100, (progressValue / displayLevel.requirement) * 100) : 100;
   const unit = badge.id === 'explorer' ? t('cities', { ns: 'badges' }) :
-    badge.id === 'foodie' ? t('restaurants', { ns: 'badges' }) :
+    badge.id === 'collector' ? t('places', { ns: 'badges' }) :
+    badge.id === 'influencer' ? t('likes', { ns: 'badges' }) :
+    badge.id === 'contentCreator' ? t('posts', { ns: 'badges' }) :
+    badge.id === 'localGuide' ? t('reviews', { ns: 'badges' }) :
+    badge.id === 'socialNetwork' ? t('followers', { ns: 'badges' }) :
     badge.id === 'streak' ? t('days', { ns: 'badges' }) : t('places', { ns: 'badges' });
+  
+  // Get level-specific description
+  const getLevelDescription = () => {
+    if (!displayLevel) return badge.description;
+    const requirement = displayLevel.requirement;
+    switch (badge.id) {
+      case 'explorer':
+        return t('cityWandererLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Save locations in ${requirement} different cities` });
+      case 'collector':
+        return t('collectorLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Save ${requirement} locations` });
+      case 'influencer':
+        return t('influencerLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Receive ${requirement} likes on your posts` });
+      case 'contentCreator':
+        return t('contentCreatorLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Create ${requirement} posts` });
+      case 'localGuide':
+        return t('localGuideLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Write ${requirement} reviews` });
+      case 'socialNetwork':
+        return t('socialNetworkLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Get ${requirement} followers` });
+      default:
+        return badge.description;
+    }
+  };
   const remaining = displayLevel ? Math.max(0, displayLevel.requirement - progressValue) : 0;
 
   const getNextSteps = () => {
@@ -144,7 +170,7 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
           </div>
 
           <h2 className="text-xl font-bold text-foreground mb-2">{badge.name}</h2>
-          <p className="text-muted-foreground text-sm mb-4">{badge.description}</p>
+          <p className="text-muted-foreground text-sm mb-4">{getLevelDescription()}</p>
 
           {currentLevel > 0 && (
             <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-full px-4 py-2">
@@ -195,7 +221,7 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
 
           {/* Next Level Goal */}
           {displayLevel && !displayLevel.earned && (
-            <div className="mb-6">
+            <div>
               <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
                 <Target className="w-5 h-5 text-primary" />
                 {t('nextSteps', { ns: 'badges' })}
@@ -210,32 +236,6 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
               </div>
             </div>
           )}
-
-          {/* Rewards */}
-          <div>
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
-              <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-              {t('rewards', { ns: 'badges' })}
-            </h3>
-            <div className="space-y-2">
-              {getRewards().map((reward, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
-                  <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full flex-shrink-0"></div>
-                  <span className="text-sm text-foreground/80">{reward}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 pt-0">
-          <Button 
-            onClick={onClose}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            {currentLevel === 3 ? t('awesome', { ns: 'badges' }) : t('keepGoing', { ns: 'badges' })}
-          </Button>
         </div>
       </div>
     </div>
