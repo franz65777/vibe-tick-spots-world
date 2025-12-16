@@ -720,7 +720,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     </Button>
                   </div>
 
-                  <Button
+                <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       setReviewOpen(true);
@@ -731,7 +731,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   >
                     <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                     <Star className="w-5 h-5" />
-                    <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
+                    <span className="text-xs">{t('review', { ns: 'explore', defaultValue: 'Review' })}</span>
                   </Button>
 
                   <Button
@@ -745,7 +745,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   >
                     <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                     <Navigation className="w-5 h-5" />
-                    <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
+                    <span className="text-xs">{t('directions', { ns: 'explore', defaultValue: 'Directions' })}</span>
                   </Button>
 
                   <Button
@@ -794,8 +794,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   }}
                 />
                 
-                {/* Dropdown positioned absolutely */}
-                <div className="absolute left-4 top-0 w-auto z-50">
+                {/* Dropdown positioned absolutely - opens upward when card is minimized */}
+                <div className="absolute left-4 bottom-full mb-2 w-auto z-50">
                   <div className="w-56 bg-muted/10 backdrop-blur-md border border-border/10 rounded-2xl shadow-lg">
                     {isSaved && (
                       <button
