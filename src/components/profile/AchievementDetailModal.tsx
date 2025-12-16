@@ -57,32 +57,19 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
   const progressPercentage = displayLevel ? Math.min(100, (progressValue / displayLevel.requirement) * 100) : 100;
   const unit = badge.id === 'explorer' ? t('cities', { ns: 'badges' }) :
     badge.id === 'collector' ? t('places', { ns: 'badges' }) :
-    badge.id === 'influencer' ? t('likes', { ns: 'badges' }) :
-    badge.id === 'contentCreator' ? t('posts', { ns: 'badges' }) :
-    badge.id === 'localGuide' ? t('reviews', { ns: 'badges' }) :
-    badge.id === 'socialNetwork' ? t('followers', { ns: 'badges' }) :
+    badge.id === 'influencer' ? t('likes', { ns: 'common' }) :
+    badge.id === 'contentCreator' ? t('posts', { ns: 'common' }) :
+    badge.id === 'localGuide' ? t('reviews', { ns: 'common' }) :
+    badge.id === 'socialNetwork' ? t('followers', { ns: 'common' }) :
     badge.id === 'streak' ? t('days', { ns: 'badges' }) : t('places', { ns: 'badges' });
-  
-  // Get level-specific description
+
   const getLevelDescription = () => {
     if (!displayLevel) return badge.description;
     const requirement = displayLevel.requirement;
-    switch (badge.id) {
-      case 'explorer':
-        return t('cityWandererLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Save locations in ${requirement} different cities` });
-      case 'collector':
-        return t('collectorLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Save ${requirement} locations` });
-      case 'influencer':
-        return t('influencerLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Receive ${requirement} likes on your posts` });
-      case 'contentCreator':
-        return t('contentCreatorLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Create ${requirement} posts` });
-      case 'localGuide':
-        return t('localGuideLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Write ${requirement} reviews` });
-      case 'socialNetwork':
-        return t('socialNetworkLevelDesc', { ns: 'badges', count: requirement, defaultValue: `Get ${requirement} followers` });
-      default:
-        return badge.description;
-    }
+
+    // Replace the first number in the already-localized description with the current level requirement.
+    // This keeps the user's language (IT/ES/FR/...) without needing new translation keys.
+    return (badge.description || '').replace(/(\d+)(\+?)/, `${requirement}$2`);
   };
   const remaining = displayLevel ? Math.max(0, displayLevel.requirement - progressValue) : 0;
 
