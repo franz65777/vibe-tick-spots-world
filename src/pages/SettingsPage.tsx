@@ -208,8 +208,8 @@ const SettingsPage: React.FC = () => {
                 <div className="text-left">
                   <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
-                    {hasValidBusinessAccount 
-                      ? 'Gestisci il tuo account business' 
+                    {hasValidBusinessAccount
+                      ? t('manageBusinessAccount', { ns: 'settings' })
                       : t('requestBusinessAccount', { ns: 'settings' })}
                   </div>
                 </div>

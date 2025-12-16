@@ -5330,68 +5330,98 @@ Object.keys(guidedTourTranslations).forEach(lang => {
   }
 });
 
-// Ensure Settings namespace exists for all supported languages (prevents "stuck in English" when switching)
-const ensureSettings = (lang: string, settings: Record<string, string>) => {
+// Ensure key namespaces exist for all supported languages (prevents fallback-to-English islands)
+const ensureNamespace = (lang: string, ns: string, values: Record<string, any>) => {
   if (!resources[lang]) return;
   resources[lang] = {
     ...resources[lang],
-    settings: {
-      // keep existing keys if present
-      ...(resources[lang] as any).settings,
-      ...settings,
+    [ns]: {
+      ...(resources[lang] as any)[ns],
+      ...values,
     },
   } as any;
 };
 
-// Minimal, high-impact settings strings used in SettingsPage + LanguageModal
-ensureSettings('it', {
+// Minimal, high-impact strings that appear in screenshots and core UI
+// SETTINGS
+ensureNamespace('it', 'settings', {
   title: 'Impostazioni',
   editProfile: 'Modifica profilo',
   editProfileDesc: 'Aggiorna le tue informazioni',
   language: 'Lingua',
+  manageBusinessAccount: 'Gestisci il tuo account business',
   languageSaved: 'Preferenza lingua salvata',
   failedToSave: 'Salvataggio non riuscito',
 });
-ensureSettings('es', {
+ensureNamespace('es', 'settings', {
   title: 'Configuración',
   editProfile: 'Editar perfil',
   editProfileDesc: 'Actualiza tu información',
   language: 'Idioma',
+  manageBusinessAccount: 'Gestiona tu cuenta business',
   languageSaved: 'Preferencia de idioma guardada',
   failedToSave: 'Error al guardar',
 });
-ensureSettings('fr', {
+ensureNamespace('fr', 'settings', {
   title: 'Paramètres',
   editProfile: 'Modifier le profil',
   editProfileDesc: 'Mettre à jour vos informations',
   language: 'Langue',
+  manageBusinessAccount: 'Gérer votre compte business',
   languageSaved: 'Préférence de langue enregistrée',
   failedToSave: 'Échec de l’enregistrement',
 });
-ensureSettings('de', {
+ensureNamespace('de', 'settings', {
   title: 'Einstellungen',
   editProfile: 'Profil bearbeiten',
   editProfileDesc: 'Deine Infos aktualisieren',
   language: 'Sprache',
+  manageBusinessAccount: 'Business-Konto verwalten',
   languageSaved: 'Sprache gespeichert',
   failedToSave: 'Speichern fehlgeschlagen',
 });
-ensureSettings('pt', {
+ensureNamespace('pt', 'settings', {
   title: 'Configurações',
   editProfile: 'Editar perfil',
   editProfileDesc: 'Atualize suas informações',
   language: 'Idioma',
+  manageBusinessAccount: 'Gerencie sua conta business',
   languageSaved: 'Idioma salvo',
   failedToSave: 'Falha ao salvar',
 });
-ensureSettings('tr', {
+ensureNamespace('tr', 'settings', {
   title: 'Ayarlar',
   editProfile: 'Profili düzenle',
   editProfileDesc: 'Bilgilerini güncelle',
   language: 'Dil',
+  manageBusinessAccount: 'Business hesabını yönet',
   languageSaved: 'Dil tercihi kaydedildi',
   failedToSave: 'Kaydetme başarısız',
 });
+
+// COMMON (profile header stats)
+ensureNamespace('it', 'common', { followers: 'Follower', followingTab: 'Seguiti' });
+ensureNamespace('es', 'common', { followers: 'Seguidores', followingTab: 'Siguiendo' });
+ensureNamespace('fr', 'common', { followers: 'Abonnés', followingTab: 'Abonnements' });
+ensureNamespace('de', 'common', { followers: 'Follower', followingTab: 'Folge ich' });
+ensureNamespace('pt', 'common', { followers: 'Seguidores', followingTab: 'Seguindo' });
+ensureNamespace('tr', 'common', { followers: 'Takipçiler', followingTab: 'Takip edilen' });
+
+// MAP FILTERS (Saved label used in profile header)
+ensureNamespace('it', 'mapFilters', { saved: 'Salvati' });
+ensureNamespace('es', 'mapFilters', { saved: 'Guardados' });
+ensureNamespace('fr', 'mapFilters', { saved: 'Enregistrés' });
+ensureNamespace('de', 'mapFilters', { saved: 'Gespeichert' });
+ensureNamespace('pt', 'mapFilters', { saved: 'Salvos' });
+ensureNamespace('tr', 'mapFilters', { saved: 'Kaydedilenler' });
+
+// NAVIGATION (bottom tab bar)
+ensureNamespace('it', 'navigation', { explore: 'Esplora', search: 'Cerca', add: 'Aggiungi', feed: 'Feed', profile: 'Profilo' });
+ensureNamespace('es', 'navigation', { explore: 'Explorar', search: 'Buscar', add: 'Añadir', feed: 'Feed', profile: 'Perfil' });
+ensureNamespace('fr', 'navigation', { explore: 'Explorer', search: 'Recherche', add: 'Ajouter', feed: 'Fil', profile: 'Profil' });
+ensureNamespace('de', 'navigation', { explore: 'Entdecken', search: 'Suche', add: 'Hinzufügen', feed: 'Feed', profile: 'Profil' });
+ensureNamespace('pt', 'navigation', { explore: 'Explorar', search: 'Pesquisar', add: 'Adicionar', feed: 'Feed', profile: 'Perfil' });
+ensureNamespace('tr', 'navigation', { explore: 'Keşfet', search: 'Ara', add: 'Ekle', feed: 'Akış', profile: 'Profil' });
 
 // Add Chinese (zh) as the 12th language
 // Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
