@@ -19,6 +19,7 @@ import { getCategoryIcon, getCategoryImage } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { translateCityName } from '@/utils/cityTranslations';
 import { usePostEngagementCounts } from '@/hooks/usePostEngagementCounts';
+import { LikersDrawer } from '@/components/social/LikersDrawer';
 
 interface Post {
   id: string;
@@ -59,6 +60,8 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [reviewOrder, setReviewOrder] = useState<Record<string, number>>({});
+  const [likersPostId, setLikersPostId] = useState<string | null>(null);
+  const [likersOpen, setLikersOpen] = useState(false);
 
   // Assign progressive order to reviews for each location - memoized to prevent infinite loops
   React.useEffect(() => {
@@ -280,17 +283,28 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       )}
                     </button>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/80 via-background/0 to-transparent flex items-end">
                     <div className="p-3 w-full">
                       <div className="flex justify-between items-center">
                         <div className="flex gap-2">
-                          <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                            <Heart className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{photoCounts[post.id]?.likes ?? post.likes_count ?? 0}</span>
-                          </div>
-                          <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{photoCounts[post.id]?.comments ?? post.comments_count ?? 0}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const count = photoCounts[post.id]?.likes ?? post.likes_count ?? 0;
+                              if (count > 0) {
+                                setLikersPostId(post.id);
+                                setLikersOpen(true);
+                              }
+                            }}
+                            className="bg-background/40 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1"
+                          >
+                            <Heart className="w-3 h-3 text-foreground" />
+                            <span className="text-xs text-foreground font-medium">{photoCounts[post.id]?.likes ?? post.likes_count ?? 0}</span>
+                          </button>
+                          <div className="bg-background/40 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                            <MessageCircle className="w-3 h-3 text-foreground" />
+                            <span className="text-xs text-foreground font-medium">{photoCounts[post.id]?.comments ?? post.comments_count ?? 0}</span>
                           </div>
                         </div>
                       </div>
@@ -491,6 +505,17 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
             const { queryClient } = await import('@/lib/queryClient');
             queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
           }}
+        />
+      )}
+
+      {likersPostId && (
+        <LikersDrawer
+          isOpen={likersOpen}
+          onClose={() => {
+            setLikersOpen(false);
+            setLikersPostId(null);
+          }}
+          postId={likersPostId}
         />
       )}
 
