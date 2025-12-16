@@ -191,32 +191,61 @@ export const NewAddPage = () => {
       
       // Find or create location
       let locationId = null;
+      const lat = selectedLocation.geometry?.location?.lat?.();
+      const lng = selectedLocation.geometry?.location?.lng?.();
       
-      // Check if location exists by name and coordinates (since we don't have google_place_id)
-      const { data: existing } = await supabase
-        .from('locations')
-        .select('id')
-        .eq('name', selectedLocation.name)
-        .eq('latitude', selectedLocation.geometry?.location?.lat())
-        .eq('longitude', selectedLocation.geometry?.location?.lng())
-        .maybeSingle();
+      console.log('📍 Location coordinates:', { lat, lng, name: selectedLocation.name });
       
-      if (existing) {
-        locationId = existing.id;
-        console.log('✅ Found existing location:', locationId);
+      // STRATEGY 1: Check by coordinates first (most reliable)
+      if (lat != null && lng != null) {
+        const threshold = 0.0001; // ~11 meters
+        const { data: nearbyLocs } = await supabase
+          .from('locations')
+          .select('id, name')
+          .gte('latitude', lat - threshold)
+          .lte('latitude', lat + threshold)
+          .gte('longitude', lng - threshold)
+          .lte('longitude', lng + threshold)
+          .limit(1);
+        
+        if (nearbyLocs && nearbyLocs.length > 0) {
+          locationId = nearbyLocs[0].id;
+          console.log('✅ Found existing location by coordinates:', nearbyLocs[0].name);
+        }
       }
       
-      // Create new location if not found
+      // STRATEGY 2: Check by name (fallback) - prefer locations with coordinates
       if (!locationId) {
-        console.log('🆕 Creating new location...');
+        const { data: nameLocs } = await supabase
+          .from('locations')
+          .select('id, name, latitude, longitude')
+          .ilike('name', selectedLocation.name)
+          .not('latitude', 'is', null)
+          .limit(1);
+        
+        if (nameLocs && nameLocs.length > 0) {
+          locationId = nameLocs[0].id;
+          console.log('✅ Found existing location by name:', nameLocs[0].name);
+        }
+      }
+      
+      // Create new location if not found - only if we have valid coordinates
+      if (!locationId) {
+        if (lat == null || lng == null) {
+          console.error('❌ Cannot create location without coordinates');
+          toast.error(t('invalidLocation', { ns: 'add', defaultValue: 'Invalid location - please select a location with valid coordinates' }));
+          return;
+        }
+        
+        console.log('🆕 Creating new location with coordinates:', lat, lng);
         
         const { data: newLocation, error: locationError } = await supabase
           .from('locations')
           .insert({
             name: selectedLocation.name,
             address: selectedLocation.formatted_address,
-            latitude: selectedLocation.geometry?.location?.lat(),
-            longitude: selectedLocation.geometry?.location?.lng(),
+            latitude: lat,
+            longitude: lng,
             category: selectedCategory,
             created_by: user.id,
             pioneer_user_id: user.id
