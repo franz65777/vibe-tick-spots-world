@@ -412,7 +412,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           const hasMultipleMedia = post.media_urls.length > 1;
           
           return (
-            <article key={post.id} data-post-id={post.id} className="post-compact border-b border-border/30 pb-3 mb-2">
+            <article key={post.id} data-post-id={post.id} className="post-compact pb-1" style={{ scrollMarginTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}>
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
