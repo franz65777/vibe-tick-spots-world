@@ -838,7 +838,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Opening Hours and Saved By Users Row - Always visible */}
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-1">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
@@ -882,7 +882,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             <>
               {/* Marketing Campaign - Expandable Section */}
           {campaign && (
-            <div className="px-4 pb-2">
+            <div className="px-4 pb-1">
               <button
                 onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
                 className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
@@ -900,42 +900,38 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
           {/* Featured in Lists Section */}
           {!listsLoading && featuredLists.length > 0 && (
-            <div className="px-4 pb-1">
-              <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-3 py-1.5 w-full">
-                <div className="w-full">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
-                  </h4>
-                  <div className="overflow-x-auto scrollbar-hide">
-                    <div className="flex gap-2">
-                      {featuredLists.map((list) => (
-                        <button
-                          key={list.list_id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (list.type === 'folder') {
-                              setSelectedFolderId(list.list_id);
-                              setFolderDetailOpen(true);
-                              setIsListOpen(true);
-                            } else {
-                              setSelectedTripId(list.list_id);
-                              setTripDetailOpen(true);
-                              setIsListOpen(true);
-                            }
-                          }}
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={list.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-foreground">
-                            {list.list_name}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+            <div className="px-4 pb-0">
+              <h4 className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-left">
+                📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
+              </h4>
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2">
+                  {featuredLists.map((list) => (
+                    <button
+                      key={list.list_id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (list.type === 'folder') {
+                          setSelectedFolderId(list.list_id);
+                          setFolderDetailOpen(true);
+                          setIsListOpen(true);
+                        } else {
+                          setSelectedTripId(list.list_id);
+                          setTripDetailOpen(true);
+                          setIsListOpen(true);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                    >
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={list.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-foreground text-xs">
+                        {list.list_name}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
