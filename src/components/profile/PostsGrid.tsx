@@ -240,16 +240,12 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       ) : (
         postFilter === 'photos' ? (
           <div className="grid grid-cols-2 gap-3 w-full">
-            {(() => {
-              const photoPostIds = displayedPosts.map((p) => p.id);
-              const { counts } = usePostEngagementCounts(photoPostIds);
-
-              return displayedPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-                  onClick={() => handlePostClick(post.id)}
-                >
+            {displayedPosts.map((post) => (
+              <div
+                key={post.id}
+                className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
+                onClick={() => handlePostClick(post.id)}
+              >
                 {/* Photo Post */}
                 <>
                   <img
@@ -290,20 +286,19 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         <div className="flex gap-2">
                           <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
                             <Heart className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{counts[post.id]?.likes ?? post.likes_count ?? 0}</span>
+                            <span className="text-xs text-white font-medium">{photoCounts[post.id]?.likes ?? post.likes_count ?? 0}</span>
                           </div>
                           <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
                             <MessageCircle className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{counts[post.id]?.comments ?? post.comments_count ?? 0}</span>
+                            <span className="text-xs text-white font-medium">{photoCounts[post.id]?.comments ?? post.comments_count ?? 0}</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </>
-                </div>
-              ));
-            })()}
+              </div>
+            ))}
           </div>
         ) : (
           <div className="w-full space-y-3">
