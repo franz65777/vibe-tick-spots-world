@@ -45,7 +45,7 @@ export const useOptimizedFeed = () => {
           ? supabase.from('profiles').select('id,username,avatar_url,full_name').in('id', profileIds)
           : Promise.resolve({ data: [], error: null }),
         locationIds.length
-          ? supabase.from('locations').select('id,name,address,city,latitude,longitude').in('id', locationIds)
+          ? supabase.from('locations').select('id,name,address,city,latitude,longitude,category').in('id', locationIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 

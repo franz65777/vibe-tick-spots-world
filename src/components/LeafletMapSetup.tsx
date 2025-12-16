@@ -729,15 +729,11 @@ const LeafletMapSetup = ({
       }
     }
 
-    // Hide/show other individual markers
-    // When opened from a post (sourcePostId), hide ALL markers including selected
-    const isFromPost = !!(selectedPlace as any)?.sourcePostId;
-    
+    // Hide/show other individual markers (keep ONLY the selected pin visible)
     clusterGroup.eachLayer((layer: any) => {
       const isSelected = selectedMarker && layer === selectedMarker;
       const hasSelection = !!selectedId;
-      // If from post, hide all. Otherwise, show only selected
-      const opacity = isFromPost ? 0 : (hasSelection ? (isSelected ? 1 : 0) : 1);
+      const opacity = hasSelection ? (isSelected ? 1 : 0) : 1;
 
       if (typeof layer.setOpacity === 'function') {
         layer.setOpacity(opacity);
@@ -746,30 +742,16 @@ const LeafletMapSetup = ({
       if (typeof layer.getElement === 'function') {
         const el = layer.getElement();
         if (el) {
-          el.style.pointerEvents = isFromPost ? 'none' : (hasSelection ? (isSelected ? 'auto' : 'none') : 'auto');
+          el.style.pointerEvents = hasSelection ? (isSelected ? 'auto' : 'none') : 'auto';
         }
       }
     });
 
-    // Hide/show cluster icons using CSS class for reliability
-    if (isFromPost) {
+    // Hide cluster icons whenever a pin is selected (post-open or map-open)
+    if (selectedId) {
       mapContainer.classList.add('hide-clusters');
-      mapContainer.classList.add('hide-all-pins');
-    } else if (selectedId) {
-      mapContainer.classList.add('hide-clusters');
-      mapContainer.classList.remove('hide-all-pins');
     } else {
       mapContainer.classList.remove('hide-clusters');
-      mapContainer.classList.remove('hide-all-pins');
-    }
-    
-    // Also hide temp marker if from post
-    if (isFromPost && tempMarkerRef.current) {
-      const el = tempMarkerRef.current.getElement();
-      if (el) {
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-      }
     }
   }, [selectedPlace, isDarkMode]);
 
@@ -781,10 +763,7 @@ const LeafletMapSetup = ({
       styleEl.id = 'cluster-hide-styles';
       styleEl.innerHTML = `
         .hide-clusters .marker-cluster,
-        .hide-clusters .custom-cluster-icon,
-        .hide-all-pins .leaflet-marker-icon,
-        .hide-all-pins .leaflet-marker-pane > *,
-        .hide-all-pins .marker-cluster {
+        .hide-clusters .custom-cluster-icon {
           opacity: 0 !important;
           pointer-events: none !important;
           visibility: hidden !important;

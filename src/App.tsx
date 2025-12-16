@@ -81,16 +81,38 @@ function AppContent() {
   useEffect(() => {
     const loadLang = async () => {
       if (!user?.id) return;
-      const { data } = await supabase
+
+      // Prefer whatever the user already chose locally; only override if DB returns a value.
+      const stored = localStorage.getItem('i18nextLng');
+      if (stored && i18n.language !== stored) {
+        try {
+          await i18n.changeLanguage(stored);
+        } catch {
+          // ignore
+        }
+      }
+
+      const { data, error } = await supabase
         .from('profiles')
         .select('language')
         .eq('id', user.id)
         .single();
-      const lang = data?.language || 'en';
+
+      // If we can't read the profile language, don't force English.
+      if (error || !data?.language) return;
+
+      const lang = data.language;
       localStorage.setItem('userLanguage', lang);
       localStorage.setItem('i18nextLng', lang);
-      try { i18n.changeLanguage(lang); } catch {}
+      if (i18n.language !== lang) {
+        try {
+          await i18n.changeLanguage(lang);
+        } catch {
+          // ignore
+        }
+      }
     };
+
     loadLang();
   }, [user?.id]);
 
