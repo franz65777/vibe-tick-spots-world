@@ -240,7 +240,7 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         <DrawerHeader className="border-b-0 pb-2">
           <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-2" />
           <DrawerTitle className="text-center">
-            "{t('likes', { ns: 'common', defaultValue: 'Likes' })}"
+            {t('likes', { ns: 'common', defaultValue: 'Likes' })}
           </DrawerTitle>
         </DrawerHeader>
         

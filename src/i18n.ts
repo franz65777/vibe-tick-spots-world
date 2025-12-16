@@ -39,6 +39,12 @@ const resources = {
       like: 'Like',
       likes: 'Likes',
       noLikesYet: 'No likes yet',
+      comments: {
+        title: 'Comments',
+        addPlaceholder: 'Add a comment...',
+        noComments: 'No comments yet',
+        beFirst: 'Be the first to comment!'
+      },
       saveAs: 'Save as',
       posts: 'posts',
       locations: 'locations',
@@ -1008,6 +1014,12 @@ const resources = {
       saved: 'Guardado',
       likes: 'Me gusta',
       noLikesYet: 'Aún no hay me gusta',
+      comments: {
+        title: 'Comentarios',
+        addPlaceholder: 'Añade un comentario...',
+        noComments: 'Sin comentarios',
+        beFirst: '¡Sé el primero en comentar!'
+      },
       saveAs: 'Guardar como',
       posts: 'publicaciones',
       locations: 'ubicaciones',
@@ -1267,6 +1279,12 @@ const resources = {
       like: '点赞',
       likes: '点赞',
       noLikesYet: '还没有点赞',
+      comments: {
+        title: '评论',
+        addPlaceholder: '添加评论...',
+        noComments: '暂无评论',
+        beFirst: '成为第一个评论的人！'
+      },
       saveAs: '保存为',
       posts: '帖子',
       locations: '位置',
@@ -1883,6 +1901,12 @@ const resources = {
       like: 'いいね',
       likes: 'いいね',
       noLikesYet: 'まだいいねがありません',
+      comments: {
+        title: 'コメント',
+        addPlaceholder: 'コメントを追加...',
+        noComments: 'コメントなし',
+        beFirst: '最初にコメントしよう！'
+      },
       saveAs: '保存先',
       posts: '投稿',
       locations: '場所',
@@ -2504,6 +2528,12 @@ const resources = {
       like: '좋아요',
       likes: '좋아요',
       noLikesYet: '아직 좋아요가 없습니다',
+      comments: {
+        title: '댓글',
+        addPlaceholder: '댓글 추가...',
+        noComments: '댓글 없음',
+        beFirst: '첫 번째로 댓글을 달아보세요!'
+      },
       saveAs: '다른 이름으로 저장',
       posts: '게시물',
       locations: '위치',
@@ -3130,6 +3160,12 @@ const resources = {
       like: 'إعجاب',
       likes: 'إعجابات',
       noLikesYet: 'لا إعجابات بعد',
+      comments: {
+        title: 'التعليقات',
+        addPlaceholder: 'أضف تعليقًا...',
+        noComments: 'لا توجد تعليقات',
+        beFirst: 'كن أول من يعلق!'
+      },
       saveAs: 'حفظ كـ',
       posts: 'منشورات',
       locations: 'مواقع',
@@ -4392,6 +4428,12 @@ const resources = {
       like: 'Нравится',
       likes: 'Нравится',
       noLikesYet: 'Пока нет лайков',
+      comments: {
+        title: 'Комментарии',
+        addPlaceholder: 'Добавить комментарий...',
+        noComments: 'Пока нет комментариев',
+        beFirst: 'Будьте первым, кто прокомментирует!'
+      },
       saveAs: 'Сохранить как',
       posts: 'Посты',
       locations: 'Места',

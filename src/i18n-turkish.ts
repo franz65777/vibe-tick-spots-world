@@ -26,6 +26,12 @@ export const turkishTranslations = {
       like: 'Beğen',
       likes: 'Beğeniler',
       noLikesYet: 'Henüz beğeni yok',
+      comments: {
+        title: 'Yorumlar',
+        addPlaceholder: 'Yorum ekle...',
+        noComments: 'Henüz yorum yok',
+        beFirst: 'İlk yorumu siz yapın!'
+      },
       saveAs: 'Farklı kaydet',
       posts: 'gönderiler',
       locations: 'konumlar',
