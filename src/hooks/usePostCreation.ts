@@ -79,20 +79,21 @@ export const usePostCreation = () => {
           }
         }
 
-        // STRATEGY 3: Check by exact name match (fallback)
+        // STRATEGY 3: Check by exact name match (fallback) - use limit(1) instead of maybeSingle to avoid errors with duplicates
         if (!existingLocation) {
           console.log('🔍 Checking by name match...');
           
-          const { data: nameLocation, error: nameError } = await supabase
+          const { data: nameLocations, error: nameError } = await supabase
             .from('locations')
-            .select('id, name, address')
+            .select('id, name, address, latitude, longitude')
             .ilike('name', location.name)
-            .maybeSingle();
+            .not('latitude', 'is', null) // Prefer locations with coordinates
+            .limit(1);
 
           if (nameError) {
             console.error('❌ Error checking by name:', nameError);
-          } else if (nameLocation) {
-            existingLocation = nameLocation;
+          } else if (nameLocations && nameLocations.length > 0) {
+            existingLocation = nameLocations[0];
             console.log('✅ FOUND by name:', existingLocation.name);
           }
         }
