@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
@@ -189,15 +189,33 @@ const FeedPage = memo(() => {
     }
   };
 
-  const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, category: string | null, e: React.MouseEvent) => {
+  const handleLocationClick = (
+    postId: string,
+    locationId: string,
+    latitude: number,
+    longitude: number,
+    locationName: string | null,
+    category: string | null,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
+
+    // Save current scroll position to restore smoothly when coming back
+    const scrollTop = feedScrollRef.current?.scrollTop ?? 0;
+    try {
+      sessionStorage.setItem('feedRestorePostId', postId);
+      sessionStorage.setItem('feedScrollTop', String(scrollTop));
+    } catch {
+      // ignore
+    }
+
     navigate('/', {
       state: {
         centerMap: {
           lat: latitude,
           lng: longitude,
           locationId: locationId,
-          shouldFocus: true
+          shouldFocus: true,
         },
         openPinDetail: {
           id: locationId,
@@ -205,9 +223,9 @@ const FeedPage = memo(() => {
           lat: latitude,
           lng: longitude,
           category: category || 'restaurant',
-          sourcePostId: postId
-        }
-      }
+          sourcePostId: postId,
+        },
+      },
     });
   };
 
@@ -295,27 +313,41 @@ const FeedPage = memo(() => {
   };
   const feedScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Restore scroll position to the post that opened the pin card
-  useEffect(() => {
-    const restorePostId = (location.state as any)?.restorePostId as string | undefined;
-    if (!restorePostId) return;
+  // Restore scroll position smoothly when returning from a pin opened from feed
+  useLayoutEffect(() => {
+    const stateRestorePostId = (location.state as any)?.restorePostId as string | undefined;
+    const restorePostId = stateRestorePostId || sessionStorage.getItem('feedRestorePostId') || undefined;
+    const restoreScrollTopRaw = sessionStorage.getItem('feedScrollTop');
+    const restoreScrollTop = restoreScrollTopRaw ? Number(restoreScrollTopRaw) : null;
 
-    const scrollToPost = () => {
-      const container = feedScrollRef.current;
-      const postEl = container?.querySelector?.(`[data-post-id="${restorePostId}"]`) as HTMLElement | null;
-      if (postEl) {
-        postEl.scrollIntoView({ behavior: 'instant' as any, block: 'start' });
-      }
-      // Clear router state so it doesn't re-scroll on future renders
+    if (!restorePostId && restoreScrollTop === null) return;
+
+    const container = feedScrollRef.current;
+    if (!container) return;
+
+    // First restore previous scrollTop (prevents the "flash" to top)
+    if (restoreScrollTop !== null && Number.isFinite(restoreScrollTop)) {
+      container.scrollTop = restoreScrollTop;
+    }
+
+    // Then align exactly to the post if we can find it
+    if (restorePostId) {
+      const postEl = container.querySelector?.(`[data-post-id="${restorePostId}"]`) as HTMLElement | null;
+      if (postEl) postEl.scrollIntoView({ behavior: 'instant' as any, block: 'start' });
+    }
+
+    // Clear restore markers
+    try {
+      sessionStorage.removeItem('feedRestorePostId');
+      sessionStorage.removeItem('feedScrollTop');
+    } catch {
+      // ignore
+    }
+
+    // Clear router state so it doesn't re-run
+    if (stateRestorePostId) {
       navigate(location.pathname, { replace: true });
-    };
-
-    const t1 = window.setTimeout(scrollToPost, 50);
-    const t2 = window.setTimeout(scrollToPost, 250);
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
+    }
   }, [location.state, location.pathname, navigate]);
 
   return (
