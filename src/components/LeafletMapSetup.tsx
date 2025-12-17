@@ -1007,7 +1007,6 @@ const LeafletMapSetup = ({
           handleEndSharing={handleEndSharing}
           handleUpdateLocation={handleUpdateLocation}
           t={t}
-          filtersVisible={filtersVisible}
         />
       )}
 
@@ -1153,15 +1152,13 @@ const SharingControls = ({
   fullScreen, 
   handleEndSharing, 
   handleUpdateLocation,
-  t,
-  filtersVisible = true
+  t
 }: { 
   userActiveShare: any; 
   fullScreen?: boolean; 
   handleEndSharing: () => void; 
   handleUpdateLocation: () => void;
   t: any;
-  filtersVisible?: boolean;
 }) => {
   const { isFilterExpanded, isFriendsDropdownOpen, filterDropdownRightEdge } = useMapFilter();
   
@@ -1172,7 +1169,7 @@ const SharingControls = ({
   
   return (
     <div 
-      className={`${fullScreen ? 'fixed' : 'absolute'} z-[1000] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`${fullScreen ? 'fixed' : 'absolute'} z-[1000] flex gap-1.5`}
       style={{ 
         left: `${leftPosition}px`,
         bottom: fullScreen 
