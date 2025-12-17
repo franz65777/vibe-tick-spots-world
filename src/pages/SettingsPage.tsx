@@ -145,7 +145,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4 pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background">
+      <div className="flex items-center gap-3 p-4 pt-[calc(env(safe-area-inset-top)+12px)] sticky top-0 z-10 bg-background">
         <button
           onClick={() => navigate('/profile')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
