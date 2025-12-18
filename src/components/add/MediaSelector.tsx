@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Image as ImageIcon, Video, X, FolderPlus, Instagram } from 'lucide-react';
+import { Video, X } from 'lucide-react';
 import addPostButton from '@/assets/add-post-button.png';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import addPageHero from '@/assets/add-page-hero.png';
 import { SocialImportTutorial } from './SocialImportTutorial';
+import iconPost from '@/assets/icon-post.png';
+import iconList from '@/assets/icon-list.png';
 interface MediaSelectorProps {
   selectedFiles: File[];
   previewUrls: string[];
@@ -67,32 +69,30 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           </div>
 
           <div className="space-y-3 w-full">
-             <div className="flex gap-3 w-full">
-               <Button
-                 onClick={handleClick}
-                 size="lg"
-                 className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
-               >
-                 <ImageIcon className="w-5 h-5 mr-2 text-primary" />
-                 <span className="whitespace-nowrap">
-                   {i18n.language.startsWith('it')
-                     ? 'Crea un post'
-                     : t('chooseFromLibrary', { ns: 'add' })}
-                 </span>
-               </Button>
- 
-               <Button
-                 onClick={() => navigate('/create-list')}
-                 size="lg"
-                 className="flex-1 h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
-               >
-                 <FolderPlus className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                 <span className="whitespace-nowrap">
-                   {t('createList', { ns: 'add' })}
-                 </span>
-               </Button>
-             </div>
-           </div>
+            <Button
+              onClick={handleClick}
+              size="lg"
+              className="w-full h-14 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
+            >
+              <img src={iconPost} alt="" className="w-6 h-6 mr-3" />
+              <span className="whitespace-nowrap font-medium">
+                {i18n.language.startsWith('it')
+                  ? 'Crea un post'
+                  : t('chooseFromLibrary', { ns: 'add' })}
+              </span>
+            </Button>
+
+            <Button
+              onClick={() => navigate('/create-list')}
+              size="lg"
+              className="w-full h-14 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
+            >
+              <img src={iconList} alt="" className="w-6 h-6 mr-3" />
+              <span className="whitespace-nowrap font-medium">
+                {t('createList', { ns: 'add' })}
+              </span>
+            </Button>
+          </div>
 
           <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={e => e.target.files && onFilesSelect(e.target.files)} className="hidden" />
         </div>
