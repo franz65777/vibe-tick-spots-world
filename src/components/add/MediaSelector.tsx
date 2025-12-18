@@ -74,7 +74,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               size="lg"
               className="w-full h-14 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
             >
-              <img src={iconPost} alt="" className="w-6 h-6 mr-3" />
+              <img src={iconPost} alt="" className="w-10 h-10 mr-3" />
               <span className="whitespace-nowrap font-medium">
                 {i18n.language.startsWith('it')
                   ? 'Crea un post'
@@ -87,7 +87,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               size="lg"
               className="w-full h-14 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
             >
-              <img src={iconList} alt="" className="w-6 h-6 mr-3" />
+              <img src={iconList} alt="" className="w-10 h-10 mr-3" />
               <span className="whitespace-nowrap font-medium">
                 {t('createList', { ns: 'add' })}
               </span>
