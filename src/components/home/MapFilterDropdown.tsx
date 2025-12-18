@@ -178,7 +178,7 @@ const MapFilterDropdown = () => {
     <div ref={containerRef} className="relative flex items-center">
       {/* Friends selection dropdown - opens upward */}
       {isFriendsDropdownOpen && activeFilter === 'following' && (
-        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg min-w-[320px] max-h-[300px] z-50">
+        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg min-w-[320px] max-h-[300px] z-[2100]">
           {/* Header with search, All button, and close */}
           <div className="flex items-center gap-2 p-3 border-b border-border/30">
             <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />

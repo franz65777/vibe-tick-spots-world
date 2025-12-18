@@ -273,7 +273,7 @@ const MapSection = ({
         {/* Map Category Filters - Hide when list view is open */}
         {!isListViewOpen && (
           <div className={cn(
-            "z-[1100] w-full",
+            "z-[2000] w-full",
             isExpanded
               ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
               : "absolute top-4 left-0 right-0 px-1"
@@ -284,17 +284,17 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Filter Dropdown and Sharing Controls - Bottom Left */}
+        {/* Map Filter Dropdown - Bottom Left */}
         {!isListViewOpen && (
           <div 
             className={cn(
-              "left-3 z-[1000] flex items-center gap-2",
+              "left-3 z-[2000] flex items-center gap-2",
               isExpanded ? 'fixed' : 'absolute'
             )}
             style={{
               bottom: isExpanded 
-                ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
-                : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+                ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
+                : 'calc(6.5rem + env(safe-area-inset-bottom, 0px))'
             }}
           >
             <MapFilterDropdown />
@@ -305,14 +305,14 @@ const MapSection = ({
         {!isListViewOpen && (
         <div 
           className={cn(
-            "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-opacity duration-150",
+            "right-3 z-[2000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-opacity duration-150",
             isExpanded ? 'fixed' : 'absolute',
             !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
           )} 
           style={{
             bottom: isExpanded 
-              ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
-              : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+              ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
+              : 'calc(6.5rem + env(safe-area-inset-bottom, 0px))'
           }}
           data-has-sharing={false}>
           {/* Expand/Collapse Button */}
