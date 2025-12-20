@@ -1,10 +1,9 @@
-
-
 import { Users, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserRecommendation } from '@/services/searchService';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface UserRecommendationsProps {
   recommendations: UserRecommendation[];
@@ -15,12 +14,13 @@ interface UserRecommendationsProps {
 
 const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMessageUser }: UserRecommendationsProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (recommendations.length === 0) {
     return (
       <div className="text-center py-8 px-4">
         <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-600">No user recommendations available</p>
+        <p className="text-gray-600">{t('explore:noUsersFoundGeneric')}</p>
       </div>
     );
   }
@@ -28,8 +28,8 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-xl font-bold text-gray-900">People you might like</h3>
-        <span className="text-sm text-gray-500">{recommendations.length} users</span>
+        <h3 className="text-xl font-bold text-gray-900">{t('explore:suggestedForYou')}</h3>
+        <span className="text-sm text-gray-500">{recommendations.length} {t('explore:people').toLowerCase()}</span>
       </div>
       
       <div className="space-y-3">
@@ -64,19 +64,19 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
                     <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
                       <div className="text-center">
                         <div className="font-semibold text-gray-900">{user.followers}</div>
-                        <div>followers</div>
+                        <div>{t('common:followers').toLowerCase()}</div>
                       </div>
                       <div className="text-center">
                         <div className="font-semibold text-gray-900 flex items-center">
                           <MapPin className="w-4 h-4 mr-1" />
                           {user.savedPlaces}
                         </div>
-                        <div>places</div>
+                        <div>{t('common:userProfile.places')}</div>
                       </div>
                       {user.mutualFollowers && user.mutualFollowers > 0 && (
                         <div className="text-center">
                           <div className="font-semibold text-gray-900">{user.mutualFollowers}</div>
-                          <div>mutual</div>
+                          <div>{t('common:mutual')}</div>
                         </div>
                       )}
                     </div>
@@ -111,7 +111,7 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
                       onFollowUser(user.id);
                     }}
                   >
-                    {user.is_following ? 'Following' : 'Follow'}
+                    {user.is_following ? t('common:following') : t('common:follow')}
                   </Button>
                   
                   <Button
@@ -126,7 +126,7 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
                       }
                     }}
                   >
-                    Message
+                    {t('common:userProfile.sendMessage')}
                   </Button>
                 </div>
               </div>

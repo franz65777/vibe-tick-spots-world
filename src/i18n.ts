@@ -913,7 +913,10 @@ const resources = {
       trendingNowDesc: 'Get 100 shares'
     },
     gamification: {
-      level: 'Level'
+      level: 'Level',
+      activeChallenges: 'Active Challenges',
+      noChallenges: 'No Active Challenges',
+      checkBackSoon: 'Check back soon for new challenges!'
     },
     trips: {
       title: 'My Trips',
