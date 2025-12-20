@@ -35,6 +35,14 @@ export const coreUiTranslations = {
       adminAnalyticsDesc: 'Visualizza metriche e gestione dati',
       logoutFailed: 'Logout non riuscito',
     },
+    gamification: {
+      activeChallenges: 'Sfide attive',
+      noChallenges: 'Nessuna sfida attiva',
+      checkBackSoon: 'Torna presto per nuove sfide!',
+    },
+    profile: {
+      posts: 'Post',
+    },
   },
 
   es: {
@@ -69,6 +77,14 @@ export const coreUiTranslations = {
       adminAnalyticsTitle: 'Analíticas admin',
       adminAnalyticsDesc: 'Ver métricas y gestión de datos',
       logoutFailed: 'No se pudo cerrar sesión',
+    },
+    gamification: {
+      activeChallenges: 'Desafíos activos',
+      noChallenges: 'Sin desafíos activos',
+      checkBackSoon: '¡Vuelve pronto para nuevos desafíos!',
+    },
+    profile: {
+      posts: 'Publicaciones',
     },
   },
 
@@ -105,6 +121,14 @@ export const coreUiTranslations = {
       adminAnalyticsDesc: 'Voir les métriques et la gestion des données',
       logoutFailed: 'Déconnexion échouée',
     },
+    gamification: {
+      activeChallenges: 'Défis actifs',
+      noChallenges: 'Pas de défi actif',
+      checkBackSoon: 'Revenez bientôt pour de nouveaux défis!',
+    },
+    profile: {
+      posts: 'Publications',
+    },
   },
 
   de: {
@@ -139,6 +163,14 @@ export const coreUiTranslations = {
       adminAnalyticsTitle: 'Admin-Analysen',
       adminAnalyticsDesc: 'Metriken und Datenverwaltung ansehen',
       logoutFailed: 'Abmelden fehlgeschlagen',
+    },
+    gamification: {
+      activeChallenges: 'Aktive Herausforderungen',
+      noChallenges: 'Keine aktiven Herausforderungen',
+      checkBackSoon: 'Schau bald wieder vorbei für neue Herausforderungen!',
+    },
+    profile: {
+      posts: 'Beiträge',
     },
   },
 
@@ -175,6 +207,14 @@ export const coreUiTranslations = {
       adminAnalyticsDesc: 'Ver métricas e gestão de dados',
       logoutFailed: 'Falha ao sair',
     },
+    gamification: {
+      activeChallenges: 'Desafios ativos',
+      noChallenges: 'Sem desafios ativos',
+      checkBackSoon: 'Volte em breve para novos desafios!',
+    },
+    profile: {
+      posts: 'Publicações',
+    },
   },
 
   tr: {
@@ -209,6 +249,14 @@ export const coreUiTranslations = {
       adminAnalyticsTitle: 'Admin analitiği',
       adminAnalyticsDesc: 'Metrikleri ve veri yönetimini görüntüle',
       logoutFailed: 'Çıkış başarısız',
+    },
+    gamification: {
+      activeChallenges: 'Aktif meydan okumalar',
+      noChallenges: 'Aktif meydan okuma yok',
+      checkBackSoon: 'Yeni meydan okumalar için yakında tekrar gel!',
+    },
+    profile: {
+      posts: 'Gönderiler',
     },
   },
 } as const;

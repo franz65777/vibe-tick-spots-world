@@ -64,7 +64,7 @@ interface PostData {
 
 export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', openCommentsOnLoad, openShareOnLoad }: PostDetailModalProps) => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const engagement = useSocialEngagement(postId);
   const { savePlace, isPlaceSaved } = useSavedPlaces();
@@ -335,8 +335,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
         <div className="text-center p-6">
-          <p className="text-white text-lg mb-4">Post not found</p>
-          <Button onClick={onClose} variant="outline">Close</Button>
+          <p className="text-white text-lg mb-4">{t('explore:noResults')}</p>
+          <Button onClick={onClose} variant="outline">{t('common:close')}</Button>
         </div>
       </div>
     );
@@ -527,15 +527,15 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogTitle>{t('common:delete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this post? This action cannot be undone.
+              {t('business:confirmDeletePost')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeletePost} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? t('common:loading') : t('common:delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
