@@ -425,12 +425,12 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
         if (saveError) {
           console.error('Error saving location:', saveError);
-          toast.error('Failed to save location');
+          toast.error(t('failedToSaveLocation', { ns: 'common' }));
           setSwipeDirection(null);
           return;
         }
 
-        toast.success(`${location.name} saved!`);
+        toast.success(t('locationSaved', { ns: 'common', name: location.name }));
       }
 
       // Remove swiped location from list and update counts
@@ -459,7 +459,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       }, 300);
     } catch (error) {
       console.error('Error swiping:', error);
-      toast.error('Something went wrong');
+      toast.error(t('somethingWentWrong', { ns: 'common' }));
       setSwipeDirection(null);
     }
   };

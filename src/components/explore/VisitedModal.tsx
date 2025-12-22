@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface VisitedModalProps {
   place: any;
@@ -14,6 +15,7 @@ interface VisitedModalProps {
 
 const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [caption, setCaption] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -30,7 +32,7 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
 
   const handleSubmit = async () => {
     if (!user || (!selectedImage && !caption.trim())) {
-      toast.error('Please add a photo or comment');
+      toast.error(t('addPhotoOrComment', { ns: 'common' }));
       return;
     }
 
@@ -69,12 +71,12 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
 
       if (postError) throw postError;
 
-      toast.success('Post aggiunto con successo!');
+      toast.success(t('postAddedSuccess', { ns: 'common' }));
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Error creating post:', error);
-      toast.error('Errore durante la creazione del post');
+      toast.error(t('errorCreatingPost', { ns: 'common' }));
     } finally {
       setUploading(false);
     }
@@ -97,8 +99,8 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
             <X className="w-5 h-5" />
           </Button>
           
-          <h3 className="font-bold text-lg">Hai visitato {place.name}?</h3>
-          <p className="text-sm text-muted-foreground mt-1">Condividi la tua esperienza</p>
+          <h3 className="font-bold text-lg">{t('haveYouVisited', { ns: 'common', name: place.name })}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{t('shareYourExperience', { ns: 'common' })}</p>
         </div>
 
         {/* Content */}
@@ -107,7 +109,7 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
           <div>
             <label className="block text-sm font-medium mb-2">
               <Upload className="w-4 h-4 inline mr-1" />
-              Aggiungi una foto
+              {t('addPhoto', { ns: 'common' })}
             </label>
             
             {previewUrl ? (
@@ -128,7 +130,7 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
             ) : (
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
                 <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <span className="text-sm text-muted-foreground">Clicca per caricare</span>
+                <span className="text-sm text-muted-foreground">{t('clickToUpload', { ns: 'common' })}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -143,10 +145,10 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
           <div>
             <label className="block text-sm font-medium mb-2">
               <MessageSquare className="w-4 h-4 inline mr-1" />
-              Aggiungi un commento
+              {t('addComment', { ns: 'common' })}
             </label>
             <Textarea
-              placeholder="Racconta la tua esperienza..."
+              placeholder={t('tellYourExperience', { ns: 'common' })}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               rows={4}
@@ -161,7 +163,7 @@ const VisitedModal = ({ place, onClose, onSuccess }: VisitedModalProps) => {
             className="w-full"
             size="lg"
           >
-            {uploading ? 'Caricamento...' : 'Pubblica'}
+            {uploading ? t('uploading', { ns: 'common' }) : t('publish', { ns: 'common' })}
           </Button>
         </div>
       </div>

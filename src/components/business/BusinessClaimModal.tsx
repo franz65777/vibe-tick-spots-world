@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessClaimModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface BusinessClaimModalProps {
 
 const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: BusinessClaimModalProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     businessName: locationName || '',
@@ -49,14 +51,14 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
 
       if (error) throw error;
 
-      toast.success('Richiesta inviata con successo!', {
-        description: 'Riceverai una notifica quando la richiesta verrà approvata.'
+      toast.success(t('requestSentSuccess', { ns: 'business' }), {
+        description: t('requestSentDescription', { ns: 'business' })
       });
       
       onClose();
     } catch (error) {
       console.error('Error submitting claim:', error);
-      toast.error('Errore nell\'invio della richiesta');
+      toast.error(t('errorSendingRequest', { ns: 'business' }));
     } finally {
       setLoading(false);
     }
@@ -83,8 +85,8 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-bold text-xl">Richiedi Account Business</h3>
-              <p className="text-white/80 text-sm">Gestisci la tua attività</p>
+              <h3 className="font-bold text-xl">{t('requestBusinessAccount', { ns: 'business' })}</h3>
+              <p className="text-white/80 text-sm">{t('manageYourBusiness', { ns: 'business' })}</p>
             </div>
           </div>
         </div>
@@ -92,40 +94,40 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-200px)]">
           <div>
-            <Label htmlFor="businessName">Nome Attività *</Label>
+            <Label htmlFor="businessName">{t('businessName', { ns: 'business' })} *</Label>
             <Input
               id="businessName"
               value={formData.businessName}
               onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
               required
-              placeholder="Es. Ristorante Da Mario"
+              placeholder={t('businessNamePlaceholder', { ns: 'business' })}
             />
           </div>
 
           <div>
-            <Label htmlFor="businessType">Tipo di Attività *</Label>
+            <Label htmlFor="businessType">{t('businessType', { ns: 'business' })} *</Label>
             <Input
               id="businessType"
               value={formData.businessType}
               onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
               required
-              placeholder="Es. Ristorante, Hotel, Bar"
+              placeholder={t('businessTypePlaceholder', { ns: 'business' })}
             />
           </div>
 
           <div>
-            <Label htmlFor="description">Descrizione</Label>
+            <Label htmlFor="description">{t('description', { ns: 'business' })}</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descrivi brevemente la tua attività..."
+              placeholder={t('descriptionPlaceholder', { ns: 'business' })}
               rows={3}
             />
           </div>
 
           <div>
-            <Label htmlFor="contactEmail">Email di Contatto *</Label>
+            <Label htmlFor="contactEmail">{t('contactEmail', { ns: 'business' })} *</Label>
             <Input
               id="contactEmail"
               type="email"
@@ -136,7 +138,7 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
           </div>
 
           <div>
-            <Label htmlFor="contactPhone">Telefono</Label>
+            <Label htmlFor="contactPhone">{t('contactPhone', { ns: 'business' })}</Label>
             <Input
               id="contactPhone"
               type="tel"
@@ -146,10 +148,9 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
             />
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Nota:</strong> La tua richiesta sarà esaminata dall'amministratore. 
-              Una volta approvata, potrai accedere all'account business con un abbonamento mensile di €29.99.
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-950/30 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>{t('note', { ns: 'common' })}:</strong> {t('businessRequestNote', { ns: 'business' })}
             </p>
           </div>
 
@@ -158,7 +159,7 @@ const BusinessClaimModal = ({ isOpen, onClose, locationId, locationName }: Busin
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
-            {loading ? 'Invio...' : 'Invia Richiesta'}
+            {loading ? t('sending', { ns: 'common' }) : t('sendRequest', { ns: 'business' })}
           </Button>
         </form>
       </div>
