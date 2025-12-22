@@ -345,14 +345,19 @@ const FeedPage = memo(() => {
   const handleShare = async (recipientIds: string[]) => {
     if (!sharePostId || !user?.id) return false;
 
-    const postItem = feedItems.find(item => item.id === sharePostId);
+    const postItem = feedItems.find(item => item.id === sharePostId) as any;
     if (!postItem) return false;
 
     try {
+      // Include user info for display in DMs
+      const profile = postItem.profiles;
       const postData = {
         id: sharePostId,
         caption: postItem.caption,
-        media_urls: postItem.media_urls || []
+        media_urls: postItem.media_urls || [],
+        user_id: postItem.user_id,
+        username: profile?.username || 'Unknown',
+        avatar_url: profile?.avatar_url || null
       };
 
       await Promise.all(

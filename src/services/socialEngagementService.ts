@@ -639,20 +639,20 @@ export async function sharePost(
       return false;
     }
 
-    // Get post data
+    // Get post data with user info
     const { data: post } = await supabase
       .from('posts')
-      .select('caption, media_urls')
+      .select('caption, media_urls, user_id')
       .eq('id', postId)
       .single();
 
     if (!post) throw new Error('Post not found');
 
-    // Get sender profile
-    const { data: sender } = await supabase
+    // Get post author profile
+    const { data: postAuthor } = await supabase
       .from('profiles')
       .select('username, avatar_url')
-      .eq('id', userId)
+      .eq('id', post.user_id)
       .single();
 
     // Send to each recipient
@@ -661,9 +661,12 @@ export async function sharePost(
       receiver_id: recipientId,
       message_type: 'post_share',
       shared_content: {
-        post_id: postId,
+        id: postId,
         caption: post.caption,
         media_urls: post.media_urls,
+        user_id: post.user_id,
+        username: postAuthor?.username || 'Unknown',
+        avatar_url: postAuthor?.avatar_url || null,
       },
       content: null,
     }));
