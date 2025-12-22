@@ -10,6 +10,7 @@ import { reservationService, TimeSlot } from '@/services/reservationService';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface BookingModalProps {
 }
 
 const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModalProps) => {
+  const { t } = useTranslation();
   const { profile } = useProfile();
   const [step, setStep] = useState<'date' | 'time' | 'details' | 'confirmation'>('date');
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -186,33 +188,33 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
             <div className="bg-muted p-3 rounded-lg text-sm">
               <div className="font-semibold mb-1">Booking Summary</div>
               <div>{format(selectedDate!, 'EEEE, MMMM d, yyyy')}</div>
-              <div>{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')} • {partySize} {partySize === 1 ? 'Guest' : 'Guests'}</div>
+              <div>{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')} • {partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</div>
             </div>
 
             <div className="space-y-3">
               <div>
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t('name', { ns: 'booking' })} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Your name"
+                  placeholder={t('yourName', { ns: 'booking' })}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">{t('email', { ns: 'booking' })} *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="your@email.com"
+                  placeholder={t('yourEmail', { ns: 'booking' })}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">{t('phoneNumber', { ns: 'booking' })}</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -222,12 +224,12 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 />
               </div>
               <div>
-                <Label htmlFor="requests">Special Requests</Label>
+                <Label htmlFor="requests">{t('specialRequests', { ns: 'booking' })}</Label>
                 <Textarea
                   id="requests"
                   value={formData.specialRequests}
                   onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                  placeholder="Dietary restrictions, seating preferences, etc."
+                  placeholder={t('dietaryRestrictions', { ns: 'booking' })}
                   rows={3}
                 />
               </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X, Send, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -6,6 +5,7 @@ import { commentService, Comment } from '@/services/commentService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from 'react-i18next';
 
 interface Place {
   id: string;
@@ -21,6 +21,7 @@ interface CommentModalProps {
 }
 
 const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -173,7 +174,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
               <Input
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
+                placeholder={t('addPlaceholder', { ns: 'common', defaultValue: 'Add a comment...' })}
                 className="pr-10 rounded-full border-gray-300"
                 onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
                 disabled={submitting}

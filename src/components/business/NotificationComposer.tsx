@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Send, Users, Calendar, Eye, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface NotificationComposerProps {
   locationId: string;
@@ -14,6 +14,7 @@ interface NotificationComposerProps {
 }
 
 const NotificationComposer = ({ locationId, savedByCount }: NotificationComposerProps) => {
+  const { t } = useTranslation();
   const [notificationData, setNotificationData] = useState({
     title: '',
     message: '',
@@ -25,7 +26,7 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
 
   const handleSendNotification = async () => {
     if (!notificationData.title || !notificationData.message) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('fillAllFields', { ns: 'business' }));
       return;
     }
 
@@ -100,30 +101,30 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
 
           <div>
             <Label htmlFor="title" className="text-sm font-medium text-gray-700">
-              Notification Title *
+              {t('notificationTitle', { ns: 'business' })} *
             </Label>
             <Input
               id="title"
               value={notificationData.title}
               onChange={(e) => setNotificationData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Enter notification title..."
+              placeholder={t('enterNotificationTitle', { ns: 'business' })}
               className="mt-1"
               maxLength={50}
             />
             <p className="text-xs text-gray-500 mt-1">
-              {notificationData.title.length}/50 characters
+              {notificationData.title.length}/50 {t('characters', { ns: 'common' })}
             </p>
           </div>
 
           <div>
             <Label htmlFor="message" className="text-sm font-medium text-gray-700">
-              Message *
+              {t('message', { ns: 'business' })} *
             </Label>
             <Textarea
               id="message"
               value={notificationData.message}
               onChange={(e) => setNotificationData(prev => ({ ...prev, message: e.target.value }))}
-              placeholder="Enter your message..."
+              placeholder={t('enterYourMessage', { ns: 'business' })}
               className="mt-1 min-h-[100px]"
               maxLength={200}
             />

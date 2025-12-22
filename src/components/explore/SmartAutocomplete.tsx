@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, User, Clock, TrendingUp, Coffee, Utensils, ShoppingBag, Building2, Church, Dumbbell, Music, BookOpen, Landmark, Hotel } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeCity } from '@/utils/cityNormalization';
 import RecentUserSearches from './RecentUserSearches';
+import { useTranslation } from 'react-i18next';
 
 interface AutocompleteResult {
   type: 'place' | 'user';
@@ -50,6 +50,7 @@ const SmartAutocomplete = ({
   onRecentSelect,
   visible
 }: SmartAutocompleteProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { trackEvent } = useAnalytics();
   const [results, setResults] = useState<AutocompleteResult[]>([]);
@@ -254,7 +255,7 @@ const SmartAutocomplete = ({
           {loading ? (
             <div className="flex items-center justify-center py-6">
               <div className="w-6 h-6 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="ml-3 text-sm text-gray-600 dark:text-gray-300">Searching...</span>
+              <span className="ml-3 text-sm text-gray-600 dark:text-gray-300">{t('searching', { ns: 'common' })}</span>
             </div>
           ) : results.length > 0 ? (
             <div>
@@ -306,11 +307,11 @@ const SmartAutocomplete = ({
               <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <Search className="w-8 h-8 text-gray-400 dark:text-gray-500" />
               </div>
-              <div className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">No results found</div>
+              <div className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{t('noResultsFound', { ns: 'explore' })}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
                 {searchMode === 'locations' 
-                  ? "Try searching for cafes, restaurants, or specific place names"
-                  : "Try searching for usernames"
+                  ? t('trySearchingLocations', { ns: 'explore' })
+                  : t('trySearchingUsers', { ns: 'explore' })
                 }
               </div>
             </div>
