@@ -92,8 +92,8 @@ export const useOptimizedFeed = () => {
         const cached = JSON.parse(cachedRaw) as { ts?: number; data?: any[] };
         const ageMs = Date.now() - (cached.ts || 0);
 
-        // se la cache è più vecchia di 15s, preferiamo evitare flicker con contatori obsoleti
-        if (!cached.ts || ageMs > 15_000) return [];
+        // se la cache è più vecchia di 2s, evitiamo contatori obsoleti che poi "saltano"
+        if (!cached.ts || ageMs > 2_000) return [];
         return Array.isArray(cached.data) ? cached.data : [];
       } catch {
         return [];

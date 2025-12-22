@@ -557,7 +557,7 @@ export async function addPostComment(
       console.log('[addPostComment] Skipping notification - own post or post not found');
     }
 
-    toastSuccess(successMessage || 'Comment added');
+    if (successMessage) toastSuccess(successMessage);
 
     return {
       ...comment,
@@ -614,7 +614,7 @@ export async function deletePostComment(
         .eq('id', comment.post_id);
     }
 
-    toastSuccess(successMessage || 'Comment deleted');
+    if (successMessage) toastSuccess(successMessage);
     return true;
   } catch (error) {
     console.error('Error deleting comment:', error);
