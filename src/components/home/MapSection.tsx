@@ -253,6 +253,7 @@ const MapSection = ({
           }}
           fromMessages={fromMessages}
           onBackToMessages={onBackToMessages}
+          hideOtherPins={!!sourcePostId}
         />
         )}
 

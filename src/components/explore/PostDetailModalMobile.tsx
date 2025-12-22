@@ -310,6 +310,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           name: post.locations.name,
           lat: post.locations.latitude,
           lng: post.locations.longitude,
+          category: post.locations.category || 'restaurant',
           sourcePostId: post.id
         }
       }

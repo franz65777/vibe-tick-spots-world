@@ -527,7 +527,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         >
           {/* Compact Draggable Header - Swipe to expand/collapse */}
           <div 
-            className="bg-background px-4 pt-2 pb-2 cursor-grab active:cursor-grabbing touch-none"
+            className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing touch-pan-x"
             onTouchStart={(e) => {
               touchStartY.current = e.touches[0].clientY;
               touchStartTime.current = Date.now();
@@ -549,9 +549,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               // Calculate velocity (pixels per ms)
               const velocity = Math.abs(deltaY) / deltaTime;
               
-              // Swipe threshold: either moved enough distance OR fast swipe
-              const minSwipeDistance = 30;
-              const minSwipeVelocity = 0.3;
+              // Swipe threshold: reduced for better responsiveness
+              const minSwipeDistance = 20;
+              const minSwipeVelocity = 0.2;
               
               if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
                 if (deltaY > 0) {
@@ -587,8 +587,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               const deltaTime = Date.now() - touchStartTime.current;
               const velocity = Math.abs(deltaY) / deltaTime;
               
-              const minSwipeDistance = 30;
-              const minSwipeVelocity = 0.3;
+              const minSwipeDistance = 20;
+              const minSwipeVelocity = 0.2;
               
               if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
                 if (deltaY > 0) {
@@ -610,8 +610,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               isDragging.current = false;
             }}
           >
-            {/* Handle indicator - more prominent for drag affordance */}
-            <div className="w-12 h-1.5 bg-muted-foreground/40 rounded-full mx-auto mb-2" />
+            {/* Handle indicator - larger and more prominent for better touch target */}
+            <div className="w-14 h-2 bg-muted-foreground/50 rounded-full mx-auto mb-3" />
             <div className="flex items-center gap-3">
               {(sourcePostId || onBack) && (
                 <Button
