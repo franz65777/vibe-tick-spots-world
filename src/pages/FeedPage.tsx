@@ -366,9 +366,7 @@ const FeedPage = memo(() => {
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 border-[1.5px] border-transparent shadow-sm
-                [background-image:linear-gradient(hsl(var(--popover)),hsl(var(--popover))),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-                [background-origin:border-box] [background-clip:padding-box,border-box]">
+              <DropdownMenuContent align="start" className="w-56 bg-popover border-border shadow-md">
                 <DropdownMenuItem 
                   onClick={() => setFeedType('forYou')}
                   className="cursor-pointer focus:bg-accent"
