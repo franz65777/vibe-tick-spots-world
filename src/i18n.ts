@@ -213,6 +213,16 @@ const resources = {
       week: 'week',
       weeks: 'weeks',
       leaderboard: 'Leaderboard',
+      comments: {
+        title: 'Comments',
+        noComments: 'No comments yet',
+        beFirst: 'Be the first to comment!',
+        addPlaceholder: 'Add a comment...',
+        delete: 'Delete',
+        commentAdded: 'Comment added!',
+        commentDeleted: 'Comment deleted',
+        enterComment: 'Please enter a comment'
+      },
       userProfile: {
         followers: 'Followers',
         following: 'Following',
@@ -1175,6 +1185,16 @@ const resources = {
       week: 'semana',
       weeks: 'semanas',
       leaderboard: 'Tabla de Clasificación',
+      comments: {
+        title: 'Comentarios',
+        noComments: 'Aún no hay comentarios',
+        beFirst: '¡Sé el primero en comentar!',
+        addPlaceholder: 'Añade un comentario...',
+        delete: 'Eliminar',
+        commentAdded: '¡Comentario añadido!',
+        commentDeleted: 'Comentario eliminado',
+        enterComment: 'Por favor escribe un comentario'
+      },
       userProfile: {
         followers: 'Seguidores',
         following: 'Siguiendo',
@@ -2088,6 +2108,16 @@ const resources = {
       week: 'settimana',
       weeks: 'settimane',
       leaderboard: 'Classifica',
+      comments: {
+        title: 'Commenti',
+        noComments: 'Nessun commento ancora',
+        beFirst: 'Sii il primo a commentare!',
+        addPlaceholder: 'Aggiungi un commento...',
+        delete: 'Elimina',
+        commentAdded: 'Commento aggiunto!',
+        commentDeleted: 'Commento eliminato',
+        enterComment: 'Inserisci un commento'
+      },
       userProfile: {
         followers: 'Follower',
         following: 'Seguiti',
@@ -2979,6 +3009,16 @@ const resources = {
       week: 'semaine',
       weeks: 'semaines',
       leaderboard: 'Classement',
+      comments: {
+        title: 'Commentaires',
+        noComments: 'Aucun commentaire pour le moment',
+        beFirst: 'Soyez le premier à commenter !',
+        addPlaceholder: 'Ajouter un commentaire...',
+        delete: 'Supprimer',
+        commentAdded: 'Commentaire ajouté !',
+        commentDeleted: 'Commentaire supprimé',
+        enterComment: 'Veuillez entrer un commentaire'
+      },
       userProfile: {
         followers: 'Abonnés',
         following: 'Abonnements',
@@ -3750,6 +3790,16 @@ const resources = {
       week: 'Woche',
       weeks: 'Wochen',
       leaderboard: 'Bestenliste',
+      comments: {
+        title: 'Kommentare',
+        noComments: 'Noch keine Kommentare',
+        beFirst: 'Sei der Erste, der kommentiert!',
+        addPlaceholder: 'Kommentar hinzufügen...',
+        delete: 'Löschen',
+        commentAdded: 'Kommentar hinzugefügt!',
+        commentDeleted: 'Kommentar gelöscht',
+        enterComment: 'Bitte gib einen Kommentar ein'
+      },
       userProfile: {
         followers: 'Follower',
         following: 'Folge ich',
@@ -4459,6 +4509,16 @@ const resources = {
       week: 'semana',
       weeks: 'semanas',
       leaderboard: 'Classificação',
+      comments: {
+        title: 'Comentários',
+        noComments: 'Nenhum comentário ainda',
+        beFirst: 'Seja o primeiro a comentar!',
+        addPlaceholder: 'Adicione um comentário...',
+        delete: 'Excluir',
+        commentAdded: 'Comentário adicionado!',
+        commentDeleted: 'Comentário excluído',
+        enterComment: 'Por favor, insira um comentário'
+      },
       userProfile: {
         followers: 'Seguidores',
         following: 'Seguindo',
@@ -5183,6 +5243,16 @@ const resources = {
         allCities: '所有城市',
         noLocationsInCity: '该城市没有地点'
       },
+      comments: {
+        title: '评论',
+        noComments: '暂无评论',
+        beFirst: '成为第一个评论的人！',
+        addPlaceholder: '添加评论...',
+        delete: '删除',
+        commentAdded: '评论已添加！',
+        commentDeleted: '评论已删除',
+        enterComment: '请输入评论'
+      },
     },
     navigation: {
       explore: '探索',
@@ -5783,6 +5853,16 @@ const resources = {
         tapCityToSee: '都市をタップして場所を表示',
         allCities: 'すべての都市',
         noLocationsInCity: 'この都市には場所がありません'
+      },
+      comments: {
+        title: 'コメント',
+        noComments: 'まだコメントがありません',
+        beFirst: '最初にコメントしましょう！',
+        addPlaceholder: 'コメントを追加...',
+        delete: '削除',
+        commentAdded: 'コメントを追加しました！',
+        commentDeleted: 'コメントを削除しました',
+        enterComment: 'コメントを入力してください'
       },
     },
     navigation: {
@@ -6389,6 +6469,16 @@ const resources = {
       week: '주',
       weeks: '주',
       leaderboard: '리더보드',
+      comments: {
+        title: '댓글',
+        noComments: '아직 댓글이 없습니다',
+        beFirst: '첫 번째로 댓글을 남겨보세요!',
+        addPlaceholder: '댓글 추가...',
+        delete: '삭제',
+        commentAdded: '댓글이 추가되었습니다!',
+        commentDeleted: '댓글이 삭제되었습니다',
+        enterComment: '댓글을 입력해주세요'
+      },
       userProfile: {
         followers: '팔로워',
         following: '팔로잉',
@@ -7050,6 +7140,16 @@ const resources = {
         tapCityToSee: 'اضغط على مدينة لرؤية الأماكن',
         allCities: 'جميع المدن',
         noLocationsInCity: 'لا توجد أماكن في هذه المدينة'
+      },
+      comments: {
+        title: 'التعليقات',
+        noComments: 'لا توجد تعليقات بعد',
+        beFirst: 'كن أول من يعلق!',
+        addPlaceholder: 'أضف تعليقاً...',
+        delete: 'حذف',
+        commentAdded: 'تمت إضافة التعليق!',
+        commentDeleted: 'تم حذف التعليق',
+        enterComment: 'يرجى إدخال تعليق'
       }
     },
     navigation: {
@@ -8311,6 +8411,16 @@ const resources = {
         tapCityToSee: 'нажмите на город, чтобы увидеть места',
         allCities: 'Все города',
         noLocationsInCity: 'В этом городе нет мест'
+      },
+      comments: {
+        title: 'Комментарии',
+        noComments: 'Пока нет комментариев',
+        beFirst: 'Будьте первым, кто прокомментирует!',
+        addPlaceholder: 'Добавить комментарий...',
+        delete: 'Удалить',
+        commentAdded: 'Комментарий добавлен!',
+        commentDeleted: 'Комментарий удалён',
+        enterComment: 'Пожалуйста, введите комментарий'
       }
     },
     navigation: {

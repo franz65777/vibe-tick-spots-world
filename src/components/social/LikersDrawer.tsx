@@ -66,23 +66,15 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   const loadLikers = async () => {
     setLoading(true);
     try {
-      // Get all likes for this post with user profiles
-      const { data: likes, error } = await supabase
+      // First get all like user_ids for this post
+      const { data: likes, error: likesError } = await supabase
         .from('post_likes')
-        .select(`
-          user_id,
-          profiles:user_id (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('user_id, created_at')
         .eq('post_id', postId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching likes:', error);
+      if (likesError) {
+        console.error('Error fetching likes:', likesError);
         setLikers([]);
         setLoading(false);
         return;
@@ -94,6 +86,22 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         return;
       }
 
+      // Get unique user IDs
+      const userIds = [...new Set(likes.map(l => l.user_id))];
+
+      // Fetch profiles separately for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Create a map of user_id to profile
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
       // Get current user's follows
       let followingIds = new Set<string>();
       if (user?.id) {
@@ -104,17 +112,16 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         followingIds = new Set(follows?.map(f => f.following_id) || []);
       }
 
-      // Map likes to Liker format
+      // Map likes to Liker format using the profile map
       const likersList = likes
         .map(like => {
-          const profile = like.profiles as any;
-          if (!profile) return null;
+          const profile = profileMap.get(like.user_id);
           
           return {
             user_id: like.user_id,
-            username: profile.username || 'User',
-            full_name: profile.full_name || null,
-            avatar_url: profile.avatar_url || null,
+            username: profile?.username || 'User',
+            full_name: profile?.full_name || null,
+            avatar_url: profile?.avatar_url || null,
             is_followed: followingIds.has(like.user_id)
           };
         })

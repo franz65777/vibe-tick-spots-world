@@ -76,25 +76,60 @@ export const PostActions = ({
     setLocalSharesCount(sharesCount);
   }, [sharesCount]);
 
-  // Subscribe to real-time post count updates
+  // Subscribe to real-time count updates for likes, comments, and shares
   useEffect(() => {
-    // Subscribe to post updates for this specific post
-    const channel = supabase
-      .channel(`post-counts-${postId}`)
+    // Subscribe to post_likes for live like count updates
+    const likesChannel = supabase
+      .channel(`post-likes-live-${postId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'posts', filter: `id=eq.${postId}` },
+        { event: '*', schema: 'public', table: 'post_likes', filter: `post_id=eq.${postId}` },
         (payload) => {
-          const newData = payload.new as any;
-          if (newData.likes_count !== undefined) setLocalLikesCount(newData.likes_count);
-          if (newData.comments_count !== undefined) setLocalCommentsCount(newData.comments_count);
-          if (newData.shares_count !== undefined) setLocalSharesCount(newData.shares_count);
+          if (payload.eventType === 'INSERT') {
+            setLocalLikesCount(prev => prev + 1);
+          } else if (payload.eventType === 'DELETE') {
+            setLocalLikesCount(prev => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to post_comments for live comment count updates
+    const commentsChannel = supabase
+      .channel(`post-comments-live-${postId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_comments', filter: `post_id=eq.${postId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setLocalCommentsCount(prev => prev + 1);
+          } else if (payload.eventType === 'DELETE') {
+            setLocalCommentsCount(prev => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to post_shares for live share count updates
+    const sharesChannel = supabase
+      .channel(`post-shares-live-${postId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_shares', filter: `post_id=eq.${postId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setLocalSharesCount(prev => prev + 1);
+          } else if (payload.eventType === 'DELETE') {
+            setLocalSharesCount(prev => Math.max(0, prev - 1));
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(commentsChannel);
+      supabase.removeChannel(sharesChannel);
     };
   }, [postId]);
 
