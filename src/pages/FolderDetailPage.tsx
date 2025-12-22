@@ -48,12 +48,17 @@ const FolderDetailPage = () => {
   };
 
   const handleLocationClick = (locationData: any) => {
-    // Navigate to home with location data, returnTo points back to this folder
+    // Navigate to home with location data
+    // Pass complete returnToState so we can fully restore context when coming back
     navigate('/', { 
       state: { 
         selectedLocation: locationData,
-        returnTo: location.pathname,
-        returnToState: { from: originPath, scrollY: scrollPosition }
+        returnTo: originPath,
+        returnToState: { 
+          from: originPath, 
+          scrollY: scrollPosition,
+          folderId: folderId
+        }
       } 
     });
   };
