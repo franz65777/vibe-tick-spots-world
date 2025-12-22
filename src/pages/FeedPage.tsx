@@ -19,8 +19,12 @@ import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
 
-// Lazy load heavy component
+// Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
+const CityStatsCard = lazy(() => import('@/components/feed/CityStatsCard'));
+const FeedListsCarousel = lazy(() => import('@/components/feed/FeedListsCarousel'));
+const FeedSuggestionsCarousel = lazy(() => import('@/components/feed/FeedSuggestionsCarousel'));
+const FeedFriendSaving = lazy(() => import('@/components/feed/FeedFriendSaving'));
 
 const FeedPage = memo(() => {
   const { user } = useAuth();
@@ -475,27 +479,58 @@ const FeedPage = memo(() => {
             </div>
            ) : (
             <div className="space-y-0 bg-background">
-              {feedItems.map((item) => {
+              {/* City Stats Card - always at top for "For You" feed */}
+              {feedType === 'forYou' && (
+                <Suspense fallback={<div className="mx-4 mb-4 h-48 bg-muted rounded-2xl animate-pulse" />}>
+                  <CityStatsCard />
+                </Suspense>
+              )}
+
+              {/* Feed items with interleaved discovery sections */}
+              {feedItems.map((item, index) => {
                 const profile = item.profiles as any;
                 const userId = item.user_id;
                 const userHasStory = stories.some(s => s.user_id === userId);
 
                 return (
-                  <Suspense key={item.id} fallback={<Skeleton className="h-96 w-full" />}>
-                    <FeedPostItem
-                      item={item}
-                      profile={profile}
-                      userHasStory={userHasStory}
-                      postLikes={postLikes}
-                      expandedCaptions={expandedCaptions}
-                      isPromotionFeed={feedType === 'promotions'}
-                      onAvatarClick={handleAvatarClick}
-                      onLocationClick={handleLocationClick}
-                      onCommentClick={handleCommentClick}
-                      onShareClick={handleShareClick}
-                      onToggleCaption={toggleCaption}
-                    />
-                  </Suspense>
+                  <React.Fragment key={item.id}>
+                    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                      <FeedPostItem
+                        item={item}
+                        profile={profile}
+                        userHasStory={userHasStory}
+                        postLikes={postLikes}
+                        expandedCaptions={expandedCaptions}
+                        isPromotionFeed={feedType === 'promotions'}
+                        onAvatarClick={handleAvatarClick}
+                        onLocationClick={handleLocationClick}
+                        onCommentClick={handleCommentClick}
+                        onShareClick={handleShareClick}
+                        onToggleCaption={toggleCaption}
+                      />
+                    </Suspense>
+
+                    {/* Insert lists carousel after 2nd post */}
+                    {feedType === 'forYou' && index === 1 && (
+                      <Suspense fallback={null}>
+                        <FeedListsCarousel />
+                      </Suspense>
+                    )}
+
+                    {/* Insert suggestions carousel after 5th post */}
+                    {feedType === 'forYou' && index === 4 && (
+                      <Suspense fallback={null}>
+                        <FeedSuggestionsCarousel />
+                      </Suspense>
+                    )}
+
+                    {/* Insert friend saving activity after 8th post */}
+                    {feedType === 'forYou' && index === 7 && (
+                      <Suspense fallback={null}>
+                        <FeedFriendSaving />
+                      </Suspense>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
