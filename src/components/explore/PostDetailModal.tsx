@@ -537,6 +537,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
         comments={engagement.comments}
         onAddComment={engagement.addComment}
         onDeleteComment={engagement.deleteComment}
+        isLoading={engagement.loading}
       />
 
       {/* Share Modal */}
