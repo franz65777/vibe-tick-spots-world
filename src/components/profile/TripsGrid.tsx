@@ -396,11 +396,15 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           onClose={() => setViewingFolderId(null)}
           onSaveStatusChange={handleFolderSaveStatusChange}
           onLocationClick={(loc) => {
-            navigate('/', {
-              state: {
-                selectedLocation: loc,
-                returnTo: location.pathname,
-              },
+            // Close the modal first, then navigate to folder page which handles location click properly
+            setViewingFolderId(null);
+            // Navigate to the folder page so the back stack works correctly:
+            // profile -> folder -> home (with location)
+            navigate(`/folder/${viewingFolderId}`, { 
+              state: { 
+                from: location.pathname,
+                openLocation: loc
+              } 
             });
           }}
         />
