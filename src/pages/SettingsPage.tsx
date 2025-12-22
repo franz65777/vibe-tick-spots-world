@@ -66,12 +66,18 @@ const SettingsPage: React.FC = () => {
     const load = async () => {
       // Always start from local preference so UI switches instantly
       const stored = normalizeLanguage(localStorage.getItem('i18nextLng') || 'en');
+      console.info('🌐 SettingsPage load language:', { stored, i18nLanguage: i18n.language });
       setLanguage(stored);
       if (i18n.language !== stored) {
         try {
           await i18n.changeLanguage(stored);
-        } catch {
-          // ignore
+          console.info('🌐 SettingsPage applied stored language:', {
+            after: i18n.language,
+            hasCommon: i18n.hasResourceBundle(stored, 'common'),
+            hasSettings: i18n.hasResourceBundle(stored, 'settings'),
+          });
+        } catch (e) {
+          console.warn('🌐 SettingsPage failed to apply stored language:', e);
         }
       }
 
@@ -100,13 +106,20 @@ const SettingsPage: React.FC = () => {
   const handleLanguageChange = async (newLanguage: string) => {
     const normalized = normalizeLanguage(newLanguage);
 
+    console.info('🌐 Language change requested:', { newLanguage, normalized, before: i18n.language });
+
     // Switch UI immediately (don't block on DB)
     setLanguage(normalized);
     localStorage.setItem('i18nextLng', normalized);
     try {
       await i18n.changeLanguage(normalized);
-    } catch {
-      // ignore
+      console.info('🌐 Language changed:', {
+        after: i18n.language,
+        hasCommon: i18n.hasResourceBundle(normalized, 'common'),
+        hasSettings: i18n.hasResourceBundle(normalized, 'settings'),
+      });
+    } catch (e) {
+      console.warn('🌐 i18n.changeLanguage failed:', e);
     }
 
     const tForLang = i18n.getFixedT(normalized, 'settings');
