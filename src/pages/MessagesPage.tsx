@@ -1109,7 +1109,7 @@ const MessagesPage = () => {
                             <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
                               {formatMessageTime(message.created_at)}
                             </p>
-                          </div> : ['place_share', 'post_share', 'profile_share', 'folder_share', 'trip_share'].includes(message.message_type) && message.shared_content ? <div className={`w-full max-w-[280px] ${isOwn ? 'ml-auto' : ''}`}>
+                          </div> : ['place_share', 'post_share', 'profile_share', 'folder_share', 'trip_share'].includes(message.message_type) && message.shared_content ? <div className={`w-full max-w-[200px] ${isOwn ? 'ml-auto' : ''}`}>
                             {message.content && <div className={`rounded-2xl px-4 py-3 mb-2 relative ${isOwn ? 'bg-primary text-primary-foreground ml-auto max-w-fit' : 'bg-card text-card-foreground border border-border'}`}>
                                 <p className="text-sm">{message.content}</p>
                               </div>}
