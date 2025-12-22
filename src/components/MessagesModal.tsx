@@ -300,12 +300,12 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                 </div>
               ) : searchQuery.trim() ? (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">No users found</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('noUsersFound', { ns: 'common' })}</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                   <p className="text-gray-500 dark:text-gray-400">
-                    Search for people to start a conversation
+                    {t('searchToStartConversation', { ns: 'messages' })}
                   </p>
                 </div>
               )}

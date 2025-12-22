@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, TrendingUp, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslation } from 'react-i18next';
 
 interface UserSearchResultsProps {
   searchQuery: string;
@@ -22,6 +23,8 @@ const UserSearchResults = ({
   onFollowUser,
   onRecentSearchClick,
 }: UserSearchResultsProps) => {
+  const { t } = useTranslation();
+  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -86,9 +89,9 @@ const UserSearchResults = ({
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4">
         <Users className="h-12 w-12 text-muted-foreground mb-3" />
-        <p className="text-muted-foreground text-center">No users found</p>
+        <p className="text-muted-foreground text-center">{t('noUsersFound', { ns: 'common' })}</p>
         <p className="text-sm text-muted-foreground text-center mt-1">
-          Try searching for a different username
+          {t('tryDifferentUsername', { ns: 'explore' })}
         </p>
       </div>
     );

@@ -531,7 +531,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-1">
         <div className="text-center">
-          <p className="text-muted-foreground dark:text-gray-400">No locations found</p>
+          <p className="text-muted-foreground dark:text-gray-400">{t('noLocationsFound', { ns: 'explore' })}</p>
         </div>
       </div>
     );
@@ -542,7 +542,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-1">
         <div className="text-center">
-          <p className="text-muted-foreground dark:text-gray-400">No locations found</p>
+          <p className="text-muted-foreground dark:text-gray-400">{t('noLocationsFound', { ns: 'explore' })}</p>
         </div>
       </div>
     );

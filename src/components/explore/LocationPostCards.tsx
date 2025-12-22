@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
+import { useTranslation } from 'react-i18next';
 
 interface LocationWithPosts {
   id: string;
@@ -26,6 +27,7 @@ interface LocationPostCardsProps {
 }
 
 const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [locations, setLocations] = useState<LocationWithPosts[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Loading location libraries...</span>
+          <span className="text-gray-600">{t('loading', { ns: 'common' })}</span>
         </div>
       </div>
     );
@@ -154,11 +156,11 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
           <Heart className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="font-semibold text-gray-900 mb-2">No posts found</h3>
+        <h3 className="font-semibold text-gray-900 mb-2">{t('noPosts', { ns: 'explore' })}</h3>
         <p className="text-gray-500 text-center text-sm">
           {searchQuery 
-            ? "No locations match your search with posts"
-            : "Be the first to share photos at amazing places!"
+            ? t('noLocationsMatchSearch', { ns: 'explore' })
+            : t('beFirstToSharePhotos', { ns: 'explore' })
           }
         </p>
       </div>
