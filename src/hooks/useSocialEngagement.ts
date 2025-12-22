@@ -169,6 +169,27 @@ export const useSocialEngagement = (postId: string, initialCounts?: { likes?: nu
     };
   }, [postId]);
 
+  // Instant UI updates when the user comments/shares (in addition to realtime)
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent)?.detail as
+        | { postId?: string; commentsDelta?: number; sharesDelta?: number }
+        | undefined;
+
+      if (!detail?.postId || detail.postId !== postId) return;
+
+      if (typeof detail.commentsDelta === 'number') {
+        setCommentCount((prev) => Math.max(0, (prev ?? 0) + detail.commentsDelta!));
+      }
+      if (typeof detail.sharesDelta === 'number') {
+        setShareCount((prev) => Math.max(0, (prev ?? 0) + detail.sharesDelta!));
+      }
+    };
+
+    window.addEventListener('post-engagement-updated', handler as EventListener);
+    return () => window.removeEventListener('post-engagement-updated', handler as EventListener);
+  }, [postId]);
+
   // Lazy load comments only when needed
   const loadComments = useCallback(async () => {
     if (!postId) return;

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useOptimizedFeed = () => {
   const { user } = useAuth();
 
-  const { data: posts = [], isLoading } = useQuery({
+  const { data: posts = [], isLoading, isFetching } = useQuery({
     queryKey: ['feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -93,6 +93,7 @@ export const useOptimizedFeed = () => {
 
   return {
     posts,
-    loading: isLoading,
+    // Evita il "flash" di pagina vuota: se non abbiamo ancora niente e stiamo fetchando, consideriamolo loading
+    loading: isLoading || (isFetching && posts.length === 0),
   };
 };

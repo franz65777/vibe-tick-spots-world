@@ -344,7 +344,7 @@ const FeedPage = memo(() => {
 
   const handleShare = async (recipientIds: string[]) => {
     if (!sharePostId || !user?.id) return false;
-    
+
     const postItem = feedItems.find(item => item.id === sharePostId);
     if (!postItem) return false;
 
@@ -356,7 +356,7 @@ const FeedPage = memo(() => {
       };
 
       await Promise.all(
-        recipientIds.map(recipientId => 
+        recipientIds.map(recipientId =>
           messageService.sendPostShare(recipientId, postData)
         )
       );
@@ -375,18 +375,18 @@ const FeedPage = memo(() => {
         );
       });
 
-      toast({
-        title: "✅ Post condiviso!",
-        description: `Condiviso con ${recipientIds.length} ${recipientIds.length === 1 ? 'persona' : 'persone'}`,
-      });
+      // Broadcast so other UI (cards/modals) updates immediately too
+      window.dispatchEvent(new CustomEvent('post-engagement-updated', {
+        detail: { postId: sharePostId, sharesDelta: 1 }
+      }));
 
       return true;
     } catch (error) {
       console.error('Error sharing post:', error);
       toast({
-        title: "Error",
-        description: "Failed to share post",
-        variant: "destructive",
+        title: t('error', { ns: 'common', defaultValue: 'Errore' }),
+        description: t('add.errorCreating', { defaultValue: 'Impossibile condividere il post. Riprova.' }),
+        variant: 'destructive',
       });
       return false;
     }
