@@ -78,6 +78,16 @@ export const turkishTranslations = {
         closed: 'Kapalı',
         opensAt: '{{time}} açılır',
         closesAt: '{{time}} kapanır'
+      },
+      comments: {
+        title: 'Yorumlar',
+        noComments: 'Henüz yorum yok',
+        beFirst: 'İlk yorumu yapan siz olun!',
+        addPlaceholder: 'Yorum ekle...',
+        delete: 'Sil',
+        commentAdded: 'Yorum eklendi!',
+        commentDeleted: 'Yorum silindi',
+        enterComment: 'Lütfen bir yorum girin'
       }
     },
     home: {
