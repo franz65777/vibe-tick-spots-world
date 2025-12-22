@@ -93,7 +93,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
               )}
               <div>
                 <h3 className="font-bold text-lg">
-                  {mode === 'comments' ? 'Travel Stories' : 'Share Discovery'}
+                  {mode === 'comments' ? t('travelStories', { ns: 'common' }) : t('shareDiscovery', { ns: 'common' })}
                 </h3>
                 <p className="text-white/80 text-sm">{place?.name}</p>
               </div>
@@ -121,7 +121,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                 ) : comments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm">Be the first to share your experience!</p>
+                    <p className="text-sm">{t('beFirstToShare', { ns: 'common' })}</p>
                   </div>
                 ) : (
                   comments.map((comment) => (
@@ -149,7 +149,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                               {comment.likes_count}
                             </button>
                             <button className="text-xs text-gray-500 hover:text-blue-500 transition-colors">
-                              Reply
+                              {t('reply', { ns: 'common' })}
                             </button>
                           </div>
                         </div>
@@ -171,7 +171,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                 </Avatar>
                 <div className="flex-1 flex gap-2">
                   <Textarea
-                    placeholder="Share your experience at this place..."
+                    placeholder={t('shareYourExperiencePlaceholder', { ns: 'common' })}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     className="resize-none border-gray-200 rounded-xl text-sm"
