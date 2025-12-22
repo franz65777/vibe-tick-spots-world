@@ -14,8 +14,21 @@ import { extendedLanguageTranslations } from './i18n-extended-languages';
 import { addPageTranslations } from './i18n-add-page';
 import { comprehensiveTranslations } from './i18n-comprehensive';
 
+// Deep merge utility for translations to preserve nested objects
+const deepMerge = (target: Record<string, any>, source: Record<string, any>): Record<string, any> => {
+  const result = { ...target };
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(result[key] || {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+};
+
 // Comprehensive resources for all languages
-const resources = {
+const resources: Record<string, any> = {
   en: {
     common: {
       clearAll: 'Clear All',
@@ -5300,105 +5313,76 @@ const resources = {
   }
 };
 
-// Merge auth translations into resources
+// Merge auth translations into resources (using deepMerge to preserve nested objects)
 Object.keys(authTranslations).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      ...authTranslations[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], authTranslations[lang]);
   }
 });
 
 Object.keys(authTranslationsExtended).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      ...authTranslationsExtended[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], authTranslationsExtended[lang]);
   }
 });
 
 // Merge save tags translations into resources
 Object.keys(saveTagsTranslations).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      ...saveTagsTranslations[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], saveTagsTranslations[lang]);
   }
 });
 
 // Merge onboarding translations into resources
 Object.keys(onboardingTranslations).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      ...onboardingTranslations[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], onboardingTranslations[lang]);
   }
 });
 
 // Merge Turkish translations into resources
 Object.keys(turkishTranslations).forEach(lang => {
-  resources[lang] = {
-    ...resources[lang] || {},
-    ...turkishTranslations[lang]
-  };
+  resources[lang] = deepMerge(resources[lang] || {}, turkishTranslations[lang]);
 });
 
 // Merge signup translations into resources
 Object.keys(signupTranslations).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      ...signupTranslations[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], signupTranslations[lang]);
   }
 });
 
 // Merge createList translations into resources
 Object.keys(createListTranslations).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      createList: createListTranslations[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], { createList: createListTranslations[lang] });
   }
 });
 
 // Merge guided tour translations into resources
 Object.keys(guidedTourTranslations).forEach(lang => {
   if (resources[lang]) {
-    resources[lang] = {
-      ...resources[lang],
-      ...guidedTourTranslations[lang]
-    };
+    resources[lang] = deepMerge(resources[lang], guidedTourTranslations[lang]);
   }
 });
 
 // Ensure key namespaces exist for all supported languages (prevents fallback-to-English islands)
+// Now uses deepMerge to preserve nested translations
 const ensureNamespace = (lang: string, ns: string, values: Record<string, any>) => {
   if (!resources[lang]) return;
+  const existing = (resources[lang] as any)[ns] || {};
   resources[lang] = {
     ...resources[lang],
-    [ns]: {
-      ...(resources[lang] as any)[ns],
-      ...values,
-    },
+    [ns]: deepMerge(existing, values),
   } as any;
 };
 
 // Merge add page translations for all 12 languages
 Object.keys(addPageTranslations).forEach(lang => {
-  resources[lang] = {
-    ...resources[lang] || {},
-  };
+  resources[lang] = resources[lang] || {};
   Object.entries(addPageTranslations[lang] as Record<string, any>).forEach(([ns, values]) => {
-    (resources[lang] as any)[ns] = {
-      ...(resources[lang] as any)[ns],
-      ...values,
-    };
+    const existing = (resources[lang] as any)[ns] || {};
+    (resources[lang] as any)[ns] = deepMerge(existing, values);
   });
 });
 
