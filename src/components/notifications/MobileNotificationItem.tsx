@@ -727,6 +727,8 @@ const MobileNotificationItem = ({
 
   // Check if this is a review like notification - reviews have no post_image
   const isReviewLike = notification.type === 'like' && !notification.data?.post_image;
+  const isReviewComment =
+    notification.type === 'comment' && !notification.data?.post_image && notification.data?.content_type === 'review';
 
   return (
     <>
@@ -872,7 +874,7 @@ const MobileNotificationItem = ({
                   >
                     {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
                   </Button>
-                ) : notification.type === 'comment' ? (
+                ) : notification.type === 'comment' && notification.data?.comment_id ? (
                   <Button
                     onClick={handleCommentLike}
                     variant="ghost"
@@ -883,7 +885,7 @@ const MobileNotificationItem = ({
                       className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
                     />
                   </Button>
-                ) : notification.data?.post_image && !isReviewLike ? (
+                ) : notification.data?.post_image ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
                     onClick={handlePostClick}
@@ -894,7 +896,7 @@ const MobileNotificationItem = ({
                       className="w-full h-full object-cover"
                     />
                   </div>
-                ) : isReviewLike ? (
+                ) : isReviewLike || isReviewComment ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
                     onClick={handlePostClick}
