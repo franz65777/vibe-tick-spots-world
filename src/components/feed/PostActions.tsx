@@ -43,9 +43,12 @@ export const PostActions = ({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { isLiked, likeCount, toggleLike, comments } = useSocialEngagement(postId);
-  const [localLikesCount, setLocalLikesCount] = useState(likesCount);
-  const [localCommentsCount, setLocalCommentsCount] = useState(commentsCount);
+  
+  // Use hook values as primary, fallback to props for initial render
+  const localLikesCount = likeCount ?? likesCount;
+  const localCommentsCount = comments?.length ?? commentsCount;
   const [localSharesCount, setLocalSharesCount] = useState(sharesCount);
+  
   const [isLocationSaved, setIsLocationSaved] = useState(false);
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
   const [showLikersModal, setShowLikersModal] = useState(false);
@@ -53,64 +56,13 @@ export const PostActions = ({
   const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sync like count
-  useEffect(() => {
-    if (likeCount !== undefined) {
-      setLocalLikesCount(likeCount);
-    } else if (likesCount !== undefined) {
-      setLocalLikesCount(likesCount);
-    }
-  }, [likeCount, likesCount]);
-
-  // Sync comments count
-  useEffect(() => {
-    if (comments?.length !== undefined) {
-      setLocalCommentsCount(comments.length);
-    } else if (commentsCount !== undefined) {
-      setLocalCommentsCount(commentsCount);
-    }
-  }, [comments?.length, commentsCount]);
-
-  // Sync shares count
+  // Sync shares count from props
   useEffect(() => {
     setLocalSharesCount(sharesCount);
   }, [sharesCount]);
 
-  // Subscribe to real-time count updates for likes, comments, and shares
+  // Subscribe to real-time share count updates only (likes/comments handled by useSocialEngagement)
   useEffect(() => {
-    // Subscribe to post_likes for live like count updates
-    const likesChannel = supabase
-      .channel(`post-likes-live-${postId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'post_likes', filter: `post_id=eq.${postId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setLocalLikesCount(prev => prev + 1);
-          } else if (payload.eventType === 'DELETE') {
-            setLocalLikesCount(prev => Math.max(0, prev - 1));
-          }
-        }
-      )
-      .subscribe();
-
-    // Subscribe to post_comments for live comment count updates
-    const commentsChannel = supabase
-      .channel(`post-comments-live-${postId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'post_comments', filter: `post_id=eq.${postId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setLocalCommentsCount(prev => prev + 1);
-          } else if (payload.eventType === 'DELETE') {
-            setLocalCommentsCount(prev => Math.max(0, prev - 1));
-          }
-        }
-      )
-      .subscribe();
-
-    // Subscribe to post_shares for live share count updates
     const sharesChannel = supabase
       .channel(`post-shares-live-${postId}`)
       .on(
@@ -127,8 +79,6 @@ export const PostActions = ({
       .subscribe();
 
     return () => {
-      supabase.removeChannel(likesChannel);
-      supabase.removeChannel(commentsChannel);
       supabase.removeChannel(sharesChannel);
     };
   }, [postId]);
