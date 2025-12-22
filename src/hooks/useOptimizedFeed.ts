@@ -66,10 +66,13 @@ export const useOptimizedFeed = () => {
 
       console.log('Feed loaded (enriched):', enriched.length);
 
-      // Cache feed per caricamento istantaneo prossima volta
+      // Cache feed per caricamento istantaneo prossima volta (con timestamp)
       try {
         if (user?.id) {
-          localStorage.setItem(`feed_cache_${user.id}`, JSON.stringify(enriched));
+          localStorage.setItem(
+            `feed_cache_${user.id}`,
+            JSON.stringify({ ts: Date.now(), data: enriched })
+          );
         }
       } catch {}
 
@@ -80,11 +83,18 @@ export const useOptimizedFeed = () => {
     gcTime: 5 * 60 * 1000,
     refetchOnMount: 'always',
     initialData: () => {
-      // Carica subito dalla cache per UI istantanea
+      // Carica subito dalla cache solo se recentissima per evitare contatori vecchi
       if (!user?.id) return [];
       try {
-        const cached = localStorage.getItem(`feed_cache_${user.id}`);
-        return cached ? JSON.parse(cached) : [];
+        const cachedRaw = localStorage.getItem(`feed_cache_${user.id}`);
+        if (!cachedRaw) return [];
+
+        const cached = JSON.parse(cachedRaw) as { ts?: number; data?: any[] };
+        const ageMs = Date.now() - (cached.ts || 0);
+
+        // se la cache è più vecchia di 15s, preferiamo evitare flicker con contatori obsoleti
+        if (!cached.ts || ageMs > 15_000) return [];
+        return Array.isArray(cached.data) ? cached.data : [];
       } catch {
         return [];
       }

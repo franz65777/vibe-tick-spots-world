@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Unified Social Engagement Service
@@ -15,6 +15,21 @@ type PostEngagementUpdateDetail = {
 function emitPostEngagementUpdate(detail: PostEngagementUpdateDetail) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('post-engagement-updated', { detail }));
+}
+
+function toastSuccess(title: string, description?: string) {
+  toast({ title, description });
+}
+
+function toastError(title: string, description?: string) {
+  toast({ title, description, variant: 'destructive' });
+}
+
+function normalizeLanguage(lang: string | null | undefined): string {
+  if (!lang) return 'en';
+  // Accept 'it-IT', 'en-US', etc.
+  const normalized = lang.toLowerCase().split('-')[0];
+  return normalized || 'en';
 }
 
 const notificationTranslations: Record<string, Record<string, string>> = {
@@ -197,8 +212,10 @@ async function getUserLanguage(userId: string): Promise<string> {
       .select('language')
       .eq('id', userId)
       .single();
-    let lang = profile?.language || 'en';
-    if (lang === 'zh-CN') lang = 'zh';
+
+    const lang = normalizeLanguage(profile?.language);
+    // Keep compatibility with older stored values
+    if (lang === 'zh') return 'zh';
     return lang;
   } catch {
     return 'en';
@@ -224,16 +241,14 @@ async function getLocalizedNotificationText(
       .select('language')
       .eq('id', userId)
       .single();
-    
-    let lang = profile?.language || 'en';
-    if (lang === 'zh-CN') lang = 'zh';
-    
+
+    const lang = normalizeLanguage(profile?.language);
     const translations = notificationTranslations[lang] || notificationTranslations.en;
-    
+
     const title = translations[`${type}_title`] || notificationTranslations.en[`${type}_title`];
     let message = translations[`${type}_message`] || notificationTranslations.en[`${type}_message`];
     message = message.replace('{{username}}', username);
-    
+
     return { title, message };
   } catch (error) {
     console.error('Error getting localized notification:', error);
@@ -311,7 +326,7 @@ export async function togglePostLike(postId: string, userId: string): Promise<bo
     }
   } catch (error) {
     console.error('Error toggling like:', error);
-    toast.error('Failed to update like');
+    toastError('Failed to update like');
     return false;
   }
 }
@@ -462,7 +477,7 @@ export async function addPostComment(
   try {
     const trimmed = content.trim();
     if (!trimmed) {
-      toast.error(emptyErrorMessage || 'Comment cannot be empty');
+      toastError(emptyErrorMessage || 'Comment cannot be empty');
       return null;
     }
 
@@ -542,7 +557,7 @@ export async function addPostComment(
       console.log('[addPostComment] Skipping notification - own post or post not found');
     }
 
-    toast.success(successMessage || 'Comment added');
+    toastSuccess(successMessage || 'Comment added');
 
     return {
       ...comment,
@@ -551,7 +566,7 @@ export async function addPostComment(
     };
   } catch (error) {
     console.error('Error adding comment:', error);
-    toast.error(errorMessage || 'Failed to add comment');
+    toastError(errorMessage || 'Failed to add comment');
     return null;
   }
 }
@@ -599,11 +614,11 @@ export async function deletePostComment(
         .eq('id', comment.post_id);
     }
 
-    toast.success(successMessage || 'Comment deleted');
+    toastSuccess(successMessage || 'Comment deleted');
     return true;
   } catch (error) {
     console.error('Error deleting comment:', error);
-    toast.error(errorMessage || 'Failed to delete comment');
+    toastError(errorMessage || 'Failed to delete comment');
     return false;
   }
 }
@@ -617,7 +632,7 @@ export async function sharePost(
 ): Promise<boolean> {
   try {
     if (recipientIds.length === 0) {
-      toast.error('Select at least one person');
+      toastError('Select at least one person');
       return false;
     }
 
@@ -676,12 +691,12 @@ export async function sharePost(
       .replace('{{people}}', peopleWord);
     
     console.log('[sharePost] Showing toast:', shareMsg);
-    toast.success(shareMsg);
+    toastSuccess(shareMsg);
     return true;
   } catch (error) {
     console.error('Error sharing post:', error);
     const lang = await getUserLanguage(userId);
-    toast.error(getTranslation(lang, 'share_failed'));
+    toastError(getTranslation(lang, 'share_failed'));
     return false;
   }
 }
@@ -702,7 +717,7 @@ export async function togglePostSave(postId: string, userId: string): Promise<bo
     if (existing) {
       // Unsave
       await supabase.from('post_saves').delete().eq('id', existing.id);
-      toast.success(getTranslation(lang, 'post_unsaved'));
+      toastSuccess(getTranslation(lang, 'post_unsaved'));
       return false;
     } else {
       // Save
@@ -711,13 +726,13 @@ export async function togglePostSave(postId: string, userId: string): Promise<bo
         .insert({ post_id: postId, user_id: userId });
       
       if (error) throw error;
-      toast.success(getTranslation(lang, 'post_saved'));
+      toastSuccess(getTranslation(lang, 'post_saved'));
       return true;
     }
   } catch (error) {
     console.error('Error toggling save:', error);
     const lang = await getUserLanguage(userId);
-    toast.error(getTranslation(lang, 'save_failed'));
+    toastError(getTranslation(lang, 'save_failed'));
     return false;
   }
 }
