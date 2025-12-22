@@ -489,13 +489,16 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                     <button onClick={handleLikePost} disabled={likingPost}>
                       <Heart className={`w-5 h-5 ${engagement.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                     </button>
-                    <span className="text-sm font-medium">{engagement.likeCount}</span>
+                    <span className="text-sm font-medium">{engagement.likeCount ?? 0}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => setCommentsDrawerOpen(true)}>
+                    <button onClick={() => {
+                      engagement.loadComments();
+                      setCommentsDrawerOpen(true);
+                    }}>
                       <MessageCircle className="w-5 h-5" />
                     </button>
-                    <span className="text-sm font-medium">{engagement.comments.length}</span>
+                    <span className="text-sm font-medium">{engagement.commentCount ?? 0}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setShareOpen(true)}>

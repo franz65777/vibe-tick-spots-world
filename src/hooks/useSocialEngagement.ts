@@ -8,33 +8,47 @@ import * as engagement from '@/services/socialEngagementService';
  * Works across all tabs and contexts with real-time updates
  */
 
-export const useSocialEngagement = (postId: string) => {
+export const useSocialEngagement = (postId: string, initialCounts?: { likes?: number; comments?: number; shares?: number }) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  // Use null to indicate "not yet loaded" vs 0 meaning "loaded but zero"
+  const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
+  const [shareCount, setShareCount] = useState<number | null>(null);
   const [comments, setComments] = useState<engagement.Comment[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Load initial state
   useEffect(() => {
-    if (!postId || !user) return;
+    if (!postId) return;
 
     const loadEngagement = async () => {
       setLoading(true);
       try {
-        const [likes, savedStatus, commentsData] = await Promise.all([
-          engagement.getPostLikes(postId),
-          engagement.isPostSaved(postId, user.id),
-          engagement.getPostComments(postId),
+        // Fetch counts efficiently
+        const [likesResult, commentsCountResult, sharesCountResult] = await Promise.all([
+          user ? engagement.getPostLikes(postId) : Promise.resolve({ isLiked: false, count: initialCounts?.likes || 0 }),
+          supabase.from('post_comments').select('*', { count: 'exact', head: true }).eq('post_id', postId),
+          supabase.from('post_shares').select('*', { count: 'exact', head: true }).eq('post_id', postId),
         ]);
 
-        setIsLiked(likes.isLiked);
-        setLikeCount(likes.count);
-        setIsSaved(savedStatus);
-        setComments(commentsData);
+        setIsLiked(likesResult.isLiked);
+        setLikeCount(likesResult.count);
+        setCommentCount(commentsCountResult.count || 0);
+        setShareCount(sharesCountResult.count || 0);
+
+        // Also check saved status if user is logged in
+        if (user) {
+          const savedStatus = await engagement.isPostSaved(postId, user.id);
+          setIsSaved(savedStatus);
+        }
       } catch (error) {
         console.error('Error loading engagement:', error);
+        // Fall back to initial counts on error
+        setLikeCount(initialCounts?.likes ?? 0);
+        setCommentCount(initialCounts?.comments ?? 0);
+        setShareCount(initialCounts?.shares ?? 0);
       } finally {
         setLoading(false);
       }
@@ -48,18 +62,18 @@ export const useSocialEngagement = (postId: string) => {
     if (!postId) return;
 
     const likesChannel = supabase
-      .channel(`post-likes-${postId}`)
+      .channel(`post-likes-rt-${postId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'post_likes', filter: `post_id=eq.${postId}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setLikeCount(prev => prev + 1);
+            setLikeCount(prev => (prev ?? 0) + 1);
             if (user && payload.new.user_id === user.id) {
               setIsLiked(true);
             }
           } else if (payload.eventType === 'DELETE') {
-            setLikeCount(prev => Math.max(0, prev - 1));
+            setLikeCount(prev => Math.max(0, (prev ?? 0) - 1));
             if (user && payload.old.user_id === user.id) {
               setIsLiked(false);
             }
@@ -78,13 +92,15 @@ export const useSocialEngagement = (postId: string) => {
     if (!postId) return;
 
     const commentsChannel = supabase
-      .channel(`post-comments-${postId}`)
+      .channel(`post-comments-rt-${postId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'post_comments', filter: `post_id=eq.${postId}` },
         async (payload) => {
           if (payload.eventType === 'INSERT') {
-            // Fetch the new comment with profile data
+            setCommentCount(prev => (prev ?? 0) + 1);
+            
+            // Fetch the new comment with profile data for the comments array
             const { data: newComment } = await supabase
               .from('post_comments')
               .select(`
@@ -117,6 +133,7 @@ export const useSocialEngagement = (postId: string) => {
               });
             }
           } else if (payload.eventType === 'DELETE') {
+            setCommentCount(prev => Math.max(0, (prev ?? 0) - 1));
             setComments(prev => prev.filter(c => c.id !== payload.old.id));
           }
         }
@@ -128,12 +145,43 @@ export const useSocialEngagement = (postId: string) => {
     };
   }, [postId]);
 
+  // Real-time subscription for shares
+  useEffect(() => {
+    if (!postId) return;
+
+    const sharesChannel = supabase
+      .channel(`post-shares-rt-${postId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_shares', filter: `post_id=eq.${postId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setShareCount(prev => (prev ?? 0) + 1);
+          } else if (payload.eventType === 'DELETE') {
+            setShareCount(prev => Math.max(0, (prev ?? 0) - 1));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sharesChannel);
+    };
+  }, [postId]);
+
+  // Lazy load comments only when needed
+  const loadComments = useCallback(async () => {
+    if (!postId) return;
+    const commentsData = await engagement.getPostComments(postId);
+    setComments(commentsData);
+  }, [postId]);
+
   const toggleLike = useCallback(async () => {
     if (!user) return;
     
     const newLikedState = await engagement.togglePostLike(postId, user.id);
     setIsLiked(newLikedState);
-    setLikeCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+    setLikeCount(prev => newLikedState ? (prev ?? 0) + 1 : Math.max(0, (prev ?? 0) - 1));
   }, [postId, user]);
 
   const toggleSave = useCallback(async () => {
@@ -161,6 +209,7 @@ export const useSocialEngagement = (postId: string) => {
     );
     if (newComment) {
       setComments(prev => [...prev, newComment]);
+      setCommentCount(prev => (prev ?? 0) + 1);
     }
   }, [postId, user]);
 
@@ -170,6 +219,7 @@ export const useSocialEngagement = (postId: string) => {
     const success = await engagement.deletePostComment(commentId, user.id);
     if (success) {
       setComments(prev => prev.filter(c => c.id !== commentId));
+      setCommentCount(prev => Math.max(0, (prev ?? 0) - 1));
     }
   }, [user]);
 
@@ -183,6 +233,8 @@ export const useSocialEngagement = (postId: string) => {
     isLiked,
     isSaved,
     likeCount,
+    commentCount,
+    shareCount,
     comments,
     loading,
     toggleLike,
@@ -190,5 +242,6 @@ export const useSocialEngagement = (postId: string) => {
     addComment,
     deleteComment,
     sharePost,
+    loadComments,
   };
 };
