@@ -54,6 +54,8 @@ export const turkishTranslations = {
       search: 'Ara',
       linkCopied: 'Bağlantı panoya kopyalandı!',
       copyLink: 'Bağlantıyı kopyala',
+      send: 'Gönder',
+      sending: 'Gönderiliyor...',
       locationShared: 'Konum paylaşıldı!',
       listShared: 'Liste paylaşıldı!',
       tripShared: 'Gezi paylaşıldı!',

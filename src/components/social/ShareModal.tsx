@@ -278,11 +278,11 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     {sending ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        {t('sending', { ns: 'common', defaultValue: 'Sending...' })}
+                        {t('sending', { ns: 'common' })}
                       </>
                     ) : (
                       <>
-                        {t('send', { ns: 'common', defaultValue: 'Send' })} {selected.size > 0 && `(${selected.size})`}
+                        {t('send', { ns: 'common' })} {selected.size > 0 && `(${selected.size})`}
                       </>
                     )}
                   </Button>
