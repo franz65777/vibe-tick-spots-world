@@ -22,6 +22,7 @@ interface FolderDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveStatusChange?: () => void;
+  onLocationClick?: (location: any) => void;
 }
 
 const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: () => void }) => {
@@ -92,7 +93,7 @@ const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: 
   );
 };
 
-const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: FolderDetailModalProps) => {
+const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLocationClick }: FolderDetailModalProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -354,32 +355,24 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
     }
   };
 
-  const handleLocationClick = async (location: any) => {
-    // Pre-fetch location data for faster loading
-    const fetchPromises = [];
-    
-    if (location.id) {
-      fetchPromises.push(
-        supabase
-          .from('posts')
-          .select('id, media_urls, caption, rating, user_id, created_at')
-          .eq('location_id', location.id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-      );
-    }
-
-    // Execute pre-fetch in background
-    Promise.all(fetchPromises).catch(console.error);
-
-    // Format location data for PinDetailCard
-    setSelectedLocation({
+  const handleLocationClickInternal = async (location: any) => {
+    // Format location data
+    const formattedLocation = {
       ...location,
       coordinates: {
         lat: location.latitude,
         lng: location.longitude
       }
-    });
+    };
+
+    // If parent provided a handler, use it (for page navigation)
+    if (onLocationClick) {
+      onLocationClick(formattedLocation);
+      return;
+    }
+
+    // Otherwise use internal state (for modal within modal)
+    setSelectedLocation(formattedLocation);
   };
 
   const handleClose = () => {
@@ -392,8 +385,9 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
   // Show skeleton loading state instead of spinner for smoother UX
   if (loading && !folder) {
     return (
-      <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 animate-in fade-in duration-200">
-        <div className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
+      <div className="fixed inset-0 z-[10000] flex items-end justify-center animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        <div className="relative w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
           <div className="relative aspect-[4/3] bg-muted animate-pulse" />
           <div className="p-6 space-y-4">
             <div className="h-8 w-2/3 bg-muted rounded animate-pulse" />
@@ -412,13 +406,15 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
     <>
       <div 
         className={cn(
-          "fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 animate-in fade-in duration-200",
+          "fixed inset-0 z-[10000] flex items-end justify-center animate-in fade-in duration-200",
           selectedLocation && "hidden"
         )}
         onClick={handleClose}
       >
+        {/* Semi-transparent backdrop that shows content behind */}
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
         <div 
-          className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+          className="relative w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Cover Image */}
@@ -448,13 +444,13 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
 
           {/* Content */}
           <div className="overflow-y-auto max-h-[calc(90vh-300px)]" onScroll={handleScroll}>
-            <div className="p-6 space-y-6">
-              {/* Title */}
+            <div className="p-6 pt-3 space-y-4">
+              {/* Title - closer to image */}
               <h2 className="text-2xl font-bold">{folder.name}</h2>
 
-              {/* Stats Row with Action Buttons - Fade on scroll */}
+              {/* Stats Row with Action Buttons - closer to title */}
               <div className={cn(
-                "flex items-center justify-between transition-opacity duration-300",
+                "flex items-center justify-between transition-opacity duration-300 -mt-1",
                 scrolled && "opacity-0 pointer-events-none"
               )}>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -549,13 +545,13 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange }: Fo
               {/* Locations */}
               {locations.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-lg">{t('common:vibes', { defaultValue: 'Vibes' })}</h3>
+                  <h3 className="font-semibold text-lg">{t('common:placesLabel', { defaultValue: 'Luoghi' })}</h3>
                   <div className="space-y-2">
                     {locations.map((location: any) => (
                       <LocationCardWithStats 
                         key={location.id}
                         location={location}
-                        onClick={() => handleLocationClick(location)}
+                        onClick={() => handleLocationClickInternal(location)}
                       />
                     ))}
                   </div>
