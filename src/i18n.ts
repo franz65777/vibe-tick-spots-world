@@ -5487,6 +5487,80 @@ Object.entries(settingsKeys).forEach(([key, translations]) => {
   });
 });
 
+// Messages namespace translations for all 12 languages
+const messagesKeys = {
+  searchForPeople: { en: 'Search for people...', it: 'Cerca persone...', es: 'Buscar personas...', fr: 'Rechercher des personnes...', de: 'Personen suchen...', pt: 'Pesquisar pessoas...', tr: 'Kişi ara...', 'zh-CN': '搜索用户...', ja: 'ユーザーを検索...', ko: '사람 검색...', ar: 'البحث عن أشخاص...', ru: 'Поиск людей...' },
+  typeMessage: { en: 'Type a message...', it: 'Scrivi un messaggio...', es: 'Escribe un mensaje...', fr: 'Tapez un message...', de: 'Nachricht eingeben...', pt: 'Digite uma mensagem...', tr: 'Mesaj yazın...', 'zh-CN': '输入消息...', ja: 'メッセージを入力...', ko: '메시지 입력...', ar: 'اكتب رسالة...', ru: 'Введите сообщение...' },
+  noMessages: { en: 'No messages yet', it: 'Nessun messaggio', es: 'Sin mensajes', fr: 'Pas de messages', de: 'Keine Nachrichten', pt: 'Sem mensagens', tr: 'Mesaj yok', 'zh-CN': '暂无消息', ja: 'メッセージはありません', ko: '메시지 없음', ar: 'لا توجد رسائل', ru: 'Нет сообщений' },
+};
+
+Object.entries(messagesKeys).forEach(([key, translations]) => {
+  Object.entries(translations).forEach(([lang, value]) => {
+    ensureNamespace(lang, 'messages', { [key]: value });
+  });
+});
+
+// Add Location translations for all 12 languages
+const addLocationKeys = {
+  searchForPlace: { en: 'Search for a place', it: 'Cerca un luogo', es: 'Buscar un lugar', fr: 'Rechercher un lieu', de: 'Ort suchen', pt: 'Pesquisar um lugar', tr: 'Yer ara', 'zh-CN': '搜索地点', ja: '場所を検索', ko: '장소 검색', ar: 'البحث عن مكان', ru: 'Поиск места' },
+  searchPlaceholder: { en: 'Search restaurants, cafes, attractions...', it: 'Cerca ristoranti, caffè, attrazioni...', es: 'Buscar restaurantes, cafés, atracciones...', fr: 'Rechercher restaurants, cafés, attractions...', de: 'Restaurants, Cafés, Attraktionen suchen...', pt: 'Pesquisar restaurantes, cafés, atrações...', tr: 'Restoran, kafe, gezi yeri ara...', 'zh-CN': '搜索餐厅、咖啡馆、景点...', ja: 'レストラン、カフェ、観光地を検索...', ko: '레스토랑, 카페, 명소 검색...', ar: 'البحث عن مطاعم، مقاهي، معالم...', ru: 'Поиск ресторанов, кафе, достопримечательностей...' },
+  or: { en: 'OR', it: 'OPPURE', es: 'O', fr: 'OU', de: 'ODER', pt: 'OU', tr: 'VEYA', 'zh-CN': '或者', ja: 'または', ko: '또는', ar: 'أو', ru: 'ИЛИ' },
+  addCustomLocation: { en: 'Add custom location', it: 'Aggiungi luogo personalizzato', es: 'Añadir ubicación personalizada', fr: 'Ajouter un lieu personnalisé', de: 'Benutzerdefinierten Ort hinzufügen', pt: 'Adicionar local personalizado', tr: 'Özel konum ekle', 'zh-CN': '添加自定义地点', ja: 'カスタム場所を追加', ko: '사용자 지정 위치 추가', ar: 'إضافة موقع مخصص', ru: 'Добавить свое место' },
+  enterLocationName: { en: 'Enter location name...', it: 'Inserisci nome luogo...', es: 'Introduce el nombre del lugar...', fr: 'Entrez le nom du lieu...', de: 'Ortsname eingeben...', pt: 'Digite o nome do local...', tr: 'Konum adı girin...', 'zh-CN': '输入地点名称...', ja: '場所名を入力...', ko: '장소 이름 입력...', ar: 'أدخل اسم الموقع...', ru: 'Введите название места...' },
+  useThisLocation: { en: 'Use This Location', it: 'Usa questa posizione', es: 'Usar esta ubicación', fr: 'Utiliser cet emplacement', de: 'Diesen Ort verwenden', pt: 'Usar este local', tr: 'Bu konumu kullan', 'zh-CN': '使用此位置', ja: 'この場所を使用', ko: '이 위치 사용', ar: 'استخدم هذا الموقع', ru: 'Использовать это место' },
+  locationName: { en: 'Location Name', it: 'Nome luogo', es: 'Nombre del lugar', fr: 'Nom du lieu', de: 'Ortsname', pt: 'Nome do local', tr: 'Konum adı', 'zh-CN': '地点名称', ja: '場所名', ko: '장소 이름', ar: 'اسم الموقع', ru: 'Название места' },
+  enterCustomName: { en: 'Enter a custom name...', it: 'Inserisci un nome personalizzato...', es: 'Introduce un nombre personalizado...', fr: 'Entrez un nom personnalisé...', de: 'Benutzerdefinierten Namen eingeben...', pt: 'Digite um nome personalizado...', tr: 'Özel bir ad girin...', 'zh-CN': '输入自定义名称...', ja: 'カスタム名を入力...', ko: '사용자 지정 이름 입력...', ar: 'أدخل اسمًا مخصصًا...', ru: 'Введите свое название...' },
+  category: { en: 'Category', it: 'Categoria', es: 'Categoría', fr: 'Catégorie', de: 'Kategorie', pt: 'Categoria', tr: 'Kategori', 'zh-CN': '类别', ja: 'カテゴリー', ko: '카테고리', ar: 'الفئة', ru: 'Категория' },
+  yourRating: { en: 'Your Rating', it: 'La tua valutazione', es: 'Tu valoración', fr: 'Votre note', de: 'Deine Bewertung', pt: 'Sua avaliação', tr: 'Değerlendirmen', 'zh-CN': '您的评分', ja: 'あなたの評価', ko: '평점', ar: 'تقييمك', ru: 'Ваша оценка' },
+  description: { en: 'Description', it: 'Descrizione', es: 'Descripción', fr: 'Description', de: 'Beschreibung', pt: 'Descrição', tr: 'Açıklama', 'zh-CN': '描述', ja: '説明', ko: '설명', ar: 'الوصف', ru: 'Описание' },
+  whatMakesSpecial: { en: 'What makes this place special?', it: 'Cosa rende speciale questo posto?', es: '¿Qué hace especial este lugar?', fr: "Qu'est-ce qui rend cet endroit spécial?", de: 'Was macht diesen Ort besonders?', pt: 'O que torna este lugar especial?', tr: 'Bu yeri özel yapan ne?', 'zh-CN': '这个地方有什么特别之处？', ja: 'この場所の特別なところは？', ko: '이 장소의 특별한 점은?', ar: 'ما الذي يجعل هذا المكان مميزًا؟', ru: 'Что делает это место особенным?' },
+  tags: { en: 'Tags', it: 'Tag', es: 'Etiquetas', fr: 'Tags', de: 'Tags', pt: 'Tags', tr: 'Etiketler', 'zh-CN': '标签', ja: 'タグ', ko: '태그', ar: 'العلامات', ru: 'Теги' },
+  addTag: { en: 'Add a tag...', it: 'Aggiungi un tag...', es: 'Añadir etiqueta...', fr: 'Ajouter un tag...', de: 'Tag hinzufügen...', pt: 'Adicionar tag...', tr: 'Etiket ekle...', 'zh-CN': '添加标签...', ja: 'タグを追加...', ko: '태그 추가...', ar: 'أضف علامة...', ru: 'Добавить тег...' },
+  continue: { en: 'Continue', it: 'Continua', es: 'Continuar', fr: 'Continuer', de: 'Weiter', pt: 'Continuar', tr: 'Devam', 'zh-CN': '继续', ja: '続ける', ko: '계속', ar: 'متابعة', ru: 'Продолжить' },
+  reviewYourLocation: { en: 'Review Your Location', it: 'Rivedi il tuo luogo', es: 'Revisa tu ubicación', fr: 'Vérifiez votre lieu', de: 'Überprüfe deinen Ort', pt: 'Revise seu local', tr: 'Konumunu gözden geçir', 'zh-CN': '检查您的地点', ja: '場所を確認', ko: '위치 확인', ar: 'راجع موقعك', ru: 'Проверьте место' },
+  name: { en: 'Name', it: 'Nome', es: 'Nombre', fr: 'Nom', de: 'Name', pt: 'Nome', tr: 'Ad', 'zh-CN': '名称', ja: '名前', ko: '이름', ar: 'الاسم', ru: 'Название' },
+  saveLocation: { en: 'Save Location', it: 'Salva luogo', es: 'Guardar ubicación', fr: 'Enregistrer le lieu', de: 'Ort speichern', pt: 'Salvar local', tr: 'Konumu kaydet', 'zh-CN': '保存地点', ja: '場所を保存', ko: '장소 저장', ar: 'حفظ الموقع', ru: 'Сохранить место' },
+};
+
+Object.entries(addLocationKeys).forEach(([key, translations]) => {
+  Object.entries(translations).forEach(([lang, value]) => {
+    ensureNamespace(lang, 'add', { [key]: value });
+  });
+});
+
+// Trips namespace translations for all 12 languages
+const tripsKeys = {
+  editTrip: { en: 'Edit Trip', it: 'Modifica viaggio', es: 'Editar viaje', fr: 'Modifier le voyage', de: 'Reise bearbeiten', pt: 'Editar viagem', tr: 'Geziyi düzenle', 'zh-CN': '编辑行程', ja: '旅行を編集', ko: '여행 편집', ar: 'تعديل الرحلة', ru: 'Редактировать поездку' },
+  tripName: { en: 'Trip name', it: 'Nome viaggio', es: 'Nombre del viaje', fr: 'Nom du voyage', de: 'Reisename', pt: 'Nome da viagem', tr: 'Gezi adı', 'zh-CN': '行程名称', ja: '旅行名', ko: '여행 이름', ar: 'اسم الرحلة', ru: 'Название поездки' },
+  optionalDescription: { en: 'Optional description', it: 'Descrizione opzionale', es: 'Descripción opcional', fr: 'Description optionnelle', de: 'Optionale Beschreibung', pt: 'Descrição opcional', tr: 'İsteğe bağlı açıklama', 'zh-CN': '可选描述', ja: '任意の説明', ko: '선택적 설명', ar: 'وصف اختياري', ru: 'Необязательное описание' },
+};
+
+Object.entries(tripsKeys).forEach(([key, translations]) => {
+  Object.entries(translations).forEach(([lang, value]) => {
+    ensureNamespace(lang, 'trips', { [key]: value });
+  });
+});
+
+// Categories namespace translations for all 12 languages
+const categoriesKeys = {
+  restaurant: { en: 'Restaurant', it: 'Ristorante', es: 'Restaurante', fr: 'Restaurant', de: 'Restaurant', pt: 'Restaurante', tr: 'Restoran', 'zh-CN': '餐厅', ja: 'レストラン', ko: '레스토랑', ar: 'مطعم', ru: 'Ресторан' },
+  cafe: { en: 'Café', it: 'Caffè', es: 'Cafetería', fr: 'Café', de: 'Café', pt: 'Café', tr: 'Kafe', 'zh-CN': '咖啡馆', ja: 'カフェ', ko: '카페', ar: 'مقهى', ru: 'Кафе' },
+  bar: { en: 'Bar', it: 'Bar', es: 'Bar', fr: 'Bar', de: 'Bar', pt: 'Bar', tr: 'Bar', 'zh-CN': '酒吧', ja: 'バー', ko: '바', ar: 'بار', ru: 'Бар' },
+  shopping: { en: 'Shopping', it: 'Shopping', es: 'Compras', fr: 'Shopping', de: 'Einkaufen', pt: 'Compras', tr: 'Alışveriş', 'zh-CN': '购物', ja: 'ショッピング', ko: '쇼핑', ar: 'تسوق', ru: 'Покупки' },
+  entertainment: { en: 'Entertainment', it: 'Intrattenimento', es: 'Entretenimiento', fr: 'Divertissement', de: 'Unterhaltung', pt: 'Entretenimento', tr: 'Eğlence', 'zh-CN': '娱乐', ja: 'エンターテイメント', ko: '엔터테인먼트', ar: 'ترفيه', ru: 'Развлечения' },
+  park: { en: 'Park', it: 'Parco', es: 'Parque', fr: 'Parc', de: 'Park', pt: 'Parque', tr: 'Park', 'zh-CN': '公园', ja: '公園', ko: '공원', ar: 'حديقة', ru: 'Парк' },
+  museum: { en: 'Museum', it: 'Museo', es: 'Museo', fr: 'Musée', de: 'Museum', pt: 'Museu', tr: 'Müze', 'zh-CN': '博物馆', ja: '博物館', ko: '박물관', ar: 'متحف', ru: 'Музей' },
+  hotel: { en: 'Hotel', it: 'Hotel', es: 'Hotel', fr: 'Hôtel', de: 'Hotel', pt: 'Hotel', tr: 'Otel', 'zh-CN': '酒店', ja: 'ホテル', ko: '호텔', ar: 'فندق', ru: 'Отель' },
+  gym: { en: 'Gym', it: 'Palestra', es: 'Gimnasio', fr: 'Salle de sport', de: 'Fitnessstudio', pt: 'Academia', tr: 'Spor salonu', 'zh-CN': '健身房', ja: 'ジム', ko: '헬스장', ar: 'صالة رياضية', ru: 'Спортзал' },
+  other: { en: 'Other', it: 'Altro', es: 'Otro', fr: 'Autre', de: 'Sonstiges', pt: 'Outro', tr: 'Diğer', 'zh-CN': '其他', ja: 'その他', ko: '기타', ar: 'أخرى', ru: 'Другое' },
+};
+
+Object.entries(categoriesKeys).forEach(([key, translations]) => {
+  Object.entries(translations).forEach(([lang, value]) => {
+    ensureNamespace(lang, 'categories', { [key]: value });
+  });
+});
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
