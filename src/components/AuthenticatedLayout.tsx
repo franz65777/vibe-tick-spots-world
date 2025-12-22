@@ -111,14 +111,16 @@ const AuthenticatedLayoutContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="h-screen overflow-hidden">
-        <Outlet />
-      </div>
-      {!shouldHideNav && (
-        <div className="fixed bottom-0 left-0 right-0 z-[1500]">
-          {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
+      <div className="h-screen overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0">
+          <Outlet />
         </div>
-      )}
+        {!shouldHideNav && (
+          <div className="fixed bottom-0 left-0 right-0 z-[1500]">
+            {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
