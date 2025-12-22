@@ -38,13 +38,17 @@ const ProfilePage = memo(() => {
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
 
-  // Handle opening folder from message share
+  // Handle opening folder from message share or returning from rewards
   useEffect(() => {
     const state = location.state as any;
     if (state?.openFolderId) {
       setInitialFolderId(state.openFolderId);
       setIsLocationsListOpen(true);
       // Clear the state to prevent reopening on subsequent renders
+      window.history.replaceState({}, document.title);
+    }
+    if (state?.activeTab) {
+      setActiveTab(state.activeTab);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
