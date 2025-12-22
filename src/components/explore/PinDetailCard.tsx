@@ -837,7 +837,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Opening Hours and Saved By Users Row - Directly under buttons */}
-          <div className="px-4 -mt-2 pb-0 overflow-visible">
+          <div className="px-4 pt-0 pb-1 overflow-visible">
             <div className="flex items-center justify-between gap-4 overflow-visible">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
