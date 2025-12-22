@@ -532,6 +532,7 @@ const resources = {
       uploading: 'Uploading',
       inYourNetwork: 'In your network',
       noPlacesFound: 'No places found for',
+      invalidLocation: 'Invalid location - please select a location with valid coordinates',
     },
     settings: {
       title: 'Settings',
@@ -1458,6 +1459,7 @@ const resources = {
       uploading: 'Subiendo',
       inYourNetwork: 'En tu red',
       noPlacesFound: 'No se encontraron lugares para',
+      invalidLocation: 'Ubicación inválida - por favor selecciona una ubicación con coordenadas válidas',
     },
     settings: {
       title: 'Configuración',
@@ -2375,6 +2377,7 @@ const resources = {
       uploading: 'Caricamento',
       inYourNetwork: 'Nella tua rete',
       noPlacesFound: 'Nessun luogo trovato per',
+      invalidLocation: 'Posizione non valida - seleziona una posizione con coordinate valide',
     },
     settings: {
       title: 'Impostazioni',
@@ -3275,6 +3278,7 @@ const resources = {
       uploading: 'Téléchargement',
       inYourNetwork: 'Dans votre réseau',
       noPlacesFound: 'Aucun lieu trouvé pour',
+      invalidLocation: 'Emplacement invalide - veuillez sélectionner un emplacement avec des coordonnées valides',
     },
     settings: {
       title: 'Paramètres',
@@ -4057,6 +4061,7 @@ const resources = {
       uploading: 'Hochladen',
       inYourNetwork: 'In deinem Netzwerk',
       noPlacesFound: 'Keine Orte gefunden für',
+      invalidLocation: 'Ungültiger Standort - bitte wählen Sie einen Standort mit gültigen Koordinaten',
     },
     settings: {
       title: 'Einstellungen',
@@ -4776,6 +4781,7 @@ const resources = {
       uploading: 'Enviando',
       inYourNetwork: 'Na sua rede',
       noPlacesFound: 'Nenhum local encontrado para',
+      invalidLocation: 'Localização inválida - selecione uma localização com coordenadas válidas',
     },
     settings: {
       title: 'Configurações',
@@ -5444,6 +5450,7 @@ const resources = {
       youMustTagLocation: '你必须标记一个地点才能分享帖子，这有助于他人发现好地方！',
       searchUsersToTag: '搜索用户以标记...',
       uploading: '上传中',
+      invalidLocation: '无效位置 - 请选择一个有效坐标的位置',
     },
     settings: {
       title: '设置',
@@ -6056,6 +6063,7 @@ const resources = {
       youMustTagLocation: '投稿を共有するには場所をタグ付けする必要があります。これにより他の人が素敵な場所を見つけやすくなります！',
       searchUsersToTag: 'タグ付けするユーザーを検索...',
       uploading: 'アップロード中',
+      invalidLocation: '無効な場所 - 有効な座標のある場所を選択してください',
     },
     settings: {
       title: '設定',
@@ -6708,6 +6716,7 @@ const resources = {
       youMustTagLocation: '게시물을 공유하려면 장소를 태그해야 합니다. 이는 다른 사람들이 좋은 장소를 발견하는 데 도움이 됩니다!',
       searchUsersToTag: '태그할 사용자 검색...',
       uploading: '업로드 중',
+      invalidLocation: '잘못된 위치 - 유효한 좌표가 있는 위치를 선택하세요',
     },
     settings: {
       title: '설정',
@@ -7343,6 +7352,7 @@ const resources = {
       youMustTagLocation: 'يجب عليك وسم موقع لمشاركة منشورك. هذا يساعد الآخرين على اكتشاف أماكن رائعة!',
       searchUsersToTag: 'ابحث عن مستخدمين للوسم...',
       uploading: 'جارٍ التحميل',
+      invalidLocation: 'موقع غير صالح - يرجى اختيار موقع بإحداثيات صالحة',
     },
     settings: {
       title: 'الإعدادات',
@@ -7964,6 +7974,7 @@ const resources = {
       youMustTagLocation: 'पोस्ट साझा करने के लिए आपको स्थान टैग करना होगा। इससे दूसरों को बेहतरीन स्थान खोजने में मदद मिलती है!',
       searchUsersToTag: 'टैग करने के लिए उपयोगकर्ता खोजें...',
       uploading: 'अपलोड हो रहा है',
+      invalidLocation: 'अमान्य स्थान - कृपया वैध निर्देशांक वाला स्थान चुनें',
     },
     settings: {
       title: 'सेटिंग्स',
@@ -8614,6 +8625,7 @@ const resources = {
       youMustTagLocation: 'Вы должны отметить место, чтобы опубликовать пост. Это помогает другим находить отличные места!',
       searchUsersToTag: 'Поиск пользователей для отметки...',
       uploading: 'Загрузка',
+      invalidLocation: 'Недействительное местоположение - выберите местоположение с действительными координатами',
     },
     settings: {
       title: 'Настройки',
