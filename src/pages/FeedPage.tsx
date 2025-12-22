@@ -296,8 +296,8 @@ const FeedPage = memo(() => {
       );
 
       toast({
-        title: "✅ Post condiviso!",
-        description: `Condiviso con ${recipientIds.length} ${recipientIds.length === 1 ? 'persona' : 'persone'}`,
+        title: t('postShared', { ns: 'common' }),
+        description: t('sharedWithCount', { ns: 'common', count: recipientIds.length }),
       });
 
       return true;
