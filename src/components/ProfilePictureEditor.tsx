@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 interface ProfilePictureEditorProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   onClose,
   currentAvatarUrl
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
@@ -202,7 +203,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
             disabled={uploading}
             className="flex-1"
           >
-            Cancel
+            {t('cancel', { ns: 'common' })}
           </Button>
           <Button
             onClick={handleUpload}
@@ -212,10 +213,10 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
             {uploading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Uploading...
+                {t('uploading', { ns: 'common' })}
               </div>
             ) : (
-              'Save'
+              t('save', { ns: 'common' })
             )}
           </Button>
         </div>

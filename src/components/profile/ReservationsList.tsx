@@ -5,17 +5,19 @@ import { Button } from '@/components/ui/button';
 import { useReservations } from '@/hooks/useReservations';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const ReservationsList = () => {
+  const { t } = useTranslation();
   const { reservations, loading, cancelReservation } = useReservations();
 
   const handleCancel = async (reservationId: string, locationName: string) => {
-    if (window.confirm(`Cancel your reservation at ${locationName}?`)) {
+    if (window.confirm(t('cancelReservationConfirm', { ns: 'booking', locationName }))) {
       const result = await cancelReservation(reservationId);
       if (result.error) {
-        toast.error('Failed to cancel reservation');
+        toast.error(t('cancelFailed', { ns: 'booking' }));
       } else {
-        toast.success('Reservation cancelled');
+        toast.success(t('reservationCancelled', { ns: 'booking' }));
       }
     }
   };
@@ -39,9 +41,9 @@ const ReservationsList = () => {
     return (
       <div className="text-center py-12 px-4">
         <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No Reservations Yet</h3>
+        <h3 className="text-lg font-semibold mb-2">{t('noReservationsYet', { ns: 'booking' })}</h3>
         <p className="text-sm text-muted-foreground">
-          Book a table at your favorite restaurants to see them here
+          {t('bookTableToSee', { ns: 'booking' })}
         </p>
       </div>
     );

@@ -301,8 +301,8 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
                 {requests && requests.length === 0 && (
                   <Card className="p-12 text-center">
                     <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No pending requests</h3>
-                    <p className="text-muted-foreground text-sm">Pending business account requests will appear here</p>
+                    <h3 className="text-lg font-semibold mb-2">{t('noPendingRequests', { ns: 'business' })}</h3>
+                    <p className="text-muted-foreground text-sm">{t('pendingRequestsWillAppear', { ns: 'business' })}</p>
                   </Card>
                 )}
               </div>

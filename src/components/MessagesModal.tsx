@@ -323,13 +323,13 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
             ) : threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <p className="font-semibold text-gray-900 dark:text-white mb-2">
-                  No messages yet
+                  {t('noMessagesYet', { ns: 'messages' })}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                  Start a conversation with someone
+                  {t('startConversation', { ns: 'messages' })}
                 </p>
                 <Button onClick={() => setView('search')} className="rounded-full">
-                  New Message
+                  {t('newMessage', { ns: 'messages' })}
                 </Button>
               </div>
             ) : (
