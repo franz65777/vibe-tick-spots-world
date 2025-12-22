@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Pin, Heart, MessageCircle, Bookmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Post {
   id: string;
@@ -27,15 +28,18 @@ interface BusinessLocationPostsProps {
 }
 
 const BusinessLocationPosts = ({ posts, onPinToggle }: BusinessLocationPostsProps) => {
+  const { t } = useTranslation();
   const [pinningPostId, setPinningPostId] = useState<string | null>(null);
 
   const handlePinToggle = async (postId: string, isPinned: boolean) => {
     setPinningPostId(postId);
     try {
       await onPinToggle(postId, isPinned);
-      toast.success(isPinned ? 'Post unpinned' : 'Post pinned to top');
+      toast.success(isPinned 
+        ? t('postUnpinned', { ns: 'business', defaultValue: 'Post unpinned' }) 
+        : t('postPinnedToTop', { ns: 'business', defaultValue: 'Post pinned to top' }));
     } catch (error) {
-      toast.error('Failed to update pin status');
+      toast.error(t('failedToUpdatePinStatus', { ns: 'business', defaultValue: 'Failed to update pin status' }));
     } finally {
       setPinningPostId(null);
     }

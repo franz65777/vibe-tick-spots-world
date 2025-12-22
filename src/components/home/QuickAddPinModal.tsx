@@ -152,7 +152,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       }
     } catch (error: any) {
       console.error('Error fetching nearby suggestions:', error);
-      toast.error(error?.message || 'Failed to fetch nearby locations. Please try again.');
+      toast.error(error?.message || t('failedToFetchLocations', { ns: 'common', defaultValue: 'Failed to fetch nearby locations. Please try again.' }));
     } finally {
       setIsFetchingSuggestions(false);
     }
@@ -183,14 +183,14 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
   const handleSavePin = async () => {
     if (!selectedPlace) {
-      toast.error('Please select a location first');
+      toast.error(t('pleaseSelectLocation', { ns: 'common', defaultValue: 'Please select a location first' }));
       return;
     }
 
     const categoryToUse = selectedPlace.category;
 
     if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(categoryToUse)) {
-      toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
+      toast.error(t('categoryFilteredOut', { ns: 'common', defaultValue: 'This category is currently filtered out. Switch filters or pick a matching venue.' }));
       return;
     }
 
@@ -245,7 +245,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         .maybeSingle();
 
       if (existingSave) {
-        toast.info(`${selectedPlace.name} is already in your favorites!`);
+        toast.info(t('alreadyInFavorites', { ns: 'common', name: selectedPlace.name, defaultValue: '{{name}} is already in your favorites!' }));
         onPinAdded();
         handleClose();
         return;
@@ -263,12 +263,12 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         throw new Error('Failed to save location: ' + saveError.message);
       }
       
-      toast.success(`${selectedPlace.name} saved to your favorites!`);
+      toast.success(t('savedToFavorites', { ns: 'common', name: selectedPlace.name, defaultValue: '{{name}} saved to your favorites!' }));
       onPinAdded();
       handleClose();
     } catch (error: any) {
       console.error('Error saving pin:', error);
-      toast.error(error?.message || 'Failed to save location. Please try again.');
+      toast.error(error?.message || t('failedToSave', { ns: 'common', defaultValue: 'Failed to save location. Please try again.' }));
     } finally {
       setIsLoading(false);
     }

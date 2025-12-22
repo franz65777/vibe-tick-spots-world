@@ -274,7 +274,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       onClick={(e) => handleDeletePost(post.id, e)}
                       disabled={deleting}
                       className="absolute top-2 left-2 w-7 h-9 bg-gray-500/90 hover:bg-gray-600 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                      title="Delete post"
+                      title={t('delete', { ns: 'common' })}
                     >
                       {deleting ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -478,7 +478,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       onClick={(e) => handleDeletePost(post.id, e)}
                       disabled={deleting}
                       className="absolute top-2 right-2 w-5 h-5 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                      title="Delete review"
+                      title={t('delete', { ns: 'common' })}
                     >
                       {deleting ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
