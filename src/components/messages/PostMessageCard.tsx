@@ -25,15 +25,17 @@ const PostMessageCard = ({ postData }: PostMessageCardProps) => {
   
   return (
     <div 
-      className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm max-w-[280px] cursor-pointer active:opacity-90 transition-opacity"
+      className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm max-w-[180px] cursor-pointer active:opacity-90 transition-opacity"
       onClick={handleClick}
     >
       {cover ? (
-        <div className="relative w-full aspect-square bg-muted">
+        <div className="relative w-full aspect-square bg-muted rounded-2xl overflow-hidden ring-2 ring-primary/20">
           <img 
             src={cover} 
             alt={postData.caption || 'Post'} 
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
           {hasMultipleMedia && (
             <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -49,8 +51,8 @@ const PostMessageCard = ({ postData }: PostMessageCardProps) => {
       )}
       
       {postData.caption && (
-        <div className="p-3">
-          <p className="text-[13px] text-foreground leading-snug line-clamp-3">{postData.caption}</p>
+        <div className="p-2">
+          <p className="text-[12px] text-foreground leading-snug line-clamp-2">{postData.caption}</p>
         </div>
       )}
     </div>
