@@ -223,6 +223,9 @@ const HomePage = memo(() => {
           visitors: [],
           google_place_id: locData.google_place_id
         };
+        // Mark as coming from a list so we can show a back button to the list
+        (placeToShow as any).returnTo = state.returnTo;
+
         if (placeToShow.coordinates) {
           setMapCenter(placeToShow.coordinates);
         }

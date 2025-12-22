@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import CreateTripModal from './CreateTripModal';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ const TripsGrid: React.FC<TripsGridProps> = ({
   userId: propUserId
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [editingTrip, setEditingTrip] = useState<any>(null);
@@ -394,6 +395,14 @@ const TripsGrid: React.FC<TripsGridProps> = ({
           isOpen={!!viewingFolderId}
           onClose={() => setViewingFolderId(null)}
           onSaveStatusChange={handleFolderSaveStatusChange}
+          onLocationClick={(loc) => {
+            navigate('/', {
+              state: {
+                selectedLocation: loc,
+                returnTo: location.pathname,
+              },
+            });
+          }}
         />
       )}
 
