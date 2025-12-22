@@ -9,6 +9,7 @@ import { turkishTranslations } from './i18n-turkish';
 import { signupTranslations } from './i18n-signup';
 import { createListTranslations } from './i18n-create-list';
 import { guidedTourTranslations } from './i18n-guided-tour';
+import { rewardsTranslations } from './i18n-rewards';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -9023,6 +9024,16 @@ Object.keys(guidedTourTranslations).forEach(lang => {
     resources[lang] = {
       ...resources[lang],
       ...guidedTourTranslations[lang]
+    };
+  }
+});
+
+// Merge rewards translations into profile namespace
+Object.keys(rewardsTranslations).forEach(lang => {
+  if (resources[lang] && resources[lang].profile) {
+    resources[lang].profile = {
+      ...resources[lang].profile,
+      ...rewardsTranslations[lang]
     };
   }
 });
