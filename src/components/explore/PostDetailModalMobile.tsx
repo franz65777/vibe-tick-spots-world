@@ -9,7 +9,7 @@ import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
 import { PostActions } from '@/components/feed/PostActions';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { getPostComments, addPostComment, deletePostComment, type Comment } from '@/services/socialEngagementService';
+import { getPostComments, addPostComment, deletePostComment, sharePost, type Comment } from '@/services/socialEngagementService';
 import { useTranslation } from 'react-i18next';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
@@ -605,7 +605,12 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
         <ShareModal
           isOpen={shareOpen}
           onClose={() => setShareOpen(false)}
-          onShare={async () => true}
+          onShare={async (recipientIds) => {
+            if (!user?.id) return false;
+            const ok = await sharePost(posts[0].id, user.id, recipientIds);
+            if (ok) bumpLocalPostCount(posts[0].id, 'shares_count', 1);
+            return ok;
+          }}
           postId={posts[0].id}
         />
       )}
