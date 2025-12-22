@@ -4,10 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import BusinessDashboard from '@/components/business/BusinessDashboard';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
 const BusinessDashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [businessData, setBusinessData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -101,9 +103,9 @@ const BusinessDashboardPage = () => {
   if (!businessData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">No Business Claimed</h2>
-        <p className="text-gray-600 text-center max-w-md">
-          You haven't claimed any business locations yet. Find a location on the map and click "Claim this business" to get started.
+        <h2 className="text-2xl font-bold text-foreground mb-4">{t('noBusinessClaimed', { ns: 'business' })}</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          {t('noBusinessClaimedDesc', { ns: 'business' })}
         </p>
       </div>
     );
