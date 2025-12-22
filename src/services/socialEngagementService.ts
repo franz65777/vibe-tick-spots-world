@@ -6,7 +6,17 @@ import { toast } from 'sonner';
  * Handles likes, comments, shares across posts with proper notifications
  */
 
-// Notification translations for all supported languages
+type PostEngagementUpdateDetail = {
+  postId: string;
+  commentsDelta?: number;
+  sharesDelta?: number;
+};
+
+function emitPostEngagementUpdate(detail: PostEngagementUpdateDetail) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('post-engagement-updated', { detail }));
+}
+
 const notificationTranslations: Record<string, Record<string, string>> = {
   en: {
     new_like_title: 'New like',
