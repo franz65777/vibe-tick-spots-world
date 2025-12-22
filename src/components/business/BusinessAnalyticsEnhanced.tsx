@@ -88,12 +88,12 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
     <div className="space-y-6">
       {/* Time Range Selector */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Analytics Dashboard</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('analyticsDashboard', { ns: 'business' })}</h2>
         <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as typeof timeRange)}>
           <TabsList className="bg-muted/50">
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="month">Month</TabsTrigger>
-            <TabsTrigger value="year">Year</TabsTrigger>
+            <TabsTrigger value="week">{t('week', { ns: 'common' })}</TabsTrigger>
+            <TabsTrigger value="month">{t('month', { ns: 'common' })}</TabsTrigger>
+            <TabsTrigger value="year">{t('year', { ns: 'common' })}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -262,7 +262,7 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">487</p>
-                <p className="text-xs text-muted-foreground">Comments</p>
+                <p className="text-xs text-muted-foreground">{t('comments', { ns: 'common' })}</p>
               </div>
             </div>
           </CardContent>
@@ -276,7 +276,7 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">234</p>
-                <p className="text-xs text-muted-foreground">Shares</p>
+                <p className="text-xs text-muted-foreground">{t('shares', { ns: 'common' })}</p>
               </div>
             </div>
           </CardContent>
@@ -290,7 +290,7 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">6-9 PM</p>
-                <p className="text-xs text-muted-foreground">Peak Hours</p>
+                <p className="text-xs text-muted-foreground">{t('peakHours', { ns: 'business' })}</p>
               </div>
             </div>
           </CardContent>
@@ -304,7 +304,7 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">78%</p>
-                <p className="text-xs text-muted-foreground">Local Audience</p>
+                <p className="text-xs text-muted-foreground">{t('localAudience', { ns: 'business' })}</p>
               </div>
             </div>
           </CardContent>
@@ -320,9 +320,9 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
                 <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-foreground mb-2">Best Performing Day</h4>
+                <h4 className="font-semibold text-foreground mb-2">{t('bestPerformingDay', { ns: 'business' })}</h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Saturday shows 45% higher engagement. Schedule important posts on weekends for maximum impact.
+                  {t('saturdayHigherEngagement', { ns: 'business' })}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
@@ -342,9 +342,9 @@ const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => 
                 <Zap className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-foreground mb-2">Content Recommendation</h4>
+                <h4 className="font-semibold text-foreground mb-2">{t('contentRecommendation', { ns: 'business' })}</h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Photo posts get 3x more engagement than text. Add high-quality images to boost visibility.
+                  {t('photoPostsEngagement', { ns: 'business' })}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">

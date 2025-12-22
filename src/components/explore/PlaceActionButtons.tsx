@@ -97,7 +97,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Navigation className="w-5 h-5" />
-          <span className="text-xs">Directions</span>
+          <span className="text-xs">{t('directions', { ns: 'navigation' })}</span>
         </Button>
 
         <Button
@@ -107,7 +107,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Share2 className="w-5 h-5" />
-          <span className="text-xs">Share</span>
+          <span className="text-xs">{t('share', { ns: 'common' })}</span>
         </Button>
 
         <Button

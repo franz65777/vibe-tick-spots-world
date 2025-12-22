@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Utensils, Coffee, Building, ShoppingBag, GraduationCap, Music, MapPin, TreePine, Dumbbell, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 type CategoryType = 'all' | 'restaurant' | 'bar' | 'cafe' | 'shop' | 'museum' | 'hotel' | 'park' | 'gym' | 'attraction';
 
@@ -28,6 +28,7 @@ const EnhancedCategoryFilter = ({
   selectedCategories = [], 
   onCategoriesChange 
 }: EnhancedCategoryFilterProps) => {
+  const { t } = useTranslation();
   const handleCategoryToggle = (categoryId: CategoryType) => {
     if (categoryId === 'all') {
       onCategoriesChange(['all']);
@@ -82,7 +83,7 @@ const EnhancedCategoryFilter = ({
             className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap min-h-[44px] border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
           >
             <X className="w-4 h-4" />
-            <span className="hidden sm:inline">Clear Filters</span>
+            <span className="hidden sm:inline">{t('clearFilters', { ns: 'common' })}</span>
           </Button>
         )}
       </div>

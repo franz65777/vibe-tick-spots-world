@@ -93,7 +93,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
       <div className="bg-white rounded-t-2xl w-full max-w-md h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold">Comments</h2>
+          <h2 className="text-lg font-semibold">{t('comments', { ns: 'common' })}</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
