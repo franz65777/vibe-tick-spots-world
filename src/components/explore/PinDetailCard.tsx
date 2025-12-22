@@ -837,8 +837,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Opening Hours and Saved By Users Row - Directly under buttons */}
-          <div className="px-4 -mt-2 pb-0">
-            <div className="flex items-center justify-between gap-4">
+          <div className="px-4 -mt-2 pb-0 overflow-visible">
+            <div className="flex items-center justify-between gap-4 overflow-visible">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
                 coordinates={place.coordinates} 
@@ -856,10 +856,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     e.stopPropagation();
                     setSavedByOpen(true);
                   }}
-                  className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity"
+                  className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity overflow-visible"
                 >
                   {savedByUsers.slice(0, 2).map((savedUser) => (
-                    <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background">
+                    <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background overflow-visible">
                       <AvatarImage src={savedUser.avatar_url || undefined} />
                       <AvatarFallback className="text-xs bg-primary/20 text-primary">
                         {savedUser.username?.[0]?.toUpperCase() || 'U'}
@@ -867,7 +867,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     </Avatar>
                   ))}
                   {savedByTotalCount > 2 && (
-                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center overflow-visible">
                       <span className="text-[10px] font-medium text-muted-foreground">+{savedByTotalCount - 2}</span>
                     </div>
                   )}
