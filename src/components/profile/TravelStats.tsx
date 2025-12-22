@@ -1,7 +1,8 @@
-
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useTranslation } from 'react-i18next';
 
 const TravelStats = () => {
+  const { t } = useTranslation();
   const { getStats, loading } = useSavedPlaces();
   const stats = getStats();
 
@@ -12,7 +13,7 @@ const TravelStats = () => {
           <div key={index} className="text-center">
             <div className="text-2xl mb-1">📍</div>
             <div className="text-lg font-bold text-gray-300 animate-pulse">-</div>
-            <div className="text-xs text-gray-300 animate-pulse">Loading...</div>
+            <div className="text-xs text-gray-300 animate-pulse">{t('loading', { ns: 'common' })}</div>
           </div>
         ))}
       </div>
@@ -20,8 +21,8 @@ const TravelStats = () => {
   }
 
   const travelStats = [
-    { label: 'Cities', value: stats.cities.toString(), icon: '📍' },
-    { label: 'Places', value: stats.places.toString(), icon: '🔍' },
+    { label: t('cities', { ns: 'profile' }), value: stats.cities.toString(), icon: '📍' },
+    { label: t('places', { ns: 'profile' }), value: stats.places.toString(), icon: '🔍' },
   ];
 
   return (

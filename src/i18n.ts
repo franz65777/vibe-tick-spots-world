@@ -5596,7 +5596,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour', 'booking', 'reviews'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,
@@ -5607,5 +5607,55 @@ i18n
       lookupLocalStorage: 'i18nextLng',
     },
   });
+
+// Add new comprehensive keys for all languages
+const newKeys = {
+  en: {
+    explore: { noPlacesFoundFor: 'No places found for "{{query}}"', trySearchingCityOrLandmark: 'Try searching for a city or landmark', followUsersToSee: 'Follow some users to see their favorite places here', noPosts: 'No posts found' },
+    booking: { guest: 'Guest', guests: 'Guests', name: 'Name', email: 'Email', phoneNumber: 'Phone Number', specialRequests: 'Special Requests', yourName: 'Your name', yourEmail: 'your@email.com', dietaryRestrictions: 'Dietary restrictions, seating preferences, etc.' },
+    business: { fillAllFields: 'Please fill in all required fields', notificationTitle: 'Notification Title', message: 'Message', enterNotificationTitle: 'Enter notification title...', enterYourMessage: 'Enter your message...' },
+    reviews: { yourReview: 'Your review', shareYourExperience: 'Share your experience at this location...', updateReview: 'Update Review', submitReview: 'Submit Review' },
+    common: { submitting: 'Submitting...', characters: 'characters' },
+    profile: { cities: 'Cities', places: 'Places' },
+  },
+  it: {
+    explore: { noPlacesFoundFor: 'Nessun posto trovato per "{{query}}"', trySearchingCityOrLandmark: 'Prova a cercare una città o un punto di riferimento', followUsersToSee: 'Segui altri utenti per vedere i loro posti preferiti qui', noPosts: 'Nessun post trovato' },
+    booking: { guest: 'Ospite', guests: 'Ospiti', name: 'Nome', email: 'Email', phoneNumber: 'Numero di telefono', specialRequests: 'Richieste speciali', yourName: 'Il tuo nome', yourEmail: 'tua@email.com', dietaryRestrictions: 'Restrizioni alimentari, preferenze di posto, ecc.' },
+    business: { fillAllFields: 'Compila tutti i campi obbligatori', notificationTitle: 'Titolo notifica', message: 'Messaggio', enterNotificationTitle: 'Inserisci titolo notifica...', enterYourMessage: 'Inserisci il tuo messaggio...' },
+    reviews: { yourReview: 'La tua recensione', shareYourExperience: 'Condividi la tua esperienza in questo posto...', updateReview: 'Aggiorna recensione', submitReview: 'Invia recensione' },
+    common: { submitting: 'Invio in corso...', characters: 'caratteri' },
+    profile: { cities: 'Città', places: 'Luoghi' },
+  },
+  es: {
+    explore: { noPlacesFoundFor: 'No se encontraron lugares para "{{query}}"', trySearchingCityOrLandmark: 'Intenta buscar una ciudad o punto de referencia', followUsersToSee: 'Sigue a otros usuarios para ver sus lugares favoritos aquí', noPosts: 'No se encontraron publicaciones' },
+    booking: { guest: 'Invitado', guests: 'Invitados', name: 'Nombre', email: 'Correo', phoneNumber: 'Teléfono', specialRequests: 'Solicitudes especiales', yourName: 'Tu nombre', yourEmail: 'tu@email.com', dietaryRestrictions: 'Restricciones dietéticas, preferencias de asiento, etc.' },
+    business: { fillAllFields: 'Complete todos los campos requeridos', notificationTitle: 'Título de notificación', message: 'Mensaje', enterNotificationTitle: 'Ingrese título...', enterYourMessage: 'Ingrese su mensaje...' },
+    reviews: { yourReview: 'Tu reseña', shareYourExperience: 'Comparte tu experiencia en este lugar...', updateReview: 'Actualizar reseña', submitReview: 'Enviar reseña' },
+    common: { submitting: 'Enviando...', characters: 'caracteres' },
+    profile: { cities: 'Ciudades', places: 'Lugares' },
+  },
+  fr: {
+    explore: { noPlacesFoundFor: 'Aucun lieu trouvé pour "{{query}}"', trySearchingCityOrLandmark: 'Essayez de rechercher une ville ou un point de repère', followUsersToSee: 'Suivez des utilisateurs pour voir leurs lieux favoris ici', noPosts: 'Aucune publication trouvée' },
+    booking: { guest: 'Invité', guests: 'Invités', name: 'Nom', email: 'Email', phoneNumber: 'Téléphone', specialRequests: 'Demandes spéciales', yourName: 'Votre nom', yourEmail: 'votre@email.com', dietaryRestrictions: 'Restrictions alimentaires, préférences de place, etc.' },
+    business: { fillAllFields: 'Veuillez remplir tous les champs obligatoires', notificationTitle: 'Titre de notification', message: 'Message', enterNotificationTitle: 'Entrez le titre...', enterYourMessage: 'Entrez votre message...' },
+    reviews: { yourReview: 'Votre avis', shareYourExperience: 'Partagez votre expérience dans ce lieu...', updateReview: 'Mettre à jour', submitReview: 'Envoyer' },
+    common: { submitting: 'Envoi...', characters: 'caractères' },
+    profile: { cities: 'Villes', places: 'Lieux' },
+  },
+  de: {
+    explore: { noPlacesFoundFor: 'Keine Orte gefunden für "{{query}}"', trySearchingCityOrLandmark: 'Versuche, nach einer Stadt oder Sehenswürdigkeit zu suchen', followUsersToSee: 'Folge anderen Nutzern, um ihre Lieblingsorte hier zu sehen', noPosts: 'Keine Beiträge gefunden' },
+    booking: { guest: 'Gast', guests: 'Gäste', name: 'Name', email: 'E-Mail', phoneNumber: 'Telefonnummer', specialRequests: 'Sonderwünsche', yourName: 'Dein Name', yourEmail: 'deine@email.com', dietaryRestrictions: 'Ernährungseinschränkungen, Sitzplatzpräferenzen, usw.' },
+    business: { fillAllFields: 'Bitte füllen Sie alle Pflichtfelder aus', notificationTitle: 'Benachrichtigungstitel', message: 'Nachricht', enterNotificationTitle: 'Titel eingeben...', enterYourMessage: 'Nachricht eingeben...' },
+    reviews: { yourReview: 'Deine Bewertung', shareYourExperience: 'Teile deine Erfahrung an diesem Ort...', updateReview: 'Aktualisieren', submitReview: 'Absenden' },
+    common: { submitting: 'Wird gesendet...', characters: 'Zeichen' },
+    profile: { cities: 'Städte', places: 'Orte' },
+  },
+};
+
+Object.entries(newKeys).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
 
 export default i18n;

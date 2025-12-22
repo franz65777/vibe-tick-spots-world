@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPostReview, updatePostReview, hasUserReviewedPost, type PostReview } from '@/services/reviewService';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface ReviewModalProps {
   postId: string;
@@ -23,6 +24,7 @@ export const ReviewModal = ({
   onClose,
   onReviewSubmitted,
 }: ReviewModalProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -166,12 +168,12 @@ export const ReviewModal = ({
           {/* Comment */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Your review
+              {t('yourReview', { ns: 'reviews' })}
             </label>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience at this location..."
+              placeholder={t('shareYourExperience', { ns: 'reviews' })}
               className="min-h-[120px] resize-none"
               maxLength={500}
             />
@@ -186,7 +188,7 @@ export const ReviewModal = ({
             disabled={submitting || rating === 0 || comment.trim().length === 0}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl"
           >
-            {submitting ? 'Submitting...' : existingReview ? 'Update Review' : 'Submit Review'}
+            {submitting ? t('submitting', { ns: 'common' }) : existingReview ? t('updateReview', { ns: 'reviews' }) : t('submitReview', { ns: 'reviews' })}
           </Button>
         </div>
       </div>
