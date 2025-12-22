@@ -466,7 +466,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
                         <Trash2 className="w-4 h-4 mr-2" />
-                        Delete post
+                        {t('delete', { ns: 'common' })}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

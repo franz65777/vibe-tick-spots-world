@@ -84,7 +84,9 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-muted-foreground text-sm">Loading notifications…</span>
+                <span className="text-muted-foreground text-sm">
+                  {t('loadingNotifications', { ns: 'notifications' })}
+                </span>
               </div>
             </div>
           ) : notifications.length === 0 ? (
@@ -92,8 +94,12 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
               <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
                 <Bell className="w-7 h-7 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">All caught up!</h3>
-              <p className="text-muted-foreground text-sm">No new notifications</p>
+              <h3 className="font-semibold text-foreground mb-1">
+                {t('allCaughtUp', { ns: 'notifications' })}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {t('noNewNotifications', { ns: 'notifications' })}
+              </p>
             </div>
           ) : (
             <div className="w-full">
