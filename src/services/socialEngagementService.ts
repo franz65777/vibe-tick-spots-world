@@ -537,17 +537,17 @@ export async function addPostComment(
         message: `${message}: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? '...' : ''}"`,
         data: {
           post_id: postId,
-          user_id: userId,
+          user_id: userId,        // actor (who left the comment)
           user_name: profile?.username,
           user_avatar: profile?.avatar_url,
-          comment: trimmed,
+          comment_text: trimmed,  // key expected by MobileNotificationItem
         },
       };
-      
+
       console.log('[addPostComment] Inserting notification:', notificationData);
-      
+
       const { error: notifError } = await supabase.from('notifications').insert(notificationData);
-      
+
       if (notifError) {
         console.error('[addPostComment] Notification insert error:', notifError);
       } else {

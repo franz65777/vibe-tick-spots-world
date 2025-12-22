@@ -46,6 +46,7 @@ const NotificationsPage = () => {
         }
         break;
       case 'like':
+      case 'comment':
         if (notification.data?.post_id) {
           // Open the post directly
           navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
