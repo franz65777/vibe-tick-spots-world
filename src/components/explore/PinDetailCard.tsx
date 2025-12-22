@@ -836,8 +836,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             )}
           </div>
 
-          {/* Opening Hours and Saved By Users Row - Now closer to action buttons */}
-          <div className="px-4 pt-2 pb-3">
+          {/* Opening Hours and Saved By Users Row - Closer to action buttons */}
+          <div className="px-4 pt-1 pb-2">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
@@ -899,41 +899,39 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
           {/* Featured in Lists Section */}
           {!listsLoading && featuredLists.length > 0 && (
-            <div className="px-4 pb-1">
-              <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-3 py-1.5 w-full">
-                <div className="w-full">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
-                  </h4>
-                  <div className="overflow-x-auto scrollbar-hide">
-                    <div className="flex gap-2">
-                      {featuredLists.map((list) => (
-                        <button
-                          key={list.list_id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (list.type === 'folder') {
-                              setSelectedFolderId(list.list_id);
-                              setFolderDetailOpen(true);
-                              setIsListOpen(true);
-                            } else {
-                              setSelectedTripId(list.list_id);
-                              setTripDetailOpen(true);
-                              setIsListOpen(true);
-                            }
-                          }}
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={list.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-foreground">
-                            {list.list_name}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+            <div className="px-4 pb-2">
+              <div className="w-full">
+                <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide text-left">
+                  📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
+                </h4>
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-2">
+                    {featuredLists.map((list) => (
+                      <button
+                        key={list.list_id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (list.type === 'folder') {
+                            setSelectedFolderId(list.list_id);
+                            setFolderDetailOpen(true);
+                            setIsListOpen(true);
+                          } else {
+                            setSelectedTripId(list.list_id);
+                            setTripDetailOpen(true);
+                            setIsListOpen(true);
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                      >
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={list.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-foreground">
+                          {list.list_name}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -941,7 +939,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           )}
 
           {/* Tabs and Content */}
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col mt-1">
             {/* Tab Navigation with Horizontal Scroll */}
             <div 
               className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
@@ -1038,40 +1036,38 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                                 setSelectedPostId(post.id);
                               }
                             }}
-                            className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                            className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow will-change-transform"
                           >
-                            <div className="absolute inset-0">
-                              <img 
-                                src={post.media_urls[0]} 
-                                alt="Post image" 
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                              {/* User Avatar Overlay */}
-                              <div className="absolute top-2 left-2">
-                                <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                                  <AvatarImage src={post.profiles?.avatar_url} />
-                                  <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                    {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </div>
-                              {/* Multiple images indicator */}
-                              {post.media_urls.length > 1 && (
-                                <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                  +{post.media_urls.length - 1}
-                                </div>
-                              )}
-                              {/* Post Caption */}
-                              {post.caption && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5">
-                                  <p className="text-xs text-white line-clamp-2 leading-relaxed">
-                                    {post.caption}
-                                  </p>
-                                </div>
-                              )}
+                            <img 
+                              src={post.media_urls[0]} 
+                              alt="Post image" 
+                              className="absolute inset-0 w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            {/* User Avatar Overlay */}
+                            <div className="absolute top-2 left-2 pointer-events-none">
+                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                                <AvatarImage src={post.profiles?.avatar_url} />
+                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
                             </div>
+                            {/* Multiple images indicator */}
+                            {post.media_urls.length > 1 && (
+                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium pointer-events-none">
+                                +{post.media_urls.length - 1}
+                              </div>
+                            )}
+                            {/* Post Caption */}
+                            {post.caption && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5 pointer-events-none">
+                                <p className="text-xs text-white line-clamp-2 leading-relaxed">
+                                  {post.caption}
+                                </p>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
