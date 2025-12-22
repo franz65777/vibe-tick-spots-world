@@ -5652,7 +5652,87 @@ const newKeys = {
   },
 };
 
+// Additional keys for home, messages, booking
+const moreKeys = {
+  en: {
+    home: { weeklyWinner: 'Weekly Winner', noTrendingLocations: 'No trending locations this week yet!', beFirstToDiscover: 'Be the first to discover something amazing' },
+    messages: { noMessagesYet: 'No messages yet', startConversation: 'Start a conversation with someone', newMessage: 'New Message', noMessagesSentYet: 'No messages sent yet', startConversationsToSee: 'Start conversations to see your sent messages here', noMessagesReceived: 'No messages received', youllSeeMessagesHere: "You'll see messages from others here" },
+    booking: { noReservationsYet: 'No Reservations Yet', bookTableToSee: 'Book a table at your favorite restaurants to see them here', cancelReservationConfirm: 'Cancel your reservation at {{locationName}}?', cancelFailed: 'Failed to cancel reservation', reservationCancelled: 'Reservation cancelled' },
+    common: { noCommentsYet: 'No comments yet. Be the first to share your thoughts!' },
+  },
+  it: {
+    home: { weeklyWinner: 'Vincitore Settimanale', noTrendingLocations: 'Ancora nessun luogo di tendenza questa settimana!', beFirstToDiscover: 'Sii il primo a scoprire qualcosa di fantastico' },
+    messages: { noMessagesYet: 'Ancora nessun messaggio', startConversation: 'Inizia una conversazione con qualcuno', newMessage: 'Nuovo Messaggio', noMessagesSentYet: 'Nessun messaggio inviato', startConversationsToSee: 'Inizia le conversazioni per vedere i messaggi inviati qui', noMessagesReceived: 'Nessun messaggio ricevuto', youllSeeMessagesHere: 'Vedrai i messaggi degli altri qui' },
+    booking: { noReservationsYet: 'Ancora nessuna prenotazione', bookTableToSee: 'Prenota un tavolo nei tuoi ristoranti preferiti per vederli qui', cancelReservationConfirm: 'Annullare la prenotazione a {{locationName}}?', cancelFailed: 'Impossibile annullare la prenotazione', reservationCancelled: 'Prenotazione annullata' },
+    common: { noCommentsYet: 'Ancora nessun commento. Sii il primo a condividere i tuoi pensieri!' },
+  },
+  es: {
+    home: { weeklyWinner: 'Ganador Semanal', noTrendingLocations: '¡Aún no hay lugares en tendencia esta semana!', beFirstToDiscover: 'Sé el primero en descubrir algo increíble' },
+    messages: { noMessagesYet: 'Aún no hay mensajes', startConversation: 'Inicia una conversación con alguien', newMessage: 'Nuevo Mensaje', noMessagesSentYet: 'No hay mensajes enviados', startConversationsToSee: 'Inicia conversaciones para ver tus mensajes enviados aquí', noMessagesReceived: 'No hay mensajes recibidos', youllSeeMessagesHere: 'Verás los mensajes de otros aquí' },
+    booking: { noReservationsYet: 'Sin reservaciones', bookTableToSee: 'Reserva una mesa en tus restaurantes favoritos para verlos aquí', cancelReservationConfirm: '¿Cancelar tu reservación en {{locationName}}?', cancelFailed: 'Error al cancelar reservación', reservationCancelled: 'Reservación cancelada' },
+    common: { noCommentsYet: 'Aún no hay comentarios. ¡Sé el primero en compartir tus pensamientos!' },
+  },
+  fr: {
+    home: { weeklyWinner: 'Gagnant de la Semaine', noTrendingLocations: 'Pas encore de lieux tendance cette semaine !', beFirstToDiscover: 'Soyez le premier à découvrir quelque chose de formidable' },
+    messages: { noMessagesYet: 'Pas encore de messages', startConversation: 'Démarrez une conversation', newMessage: 'Nouveau Message', noMessagesSentYet: 'Aucun message envoyé', startConversationsToSee: 'Démarrez des conversations pour voir vos messages envoyés ici', noMessagesReceived: 'Aucun message reçu', youllSeeMessagesHere: 'Vous verrez les messages des autres ici' },
+    booking: { noReservationsYet: 'Pas encore de réservations', bookTableToSee: 'Réservez une table dans vos restaurants préférés pour les voir ici', cancelReservationConfirm: 'Annuler votre réservation à {{locationName}} ?', cancelFailed: 'Échec de l\'annulation', reservationCancelled: 'Réservation annulée' },
+    common: { noCommentsYet: 'Pas encore de commentaires. Soyez le premier à partager vos pensées !' },
+  },
+  de: {
+    home: { weeklyWinner: 'Wochensieger', noTrendingLocations: 'Diese Woche noch keine trendigen Orte!', beFirstToDiscover: 'Sei der Erste, der etwas Tolles entdeckt' },
+    messages: { noMessagesYet: 'Noch keine Nachrichten', startConversation: 'Starte eine Unterhaltung', newMessage: 'Neue Nachricht', noMessagesSentYet: 'Keine Nachrichten gesendet', startConversationsToSee: 'Starte Unterhaltungen, um deine gesendeten Nachrichten hier zu sehen', noMessagesReceived: 'Keine Nachrichten empfangen', youllSeeMessagesHere: 'Du siehst hier Nachrichten von anderen' },
+    booking: { noReservationsYet: 'Noch keine Reservierungen', bookTableToSee: 'Buche einen Tisch in deinen Lieblingsrestaurants, um sie hier zu sehen', cancelReservationConfirm: 'Reservierung bei {{locationName}} stornieren?', cancelFailed: 'Stornierung fehlgeschlagen', reservationCancelled: 'Reservierung storniert' },
+    common: { noCommentsYet: 'Noch keine Kommentare. Sei der Erste, der seine Gedanken teilt!' },
+  },
+};
+
 Object.entries(newKeys).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
+
+Object.entries(moreKeys).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
+
+// Even more keys for business analytics, explore, common
+const evenMoreKeys = {
+  en: {
+    business: { noPendingRequests: 'No pending requests', pendingRequestsWillAppear: 'Pending business account requests will appear here', growthRate: 'Growth Rate', vsLastMonth: 'vs last month', peakActivityHours: 'Peak Activity Hours', peakActivityDesc: 'Most user activity occurs between 6-9 PM on weekdays', topContentType: 'Top Content Type', topContentDesc: 'Food photos generate 45% more engagement than other content' },
+    explore: { noRecommendations: 'No recommendations available', recommendedForYou: 'Recommended for you' },
+    navigation: { navigateWithWaze: 'Navigate with Waze', navigateWithGoogle: 'Navigate with Google Maps', navigateWithApple: 'Navigate with Apple Maps' },
+    common: { uploading: 'Uploading...', places: 'places' },
+  },
+  it: {
+    business: { noPendingRequests: 'Nessuna richiesta in sospeso', pendingRequestsWillAppear: 'Le richieste di account business in sospeso appariranno qui', growthRate: 'Tasso di crescita', vsLastMonth: 'vs mese scorso', peakActivityHours: 'Ore di punta', peakActivityDesc: 'La maggior parte dell\'attività degli utenti si verifica tra le 18-21 nei giorni feriali', topContentType: 'Tipo di contenuto migliore', topContentDesc: 'Le foto di cibo generano il 45% in più di engagement' },
+    explore: { noRecommendations: 'Nessun suggerimento disponibile', recommendedForYou: 'Consigliati per te' },
+    navigation: { navigateWithWaze: 'Naviga con Waze', navigateWithGoogle: 'Naviga con Google Maps', navigateWithApple: 'Naviga con Apple Maps' },
+    common: { uploading: 'Caricamento...', places: 'luoghi' },
+  },
+  es: {
+    business: { noPendingRequests: 'Sin solicitudes pendientes', pendingRequestsWillAppear: 'Las solicitudes de cuentas de negocio pendientes aparecerán aquí', growthRate: 'Tasa de crecimiento', vsLastMonth: 'vs mes anterior', peakActivityHours: 'Horas pico', peakActivityDesc: 'La mayor actividad ocurre entre 6-9 PM en días laborables', topContentType: 'Mejor tipo de contenido', topContentDesc: 'Las fotos de comida generan 45% más interacción' },
+    explore: { noRecommendations: 'No hay recomendaciones disponibles', recommendedForYou: 'Recomendados para ti' },
+    navigation: { navigateWithWaze: 'Navegar con Waze', navigateWithGoogle: 'Navegar con Google Maps', navigateWithApple: 'Navegar con Apple Maps' },
+    common: { uploading: 'Subiendo...', places: 'lugares' },
+  },
+  fr: {
+    business: { noPendingRequests: 'Aucune demande en attente', pendingRequestsWillAppear: 'Les demandes de compte professionnel en attente apparaîtront ici', growthRate: 'Taux de croissance', vsLastMonth: 'vs mois dernier', peakActivityHours: 'Heures de pointe', peakActivityDesc: 'La plupart des activités ont lieu entre 18h-21h en semaine', topContentType: 'Meilleur type de contenu', topContentDesc: 'Les photos de nourriture génèrent 45% plus d\'engagement' },
+    explore: { noRecommendations: 'Aucune recommandation disponible', recommendedForYou: 'Recommandés pour vous' },
+    navigation: { navigateWithWaze: 'Naviguer avec Waze', navigateWithGoogle: 'Naviguer avec Google Maps', navigateWithApple: 'Naviguer avec Apple Maps' },
+    common: { uploading: 'Téléchargement...', places: 'lieux' },
+  },
+  de: {
+    business: { noPendingRequests: 'Keine ausstehenden Anfragen', pendingRequestsWillAppear: 'Ausstehende Geschäftskonto-Anfragen werden hier angezeigt', growthRate: 'Wachstumsrate', vsLastMonth: 'vs letzten Monat', peakActivityHours: 'Spitzenzeiten', peakActivityDesc: 'Die meiste Nutzeraktivität findet zwischen 18-21 Uhr an Wochentagen statt', topContentType: 'Bester Inhaltstyp', topContentDesc: 'Essensfotos erzeugen 45% mehr Engagement' },
+    explore: { noRecommendations: 'Keine Empfehlungen verfügbar', recommendedForYou: 'Für dich empfohlen' },
+    navigation: { navigateWithWaze: 'Mit Waze navigieren', navigateWithGoogle: 'Mit Google Maps navigieren', navigateWithApple: 'Mit Apple Maps navigieren' },
+    common: { uploading: 'Wird hochgeladen...', places: 'Orte' },
+  },
+};
+
+Object.entries(evenMoreKeys).forEach(([lang, namespaces]) => {
   Object.entries(namespaces).forEach(([ns, values]) => {
     ensureNamespace(lang, ns, values);
   });

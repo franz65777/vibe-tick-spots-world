@@ -113,7 +113,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No comments yet. Be the first to share your thoughts!</p>
+              <p className="text-sm">{t('noCommentsYet', { ns: 'common', defaultValue: 'No comments yet. Be the first to share your thoughts!' })}</p>
             </div>
           ) : (
             <div className="space-y-4">

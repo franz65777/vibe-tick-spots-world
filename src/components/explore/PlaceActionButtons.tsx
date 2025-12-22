@@ -174,7 +174,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
               </div>
               <div className="text-left">
                 <div className="font-semibold">Waze</div>
-                <div className="text-xs text-muted-foreground">Navigate with Waze</div>
+                <div className="text-xs text-muted-foreground">{t('navigateWithWaze', { ns: 'navigation' })}</div>
               </div>
             </Button>
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crown, MapPin, Heart, Bookmark, TrendingUp, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 interface WeeklyWinnerProps {
   location: {
@@ -17,14 +18,16 @@ interface WeeklyWinnerProps {
 }
 
 const WeeklyWinner = ({ location, onLocationClick }: WeeklyWinnerProps) => {
+  const { t } = useTranslation();
+  
   if (!location) {
     return (
       <Card className="relative overflow-hidden bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
         <div className="p-6 text-center">
           <Crown className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Weekly Winner</h3>
-          <p className="text-gray-600">No trending locations this week yet!</p>
-          <p className="text-sm text-gray-500 mt-1">Be the first to discover something amazing</p>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('weeklyWinner', { ns: 'home' })}</h3>
+          <p className="text-gray-600">{t('noTrendingLocations', { ns: 'home' })}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('beFirstToDiscover', { ns: 'home' })}</p>
         </div>
       </Card>
     );
