@@ -302,7 +302,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       )}
 
       {/* Post Actions */}
-      <div className="post-compact-actions space-y-2.5">
+      <div className="post-compact-actions space-y-1.5">
         <PostActions
           postId={postId}
           likesCount={item.likes_count || 0}
@@ -359,8 +359,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
         {/* Caption */}
         {caption && renderCaption()}
 
-        {/* Timestamp */}
-        <p className="text-xs text-muted-foreground text-left">
+        {/* Timestamp - reduced margin */}
+        <p className="text-xs text-muted-foreground text-left mt-0.5">
           {formatPostDate(createdAt, t)}
         </p>
       </div>
