@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, MapPin, TrendingUp } from 'lucide-react';
+import { Globe, TrendingUp, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,7 @@ const CityStatsCard = memo(() => {
   const [topCities, setTopCities] = useState<CityRanking[]>([]);
   const [userCity, setUserCity] = useState<CityRanking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -110,72 +111,100 @@ const CityStatsCard = memo(() => {
   return (
     <div 
       className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 p-5 shadow-sm border border-border/50 cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => navigate('/explore')}
+      onClick={() => !isMinimized && navigate('/explore')}
     >
-      {/* Header with globe */}
+      {/* Header with globe and minimize button */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
             <Globe className="w-4 h-4 text-primary" />
           </div>
         </div>
-        <div className="w-16 h-16 opacity-20">
-          <Globe className="w-full h-full text-primary" />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(!isMinimized);
+            }}
+            className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
+          >
+            {isMinimized ? (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            )}
+          </button>
+          {!isMinimized && (
+            <div className="w-16 h-16 opacity-20">
+              <Globe className="w-full h-full text-primary" />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Title */}
-      <h3 className="text-xl font-bold text-foreground mb-1">
-        {userCity ? t('yourCityGrowing', { defaultValue: 'your city is growing!' }) : t('discoverPlaces', { defaultValue: 'discover places' })}
-      </h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t('curatedByRealPeople', { defaultValue: "we don't scrape places from the internet. 100% curated by real people." })}
-      </p>
-
-      {/* Stats table */}
-      <div className="space-y-2 mb-4">
-        {/* Total places */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-primary" />
-            <span className="font-medium text-muted-foreground uppercase tracking-wide text-xs">{t('totalPlaces', { defaultValue: 'TOTAL PLACES' })}</span>
-          </div>
-          <span className="font-bold text-foreground">{totalPlaces.toLocaleString()}</span>
+      {isMinimized ? (
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-foreground">
+            {t('discoverPlaces', { defaultValue: 'discover places' })}
+          </h3>
+          <span className="text-sm text-muted-foreground">{totalPlaces.toLocaleString()} {t('places', { defaultValue: 'places' })}</span>
         </div>
+      ) : (
+        <>
+          {/* Title */}
+          <h3 className="text-xl font-bold text-foreground mb-1">
+            {userCity ? t('yourCityGrowing', { defaultValue: 'your city is growing!' }) : t('discoverPlaces', { defaultValue: 'discover places' })}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {t('curatedByRealPeople', { defaultValue: "we don't scrape places from the internet. 100% curated by real people." })}
+          </p>
 
-        {/* Top cities */}
-        {topCities.map((city) => (
-          <div key={city.city} className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-4 text-center font-bold text-muted-foreground">#{city.rank}</span>
-              <span className="font-medium text-foreground uppercase tracking-wide text-xs">{city.city}</span>
+          {/* Stats table */}
+          <div className="space-y-2 mb-4">
+            {/* Total places */}
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <span className="font-medium text-muted-foreground uppercase tracking-wide text-xs">{t('totalPlaces', { defaultValue: 'TOTAL PLACES' })}</span>
+              </div>
+              <span className="font-bold text-foreground">{totalPlaces.toLocaleString()}</span>
             </div>
-            <span className="font-bold text-foreground">{city.count.toLocaleString()}</span>
-          </div>
-        ))}
 
-        {/* User's city if not in top 3 */}
-        {userCity && (!userCity.rank || userCity.rank > 3) && (
-          <div className="flex items-center justify-between text-sm pt-1 border-t border-border/50">
-            <div className="flex items-center gap-2">
-              <span className="w-4 text-center font-bold text-muted-foreground">{userCity.rank ? `#${userCity.rank}` : '--'}</span>
-              <span className="font-medium text-primary uppercase tracking-wide text-xs">{userCity.city}</span>
-            </div>
-            <span className="font-bold text-primary">{userCity.count.toLocaleString()}</span>
-          </div>
-        )}
-      </div>
+            {/* Top cities */}
+            {topCities.map((city) => (
+              <div key={city.city} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-4 text-center font-bold text-muted-foreground">#{city.rank}</span>
+                  <span className="font-medium text-foreground uppercase tracking-wide text-xs">{city.city}</span>
+                </div>
+                <span className="font-bold text-foreground">{city.count.toLocaleString()}</span>
+              </div>
+            ))}
 
-      {/* CTA Button */}
-      <button 
-        className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate('/add');
-        }}
-      >
-        {t('startBuilding', { defaultValue: 'start building' })}
-      </button>
+            {/* User's city - always show if available */}
+            {userCity && (
+              <div className={`flex items-center justify-between text-sm ${userCity.rank && userCity.rank <= 3 ? '' : 'pt-1 border-t border-border/50'}`}>
+                <div className="flex items-center gap-2">
+                  <span className="w-4 text-center font-bold text-primary">{userCity.rank ? `#${userCity.rank}` : '--'}</span>
+                  <span className="font-medium text-primary uppercase tracking-wide text-xs">{userCity.city}</span>
+                </div>
+                <span className="font-bold text-primary">{userCity.count.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+
+          {/* CTA Button */}
+          <button 
+            className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/add');
+            }}
+          >
+            {t('startBuilding', { defaultValue: 'start building' })}
+          </button>
+        </>
+      )}
     </div>
   );
 });

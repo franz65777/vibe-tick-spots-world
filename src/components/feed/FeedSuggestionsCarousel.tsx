@@ -134,14 +134,8 @@ const FeedSuggestionsCarousel = memo(() => {
   return (
     <div className="py-4">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 mb-3">
+      <div className="px-4 mb-3">
         <h3 className="font-bold text-foreground">{t('pickedForYou', { defaultValue: 'picked for you' })}</h3>
-        <button 
-          onClick={() => navigate('/explore')}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          {t('viewTheList', { defaultValue: 'view the list' })}
-        </button>
       </div>
 
       {/* Horizontal scroll */}
