@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import FolderDetailModal from '@/components/profile/FolderDetailModal';
 
 const FolderDetailPage = () => {
@@ -7,26 +7,24 @@ const FolderDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Track where we came from (feed, profile, etc.)
+  // Track where we came from and scroll position
   const [originPath, setOriginPath] = useState<string>('/feed');
+  const [scrollPosition, setScrollPosition] = useState<number>(0);
+  const hasHandledOpenLocation = useRef(false);
   
   useEffect(() => {
     // Capture the referrer on first mount
     const state = location.state as any;
     if (state?.from) {
       setOriginPath(state.from);
-    } else {
-      // Try to detect from document referrer or default to feed
-      const referrer = document.referrer;
-      if (referrer.includes('/profile')) {
-        setOriginPath('/profile');
-      } else {
-        setOriginPath('/feed');
-      }
+    }
+    if (state?.scrollY !== undefined) {
+      setScrollPosition(state.scrollY);
     }
     
     // If we have a location to open immediately (from profile modal click)
-    if (state?.openLocation) {
+    if (state?.openLocation && !hasHandledOpenLocation.current) {
+      hasHandledOpenLocation.current = true;
       // Small delay to let the modal render first
       setTimeout(() => {
         handleLocationClick(state.openLocation);
@@ -40,8 +38,13 @@ const FolderDetailPage = () => {
   }
 
   const handleClose = () => {
-    // Navigate back to where we came from
-    navigate(originPath);
+    // Navigate back to where we came from, restoring scroll position if from feed
+    navigate(originPath, { 
+      state: { 
+        restoreScroll: scrollPosition 
+      },
+      replace: true
+    });
   };
 
   const handleLocationClick = (locationData: any) => {
@@ -49,7 +52,8 @@ const FolderDetailPage = () => {
     navigate('/', { 
       state: { 
         selectedLocation: locationData,
-        returnTo: location.pathname
+        returnTo: location.pathname,
+        returnToState: { from: originPath, scrollY: scrollPosition }
       } 
     });
   };

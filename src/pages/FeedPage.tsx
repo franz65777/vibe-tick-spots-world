@@ -1,11 +1,11 @@
-import React, { useEffect, useState, memo, lazy, Suspense } from 'react';
+import React, { useEffect, useState, memo, lazy, Suspense, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronDown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useStories } from '@/hooks/useStories';
@@ -29,13 +29,32 @@ const FeedFriendSaving = lazy(() => import('@/components/feed/FeedFriendSaving')
 const FeedPage = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hasRestoredScroll = useRef(false);
   
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('feed');
   
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
+  
+  // Restore scroll position when returning from folder page
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.restoreScroll !== undefined && !hasRestoredScroll.current) {
+      hasRestoredScroll.current = true;
+      // Small delay to ensure content is rendered
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = state.restoreScroll;
+        }
+      }, 50);
+      // Clear the state to prevent re-scrolling on subsequent renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   // Usa React Query per feed "Per te" - post degli utenti seguiti (esclusi business post)
   const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
@@ -449,7 +468,7 @@ const FeedPage = memo(() => {
         </div>
 
         {/* Feed Content */}
-        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
           {loading ? (
             <div className="py-4 w-full">
               {[1,2,3].map((i) => (
