@@ -341,7 +341,7 @@ const CreateListPage = () => {
   return (
     <div className="fixed inset-0 z-[10001] flex flex-col bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 pt-safe">
+      <div className="flex items-center justify-between px-4 py-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
         <button
           onClick={handleClose}
           className="p-2 hover:bg-accent rounded-full transition-colors"
