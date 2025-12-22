@@ -223,6 +223,10 @@ const MapSection = ({
           mapCenter={mapCenter}
           selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
           onCloseSelectedPlace={() => { 
+            // If it was opened from a list (feed/profile), navigate back to that list
+            if ((selectedPlace as any)?.returnTo) {
+              onClearInitialPlace?.();
+            }
             // If it was a temporary location from SaveLocationPage, navigate back
             if (selectedPlace?.isTemporary) {
               onClearInitialPlace?.();
