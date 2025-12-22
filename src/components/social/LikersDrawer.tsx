@@ -179,7 +179,7 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         if (!open) onClose();
       }}
     >
-      <DrawerContent showHandle={false} className="h-[82vh] max-h-[90vh]">
+      <DrawerContent showHandle={false} className="h-[82vh] max-h-[90vh] z-[4000]" overlayClassName="z-[3999]">
         <DrawerHeader className="border-b-0 pb-2">
           <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-2" />
           <DrawerTitle className="text-center">
