@@ -4,6 +4,7 @@ import { TrendingUp, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import globeAnimation from '@/assets/globe-animation.gif';
 
 interface CityRanking {
@@ -16,6 +17,7 @@ const CityStatsCard = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { location: geoLocation, getCityFromCoordinates } = useGeolocation();
   const [totalPlaces, setTotalPlaces] = useState(0);
   const [topCities, setTopCities] = useState<CityRanking[]>([]);
   const [userCity, setUserCity] = useState<CityRanking | null>(null);
@@ -48,7 +50,7 @@ const CityStatsCard = memo(() => {
           }
         });
 
-        // Sort and get top 3
+        // Sort and rank all cities
         const sortedCities = Object.entries(cityCountMap)
           .sort(([, a], [, b]) => b - a)
           .map(([city, count], idx) => ({
@@ -59,18 +61,32 @@ const CityStatsCard = memo(() => {
 
         setTopCities(sortedCities.slice(0, 3));
 
-        // Get user's current city from profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('current_city')
-          .eq('id', user.id)
-          .single();
+        // Get user's current city from geolocation or profile
+        let currentCityName: string | null = null;
+        
+        // First try geolocation
+        if (geoLocation?.city) {
+          currentCityName = geoLocation.city;
+        } else if (geoLocation?.latitude && geoLocation?.longitude) {
+          // Try to get city from coordinates
+          currentCityName = await getCityFromCoordinates(geoLocation.latitude, geoLocation.longitude);
+        }
+        
+        // Fallback to profile
+        if (!currentCityName) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('current_city')
+            .eq('id', user.id)
+            .single();
+          currentCityName = profile?.current_city || null;
+        }
 
-        if (profile?.current_city) {
-          const userCityCount = cityCountMap[profile.current_city] || 0;
-          const userCityRank = sortedCities.findIndex(c => c.city === profile.current_city) + 1;
+        if (currentCityName) {
+          const userCityCount = cityCountMap[currentCityName] || 0;
+          const userCityRank = sortedCities.findIndex(c => c.city.toLowerCase() === currentCityName!.toLowerCase()) + 1;
           setUserCity({
-            city: profile.current_city,
+            city: currentCityName,
             count: userCityCount,
             rank: userCityRank > 0 ? userCityRank : null
           });
@@ -99,7 +115,7 @@ const CityStatsCard = memo(() => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, geoLocation?.city, geoLocation?.latitude, geoLocation?.longitude]);
 
   if (loading) {
     return (
@@ -152,7 +168,7 @@ const CityStatsCard = memo(() => {
             {userCity ? t('yourCityGrowing', { defaultValue: 'your city is growing!' }) : t('discoverPlaces', { defaultValue: 'discover places' })}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {t('curatedByRealPeople', { defaultValue: "we don't scrape places from the internet. 100% curated by real people." })}
+            {t('curatedByPeople', { defaultValue: 'every place is saved by real users. no scraped data, just authentic recommendations.' })}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -192,7 +208,7 @@ const CityStatsCard = memo(() => {
         ))}
 
         {/* User's city - always show if available, highlighted */}
-        {userCity && !topCities.some(c => c.city === userCity.city) && (
+        {userCity && !topCities.some(c => c.city.toLowerCase() === userCity.city.toLowerCase()) && (
           <div className="flex items-center justify-between text-sm pt-1 border-t border-border/50">
             <div className="flex items-center gap-2">
               <span className="w-4 text-center font-bold text-primary">{userCity.rank ? `#${userCity.rank}` : '--'}</span>
