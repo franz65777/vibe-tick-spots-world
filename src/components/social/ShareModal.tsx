@@ -80,11 +80,14 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
 
   const handleSend = async () => {
     if (selected.size === 0) return;
-    
+
     setSending(true);
     try {
       const success = await onShare(Array.from(selected));
       if (success) {
+        toast({
+          title: t('add.postShared', { defaultValue: 'Post condiviso con successo!' }),
+        });
         onClose();
       }
     } finally {

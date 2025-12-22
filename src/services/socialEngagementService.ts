@@ -351,6 +351,9 @@ export async function addPostComment(
 
     if (error) throw error;
 
+    // Notifica immediata all'UI (count live senza refresh)
+    emitPostEngagementUpdate({ postId, commentsDelta: 1 });
+
     // Update comments count on post
     const { data: postData } = await supabase
       .from('posts')
@@ -419,7 +422,7 @@ export async function addPostComment(
 }
 
 export async function deletePostComment(
-  commentId: string, 
+  commentId: string,
   userId: string,
   successMessage?: string,
   errorMessage?: string
@@ -442,6 +445,9 @@ export async function deletePostComment(
       .eq('user_id', userId);
 
     if (error) throw error;
+
+    // Notifica immediata all'UI (count live senza refresh)
+    emitPostEngagementUpdate({ postId: comment.post_id, commentsDelta: -1 });
 
     // Update comments count on post
     const { data: post } = await supabase
@@ -497,16 +503,16 @@ export async function sharePost(
       .single();
 
     // Send to each recipient
-    const messages = recipientIds.map(recipientId => ({
+    const messages = recipientIds.map((recipientId) => ({
       sender_id: userId,
       receiver_id: recipientId,
-      message_type: 'post',
+      message_type: 'post_share',
       shared_content: {
         post_id: postId,
         caption: post.caption,
         media_urls: post.media_urls,
       },
-      content: `${sender?.username || 'Someone'} shared a post with you`,
+      content: null,
     }));
 
     const { error: msgError } = await supabase
@@ -521,6 +527,8 @@ export async function sharePost(
       .insert({ user_id: userId, post_id: postId });
 
     if (shareError) console.warn('Share count error:', shareError);
+
+    emitPostEngagementUpdate({ postId, sharesDelta: 1 });
 
     toast.success(`Post shared with ${recipientIds.length} ${recipientIds.length === 1 ? 'person' : 'people'}`);
     return true;
