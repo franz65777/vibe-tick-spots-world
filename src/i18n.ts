@@ -10,6 +10,7 @@ import { signupTranslations } from './i18n-signup';
 import { createListTranslations } from './i18n-create-list';
 import { guidedTourTranslations } from './i18n-guided-tour';
 import { coreUiTranslations } from './i18n-core-ui';
+import { extendedLanguageTranslations } from './i18n-extended-languages';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -5447,14 +5448,44 @@ ensureNamespace('de', 'navigation', { explore: 'Entdecken', search: 'Suche', add
 ensureNamespace('pt', 'navigation', { explore: 'Explorar', search: 'Pesquisar', add: 'Adicionar', feed: 'Feed', profile: 'Perfil' });
 ensureNamespace('tr', 'navigation', { explore: 'Keşfet', search: 'Ara', add: 'Ekle', feed: 'Akış', profile: 'Profil' });
 
-// Add Chinese (zh) as the 12th language
-// Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
-/* resources.zh = {
-  ...authTranslationsExtended.zh,
-  common: {
-    ...resources.en.common  // Temporary: copy from English, will be translated later
-  }
-}; */
+// Add extended language translations (zh-CN, ja, ko, ar, ru)
+Object.entries(extendedLanguageTranslations).forEach(([lang, translations]) => {
+  Object.entries(translations).forEach(([ns, nsTranslations]) => {
+    ensureNamespace(lang, ns, nsTranslations as Record<string, unknown>);
+  });
+});
+
+// Add common keys for all 12 languages
+const commonKeys = {
+  accept: { en: 'Accept', it: 'Accetta', es: 'Aceptar', fr: 'Accepter', de: 'Akzeptieren', pt: 'Aceitar', tr: 'Kabul Et', 'zh-CN': '接受', ja: '承認', ko: '수락', ar: 'قبول', ru: 'Принять' },
+  decline: { en: 'Decline', it: 'Rifiuta', es: 'Rechazar', fr: 'Refuser', de: 'Ablehnen', pt: 'Recusar', tr: 'Reddet', 'zh-CN': '拒绝', ja: '拒否', ko: '거절', ar: 'رفض', ru: 'Отклонить' },
+  block: { en: 'Block', it: 'Blocca', es: 'Bloquear', fr: 'Bloquer', de: 'Blockieren', pt: 'Bloquear', tr: 'Engelle', 'zh-CN': '拉黑', ja: 'ブロック', ko: '차단', ar: 'حظر', ru: 'Заблокировать' },
+  level: { en: 'Level', it: 'Livello', es: 'Nivel', fr: 'Niveau', de: 'Level', pt: 'Nível', tr: 'Seviye', 'zh-CN': '等级', ja: 'レベル', ko: '레벨', ar: 'المستوى', ru: 'Уровень' },
+  pts: { en: 'pts', it: 'pti', es: 'pts', fr: 'pts', de: 'Pkt', pt: 'pts', tr: 'puan', 'zh-CN': '积分', ja: 'ポイント', ko: '포인트', ar: 'نقاط', ru: 'очков' },
+  best: { en: 'Best', it: 'Record', es: 'Mejor', fr: 'Record', de: 'Beste', pt: 'Melhor', tr: 'En İyi', 'zh-CN': '最佳', ja: 'ベスト', ko: '최고', ar: 'الأفضل', ru: 'Лучший' },
+  dayStreak: { en: '{{count}} day streak', it: '{{count}} giorni consecutivi', es: '{{count}} días seguidos', fr: '{{count}} jours consécutifs', de: '{{count}} Tage Streak', pt: '{{count}} dias seguidos', tr: '{{count}} gün seri', 'zh-CN': '{{count}}天连续', ja: '{{count}}日連続', ko: '{{count}}일 연속', ar: '{{count}} يوم متتالي', ru: '{{count}} дней подряд' },
+  noUserRecommendations: { en: 'No user recommendations available', it: 'Nessun utente consigliato', es: 'Sin recomendaciones de usuarios', fr: 'Aucune recommandation disponible', de: 'Keine Benutzerempfehlungen', pt: 'Sem recomendações de usuários', tr: 'Kullanıcı önerisi yok', 'zh-CN': '暂无用户推荐', ja: 'ユーザーのおすすめはありません', ko: '추천 사용자가 없습니다', ar: 'لا توجد توصيات للمستخدمين', ru: 'Нет рекомендаций пользователей' },
+  peopleYouMightLike: { en: 'People you might like', it: 'Persone che potrebbero piacerti', es: 'Personas que te pueden gustar', fr: 'Personnes que vous pourriez aimer', de: 'Personen, die dir gefallen könnten', pt: 'Pessoas que você pode gostar', tr: 'Beğenebileceğin kişiler', 'zh-CN': '你可能喜欢的人', ja: 'おすすめのユーザー', ko: '팔로우하면 좋은 사람들', ar: 'أشخاص قد تعجبك', ru: 'Вам могут понравиться' },
+  message: { en: 'Message', it: 'Messaggio', es: 'Mensaje', fr: 'Message', de: 'Nachricht', pt: 'Mensagem', tr: 'Mesaj', 'zh-CN': '发消息', ja: 'メッセージ', ko: '메시지', ar: 'رسالة', ru: 'Сообщение' },
+};
+
+Object.entries(commonKeys).forEach(([key, translations]) => {
+  Object.entries(translations).forEach(([lang, value]) => {
+    ensureNamespace(lang, 'common', { [key]: value });
+  });
+});
+
+// Settings translations for all 12 languages
+const settingsKeys = {
+  friendRequests: { en: 'Friend Requests', it: 'Richieste di amicizia', es: 'Solicitudes de amistad', fr: 'Demandes d\'amis', de: 'Freundschaftsanfragen', pt: 'Solicitações de amizade', tr: 'Arkadaşlık istekleri', 'zh-CN': '好友请求', ja: '友達リクエスト', ko: '친구 요청', ar: 'طلبات الصداقة', ru: 'Запросы в друзья' },
+  noFriendRequests: { en: 'No pending friend requests', it: 'Nessuna richiesta in sospeso', es: 'Sin solicitudes pendientes', fr: 'Aucune demande en attente', de: 'Keine ausstehenden Anfragen', pt: 'Sem solicitações pendentes', tr: 'Bekleyen istek yok', 'zh-CN': '暂无好友请求', ja: '友達リクエストはありません', ko: '친구 요청이 없습니다', ar: 'لا توجد طلبات صداقة', ru: 'Нет запросов в друзья' },
+};
+
+Object.entries(settingsKeys).forEach(([key, translations]) => {
+  Object.entries(translations).forEach(([lang, value]) => {
+    ensureNamespace(lang, 'settings', { [key]: value });
+  });
+});
 
 i18n
   .use(LanguageDetector)

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Crown, Star, Trophy, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSuperUser } from '@/hooks/useSuperUser';
 import fireIcon from '@/assets/fire-icon-3d.png';
 
 const SuperUserBadge = () => {
+  const { t } = useTranslation();
   const { superUser, isElite, levelProgress } = useSuperUser();
 
   if (!superUser) return null;
@@ -32,8 +34,8 @@ const SuperUserBadge = () => {
       <div className="relative">
         <div className={`bg-gradient-to-r ${getBadgeColor()} text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 text-sm font-medium`}>
           <Icon className="w-4 h-4" />
-          <span>Level {superUser.level}</span>
-          <span className="text-xs opacity-90">{superUser.points}pts</span>
+          <span>{t('common:level', { defaultValue: 'Level' })} {superUser.level}</span>
+          <span className="text-xs opacity-90">{superUser.points}{t('common:pts', { defaultValue: 'pts' })}</span>
         </div>
         
         {/* Level progress bar */}
@@ -56,9 +58,9 @@ const SuperUserBadge = () => {
       {currentStreak > 0 && (
         <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-xs font-semibold shadow">
           <img src={fireIcon} alt="fire" className="w-4 h-4" style={{ transform: 'scaleX(0.85)' }} />
-          <span>{currentStreak} day streak</span>
+          <span>{t('common:dayStreak', { count: currentStreak, defaultValue: '{{count}} day streak' })}</span>
           {longestStreak > currentStreak && (
-            <span className="opacity-75">• Best: {longestStreak}</span>
+            <span className="opacity-75">• {t('common:best', { defaultValue: 'Best' })}: {longestStreak}</span>
           )}
         </div>
       )}
