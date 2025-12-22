@@ -3,12 +3,13 @@ import { Drawer } from 'vaul';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, X, Search, Link as LinkIcon, Plus, Share2, MessageCircle } from 'lucide-react';
+import { Loader2, Search, Link as LinkIcon, Plus, Share2, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFrequentContacts } from '@/hooks/useFrequentContacts';
+import { useTranslation } from 'react-i18next';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface ShareModalProps {
 
 export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -95,14 +97,14 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
     try {
       await navigator.clipboard.writeText(postUrl);
       toast({
-        title: "Link copiato",
-        description: "Il link è stato copiato negli appunti",
+        title: t('linkCopied', { ns: 'common', defaultValue: 'Link copied' }),
+        description: t('linkCopiedDesc', { ns: 'common', defaultValue: 'The link has been copied to clipboard' }),
       });
       onClose();
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile copiare il link",
+        title: t('error', { ns: 'common', defaultValue: 'Error' }),
+        description: t('copyLinkFailed', { ns: 'common', defaultValue: 'Unable to copy link' }),
         variant: "destructive",
       });
     }
@@ -110,7 +112,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
 
   const handleWhatsAppShare = () => {
     const postUrl = `${window.location.origin}/post/${postId}`;
-    const text = encodeURIComponent(`Guarda questo post su Spott: ${postUrl}`);
+    const text = encodeURIComponent(t('checkThisPost', { ns: 'common', defaultValue: 'Check this post on Spott' }) + `: ${postUrl}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
     onClose();
   };
@@ -123,7 +125,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-[3100]" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[3101] bg-background rounded-t-3xl flex flex-col max-h-[50vh] outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[3101] bg-background rounded-t-3xl flex flex-col max-h-[70vh] outline-none pb-safe">
           <style>{`
             [data-vaul-drawer-wrapper] { z-index: 3101 !important; }
             body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
@@ -136,17 +138,8 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
             {showUserList ? (
             <>
               {/* User selection view */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8 rounded-full"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-                <h3 className="font-semibold text-base">Condividi su</h3>
-                <div className="w-8" />
+              <div className="flex items-center justify-center px-4 py-3 shrink-0">
+                <h3 className="font-semibold text-base">{t('shareTo', { ns: 'common', defaultValue: 'Share' })}</h3>
               </div>
 
               <div className="px-4 py-3">
@@ -155,7 +148,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                   <Input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Cerca"
+                    placeholder={t('search', { ns: 'common', defaultValue: 'Search' })}
                     className="pl-10 rounded-full bg-muted border-0"
                   />
                 </div>
@@ -174,10 +167,10 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                         <div className="flex items-center gap-2 mb-3 px-1">
                           <MessageCircle className="w-4 h-4 text-muted-foreground" />
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            Contatti frequenti
+                            {t('frequentContacts', { ns: 'common', defaultValue: 'Frequent contacts' })}
                           </h4>
                         </div>
-                         <div className="grid grid-cols-4 gap-4 pb-4 border-b border-border">
+                         <div className="grid grid-cols-4 gap-4 pb-4">
                            {frequentContacts.slice(0, 4).map((contact) => (
                             <button
                               key={contact.id}
@@ -210,7 +203,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     {filteredUsers.length === 0 ? (
                   <div className="text-center py-16 px-4">
                     <p className="text-muted-foreground text-sm mb-6">
-                      {query ? 'Nessun utente trovato' : 'Segui persone per condividere con loro'}
+                      {query ? t('noUsersFound', { ns: 'common', defaultValue: 'No users found' }) : t('followPeopleToShare', { ns: 'common', defaultValue: 'Follow people to share with them' })}
                     </p>
                     {/* Quick share actions when no users */}
                     <div className="flex justify-center gap-8 mt-8">
@@ -232,7 +225,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center shadow-lg">
                           <LinkIcon className="w-7 h-7 text-foreground" />
                         </div>
-                        <span className="text-xs font-medium">Copia link</span>
+                        <span className="text-xs font-medium">{t('copyLink', { ns: 'common', defaultValue: 'Copy link' })}</span>
                       </button>
                     </div>
                   </div>
@@ -240,7 +233,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                       <>
                          {!query && frequentContacts.length > 0 && (
                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 mt-6">
-                             Tutti i contatti
+                             {t('allContacts', { ns: 'common', defaultValue: 'All contacts' })}
                            </h4>
                          )}
                          <div className="grid grid-cols-4 gap-4 pb-4">
@@ -276,7 +269,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
               </ScrollArea>
 
               {selected.size > 0 && (
-                <div className="p-4 border-t shrink-0">
+                <div className="p-4 shrink-0">
                   <Button
                     onClick={handleSend}
                     disabled={sending}
@@ -285,11 +278,11 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     {sending ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Invio...
+                        {t('sending', { ns: 'common', defaultValue: 'Sending...' })}
                       </>
                     ) : (
                       <>
-                        Invia {selected.size > 0 && `(${selected.size})`}
+                        {t('send', { ns: 'common', defaultValue: 'Send' })} {selected.size > 0 && `(${selected.size})`}
                       </>
                     )}
                   </Button>
@@ -322,7 +315,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
                       <LinkIcon className="w-6 h-6 text-foreground" />
                     </div>
-                    <span className="text-xs font-medium">Copia link</span>
+                    <span className="text-xs font-medium">{t('copyLink', { ns: 'common', defaultValue: 'Copy link' })}</span>
                   </button>
 
                   {/* Add to Story */}
@@ -333,7 +326,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
                       <Plus className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-xs font-medium">Aggiungi alla storia</span>
+                    <span className="text-xs font-medium">{t('addToStory', { ns: 'common', defaultValue: 'Add to story' })}</span>
                   </button>
 
                   {/* Share to... */}
@@ -344,7 +337,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
                       <Share2 className="w-6 h-6 text-foreground" />
                     </div>
-                    <span className="text-xs font-medium text-center leading-tight">Condividi su...</span>
+                    <span className="text-xs font-medium text-center leading-tight">{t('shareToContacts', { ns: 'common', defaultValue: 'Share to...' })}</span>
                   </button>
                 </div>
               </div>
