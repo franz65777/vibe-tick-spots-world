@@ -35,7 +35,7 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
       // Mock API call - replace with actual implementation
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      toast.success(`Notification sent to ${savedByCount} users!`);
+      toast.success(t('notificationSentToUsers', { ns: 'business', count: savedByCount, defaultValue: 'Notification sent to {{count}} users!' }));
       setNotificationData({
         title: '',
         message: '',
@@ -44,7 +44,7 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
       });
       setShowPreview(false);
     } catch (error) {
-      toast.error('Failed to send notification');
+      toast.error(t('failedToSendNotification', { ns: 'business', defaultValue: 'Failed to send notification' }));
     } finally {
       setSending(false);
     }

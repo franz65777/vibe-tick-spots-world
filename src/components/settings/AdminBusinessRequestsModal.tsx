@@ -133,12 +133,12 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-business-requests'] });
-      toast.success('Business request approved successfully');
+      toast.success(t('businessRequestApproved', { ns: 'settings', defaultValue: 'Business request approved successfully' }));
       setSelectedRequest(null);
       setApproveDialogOpen(false);
     },
     onError: (error) => {
-      toast.error('Failed to approve request: ' + error.message);
+      toast.error(t('failedToApproveRequest', { ns: 'settings', defaultValue: 'Failed to approve request' }) + ': ' + error.message);
     },
   });
 
@@ -175,12 +175,12 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-business-requests'] });
-      toast.success('Business request rejected');
+      toast.success(t('businessRequestRejected', { ns: 'settings', defaultValue: 'Business request rejected' }));
       setSelectedRequest(null);
       setRejectDialogOpen(false);
     },
     onError: (error) => {
-      toast.error('Failed to reject request: ' + error.message);
+      toast.error(t('failedToRejectRequest', { ns: 'settings', defaultValue: 'Failed to reject request' }) + ': ' + error.message);
     },
   });
 

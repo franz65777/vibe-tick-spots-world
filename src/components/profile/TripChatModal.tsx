@@ -152,7 +152,7 @@ const TripChatModal = ({ tripId, tripName, isOpen, onClose }: TripChatModalProps
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error(t('failedToSendMessage', { ns: 'notifications', defaultValue: 'Failed to send message' }));
     } finally {
       setLoading(false);
     }

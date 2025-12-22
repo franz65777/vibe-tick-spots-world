@@ -162,7 +162,9 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
               </div>
               <div className="text-left">
                 <div className="font-semibold">Apple Maps</div>
-                <div className="text-xs text-muted-foreground">Navigate with Apple Maps</div>
+                <div className="text-xs text-muted-foreground">
+                  {t('navigation.navigateWithApple', { defaultValue: 'Navigate with Apple Maps' })}
+                </div>
               </div>
             </Button>
 

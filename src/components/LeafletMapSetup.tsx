@@ -965,12 +965,12 @@ const LeafletMapSetup = ({
         console.error('Error updating notifications:', notifError);
       }
       
-      toast.success('Condivisione posizione terminata');
+      toast.success(t('locationSharingEnded', { ns: 'common', defaultValue: 'Location sharing ended' }));
       refetchShares();
       setUserActiveShare(null);
     } catch (error) {
       console.error('Error ending share:', error);
-      toast.error('Errore terminando la condivisione');
+      toast.error(t('errorEndingShare', { ns: 'common', defaultValue: 'Error ending share' }));
     }
   };
 
