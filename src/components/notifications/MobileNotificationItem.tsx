@@ -336,8 +336,8 @@ const MobileNotificationItem = ({
   // Profile data is already fetched on mount and cached, which is sufficient for notifications
 
   const handleClick = () => {
-    // Handle grouped likes - navigate to post
-    if (notification.type === 'like' && notification.data?.post_id) {
+    // Handle grouped likes or comments - navigate to post
+    if ((notification.type === 'like' || notification.type === 'comment') && notification.data?.post_id) {
       navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
       return;
     }
