@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
+import { useTranslation } from 'react-i18next';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface NotificationsModalProps {
 }
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
 
@@ -57,7 +59,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-xl text-foreground">Notifications</h3>
+            <h3 className="font-bold text-xl text-foreground">{t('notifications', { ns: 'common' })}</h3>
             {unreadCount > 0 && (
               <div className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-[20px] text-center">
                 {unreadCount}

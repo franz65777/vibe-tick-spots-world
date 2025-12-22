@@ -13,7 +13,7 @@ const SignupDetails: React.FC = () => {
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [gender, setGender] = useState('');
 
-  useEffect(() => { document.title = 'Details - Spott'; }, []);
+  useEffect(() => { document.title = t('signup:detailsTitle', { defaultValue: 'Details - Spott' }); }, [t]);
   
   useEffect(() => {
     const session = sessionStorage.getItem('signup_session');
