@@ -334,8 +334,8 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         {/* Featured in Lists Section */}
         {!listsLoading && featuredLists.length > 0 && (
           <div className="mt-3 pt-3 border-t border-border">
-            <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-              📌 Featured in Lists
+            <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide text-left">
+              📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
             </h4>
             <div className="overflow-x-auto">
               <div className="flex gap-2 pb-2">

@@ -139,7 +139,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
             <>
               {/* User selection view */}
               <div className="flex items-center justify-center px-4 py-3 shrink-0">
-                <h3 className="font-semibold text-base">{t('shareTo', { ns: 'common', defaultValue: 'Share' })}</h3>
+                <h3 className="font-semibold text-base">{t('share', { ns: 'common', defaultValue: 'Share' })}</h3>
               </div>
 
               <div className="px-4 py-3">
@@ -167,7 +167,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                         <div className="flex items-center gap-2 mb-3 px-1">
                           <MessageCircle className="w-4 h-4 text-muted-foreground" />
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            {t('frequentContacts', { ns: 'common', defaultValue: 'Frequent contacts' })}
+                            {t('frequentContacts', { ns: 'messages', defaultValue: 'Frequent contacts' })}
                           </h4>
                         </div>
                          <div className="grid grid-cols-4 gap-4 pb-4">
@@ -203,7 +203,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     {filteredUsers.length === 0 ? (
                   <div className="text-center py-16 px-4">
                     <p className="text-muted-foreground text-sm mb-6">
-                      {query ? t('noUsersFound', { ns: 'common', defaultValue: 'No users found' }) : t('followPeopleToShare', { ns: 'common', defaultValue: 'Follow people to share with them' })}
+                      {query ? t('noUsersFound', { ns: 'messages', defaultValue: 'No users found' }) : t('followPeoplePrompt', { ns: 'messages', defaultValue: 'Follow people to share with them' })}
                     </p>
                     {/* Quick share actions when no users */}
                     <div className="flex justify-center gap-8 mt-8">
@@ -231,9 +231,9 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                   </div>
                     ) : (
                       <>
-                         {!query && frequentContacts.length > 0 && (
+                       {!query && frequentContacts.length > 0 && (
                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 mt-6">
-                             {t('allContacts', { ns: 'common', defaultValue: 'All contacts' })}
+                             {t('allContacts', { ns: 'messages', defaultValue: 'All contacts' })}
                            </h4>
                          )}
                          <div className="grid grid-cols-4 gap-4 pb-4">
@@ -326,7 +326,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
                       <Plus className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-xs font-medium">{t('addToStory', { ns: 'common', defaultValue: 'Add to story' })}</span>
+                    <span className="text-xs font-medium">{t('createStory', { ns: 'common', defaultValue: 'Add to story' })}</span>
                   </button>
 
                   {/* Share to... */}
@@ -337,7 +337,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
                       <Share2 className="w-6 h-6 text-foreground" />
                     </div>
-                    <span className="text-xs font-medium text-center leading-tight">{t('shareToContacts', { ns: 'common', defaultValue: 'Share to...' })}</span>
+                    <span className="text-xs font-medium text-center leading-tight">{t('share', { ns: 'common', defaultValue: 'Share to...' })}</span>
                   </button>
                 </div>
               </div>

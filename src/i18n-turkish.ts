@@ -53,6 +53,7 @@ export const turkishTranslations = {
       updateLocation: 'Güncelle',
       search: 'Ara',
       linkCopied: 'Bağlantı panoya kopyalandı!',
+      copyLink: 'Bağlantıyı kopyala',
       locationShared: 'Konum paylaşıldı!',
       listShared: 'Liste paylaşıldı!',
       tripShared: 'Gezi paylaşıldı!',
