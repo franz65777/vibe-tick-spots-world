@@ -45,6 +45,7 @@ export const PostActions = ({
   const { isLiked, likeCount, toggleLike, comments } = useSocialEngagement(postId);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
   const [localCommentsCount, setLocalCommentsCount] = useState(commentsCount);
+  const [localSharesCount, setLocalSharesCount] = useState(sharesCount);
   const [isLocationSaved, setIsLocationSaved] = useState(false);
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
   const [showLikersModal, setShowLikersModal] = useState(false);
@@ -69,6 +70,11 @@ export const PostActions = ({
       setLocalCommentsCount(commentsCount);
     }
   }, [comments?.length, commentsCount]);
+
+  // Sync shares count
+  useEffect(() => {
+    setLocalSharesCount(sharesCount);
+  }, [sharesCount]);
 
   // Load location save status
   useEffect(() => {
@@ -327,7 +333,7 @@ export const PostActions = ({
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <Share2 className="w-5 h-5" />
-        <span className="text-sm font-semibold">{sharesCount || 0}</span>
+        <span className="text-sm font-semibold">{localSharesCount || 0}</span>
       </button>
 
       {/* Pin/Save button with dropdown */}
