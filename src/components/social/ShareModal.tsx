@@ -85,9 +85,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
     try {
       const success = await onShare(Array.from(selected));
       if (success) {
-        toast({
-          title: t('add.postShared', { defaultValue: 'Post condiviso con successo!' }),
-        });
+        // Toast is shown by the service with i18n
         onClose();
       }
     } finally {
