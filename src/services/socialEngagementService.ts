@@ -23,78 +23,117 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     new_like_message: '{{username}} liked your post',
     new_comment_title: 'New comment',
     new_comment_message: '{{username}} commented on your post',
+    post_shared: 'Post shared with {{count}} {{people}}',
+    person: 'person',
+    people: 'people',
   },
   it: {
     new_like_title: 'Nuovo mi piace',
     new_like_message: '{{username}} ha messo mi piace al tuo post',
     new_comment_title: 'Nuovo commento',
     new_comment_message: '{{username}} ha commentato il tuo post',
+    post_shared: 'Post condiviso con {{count}} {{people}}',
+    person: 'persona',
+    people: 'persone',
   },
   es: {
     new_like_title: 'Nuevo me gusta',
     new_like_message: '{{username}} le dio me gusta a tu publicación',
     new_comment_title: 'Nuevo comentario',
     new_comment_message: '{{username}} comentó en tu publicación',
+    post_shared: 'Publicación compartida con {{count}} {{people}}',
+    person: 'persona',
+    people: 'personas',
   },
   fr: {
     new_like_title: 'Nouveau j\'aime',
     new_like_message: '{{username}} a aimé votre publication',
     new_comment_title: 'Nouveau commentaire',
     new_comment_message: '{{username}} a commenté votre publication',
+    post_shared: 'Publication partagée avec {{count}} {{people}}',
+    person: 'personne',
+    people: 'personnes',
   },
   de: {
     new_like_title: 'Neues Like',
     new_like_message: '{{username}} gefällt dein Beitrag',
     new_comment_title: 'Neuer Kommentar',
     new_comment_message: '{{username}} hat deinen Beitrag kommentiert',
+    post_shared: 'Beitrag mit {{count}} {{people}} geteilt',
+    person: 'Person',
+    people: 'Personen',
   },
   pt: {
     new_like_title: 'Nova curtida',
     new_like_message: '{{username}} curtiu sua publicação',
     new_comment_title: 'Novo comentário',
     new_comment_message: '{{username}} comentou na sua publicação',
+    post_shared: 'Publicação compartilhada com {{count}} {{people}}',
+    person: 'pessoa',
+    people: 'pessoas',
   },
   zh: {
     new_like_title: '新点赞',
     new_like_message: '{{username}} 点赞了你的帖子',
     new_comment_title: '新评论',
     new_comment_message: '{{username}} 评论了你的帖子',
+    post_shared: '帖子已分享给 {{count}} {{people}}',
+    person: '人',
+    people: '人',
   },
   ja: {
     new_like_title: '新しいいいね',
     new_like_message: '{{username}}があなたの投稿にいいねしました',
     new_comment_title: '新しいコメント',
     new_comment_message: '{{username}}があなたの投稿にコメントしました',
+    post_shared: '{{count}}{{people}}に投稿を共有しました',
+    person: '人',
+    people: '人',
   },
   ko: {
     new_like_title: '새 좋아요',
     new_like_message: '{{username}}님이 게시물을 좋아합니다',
     new_comment_title: '새 댓글',
     new_comment_message: '{{username}}님이 댓글을 남겼습니다',
+    post_shared: '{{count}}{{people}}에게 공유됨',
+    person: '명',
+    people: '명',
   },
   ar: {
     new_like_title: 'إعجاب جديد',
     new_like_message: '{{username}} أعجب بمنشورك',
     new_comment_title: 'تعليق جديد',
     new_comment_message: '{{username}} علق على منشورك',
+    post_shared: 'تمت مشاركة المنشور مع {{count}} {{people}}',
+    person: 'شخص',
+    people: 'أشخاص',
   },
   hi: {
     new_like_title: 'नई लाइक',
     new_like_message: '{{username}} ने आपकी पोस्ट को लाइक किया',
     new_comment_title: 'नई टिप्पणी',
     new_comment_message: '{{username}} ने आपकी पोस्ट पर टिप्पणी की',
+    post_shared: 'पोस्ट {{count}} {{people}} के साथ साझा की गई',
+    person: 'व्यक्ति',
+    people: 'लोग',
   },
   ru: {
     new_like_title: 'Новый лайк',
     new_like_message: '{{username}} понравилась ваша публикация',
     new_comment_title: 'Новый комментарий',
     new_comment_message: '{{username}} прокомментировал вашу публикацию',
+    post_shared: 'Публикация отправлена {{count}} {{people}}',
+    person: 'человеку',
+    people: 'людям',
   },
   tr: {
     new_like_title: 'Yeni beğeni',
     new_like_message: '{{username}} gönderinizi beğendi',
     new_comment_title: 'Yeni yorum',
     new_comment_message: '{{username}} gönderinize yorum yaptı',
+    post_shared: 'Gönderi {{count}} {{people}} ile paylaşıldı',
+    person: 'kişi',
+    people: 'kişi',
   },
 };
 
@@ -540,7 +579,24 @@ export async function sharePost(
 
     emitPostEngagementUpdate({ postId, sharesDelta: 1 });
 
-    toast.success(`Post shared with ${recipientIds.length} ${recipientIds.length === 1 ? 'person' : 'people'}`);
+    // Get sharer's language for localized toast
+    const { data: sharerProfile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', userId)
+      .single();
+    
+    let lang = sharerProfile?.language || 'en';
+    if (lang === 'zh-CN') lang = 'zh';
+    const translations = notificationTranslations[lang] || notificationTranslations.en;
+    const peopleWord = recipientIds.length === 1 
+      ? (translations.person || 'person') 
+      : (translations.people || 'people');
+    const shareMsg = (translations.post_shared || 'Post shared with {{count}} {{people}}')
+      .replace('{{count}}', String(recipientIds.length))
+      .replace('{{people}}', peopleWord);
+    
+    toast.success(shareMsg);
     return true;
   } catch (error) {
     console.error('Error sharing post:', error);
