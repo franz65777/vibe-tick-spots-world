@@ -60,17 +60,8 @@ const MapSection = ({
   // Use global filter context - single source of truth
   const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded } = useMapFilter();
 
-  // Hide filters when map is moving
-  const moveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (moveTimeoutRef.current) {
-        clearTimeout(moveTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Map bounds state for dynamic loading
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
 
   // Dispatch events to hide/show bottom navigation when list view opens/closes
   useEffect(() => {
@@ -96,9 +87,6 @@ const MapSection = ({
       window.dispatchEvent(new CustomEvent('ui:overlay-close'));
     }
   }, [isListViewOpen, isActiveSharesOpen]);
-  
-  // State for map bounds to enable dynamic loading
-  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   
   // Fetch locations based on current filters and map bounds
   // When list view is open, show ALL locations in the city (no mapBounds filter)
@@ -212,20 +200,7 @@ const MapSection = ({
   };
 
   const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
-    // Hide filters immediately when movement starts
-    setFiltersVisible(false);
-    
-    // Clear existing timeout
-    if (moveTimeoutRef.current) {
-      clearTimeout(moveTimeoutRef.current);
-    }
-    
-    // Show filters after 500ms of no movement
-    moveTimeoutRef.current = setTimeout(() => {
-      setFiltersVisible(true);
-    }, 500);
-    
-    // Update map bounds for dynamic loading
+    // Update map bounds for dynamic loading - filters stay visible always
     setMapBounds({
       north: bounds.getNorth(),
       south: bounds.getSouth(),
