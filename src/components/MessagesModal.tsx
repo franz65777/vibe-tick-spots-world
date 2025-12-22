@@ -25,7 +25,7 @@ interface MessagesModalProps {
 const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -259,7 +259,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                 <Input
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search for people..."
+                  placeholder={t('messages:searchForPeople')}
                   className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                   autoFocus
                 />
@@ -468,7 +468,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={t('messages:typeMessage')}
                   className="flex-1 rounded-2xl bg-gray-50 dark:bg-gray-800"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
