@@ -26,6 +26,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Post shared with {{count}} {{people}}',
     person: 'person',
     people: 'people',
+    post_saved: 'Post saved',
+    post_unsaved: 'Post unsaved',
+    share_failed: 'Failed to share post',
+    save_failed: 'Failed to update save',
   },
   it: {
     new_like_title: 'Nuovo mi piace',
@@ -35,6 +39,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Post condiviso con {{count}} {{people}}',
     person: 'persona',
     people: 'persone',
+    post_saved: 'Post salvato',
+    post_unsaved: 'Post rimosso dai salvati',
+    share_failed: 'Impossibile condividere il post',
+    save_failed: 'Impossibile aggiornare il salvataggio',
   },
   es: {
     new_like_title: 'Nuevo me gusta',
@@ -44,6 +52,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Publicación compartida con {{count}} {{people}}',
     person: 'persona',
     people: 'personas',
+    post_saved: 'Publicación guardada',
+    post_unsaved: 'Publicación eliminada de guardados',
+    share_failed: 'Error al compartir publicación',
+    save_failed: 'Error al actualizar guardado',
   },
   fr: {
     new_like_title: 'Nouveau j\'aime',
@@ -53,6 +65,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Publication partagée avec {{count}} {{people}}',
     person: 'personne',
     people: 'personnes',
+    post_saved: 'Publication enregistrée',
+    post_unsaved: 'Publication retirée des enregistrements',
+    share_failed: 'Échec du partage',
+    save_failed: 'Échec de la mise à jour',
   },
   de: {
     new_like_title: 'Neues Like',
@@ -62,6 +78,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Beitrag mit {{count}} {{people}} geteilt',
     person: 'Person',
     people: 'Personen',
+    post_saved: 'Beitrag gespeichert',
+    post_unsaved: 'Beitrag aus Gespeicherten entfernt',
+    share_failed: 'Fehler beim Teilen',
+    save_failed: 'Fehler beim Speichern',
   },
   pt: {
     new_like_title: 'Nova curtida',
@@ -71,6 +91,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Publicação compartilhada com {{count}} {{people}}',
     person: 'pessoa',
     people: 'pessoas',
+    post_saved: 'Publicação salva',
+    post_unsaved: 'Publicação removida dos salvos',
+    share_failed: 'Falha ao compartilhar',
+    save_failed: 'Falha ao atualizar',
   },
   zh: {
     new_like_title: '新点赞',
@@ -80,6 +104,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: '帖子已分享给 {{count}} {{people}}',
     person: '人',
     people: '人',
+    post_saved: '帖子已保存',
+    post_unsaved: '帖子已取消保存',
+    share_failed: '分享失败',
+    save_failed: '保存失败',
   },
   ja: {
     new_like_title: '新しいいいね',
@@ -89,6 +117,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: '{{count}}{{people}}に投稿を共有しました',
     person: '人',
     people: '人',
+    post_saved: '投稿を保存しました',
+    post_unsaved: '投稿の保存を解除しました',
+    share_failed: '共有に失敗しました',
+    save_failed: '保存の更新に失敗しました',
   },
   ko: {
     new_like_title: '새 좋아요',
@@ -98,6 +130,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: '{{count}}{{people}}에게 공유됨',
     person: '명',
     people: '명',
+    post_saved: '게시물 저장됨',
+    post_unsaved: '게시물 저장 취소됨',
+    share_failed: '공유 실패',
+    save_failed: '저장 업데이트 실패',
   },
   ar: {
     new_like_title: 'إعجاب جديد',
@@ -107,6 +143,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'تمت مشاركة المنشور مع {{count}} {{people}}',
     person: 'شخص',
     people: 'أشخاص',
+    post_saved: 'تم حفظ المنشور',
+    post_unsaved: 'تم إلغاء حفظ المنشور',
+    share_failed: 'فشل المشاركة',
+    save_failed: 'فشل تحديث الحفظ',
   },
   hi: {
     new_like_title: 'नई लाइक',
@@ -116,6 +156,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'पोस्ट {{count}} {{people}} के साथ साझा की गई',
     person: 'व्यक्ति',
     people: 'लोग',
+    post_saved: 'पोस्ट सहेजी गई',
+    post_unsaved: 'पोस्ट असहेजी गई',
+    share_failed: 'साझा करने में विफल',
+    save_failed: 'सहेजना अपडेट करने में विफल',
   },
   ru: {
     new_like_title: 'Новый лайк',
@@ -125,6 +169,10 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Публикация отправлена {{count}} {{people}}',
     person: 'человеку',
     people: 'людям',
+    post_saved: 'Публикация сохранена',
+    post_unsaved: 'Публикация удалена из сохраненных',
+    share_failed: 'Не удалось поделиться',
+    save_failed: 'Не удалось обновить сохранение',
   },
   tr: {
     new_like_title: 'Yeni beğeni',
@@ -134,8 +182,34 @@ const notificationTranslations: Record<string, Record<string, string>> = {
     post_shared: 'Gönderi {{count}} {{people}} ile paylaşıldı',
     person: 'kişi',
     people: 'kişi',
+    post_saved: 'Gönderi kaydedildi',
+    post_unsaved: 'Gönderi kaydedilmekten çıkarıldı',
+    share_failed: 'Paylaşım başarısız',
+    save_failed: 'Kaydetme güncellenemedi',
   },
 };
+
+// Helper to get user's language
+async function getUserLanguage(userId: string): Promise<string> {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', userId)
+      .single();
+    let lang = profile?.language || 'en';
+    if (lang === 'zh-CN') lang = 'zh';
+    return lang;
+  } catch {
+    return 'en';
+  }
+}
+
+// Helper to get translation
+function getTranslation(lang: string, key: string): string {
+  const translations = notificationTranslations[lang] || notificationTranslations.en;
+  return translations[key] || notificationTranslations.en[key] || key;
+}
 
 // Helper function to get localized notification text
 async function getLocalizedNotificationText(
@@ -441,7 +515,7 @@ export async function addPostComment(
         profile?.username || 'Someone'
       );
 
-      await supabase.from('notifications').insert({
+      const notificationData = {
         user_id: post.user_id,
         type: 'comment',
         title,
@@ -453,7 +527,19 @@ export async function addPostComment(
           user_avatar: profile?.avatar_url,
           comment: trimmed,
         },
-      });
+      };
+      
+      console.log('[addPostComment] Inserting notification:', notificationData);
+      
+      const { error: notifError } = await supabase.from('notifications').insert(notificationData);
+      
+      if (notifError) {
+        console.error('[addPostComment] Notification insert error:', notifError);
+      } else {
+        console.log('[addPostComment] Notification inserted successfully');
+      }
+    } else {
+      console.log('[addPostComment] Skipping notification - own post or post not found');
     }
 
     toast.success(successMessage || 'Comment added');
@@ -580,14 +666,7 @@ export async function sharePost(
     emitPostEngagementUpdate({ postId, sharesDelta: 1 });
 
     // Get sharer's language for localized toast
-    const { data: sharerProfile } = await supabase
-      .from('profiles')
-      .select('language')
-      .eq('id', userId)
-      .single();
-    
-    let lang = sharerProfile?.language || 'en';
-    if (lang === 'zh-CN') lang = 'zh';
+    const lang = await getUserLanguage(userId);
     const translations = notificationTranslations[lang] || notificationTranslations.en;
     const peopleWord = recipientIds.length === 1 
       ? (translations.person || 'person') 
@@ -596,11 +675,13 @@ export async function sharePost(
       .replace('{{count}}', String(recipientIds.length))
       .replace('{{people}}', peopleWord);
     
+    console.log('[sharePost] Showing toast:', shareMsg);
     toast.success(shareMsg);
     return true;
   } catch (error) {
     console.error('Error sharing post:', error);
-    toast.error('Failed to share post');
+    const lang = await getUserLanguage(userId);
+    toast.error(getTranslation(lang, 'share_failed'));
     return false;
   }
 }
@@ -609,6 +690,8 @@ export async function sharePost(
 
 export async function togglePostSave(postId: string, userId: string): Promise<boolean> {
   try {
+    const lang = await getUserLanguage(userId);
+    
     const { data: existing } = await supabase
       .from('post_saves')
       .select('id')
@@ -619,7 +702,7 @@ export async function togglePostSave(postId: string, userId: string): Promise<bo
     if (existing) {
       // Unsave
       await supabase.from('post_saves').delete().eq('id', existing.id);
-      toast.success('Post unsaved');
+      toast.success(getTranslation(lang, 'post_unsaved'));
       return false;
     } else {
       // Save
@@ -628,12 +711,13 @@ export async function togglePostSave(postId: string, userId: string): Promise<bo
         .insert({ post_id: postId, user_id: userId });
       
       if (error) throw error;
-      toast.success('Post saved');
+      toast.success(getTranslation(lang, 'post_saved'));
       return true;
     }
   } catch (error) {
     console.error('Error toggling save:', error);
-    toast.error('Failed to update save');
+    const lang = await getUserLanguage(userId);
+    toast.error(getTranslation(lang, 'save_failed'));
     return false;
   }
 }
