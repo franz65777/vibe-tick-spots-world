@@ -380,6 +380,10 @@ const FeedPage = memo(() => {
         detail: { postId: sharePostId, sharesDelta: 1 }
       }));
 
+      toast({
+        title: t('postShared', { ns: 'common', defaultValue: 'Post condiviso' }),
+      });
+
       return true;
     } catch (error) {
       console.error('Error sharing post:', error);
