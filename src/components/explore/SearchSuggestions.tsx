@@ -1,6 +1,6 @@
-
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface SearchSuggestionsProps {
   suggestions: string[];
@@ -9,6 +9,8 @@ interface SearchSuggestionsProps {
 }
 
 const SearchSuggestions = ({ suggestions, onSuggestionClick, searchHistory }: SearchSuggestionsProps) => {
+  const { t } = useTranslation();
+  
   if (suggestions.length === 0 && searchHistory.length === 0) {
     return null;
   }
@@ -17,7 +19,7 @@ const SearchSuggestions = ({ suggestions, onSuggestionClick, searchHistory }: Se
     <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
       {searchHistory.length > 0 && (
         <div className="p-2 border-b border-gray-100">
-          <div className="text-xs font-medium text-gray-500 mb-2">Recent searches</div>
+          <div className="text-xs font-medium text-gray-500 mb-2">{t('recentSearches', { ns: 'explore' })}</div>
           {searchHistory.map((item, index) => (
             <Button
               key={index}
@@ -35,7 +37,7 @@ const SearchSuggestions = ({ suggestions, onSuggestionClick, searchHistory }: Se
       
       {suggestions.length > 0 && (
         <div className="p-2">
-          <div className="text-xs font-medium text-gray-500 mb-2">Suggestions</div>
+          <div className="text-xs font-medium text-gray-500 mb-2">{t('suggestions', { ns: 'explore' })}</div>
           {suggestions.map((suggestion, index) => (
             <Button
               key={index}

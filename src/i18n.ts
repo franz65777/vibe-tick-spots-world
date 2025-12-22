@@ -5738,4 +5738,94 @@ Object.entries(evenMoreKeys).forEach(([lang, namespaces]) => {
   });
 });
 
+// Final comprehensive keys for remaining hardcoded strings
+const finalTranslationKeys = {
+  en: {
+    explore: { 
+      recentSearches: 'Recent Searches', 
+      suggestedUsers: 'Suggested Users', 
+      startSearchingPeople: 'Start searching for people', 
+      findFriendsDiscover: 'Find friends and discover new profiles',
+      suggestions: 'Suggestions',
+      locationSearch: 'Location search',
+    },
+    home: { discoveredBy: 'Discovered by' },
+    common: { clearFilters: 'Clear Filters', clearAll: 'Clear all', week: 'Week', month: 'Month', year: 'Year' },
+    business: { analyticsDashboard: 'Analytics Dashboard', peakHours: 'Peak Hours', localAudience: 'Local Audience', bestPerformingDay: 'Best Performing Day', saturdayHigherEngagement: 'Saturday shows 45% higher engagement. Schedule important posts on weekends for maximum impact.', contentRecommendation: 'Content Recommendation', photoPostsEngagement: 'Photo posts get 3x more engagement than text. Add high-quality images to boost visibility.' },
+  },
+  it: {
+    explore: { 
+      recentSearches: 'Ricerche recenti', 
+      suggestedUsers: 'Utenti suggeriti', 
+      startSearchingPeople: 'Inizia a cercare persone', 
+      findFriendsDiscover: 'Trova amici e scopri nuovi profili',
+      suggestions: 'Suggerimenti',
+      locationSearch: 'Ricerca luogo',
+    },
+    home: { discoveredBy: 'Scoperto da' },
+    common: { clearFilters: 'Cancella filtri', clearAll: 'Cancella tutto', week: 'Settimana', month: 'Mese', year: 'Anno' },
+    business: { analyticsDashboard: 'Dashboard Analytics', peakHours: 'Ore di punta', localAudience: 'Pubblico locale', bestPerformingDay: 'Giorno migliore', saturdayHigherEngagement: 'Il sabato mostra il 45% in più di engagement. Programma post importanti nel weekend per massimo impatto.', contentRecommendation: 'Raccomandazione contenuti', photoPostsEngagement: 'I post con foto ottengono 3 volte più engagement del testo. Aggiungi immagini di alta qualità per aumentare la visibilità.' },
+  },
+  es: {
+    explore: { 
+      recentSearches: 'Búsquedas recientes', 
+      suggestedUsers: 'Usuarios sugeridos', 
+      startSearchingPeople: 'Empieza a buscar personas', 
+      findFriendsDiscover: 'Encuentra amigos y descubre nuevos perfiles',
+      suggestions: 'Sugerencias',
+      locationSearch: 'Búsqueda de ubicación',
+    },
+    home: { discoveredBy: 'Descubierto por' },
+    common: { clearFilters: 'Limpiar filtros', clearAll: 'Limpiar todo', week: 'Semana', month: 'Mes', year: 'Año' },
+    business: { analyticsDashboard: 'Panel de Analytics', peakHours: 'Horas pico', localAudience: 'Audiencia local', bestPerformingDay: 'Mejor día', saturdayHigherEngagement: 'El sábado muestra un 45% más de engagement. Programa publicaciones importantes los fines de semana para máximo impacto.', contentRecommendation: 'Recomendación de contenido', photoPostsEngagement: 'Las publicaciones con fotos obtienen 3 veces más engagement que el texto. Añade imágenes de alta calidad para aumentar la visibilidad.' },
+  },
+  fr: {
+    explore: { 
+      recentSearches: 'Recherches récentes', 
+      suggestedUsers: 'Utilisateurs suggérés', 
+      startSearchingPeople: 'Commencez à chercher des personnes', 
+      findFriendsDiscover: 'Trouvez des amis et découvrez de nouveaux profils',
+      suggestions: 'Suggestions',
+      locationSearch: 'Recherche de lieu',
+    },
+    home: { discoveredBy: 'Découvert par' },
+    common: { clearFilters: 'Effacer les filtres', clearAll: 'Tout effacer', week: 'Semaine', month: 'Mois', year: 'Année' },
+    business: { analyticsDashboard: 'Tableau de bord Analytics', peakHours: 'Heures de pointe', localAudience: 'Audience locale', bestPerformingDay: 'Meilleur jour', saturdayHigherEngagement: 'Le samedi affiche 45% d\'engagement en plus. Planifiez les publications importantes le week-end pour un impact maximal.', contentRecommendation: 'Recommandation de contenu', photoPostsEngagement: 'Les publications photo obtiennent 3 fois plus d\'engagement que le texte. Ajoutez des images de haute qualité pour augmenter la visibilité.' },
+  },
+  de: {
+    explore: { 
+      recentSearches: 'Letzte Suchen', 
+      suggestedUsers: 'Vorgeschlagene Benutzer', 
+      startSearchingPeople: 'Beginnen Sie mit der Suche nach Personen', 
+      findFriendsDiscover: 'Finden Sie Freunde und entdecken Sie neue Profile',
+      suggestions: 'Vorschläge',
+      locationSearch: 'Ortssuche',
+    },
+    home: { discoveredBy: 'Entdeckt von' },
+    common: { clearFilters: 'Filter löschen', clearAll: 'Alles löschen', week: 'Woche', month: 'Monat', year: 'Jahr', shareWithFriends: 'Mit Freunden teilen', send: 'Senden', share: 'Teilen', shares: 'Geteilt', comments: 'Kommentare' },
+    navigation: { directions: 'Wegbeschreibung' },
+    business: { analyticsDashboard: 'Analytics Dashboard', peakHours: 'Spitzenzeiten', localAudience: 'Lokales Publikum', bestPerformingDay: 'Bester Tag', saturdayHigherEngagement: 'Samstag zeigt 45% mehr Engagement. Planen Sie wichtige Beiträge am Wochenende für maximale Wirkung.', contentRecommendation: 'Inhaltsempfehlung', photoPostsEngagement: 'Foto-Beiträge erhalten 3x mehr Engagement als Text. Fügen Sie hochwertige Bilder hinzu, um die Sichtbarkeit zu erhöhen.' },
+  },
+};
+
+// Additional common keys for all languages
+const additionalCommonKeys = {
+  en: { common: { shareWithFriends: 'Share with friends', send: 'Send', share: 'Share', shares: 'Shares', comments: 'Comments' }, navigation: { directions: 'Directions' } },
+  it: { common: { shareWithFriends: 'Condividi con gli amici', send: 'Invia', share: 'Condividi', shares: 'Condivisioni', comments: 'Commenti' }, navigation: { directions: 'Indicazioni' } },
+  es: { common: { shareWithFriends: 'Compartir con amigos', send: 'Enviar', share: 'Compartir', shares: 'Compartidos', comments: 'Comentarios' }, navigation: { directions: 'Direcciones' } },
+  fr: { common: { shareWithFriends: 'Partager avec des amis', send: 'Envoyer', share: 'Partager', shares: 'Partages', comments: 'Commentaires' }, navigation: { directions: 'Itinéraire' } },
+};
+
+Object.entries(finalTranslationKeys).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
+
+Object.entries(additionalCommonKeys).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
+
 export default i18n;
