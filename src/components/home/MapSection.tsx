@@ -257,7 +257,7 @@ const MapSection = ({
           }}
           fromMessages={fromMessages}
           onBackToMessages={onBackToMessages}
-          hideOtherPins={!!sourcePostId}
+          hideOtherPins={!!sourcePostId || !!(selectedPlace as any)?.fromList || !!(initialSelectedPlace as any)?.fromList}
         />
         )}
 

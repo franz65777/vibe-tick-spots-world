@@ -144,6 +144,8 @@ const HomePage = memo(() => {
 
   // State for return navigation from save-location page
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  // Complete state for return navigation (includes scroll position, folderId, etc.)
+  const [returnToState, setReturnToState] = useState<any>(null);
   
   // State for navigation back to messages
   const [fromMessages, setFromMessages] = useState(false);
@@ -225,6 +227,8 @@ const HomePage = memo(() => {
         };
         // Mark as coming from a list so we can show a back button to the list
         (placeToShow as any).returnTo = state.returnTo;
+        // Also mark that other pins should be hidden
+        (placeToShow as any).fromList = true;
 
         if (placeToShow.coordinates) {
           setMapCenter(placeToShow.coordinates);
@@ -232,6 +236,10 @@ const HomePage = memo(() => {
         setInitialPinToShow(placeToShow);
         if (state.returnTo) {
           setReturnTo(state.returnTo);
+        }
+        // Save complete returnToState for proper back navigation
+        if (state.returnToState) {
+          setReturnToState(state.returnToState);
         }
         usedState = true;
       }
@@ -713,8 +721,24 @@ const HomePage = memo(() => {
                   setFromMessages(false);
                   setReturnToUserId(null);
                   if (returnTo) {
-                    navigate(returnTo);
+                    // If we have returnToState with a folderId, navigate to the folder page
+                    if (returnToState?.folderId) {
+                      navigate(`/folder/${returnToState.folderId}`, { 
+                        state: { 
+                          from: returnToState.from,
+                          scrollY: returnToState.scrollY
+                        },
+                        replace: true
+                      });
+                    } else {
+                      // Otherwise navigate to the returnTo path with scroll restoration
+                      navigate(returnTo, {
+                        state: { restoreScroll: returnToState?.scrollY },
+                        replace: true
+                      });
+                    }
                     setReturnTo(null);
+                    setReturnToState(null);
                   }
                 }}
                 recenterToken={recenterToken}
