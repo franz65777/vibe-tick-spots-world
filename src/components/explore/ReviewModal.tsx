@@ -55,17 +55,17 @@ export const ReviewModal = ({
 
   const handleSubmit = async () => {
     if (!user?.id) {
-      toast.error('Please sign in to leave a review');
+      toast.error(t('pleaseSignIn', { ns: 'common' }));
       return;
     }
 
     if (rating === 0) {
-      toast.error('Please select a rating');
+      toast.error(t('pleaseSelectRating', { ns: 'reviews' }));
       return;
     }
 
     if (comment.trim().length === 0) {
-      toast.error('Please write a comment');
+      toast.error(t('pleaseWriteComment', { ns: 'reviews' }));
       return;
     }
 
@@ -76,26 +76,26 @@ export const ReviewModal = ({
         // Update existing review
         const success = await updatePostReview(existingReview.id, comment.trim(), rating);
         if (success) {
-          toast.success('Review updated successfully!');
+          toast.success(t('reviewUpdated', { ns: 'reviews' }));
           onReviewSubmitted?.();
           onClose();
         } else {
-          toast.error('Failed to update review');
+          toast.error(t('failedToUpdateReview', { ns: 'reviews' }));
         }
       } else {
         // Create new review
         const review = await createPostReview(postId, user.id, locationId, comment.trim(), rating);
         if (review) {
-          toast.success('Review submitted successfully!');
+          toast.success(t('reviewSubmitted', { ns: 'reviews' }));
           onReviewSubmitted?.();
           onClose();
         } else {
-          toast.error('Failed to submit review');
+          toast.error(t('failedToSubmitReview', { ns: 'reviews' }));
         }
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error('Something went wrong');
+      toast.error(t('somethingWentWrong', { ns: 'common' }));
     } finally {
       setSubmitting(false);
     }
@@ -109,9 +109,9 @@ export const ReviewModal = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {existingReview ? 'Edit Review' : 'Write a Review'}
-            </h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {existingReview ? t('editReview', { ns: 'reviews' }) : t('writeReview', { ns: 'reviews' })}
+          </h2>
             {locationName && (
               <p className="text-sm text-gray-500 mt-0.5">{locationName}</p>
             )}
@@ -131,7 +131,7 @@ export const ReviewModal = ({
           {/* Rating Selector */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-3">
-              Rate your experience (1-10)
+              {t('rateExperience', { ns: 'reviews' })}
             </label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
@@ -159,7 +159,7 @@ export const ReviewModal = ({
                   ))}
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  {rating}/10 - {rating >= 8 ? 'Excellent' : rating >= 6 ? 'Good' : rating >= 4 ? 'Average' : 'Poor'}
+                  {rating}/10 - {rating >= 8 ? t('excellent', { ns: 'reviews' }) : rating >= 6 ? t('good', { ns: 'reviews' }) : rating >= 4 ? t('average', { ns: 'reviews' }) : t('poor', { ns: 'reviews' })}
                 </span>
               </div>
             )}

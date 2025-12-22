@@ -29,13 +29,13 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        alert(t('pleaseSelectImage', { ns: 'common' }));
         return;
       }
 
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+        alert(t('fileSizeTooLarge', { ns: 'common' }));
         return;
       }
 
@@ -87,7 +87,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       setSelectedFile(null);
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      alert('Failed to upload profile picture. Please try again.');
+      alert(t('failedToUploadProfilePicture', { ns: 'common' }));
     } finally {
       setUploading(false);
     }
@@ -117,7 +117,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       setSelectedFile(null);
     } catch (error) {
       console.error('Error removing avatar:', error);
-      alert('Failed to remove profile picture. Please try again.');
+      alert(t('failedToRemoveProfilePicture', { ns: 'common' }));
     } finally {
       setUploading(false);
     }
@@ -130,7 +130,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Profile Picture</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('profilePicture', { ns: 'common' })}</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -175,12 +175,12 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
               >
                 <Upload className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-600">Choose a photo</span>
+                <span className="text-gray-600">{t('choosePhoto', { ns: 'common' })}</span>
               </label>
             </div>
 
             <div className="text-xs text-gray-500 text-center">
-              JPG, PNG, or GIF. Max file size 5MB.
+              {t('imageFileFormats', { ns: 'common' })}
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
               disabled={uploading}
               className="flex-1"
             >
-              Remove
+              {t('remove', { ns: 'common' })}
             </Button>
           )}
           <Button
