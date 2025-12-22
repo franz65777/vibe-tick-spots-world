@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 /**
  * Unified Social Engagement Service
@@ -514,10 +515,10 @@ export async function addPostComment(
       .eq('id', userId)
       .single();
 
-    // Get post owner for notification
+    // Get post owner + thumbnail info for notification
     const { data: post } = await supabase
       .from('posts')
-      .select('user_id')
+      .select('user_id, media_urls, content_type')
       .eq('id', postId)
       .single();
 
@@ -537,10 +538,12 @@ export async function addPostComment(
         message: `${message}: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? '...' : ''}"`,
         data: {
           post_id: postId,
-          user_id: userId,        // actor (who left the comment)
+          user_id: userId, // actor (who left the comment)
           user_name: profile?.username,
           user_avatar: profile?.avatar_url,
-          comment_text: trimmed,  // key expected by MobileNotificationItem
+          comment_text: trimmed,
+          post_image: post.media_urls?.[0] || undefined,
+          content_type: post.content_type || undefined,
         },
       };
 
@@ -691,7 +694,7 @@ export async function sharePost(
       .replace('{{people}}', peopleWord);
     
     console.log('[sharePost] Showing toast:', shareMsg);
-    toastSuccess(shareMsg);
+    sonnerToast.success(shareMsg);
     return true;
   } catch (error) {
     console.error('Error sharing post:', error);
