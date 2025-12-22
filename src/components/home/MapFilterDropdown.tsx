@@ -178,26 +178,26 @@ const MapFilterDropdown = () => {
     <div ref={containerRef} className="relative flex items-center">
       {/* Friends selection dropdown - opens upward */}
       {isFriendsDropdownOpen && activeFilter === 'following' && (
-        <div className="absolute bottom-full left-0 mb-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg min-w-[320px] max-h-[300px] z-[2100]">
+        <div className="absolute bottom-full left-0 mb-2 bg-popover text-popover-foreground rounded-2xl border border-border shadow-lg min-w-[320px] max-h-[300px] z-[2100]">
           {/* Header with search, All button, and close */}
           <div className="flex items-center gap-2 p-3 border-b border-border/30">
             <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <Input
               type="text"
-              placeholder={t('searchPlaceholder') || "Search people you follow..."}
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 h-8 bg-transparent border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/70 text-sm"
             />
             <button
               onClick={handleSelectAll}
-              className="px-3 py-1 text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary rounded-full transition-colors"
+              className="px-3 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full transition-colors hover:opacity-90"
             >
               {allSelected ? t('none') : t('all')}
             </button>
             <button
               onClick={handleCloseFriendsDropdown}
-              className="p-1 hover:bg-background/50 rounded-full transition-colors"
+              className="p-1 hover:bg-accent rounded-full transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -264,8 +264,8 @@ const MapFilterDropdown = () => {
       {/* Active filter circle button */}
       <div
         className={cn(
-          "flex items-center gap-1.5 rounded-full backdrop-blur-md transition-all duration-300 relative",
-          "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 shadow-lg",
+          "flex items-center gap-1.5 rounded-full transition-all duration-300 relative",
+          "bg-popover text-popover-foreground border border-border shadow-lg",
           isFilterExpanded ? "pr-1.5" : "pr-2.5"
         )}
       >
@@ -327,8 +327,8 @@ const MapFilterDropdown = () => {
             key={filter.id}
             onClick={() => handleFilterSelect(filter.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2 h-9 rounded-full backdrop-blur-md transition-all duration-200",
-              "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
+              "flex items-center gap-1.5 px-2 h-9 rounded-full transition-all duration-200",
+              "bg-popover text-popover-foreground border border-border hover:bg-accent shadow-lg"
             )}
           >
             <img 

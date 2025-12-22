@@ -129,9 +129,9 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
       <Dialog open={directionsModalOpen} onOpenChange={setDirectionsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Choose Map App</DialogTitle>
+            <DialogTitle>{t('chooseMapApp', { ns: 'common' })}</DialogTitle>
             <DialogDescription>
-              Select your preferred navigation app to get directions to {place.name}
+              {t('getDirections', { ns: 'common' })} {place.name}
             </DialogDescription>
           </DialogHeader>
 
@@ -146,7 +146,9 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
               </div>
               <div className="text-left">
                 <div className="font-semibold">Google Maps</div>
-                <div className="text-xs text-muted-foreground">Navigate with Google Maps</div>
+                <div className="text-xs text-muted-foreground">
+                  {t('navigation.navigateWithGoogle', { defaultValue: 'Navigate with Google Maps' })}
+                </div>
               </div>
             </Button>
 
