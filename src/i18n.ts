@@ -5829,6 +5829,28 @@ Object.entries(additionalCommonKeys).forEach(([lang, namespaces]) => {
 });
 
 // Final batch of translation keys
+const lastUiBatchAllLanguages = {
+  en: { common: { goBack: 'Go back', pass: 'Pass', failedToLoadLocations: 'Failed to load locations' }, notifications: { loadingNotifications: 'Loading notifications…', allCaughtUp: 'All caught up!', noNewNotifications: 'No new notifications', failedToUpdateFollowStatus: 'Failed to update follow status', failedToLikeComment: 'Failed to like comment', failedToSendMessage: 'Failed to send message' } },
+  it: { common: { goBack: 'Indietro', pass: 'Passa', failedToLoadLocations: 'Impossibile caricare i luoghi' }, notifications: { loadingNotifications: 'Caricamento notifiche…', allCaughtUp: 'Tutto aggiornato!', noNewNotifications: 'Nessuna nuova notifica', failedToUpdateFollowStatus: 'Impossibile aggiornare lo stato follow', failedToLikeComment: 'Impossibile mettere mi piace al commento', failedToSendMessage: 'Impossibile inviare il messaggio' } },
+  es: { common: { goBack: 'Volver', pass: 'Pasar', failedToLoadLocations: 'Error al cargar lugares' }, notifications: { loadingNotifications: 'Cargando notificaciones…', allCaughtUp: '¡Todo al día!', noNewNotifications: 'No hay nuevas notificaciones', failedToUpdateFollowStatus: 'Error al actualizar el seguimiento', failedToLikeComment: 'Error al dar me gusta al comentario', failedToSendMessage: 'Error al enviar el mensaje' } },
+  fr: { common: { goBack: 'Retour', pass: 'Passer', failedToLoadLocations: 'Échec du chargement des lieux' }, notifications: { loadingNotifications: 'Chargement des notifications…', allCaughtUp: 'Tout est à jour !', noNewNotifications: 'Aucune nouvelle notification', failedToUpdateFollowStatus: 'Échec de la mise à jour du suivi', failedToLikeComment: "Échec de l'ajout d'un like", failedToSendMessage: "Échec de l'envoi du message" } },
+  de: { common: { goBack: 'Zurück', pass: 'Weiter', failedToLoadLocations: 'Orte konnten nicht geladen werden' }, notifications: { loadingNotifications: 'Benachrichtigungen werden geladen…', allCaughtUp: 'Alles erledigt!', noNewNotifications: 'Keine neuen Benachrichtigungen', failedToUpdateFollowStatus: 'Follow-Status konnte nicht aktualisiert werden', failedToLikeComment: 'Kommentar konnte nicht geliked werden', failedToSendMessage: 'Nachricht konnte nicht gesendet werden' } },
+  pt: { common: { goBack: 'Voltar', pass: 'Passar', failedToLoadLocations: 'Falha ao carregar locais' }, notifications: { loadingNotifications: 'Carregando notificações…', allCaughtUp: 'Tudo em dia!', noNewNotifications: 'Sem novas notificações', failedToUpdateFollowStatus: 'Falha ao atualizar status de seguir', failedToLikeComment: 'Falha ao curtir comentário', failedToSendMessage: 'Falha ao enviar mensagem' } },
+  ru: { common: { goBack: 'Назад', pass: 'Пропустить', failedToLoadLocations: 'Не удалось загрузить места' }, notifications: { loadingNotifications: 'Загрузка уведомлений…', allCaughtUp: 'Всё прочитано!', noNewNotifications: 'Нет новых уведомлений', failedToUpdateFollowStatus: 'Не удалось обновить подписку', failedToLikeComment: 'Не удалось поставить лайк', failedToSendMessage: 'Не удалось отправить сообщение' } },
+  'zh-CN': { common: { goBack: '返回', pass: '跳过', failedToLoadLocations: '加载地点失败' }, notifications: { loadingNotifications: '正在加载通知…', allCaughtUp: '已全部查看！', noNewNotifications: '没有新通知', failedToUpdateFollowStatus: '更新关注状态失败', failedToLikeComment: '点赞评论失败', failedToSendMessage: '发送消息失败' } },
+  ja: { common: { goBack: '戻る', pass: 'スキップ', failedToLoadLocations: '場所の読み込みに失敗しました' }, notifications: { loadingNotifications: '通知を読み込み中…', allCaughtUp: 'すべて確認済み！', noNewNotifications: '新しい通知はありません', failedToUpdateFollowStatus: 'フォロー状態の更新に失敗しました', failedToLikeComment: 'コメントのいいねに失敗しました', failedToSendMessage: 'メッセージの送信に失敗しました' } },
+  ko: { common: { goBack: '뒤로', pass: '넘기기', failedToLoadLocations: '장소를 불러오지 못했습니다' }, notifications: { loadingNotifications: '알림 불러오는 중…', allCaughtUp: '모두 확인했어요!', noNewNotifications: '새 알림이 없습니다', failedToUpdateFollowStatus: '팔로우 상태 업데이트 실패', failedToLikeComment: '댓글 좋아요 실패', failedToSendMessage: '메시지 전송 실패' } },
+  ar: { common: { goBack: 'رجوع', pass: 'تخطي', failedToLoadLocations: 'فشل تحميل الأماكن' }, notifications: { loadingNotifications: 'جارٍ تحميل الإشعارات…', allCaughtUp: 'تمت المتابعة!', noNewNotifications: 'لا توجد إشعارات جديدة', failedToUpdateFollowStatus: 'فشل تحديث حالة المتابعة', failedToLikeComment: 'فشل الإعجاب بالتعليق', failedToSendMessage: 'فشل إرسال الرسالة' } },
+  tr: { common: { goBack: 'Geri', pass: 'Geç', failedToLoadLocations: 'Mekanlar yüklenemedi' }, notifications: { loadingNotifications: 'Bildirimler yükleniyor…', allCaughtUp: 'Hepsi tamam!', noNewNotifications: 'Yeni bildirim yok', failedToUpdateFollowStatus: 'Takip durumu güncellenemedi', failedToLikeComment: 'Yorum beğenilemedi', failedToSendMessage: 'Mesaj gönderilemedi' } },
+};
+
+Object.entries(lastUiBatchAllLanguages).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
+
+// Final batch of translation keys
 const lastBatchKeys = {
   en: { 
     common: { notifications: 'Notifications', messages: 'Messages', total: 'total' }, 
