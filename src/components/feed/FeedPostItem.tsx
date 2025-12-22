@@ -26,7 +26,7 @@ interface FeedPostItemProps {
 }
 
 const FeedPostItem = memo((props: FeedPostItemProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   
   const {
@@ -361,7 +361,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
 
         {/* Timestamp - reduced margin */}
         <p className="text-xs text-muted-foreground text-left mt-0.5">
-          {formatPostDate(createdAt, t)}
+          {formatPostDate(createdAt, t, i18n.language)}
         </p>
       </div>
     </article>

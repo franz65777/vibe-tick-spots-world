@@ -565,7 +565,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
                 {/* Timestamp */}
                 <p className="text-xs text-muted-foreground uppercase text-left">
-                  {formatPostDate(post.created_at, t)}
+                  {formatPostDate(post.created_at, t, i18n.language)}
                 </p>
               </div>
             </article>
