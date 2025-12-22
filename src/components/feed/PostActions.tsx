@@ -76,6 +76,28 @@ export const PostActions = ({
     setLocalSharesCount(sharesCount);
   }, [sharesCount]);
 
+  // Subscribe to real-time post count updates
+  useEffect(() => {
+    // Subscribe to post updates for this specific post
+    const channel = supabase
+      .channel(`post-counts-${postId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts', filter: `id=eq.${postId}` },
+        (payload) => {
+          const newData = payload.new as any;
+          if (newData.likes_count !== undefined) setLocalLikesCount(newData.likes_count);
+          if (newData.comments_count !== undefined) setLocalCommentsCount(newData.comments_count);
+          if (newData.shares_count !== undefined) setLocalSharesCount(newData.shares_count);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [postId]);
+
   // Load location save status
   useEffect(() => {
     const loadStatus = async () => {

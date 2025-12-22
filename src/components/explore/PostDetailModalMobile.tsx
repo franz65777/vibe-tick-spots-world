@@ -79,7 +79,20 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
         const postElement = scrollContainerRef.current.querySelector(`[data-post-id="${postId}"]`);
         if (postElement) {
           setTimeout(() => {
-            postElement.scrollIntoView({ behavior: 'instant', block: 'start' });
+            // Get the header height (sticky header with safe area)
+            const header = scrollContainerRef.current?.querySelector('.sticky');
+            const headerHeight = header?.getBoundingClientRect().height || 60;
+            
+            // Calculate offset to account for sticky header
+            const elementTop = postElement.getBoundingClientRect().top;
+            const containerTop = scrollContainerRef.current?.getBoundingClientRect().top || 0;
+            const currentScroll = scrollContainerRef.current?.scrollTop || 0;
+            const targetScroll = currentScroll + (elementTop - containerTop) - headerHeight;
+            
+            scrollContainerRef.current?.scrollTo({
+              top: Math.max(0, targetScroll),
+              behavior: 'instant'
+            });
           }, 100);
         }
       }
