@@ -11,6 +11,7 @@ import { createListTranslations } from './i18n-create-list';
 import { guidedTourTranslations } from './i18n-guided-tour';
 import { coreUiTranslations } from './i18n-core-ui';
 import { extendedLanguageTranslations } from './i18n-extended-languages';
+import { addPageTranslations } from './i18n-add-page';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -55,6 +56,7 @@ const resources = {
       close: 'Close',
       view: 'View',
       logout: 'Logout',
+      gotIt: 'Got it!',
       required: '*Required',
       of: 'of',
       sortBy: 'Sort by',
@@ -544,6 +546,19 @@ const resources = {
       uploading: 'Uploading',
       inYourNetwork: 'In your network',
       noPlacesFound: 'No places found for',
+      createPost: 'Create a post',
+      socialImport: {
+        title: 'Import from Instagram',
+        intro: 'Save locations from Instagram posts directly to Spott',
+        step: 'Step',
+        step1Title: 'Open Instagram',
+        step1Desc: 'Find a post with a tagged location you want to save',
+        step2Title: 'Tap Share',
+        step2Desc: 'Tap the share button on the post',
+        step3Title: 'Select Spott',
+        step3Desc: 'Choose Spott from the share menu to import the location',
+        note: "Make sure Spott is installed and you're logged in"
+      }
     },
     settings: {
       title: 'Settings',
@@ -5359,6 +5374,19 @@ const ensureNamespace = (lang: string, ns: string, values: Record<string, any>) 
     },
   } as any;
 };
+
+// Merge add page translations for all 12 languages
+Object.keys(addPageTranslations).forEach(lang => {
+  resources[lang] = {
+    ...resources[lang] || {},
+  };
+  Object.entries(addPageTranslations[lang] as Record<string, any>).forEach(([ns, values]) => {
+    (resources[lang] as any)[ns] = {
+      ...(resources[lang] as any)[ns],
+      ...values,
+    };
+  });
+});
 
 // Backfill core UI namespaces for it/es/fr/de/pt/tr (Profile, BottomNav, Filters, Settings)
 Object.entries(coreUiTranslations).forEach(([lang, namespaces]) => {

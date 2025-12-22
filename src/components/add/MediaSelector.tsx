@@ -94,9 +94,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             >
               <img src={iconPost} alt="" className="w-10 h-10 mr-3" />
               <span className="whitespace-nowrap font-medium">
-                {i18n.language.startsWith('it')
-                  ? 'Crea un post'
-                  : t('chooseFromLibrary', { ns: 'add' })}
+                {t('createPost', { ns: 'add' })}
               </span>
             </Button>
 
