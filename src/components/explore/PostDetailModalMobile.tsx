@@ -372,9 +372,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   return (
     <>
-      <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
+      <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide pt-safe">
         {/* Header with iOS safe area */}
-        <div className="bg-background sticky top-0 z-20 flex items-center px-4 pt-safe pb-3">
+        <div className="bg-background sticky top-0 z-20 flex items-center px-4 py-3">
           {(locationId || userId || showBackButton) && (
             <button
               onClick={onClose}
@@ -394,7 +394,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           const hasMultipleMedia = post.media_urls.length > 1;
           
           return (
-            <article key={post.id} data-post-id={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-2" />}
+            <article key={post.id} data-post-id={post.id} className="post-compact pb-2">
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
