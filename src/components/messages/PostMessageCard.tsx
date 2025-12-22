@@ -29,7 +29,7 @@ const PostMessageCard = ({ postData }: PostMessageCardProps) => {
       onClick={handleClick}
     >
       {cover ? (
-        <div className="relative w-[120px] h-[120px]">
+        <div className="relative w-[140px] h-[140px]">
           {/* Stacked effect for multiple images */}
           {hasMultipleMedia && postData.media_urls!.length > 1 && (
             <div 
@@ -60,13 +60,13 @@ const PostMessageCard = ({ postData }: PostMessageCardProps) => {
           </div>
         </div>
       ) : (
-        <div className="w-[120px] h-[120px] bg-muted rounded-xl flex items-center justify-center border border-border">
+        <div className="w-[140px] h-[140px] bg-muted rounded-xl flex items-center justify-center border border-border">
           <ImageIcon className="w-6 h-6 text-muted-foreground/50" />
         </div>
       )}
       
       {postData.caption && (
-        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1 mt-1.5 max-w-[120px]">{postData.caption}</p>
+        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1 mt-1.5 max-w-[140px]">{postData.caption}</p>
       )}
     </div>
   );
