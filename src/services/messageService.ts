@@ -80,7 +80,7 @@ class MessageService {
     }
   }
 
-  async sendPostShare(receiverId: string, postData: { id: string; caption?: string | null; media_urls?: string[]; }): Promise<DirectMessage | null> {
+  async sendPostShare(receiverId: string, postData: { id: string; caption?: string | null; media_urls?: string[]; user_id?: string; username?: string; avatar_url?: string | null; }): Promise<DirectMessage | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
