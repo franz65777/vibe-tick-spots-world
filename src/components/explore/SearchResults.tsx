@@ -4,6 +4,7 @@ import { Search, Users, MapPin } from 'lucide-react';
 import CompactLocationCard from './CompactLocationCard';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
+import { useTranslation } from 'react-i18next';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
@@ -30,12 +31,14 @@ const SearchResults = ({
   onFollowUser,
   onMessageUser
 }: SearchResultsProps) => {
+  const { t } = useTranslation();
+  
   if (isSearching) {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Searching...</span>
+          <span className="text-gray-600">{t('searching', { ns: 'common' })}</span>
         </div>
       </div>
     );
@@ -53,11 +56,11 @@ const SearchResults = ({
             <Users className="w-8 h-8 text-gray-400" />
           )}
         </div>
-        <h3 className="font-semibold text-gray-900 mb-2">No results found</h3>
+        <h3 className="font-semibold text-gray-900 mb-2">{t('noResultsFound', { ns: 'explore' })}</h3>
         <p className="text-gray-500 text-center text-sm">
           {searchMode === 'locations' 
-            ? "Try searching for cafes, restaurants, or specific place names"
-            : "Try searching for usernames or full names"
+            ? t('trySearchingLocations', { ns: 'explore' })
+            : t('trySearchingUsers', { ns: 'explore' })
           }
         </p>
       </div>

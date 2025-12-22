@@ -13,6 +13,7 @@ import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
 import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 import { Geolocation } from "@capacitor/geolocation";
+import { useTranslation } from 'react-i18next';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -41,6 +42,7 @@ interface LocalPlace {
 }
 
 const HomePage = memo(() => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -550,7 +552,7 @@ const HomePage = memo(() => {
       <div className="min-h-screen bg-background flex items-center justify-center pt-[env(safe-area-inset-top)]">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('loading', { ns: 'common' })}</p>
         </div>
       </div>
     );
@@ -560,13 +562,13 @@ const HomePage = memo(() => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-[env(safe-area-inset-top)]">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome!</h2>
-          <p className="text-gray-600 mb-4">Please sign in to explore amazing places</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('welcome', { ns: 'common' })}</h2>
+          <p className="text-gray-600 mb-4">{t('signInToExplore', { ns: 'common' })}</p>
           <button 
             onClick={() => navigate('/auth')}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >
-            Sign In
+            {t('signIn', { ns: 'auth' })}
           </button>
         </div>
       </div>

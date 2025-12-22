@@ -12,6 +12,7 @@ import { guidedTourTranslations } from './i18n-guided-tour';
 import { coreUiTranslations } from './i18n-core-ui';
 import { extendedLanguageTranslations } from './i18n-extended-languages';
 import { addPageTranslations } from './i18n-add-page';
+import { comprehensiveTranslations } from './i18n-comprehensive';
 
 // Comprehensive resources for all languages
 const resources = {
