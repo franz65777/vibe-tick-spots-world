@@ -142,7 +142,12 @@ const FeedListsCarousel = memo(() => {
         {lists.map((list) => (
           <button
             key={list.id}
-            onClick={() => navigate(`/folder/${list.id}`, { state: { from: '/feed' } })}
+            onClick={() => {
+              // Save current scroll position before navigating
+              const scrollContainer = document.querySelector('.overflow-y-scroll');
+              const scrollY = scrollContainer?.scrollTop || window.scrollY;
+              navigate(`/folder/${list.id}`, { state: { from: '/feed', scrollY } });
+            }}
             className="shrink-0 w-40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
           >
             {/* Cover image or gradient */}
