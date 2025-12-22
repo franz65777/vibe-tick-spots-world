@@ -4,8 +4,8 @@ import { useUserBadges } from '@/hooks/useUserBadges';
 import { useSuperUser } from '@/hooks/useSuperUser';
 import AchievementDetailModal from './AchievementDetailModal';
 import { useTranslation } from 'react-i18next';
-import { Coins } from 'lucide-react';
-import fireIcon from '@/assets/fire-icon-3d.png';
+import { Coins, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface AchievementsProps {
   userId?: string;
@@ -13,6 +13,7 @@ interface AchievementsProps {
 
 const Achievements = ({ userId }: AchievementsProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { badges, getBadgeStats, loading } = useUserBadges(userId);
   const { superUser } = useSuperUser();
   const { earned, total } = getBadgeStats();
@@ -27,8 +28,6 @@ const Achievements = ({ userId }: AchievementsProps) => {
     setIsModalOpen(true);
   };
 
-  const currentStreak = superUser?.current_streak || 0;
-  const longestStreak = superUser?.longest_streak || 0;
   const points = superUser?.points || 0;
 
   if (loading) {
@@ -54,60 +53,22 @@ const Achievements = ({ userId }: AchievementsProps) => {
   return (
     <>
       <div className="px-4 py-4 bg-background">
-        {/* Header with Streak & Coins */}
+        {/* Header with Coins Button */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-foreground">{t('achievements', { ns: 'profile' })}</h2>
             
-            {/* Weekly Streak Badge */}
-            {currentStreak > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold shadow-sm">
-                <img src={fireIcon} alt="streak" className="w-4 h-4" style={{ transform: 'scaleX(0.85)' }} />
-                <span>{currentStreak}w</span>
-              </div>
-            )}
+            {/* Coins Button */}
+            <button 
+              onClick={() => navigate('/rewards')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs font-bold shadow-sm hover:shadow-md transition-shadow"
+            >
+              <Coins className="w-3.5 h-3.5" />
+              <span>{points.toLocaleString()}</span>
+              <ChevronRight className="w-3 h-3 opacity-70" />
+            </button>
           </div>
           <span className="text-sm text-primary font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
-        </div>
-
-        {/* Streak & Coins Row */}
-        <div className="flex items-center gap-3 mb-4">
-          {/* Streak Card */}
-          <div className="flex-1 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border border-orange-200/50 dark:border-orange-800/30 rounded-xl p-3">
-            <div className="flex items-center gap-2">
-              <img src={fireIcon} alt="streak" className="w-8 h-8" style={{ transform: 'scaleX(0.85)' }} />
-              <div>
-                <p className="text-xs text-muted-foreground">{t('weeklyStreak', { ns: 'profile', defaultValue: 'Weekly Streak' })}</p>
-                <p className="text-lg font-bold text-foreground">
-                  {currentStreak} {t('weeks', { ns: 'profile', defaultValue: 'weeks' })}
-                </p>
-                {longestStreak > currentStreak && (
-                  <p className="text-[10px] text-muted-foreground">
-                    {t('best', { ns: 'profile', defaultValue: 'Best' })}: {longestStreak}w
-                  </p>
-                )}
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
-              {t('streakHint', { ns: 'profile', defaultValue: 'Save 1+ place/week to keep streak!' })}
-            </p>
-          </div>
-
-          {/* Coins Card */}
-          <div className="flex-1 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 border border-yellow-200/50 dark:border-yellow-800/30 rounded-xl p-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-sm">
-                <Coins className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t('coins', { ns: 'profile', defaultValue: 'Coins' })}</p>
-                <p className="text-lg font-bold text-foreground">{points.toLocaleString()}</p>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
-              {t('coinsHint', { ns: 'profile', defaultValue: 'Earn coins, unlock rewards!' })}
-            </p>
-          </div>
         </div>
         
         {/* Badges Grid - 2 columns x 3 rows */}
