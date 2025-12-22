@@ -47,6 +47,7 @@ const CreateTripPage = lazy(() => import('@/pages/CreateTripPage'));
 const CreateListPage = lazy(() => import('@/pages/CreateListPage'));
 const SaveLocationPage = lazy(() => import('@/pages/SaveLocationPage'));
 const UserPlacesPage = lazy(() => import('@/pages/UserPlacesPage'));
+const RewardsPage = lazy(() => import('@/pages/RewardsPage'));
 
 // Auth pages - not lazy loaded as they're needed immediately
 import SigninStart from '@/pages/auth/SigninStart';
@@ -144,6 +145,7 @@ function AppContent() {
           <Route path="/create-list" element={<CreateListPage />} />
           <Route path="/save-location" element={<SaveLocationPage />} />
           <Route path="/user-places/:userId" element={<UserPlacesPage />} />
+          <Route path="/rewards" element={<RewardsPage />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
