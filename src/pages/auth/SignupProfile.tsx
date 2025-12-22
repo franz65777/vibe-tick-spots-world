@@ -16,7 +16,7 @@ const SignupProfile: React.FC = () => {
   const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState<boolean | null>(null);
 
-  useEffect(() => { document.title = 'Profile - Spott'; }, []);
+  useEffect(() => { document.title = t('signup:profileTitle', { defaultValue: 'Profile - Spott' }); }, [t]);
   
   useEffect(() => {
     const session = sessionStorage.getItem('signup_session');

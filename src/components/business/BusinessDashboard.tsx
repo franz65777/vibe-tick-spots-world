@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BarChart3, Users, MessageSquare, Send, Star, MapPin, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NotificationComposer from './NotificationComposer';
 import BusinessAnalyticsEnhanced from './BusinessAnalyticsEnhanced';
 import ContentManagement from './ContentManagement';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessDashboardProps {
   businessData: {
@@ -24,6 +24,7 @@ interface BusinessDashboardProps {
 }
 
 const BusinessDashboard = ({ businessData }: BusinessDashboardProps) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
 
   const stats = [
@@ -90,10 +91,10 @@ const BusinessDashboard = ({ businessData }: BusinessDashboardProps) => {
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="overview">{t('overview', { ns: 'business' })}</TabsTrigger>
+            <TabsTrigger value="analytics">{t('analytics', { ns: 'business' })}</TabsTrigger>
+            <TabsTrigger value="content">{t('content', { ns: 'business' })}</TabsTrigger>
+            <TabsTrigger value="notifications">{t('notifications', { ns: 'common' })}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">

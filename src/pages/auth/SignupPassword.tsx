@@ -17,7 +17,7 @@ const SignupPassword: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { document.title = 'Create Password - Spott'; }, []);
+  useEffect(() => { document.title = t('signup:passwordTitle', { defaultValue: 'Create Password - Spott' }); }, [t]);
   
   useEffect(() => {
     const session = sessionStorage.getItem('signup_session');

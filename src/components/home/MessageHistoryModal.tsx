@@ -165,9 +165,9 @@ const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Messages</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('messages', { ns: 'common' })}</h2>
               <span className="text-sm text-gray-600">
-                {sentMessages.length + receivedMessages.length} total
+                {sentMessages.length + receivedMessages.length} {t('total', { ns: 'common' })}
               </span>
             </div>
           </div>

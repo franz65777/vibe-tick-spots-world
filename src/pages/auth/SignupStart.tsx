@@ -38,8 +38,8 @@ const SignupStart: React.FC = () => {
   const [existsMessage, setExistsMessage] = useState<string>('');
 
   useEffect(() => {
-    document.title = 'Unisciti a Spott - Signup';
-  }, []);
+    document.title = t('signup:signupTitle', { defaultValue: 'Join Spott - Signup' });
+  }, [t]);
 
   // Reset exists state when switching methods
   useEffect(() => {

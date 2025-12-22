@@ -5828,4 +5828,44 @@ Object.entries(additionalCommonKeys).forEach(([lang, namespaces]) => {
   });
 });
 
+// Final batch of translation keys
+const lastBatchKeys = {
+  en: { 
+    common: { notifications: 'Notifications', messages: 'Messages', total: 'total' }, 
+    business: { overview: 'Overview', analytics: 'Analytics', content: 'Content' },
+    signup: { detailsTitle: 'Details - Spott', verifyTitle: 'Verify - Spott', signupTitle: 'Join Spott - Signup', profileTitle: 'Profile - Spott', passwordTitle: 'Create Password - Spott' },
+    auth: { signInTitle: 'Sign In - Spott' },
+  },
+  it: { 
+    common: { notifications: 'Notifiche', messages: 'Messaggi', total: 'totale' }, 
+    business: { overview: 'Panoramica', analytics: 'Statistiche', content: 'Contenuti' },
+    signup: { detailsTitle: 'Dettagli - Spott', verifyTitle: 'Verifica - Spott', signupTitle: 'Unisciti a Spott - Registrazione', profileTitle: 'Profilo - Spott', passwordTitle: 'Crea Password - Spott' },
+    auth: { signInTitle: 'Accedi - Spott' },
+  },
+  es: { 
+    common: { notifications: 'Notificaciones', messages: 'Mensajes', total: 'total' }, 
+    business: { overview: 'Resumen', analytics: 'Analíticas', content: 'Contenido' },
+    signup: { detailsTitle: 'Detalles - Spott', verifyTitle: 'Verificar - Spott', signupTitle: 'Únete a Spott - Registro', profileTitle: 'Perfil - Spott', passwordTitle: 'Crear Contraseña - Spott' },
+    auth: { signInTitle: 'Iniciar Sesión - Spott' },
+  },
+  fr: { 
+    common: { notifications: 'Notifications', messages: 'Messages', total: 'total' }, 
+    business: { overview: 'Aperçu', analytics: 'Analytiques', content: 'Contenu' },
+    signup: { detailsTitle: 'Détails - Spott', verifyTitle: 'Vérifier - Spott', signupTitle: 'Rejoindre Spott - Inscription', profileTitle: 'Profil - Spott', passwordTitle: 'Créer Mot de Passe - Spott' },
+    auth: { signInTitle: 'Connexion - Spott' },
+  },
+  de: { 
+    common: { notifications: 'Benachrichtigungen', messages: 'Nachrichten', total: 'gesamt' }, 
+    business: { overview: 'Übersicht', analytics: 'Analytik', content: 'Inhalt' },
+    signup: { detailsTitle: 'Details - Spott', verifyTitle: 'Verifizieren - Spott', signupTitle: 'Spott beitreten - Anmeldung', profileTitle: 'Profil - Spott', passwordTitle: 'Passwort erstellen - Spott' },
+    auth: { signInTitle: 'Anmelden - Spott' },
+  },
+};
+
+Object.entries(lastBatchKeys).forEach(([lang, namespaces]) => {
+  Object.entries(namespaces).forEach(([ns, values]) => {
+    ensureNamespace(lang, ns, values);
+  });
+});
+
 export default i18n;
