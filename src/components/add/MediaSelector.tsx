@@ -9,6 +9,7 @@ import addPageHero from '@/assets/add-page-hero.png';
 import { SocialImportTutorial } from './SocialImportTutorial';
 import iconPost from '@/assets/icon-post.png';
 import iconList from '@/assets/icon-list.png';
+
 interface MediaSelectorProps {
   selectedFiles: File[];
   previewUrls: string[];
@@ -16,6 +17,7 @@ interface MediaSelectorProps {
   onRemoveFile: (index: number) => void;
   maxFiles?: number;
 }
+
 export const MediaSelector: React.FC<MediaSelectorProps> = ({
   selectedFiles,
   previewUrls,
@@ -24,32 +26,52 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   maxFiles = 5
 }) => {
   const { t, i18n } = useTranslation();
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showSocialImport, setShowSocialImport] = useState(false);
+  
   const handleClick = () => {
     fileInputRef.current?.click();
   };
+
+  // Auto-scroll to show add button when new photo is added
+  useEffect(() => {
+    if (selectedFiles.length >= 2 && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        left: scrollContainerRef.current.scrollWidth,
+        behavior: 'smooth'
+      });
+    }
+  }, [selectedFiles.length]);
+
   const categories = ['restaurant', 'cafe', 'bar', 'hotel', 'entertainment', 'bakery', 'museum'];
+  
   if (selectedFiles.length === 0) {
-    return <div className="flex flex-col items-center justify-center bg-background p-6 -mt-[30px] relative overflow-hidden min-h-screen" data-photo-selection="true">
+    return (
+      <div className="flex flex-col items-center justify-center bg-background p-6 -mt-[30px] relative overflow-hidden min-h-screen" data-photo-selection="true">
         <div className="text-center space-y-6 max-w-sm relative z-10">
           {/* Floating Category Icons - Arranged in Circle */}
           <div className="relative w-full h-64 flex items-center justify-center mb-4">
             {categories.map((category, index) => {
-            // Position icons in a circle around the center (radius: 120px)
-            const angle = index * 360 / categories.length;
-            const radius = 120;
-            const radian = angle * Math.PI / 180;
-            const x = Math.cos(radian) * radius;
-            const y = Math.sin(radian) * radius;
-            return <div key={category} className="absolute opacity-70 transition-opacity hover:opacity-100" style={{
-              top: `calc(50% + ${y}px - 1.75rem)`,
-              left: `calc(50% + ${x}px - 1.75rem)`
-            }}>
+              const angle = index * 360 / categories.length;
+              const radius = 120;
+              const radian = angle * Math.PI / 180;
+              const x = Math.cos(radian) * radius;
+              const y = Math.sin(radian) * radius;
+              return (
+                <div
+                  key={category}
+                  className="absolute opacity-70 transition-opacity hover:opacity-100"
+                  style={{
+                    top: `calc(50% + ${y}px - 1.75rem)`,
+                    left: `calc(50% + ${x}px - 1.75rem)`
+                  }}
+                >
                   <CategoryIcon category={category} className="w-14 h-14 drop-shadow-lg" />
-                </div>;
-          })}
+                </div>
+              );
+            })}
             
             {/* Center Hero Image */}
             <div className="w-36 h-36 flex items-center justify-center relative z-10">
@@ -58,13 +80,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           </div>
           
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold">{t('shareExperience', {
-              ns: 'add'
-            })}</h2>
+            <h2 className="text-2xl font-bold">{t('shareExperience', { ns: 'add' })}</h2>
             <p className="text-muted-foreground">
-              {t('addPhotosVideos', {
-              ns: 'add'
-            })}
+              {t('addPhotosVideos', { ns: 'add' })}
             </p>
           </div>
 
@@ -94,45 +112,54 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             </Button>
           </div>
 
-          <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={e => e.target.files && onFilesSelect(e.target.files)} className="hidden" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            onChange={e => e.target.files && onFilesSelect(e.target.files)}
+            className="hidden"
+          />
         </div>
 
         {/* Social Import Tutorial */}
         <SocialImportTutorial open={showSocialImport} onClose={() => setShowSocialImport(false)} />
-      </div>;
+      </div>
+    );
   }
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to show add button when new photo is added
-  useEffect(() => {
-    if (selectedFiles.length >= 2 && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        left: scrollContainerRef.current.scrollWidth,
-        behavior: 'smooth'
-      });
-    }
-  }, [selectedFiles.length]);
-
-  return <div className="space-y-3" data-photo-selection="false">
+  return (
+    <div className="space-y-3" data-photo-selection="false">
       {/* All items in horizontal scroll */}
       <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 items-center">
           {previewUrls.map((url, index) => {
             const file = selectedFiles[index];
             const isVideo = file?.type.startsWith('video/');
-            return <div key={index} className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
-              {isVideo ? <video src={url} className="w-full h-full object-cover" controls={false} /> : <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />}
-              
-              {isVideo && <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
-                  <Video className="w-5 h-5 text-white" />
-                </div>
-              </div>}
-              
-              <button onClick={() => onRemoveFile(index)} className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors">
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>;
+            return (
+              <div key={index} className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
+                {isVideo ? (
+                  <video src={url} className="w-full h-full object-cover" controls={false} />
+                ) : (
+                  <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                )}
+                
+                {isVideo && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+                      <Video className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                )}
+                
+                <button
+                  onClick={() => onRemoveFile(index)}
+                  className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            );
           })}
           
           {/* Add more button - green + icon */}
@@ -144,6 +171,14 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
         </div>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={e => e.target.files && onFilesSelect(e.target.files)} className="hidden" />
-    </div>;
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        onChange={e => e.target.files && onFilesSelect(e.target.files)}
+        className="hidden"
+      />
+    </div>
+  );
 };
