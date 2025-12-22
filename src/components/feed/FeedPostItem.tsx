@@ -183,7 +183,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
               {username}
             </button>
             {/* Show address only in promotion feed, otherwise show location name */}
-            {isPromotionFeed && location && (
+            {isPromotionFeed && location && location.latitude != null && location.longitude != null && (
               <button
                 onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
@@ -196,7 +196,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                 </span>
               </button>
             )}
-            {!isPromotionFeed && locationName && locationId && location?.latitude && location?.longitude && (
+            {!isPromotionFeed && locationName && locationId && location && location.latitude != null && location.longitude != null && (
               <button
                 onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
