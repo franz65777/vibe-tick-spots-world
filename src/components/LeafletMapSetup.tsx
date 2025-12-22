@@ -41,6 +41,7 @@ interface LeafletMapSetupProps {
   hideSharingControls?: boolean;
   fromMessages?: boolean;
   onBackToMessages?: () => void;
+  hideOtherPins?: boolean; // When true, only shows the selected pin
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -64,6 +65,7 @@ const LeafletMapSetup = ({
   hideSharingControls = false,
   fromMessages = false,
   onBackToMessages,
+  hideOtherPins = false,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -478,17 +480,22 @@ const LeafletMapSetup = ({
       return;
     }
 
-    // Remove markers that no longer exist
+    // When hideOtherPins is true and we have a selectedPlace, only show that pin
+    const placesToRender = hideOtherPins && selectedPlace 
+      ? places.filter(p => p.id === selectedPlace.id)
+      : places;
+
+    // Remove markers that are not in placesToRender
     markersRef.current.forEach((marker, id) => {
-      if (!places.find((p) => p.id === id)) {
+      if (!placesToRender.find((p) => p.id === id)) {
         clusterGroup.removeLayer(marker);
         markersRef.current.delete(id);
       }
     });
 
-    // Fetch active campaigns for all locations
+    // Fetch active campaigns for locations to render
     const fetchCampaigns = async () => {
-      const locationIds = places.map(p => p.id).filter(Boolean);
+      const locationIds = placesToRender.map(p => p.id).filter(Boolean);
       if (locationIds.length === 0) {
         // No places, render empty markers
         return;
@@ -506,7 +513,7 @@ const LeafletMapSetup = ({
 
         // Add / update markers
         const usedFallbackShareIds = new Set<string>();
-        places.forEach((place) => {
+        placesToRender.forEach((place) => {
           if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
           const hasCampaign = campaignLocationIds.has(place.id);
@@ -596,7 +603,7 @@ const LeafletMapSetup = ({
     };
 
     fetchCampaigns();
-  }, [places, isDarkMode, onPinClick, trackEvent, shares, user]);
+  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id]);
 
   // Keep selected marker visible outside clusters
   const selectedMarkerRef = useRef<L.Marker | null>(null);

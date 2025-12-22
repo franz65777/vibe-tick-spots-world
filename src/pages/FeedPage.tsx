@@ -204,6 +204,7 @@ const FeedPage = memo(() => {
           name: locationName || '',
           lat: latitude,
           lng: longitude,
+          category: (feedItems.find(i => i.id === postId) as any)?.locations?.category || 'restaurant',
           sourcePostId: postId
         }
       }
