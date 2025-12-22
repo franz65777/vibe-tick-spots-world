@@ -222,7 +222,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
   if (!languageLoaded) {
     return (
       <div className="fixed inset-0 z-[2000] bg-background flex items-center justify-center safe-top safe-bottom">
-        <div className="animate-pulse text-muted-foreground">{t('loading', { ns: 'common' })}</div>
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
   }

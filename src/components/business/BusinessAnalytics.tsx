@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { BarChart3, TrendingUp, Users, MapPin, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { useTranslation } from 'react-i18next';
 
 interface BusinessAnalyticsProps {
   businessData: {
@@ -15,7 +15,6 @@ interface BusinessAnalyticsProps {
 }
 
 const BusinessAnalytics = ({ businessData }: BusinessAnalyticsProps) => {
-  const { t } = useTranslation();
   // Mock data for charts
   const savedOverTime = [
     { month: 'Jan', saves: 45 },
@@ -49,9 +48,9 @@ const BusinessAnalytics = ({ businessData }: BusinessAnalyticsProps) => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('growthRate', { ns: 'business' })}</p>
+                <p className="text-sm font-medium text-gray-600">Growth Rate</p>
                 <p className="text-2xl font-bold text-green-600">+23%</p>
-                <p className="text-xs text-gray-500">{t('vsLastMonth', { ns: 'business' })}</p>
+                <p className="text-xs text-gray-500">vs last month</p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-600" />
             </div>
@@ -170,13 +169,13 @@ const BusinessAnalytics = ({ businessData }: BusinessAnalyticsProps) => {
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                <h4 className="font-semibold text-blue-900 mb-1">{t('peakActivityHours', { ns: 'business' })}</h4>
-                <p className="text-sm text-blue-700">{t('peakActivityDesc', { ns: 'business' })}</p>
+                <h4 className="font-semibold text-blue-900 mb-1">Peak Activity Hours</h4>
+                <p className="text-sm text-blue-700">Most user activity occurs between 6-9 PM on weekdays</p>
               </div>
               
               <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                <h4 className="font-semibold text-green-900 mb-1">{t('topContentType', { ns: 'business' })}</h4>
-                <p className="text-sm text-green-700">{t('topContentDesc', { ns: 'business' })}</p>
+                <h4 className="font-semibold text-green-900 mb-1">Top Content Type</h4>
+                <p className="text-sm text-green-700">Food photos generate 45% more engagement than other content</p>
               </div>
               
               <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">

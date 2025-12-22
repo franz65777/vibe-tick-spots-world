@@ -2,7 +2,6 @@
 import { useProfile } from '@/hooks/useProfile';
 import { useFollowStats } from '@/hooks/useFollowStats';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { useTranslation } from 'react-i18next';
 
 interface ProfileStatsProps {
   profile?: any;
@@ -19,7 +18,6 @@ const ProfileStats = ({
   onPostsClick, 
   onLocationsClick 
 }: ProfileStatsProps) => {
-  const { t } = useTranslation();
   const { profile: currentUserProfile } = useProfile();
   const { stats } = useFollowStats();
   const { getStats } = useSavedPlaces();
@@ -44,7 +42,7 @@ const ProfileStats = ({
           onClick={onPostsClick}
         >
           <div className="text-xl font-bold text-gray-900">{displayStats.posts}</div>
-          <div className="text-sm text-gray-600">{t('profile:posts')}</div>
+          <div className="text-sm text-gray-600">Posts</div>
         </button>
         
         <button 
@@ -52,7 +50,7 @@ const ProfileStats = ({
           onClick={onFollowersClick}
         >
           <div className="text-xl font-bold text-gray-900">{displayStats.followers}</div>
-          <div className="text-sm text-gray-600">{t('common:followers')}</div>
+          <div className="text-sm text-gray-600">Followers</div>
         </button>
         
         <button 
@@ -60,7 +58,7 @@ const ProfileStats = ({
           onClick={onFollowingClick}
         >
           <div className="text-xl font-bold text-gray-900">{displayStats.following}</div>
-          <div className="text-sm text-gray-600">{t('common:followingTab')}</div>
+          <div className="text-sm text-gray-600">Following</div>
         </button>
         
         <button 
@@ -68,7 +66,7 @@ const ProfileStats = ({
           onClick={onLocationsClick}
         >
           <div className="text-xl font-bold text-gray-900">{displayStats.locations}</div>
-          <div className="text-sm text-gray-600">{t('mapFilters:saved')}</div>
+          <div className="text-sm text-gray-600">Saved</div>
         </button>
       </div>
     </div>

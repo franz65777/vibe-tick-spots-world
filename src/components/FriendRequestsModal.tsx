@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { X, UserPlus, UserMinus, Shield } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -13,7 +12,6 @@ interface FriendRequestsModalProps {
 }
 
 const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
-  const { t } = useTranslation();
   const { pendingRequests, acceptFriendRequest, blockUser, loading } = useFriendRequests();
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
 
@@ -65,7 +63,7 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
       <div className="bg-white w-full h-[80vh] rounded-t-xl">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">{t('settings:friendRequests', { defaultValue: 'Friend Requests' })}</h2>
+          <h2 className="text-lg font-semibold">Friend Requests</h2>
           <button onClick={onClose}>
             <X className="w-6 h-6 text-gray-600" />
           </button>
@@ -80,7 +78,7 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
             ) : pendingRequests.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <UserPlus className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p>{t('settings:noFriendRequests', { defaultValue: 'No pending friend requests' })}</p>
+                <p>No pending friend requests</p>
               </div>
             ) : (
               pendingRequests.map((request) => (
@@ -120,7 +118,7 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <UserPlus className="w-4 h-4 mr-1" />
-                      {t('common:accept', { defaultValue: 'Accept' })}
+                      Accept
                     </Button>
                     <Button
                       size="sm"
@@ -130,7 +128,7 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
                       className="border-red-200 text-red-600 hover:bg-red-50"
                     >
                       <Shield className="w-4 h-4 mr-1" />
-                      {t('common:block', { defaultValue: 'Block' })}
+                      Block
                     </Button>
                   </div>
                 </div>

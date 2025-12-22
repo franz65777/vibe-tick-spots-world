@@ -133,12 +133,12 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-business-requests'] });
-      toast.success(t('businessRequestApproved', { ns: 'settings', defaultValue: 'Business request approved successfully' }));
+      toast.success('Business request approved successfully');
       setSelectedRequest(null);
       setApproveDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(t('failedToApproveRequest', { ns: 'settings', defaultValue: 'Failed to approve request' }) + ': ' + error.message);
+      toast.error('Failed to approve request: ' + error.message);
     },
   });
 
@@ -175,12 +175,12 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-business-requests'] });
-      toast.success(t('businessRequestRejected', { ns: 'settings', defaultValue: 'Business request rejected' }));
+      toast.success('Business request rejected');
       setSelectedRequest(null);
       setRejectDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(t('failedToRejectRequest', { ns: 'settings', defaultValue: 'Failed to reject request' }) + ': ' + error.message);
+      toast.error('Failed to reject request: ' + error.message);
     },
   });
 
@@ -199,7 +199,7 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col">
-          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+8px)] p-4">
+          <SheetHeader className="pt-[env(safe-area-inset-top)] p-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onOpenChange(false)}
@@ -301,8 +301,8 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
                 {requests && requests.length === 0 && (
                   <Card className="p-12 text-center">
                     <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">{t('noPendingRequests', { ns: 'business' })}</h3>
-                    <p className="text-muted-foreground text-sm">{t('pendingRequestsWillAppear', { ns: 'business' })}</p>
+                    <h3 className="text-lg font-semibold mb-2">No pending requests</h3>
+                    <p className="text-muted-foreground text-sm">Pending business account requests will appear here</p>
                   </Card>
                 )}
               </div>

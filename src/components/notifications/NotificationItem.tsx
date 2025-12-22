@@ -23,7 +23,7 @@ interface NotificationItemProps {
 }
 
 const NotificationItem = ({ notification, onMarkAsRead, onAction }: NotificationItemProps) => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const [currentUserData, setCurrentUserData] = useState<{name: string, avatar: string} | null>(null);
   
   // Fetch current user data dynamically for notifications with user_id
@@ -245,10 +245,10 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
             {notification.type === 'friend_request' && notification.data?.status === 'pending' && (
               <div className="flex gap-2">
                 <Button size="sm" className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700">
-                  {t('common:accept', { defaultValue: 'Accept' })}
+                  Accept
                 </Button>
                 <Button size="sm" variant="outline" className="h-7 px-3 text-xs">
-                  {t('common:decline', { defaultValue: 'Decline' })}
+                  Decline
                 </Button>
               </div>
             )}

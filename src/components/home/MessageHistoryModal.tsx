@@ -3,7 +3,6 @@ import { X, MessageCircle, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { messageService, DirectMessage } from '@/services/messageService';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
 
 interface MessageHistoryModalProps {
   isOpen: boolean;
@@ -11,7 +10,6 @@ interface MessageHistoryModalProps {
 }
 
 const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const [sentMessages, setSentMessages] = useState<DirectMessage[]>([]);
   const [receivedMessages, setReceivedMessages] = useState<DirectMessage[]>([]);
@@ -165,9 +163,9 @@ const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{t('messages', { ns: 'common' })}</h2>
+              <h2 className="text-xl font-bold text-gray-900">Messages</h2>
               <span className="text-sm text-gray-600">
-                {sentMessages.length + receivedMessages.length} {t('total', { ns: 'common' })}
+                {sentMessages.length + receivedMessages.length} total
               </span>
             </div>
           </div>
@@ -214,8 +212,8 @@ const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <ArrowLeft className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('noMessagesReceived', { ns: 'messages' })}</h3>
-                  <p className="text-gray-500">{t('youllSeeMessagesHere', { ns: 'messages' })}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages received</h3>
+                  <p className="text-gray-500">You'll see messages from others here</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
@@ -234,8 +232,8 @@ const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <ArrowRight className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('noMessagesSentYet', { ns: 'messages' })}</h3>
-                  <p className="text-gray-500">{t('startConversationsToSee', { ns: 'messages' })}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages sent yet</h3>
+                  <p className="text-gray-500">Start conversations to see your sent messages here</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">

@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { useTranslation } from 'react-i18next';
 
 interface SearchResult {
   id: string;
@@ -48,7 +47,6 @@ const UnifiedSearchAutocomplete = ({
   onScroll,
   showCategoryIcons = false,
 }: UnifiedSearchAutocompleteProps) => {
-  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -223,9 +221,9 @@ const UnifiedSearchAutocomplete = ({
       {/* No results */}
       {showResults && !loading && query.length >= 2 && results.length === 0 && (
         <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg p-6 text-center">
-          <p className="text-muted-foreground">{t('noPlacesFoundFor', { ns: 'explore', query })}</p>
+          <p className="text-muted-foreground">No places found for "{query}"</p>
           <p className="text-sm text-muted-foreground mt-2">
-            {t('trySearchingCityOrLandmark', { ns: 'explore' })}
+            Try searching for a city or landmark
           </p>
         </div>
       )}

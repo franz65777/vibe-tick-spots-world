@@ -416,7 +416,7 @@ const MobileNotificationItem = ({
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
-      toast.error(t('failedToUpdateFollowStatus', { ns: 'notifications' }));
+      toast.error('Failed to update follow status');
     } finally {
       setIsLoading(false);
     }
@@ -453,7 +453,7 @@ const MobileNotificationItem = ({
       }
     } catch (error) {
       console.error('Error liking comment:', error);
-      toast.error(t('failedToLikeComment', { ns: 'notifications' }));
+      toast.error('Failed to like comment');
     }
   };
 
@@ -512,7 +512,7 @@ const MobileNotificationItem = ({
       toast.success(t('messageSent', { ns: 'notifications' }));
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error(t('failedToSendMessage', { ns: 'notifications' }));
+      toast.error('Failed to send message');
     } finally {
       setIsLoading(false);
     }

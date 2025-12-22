@@ -17,10 +17,10 @@ const SignupVerify: React.FC = () => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  
+
   useEffect(() => {
-    document.title = t('signup:verifyTitle', { defaultValue: 'Verify - Spott' });
-  }, [t]);
+    document.title = 'Verify - Spott';
+  }, []);
 
   useEffect(() => {
     if (resendCooldown > 0) {

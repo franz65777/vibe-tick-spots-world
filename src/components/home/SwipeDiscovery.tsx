@@ -392,7 +392,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       }
     } catch (error) {
       console.error('❌ Error fetching swipe locations:', error);
-      toast.error(t('failedToLoadLocations', { ns: 'common' }));
+      toast.error('Failed to load locations');
     } finally {
       setLoading(false);
     }
@@ -425,12 +425,12 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
         if (saveError) {
           console.error('Error saving location:', saveError);
-          toast.error(t('failedToSaveLocation', { ns: 'common' }));
+          toast.error('Failed to save location');
           setSwipeDirection(null);
           return;
         }
 
-        toast.success(t('locationSaved', { ns: 'common', name: location.name }));
+        toast.success(`${location.name} saved!`);
       }
 
       // Remove swiped location from list and update counts
@@ -459,7 +459,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       }, 300);
     } catch (error) {
       console.error('Error swiping:', error);
-      toast.error(t('somethingWentWrong', { ns: 'common' }));
+      toast.error('Something went wrong');
       setSwipeDirection(null);
     }
   };
@@ -522,7 +522,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         <button
           onClick={() => navigate('/')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
-          aria-label={t('goBack', { ns: 'common' })}
+          aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
@@ -778,17 +778,17 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
-                      aria-label={t('pass', { ns: 'common' })}
+                      aria-label="Pass"
                     >
-                      <img src={swipeNo} alt={t('pass', { ns: 'common' })} className="w-full h-full object-contain drop-shadow-lg" />
+                      <img src={swipeNo} alt="Pass" className="w-full h-full object-contain drop-shadow-lg" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
                       disabled={swipeDirection !== null}
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
-                      aria-label={t('save', { ns: 'common' })}
+                      aria-label="Save"
                     >
-                      <img src={swipePin} alt={t('save', { ns: 'common' })} className="w-full h-full object-contain drop-shadow-lg" />
+                      <img src={swipePin} alt="Save" className="w-full h-full object-contain drop-shadow-lg" />
                     </button>
                   </div>
                 </div>

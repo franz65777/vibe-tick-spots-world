@@ -7,7 +7,6 @@ import { formatPostDate } from '@/utils/dateFormatter';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
-import { LikersDrawer } from '@/components/social/LikersDrawer';
 import { PostActions } from '@/components/feed/PostActions';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { getPostComments, addPostComment, deletePostComment, type Comment } from '@/services/socialEngagementService';
@@ -15,7 +14,6 @@ import { useTranslation } from 'react-i18next';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
-import { usePostEngagementCounts } from '@/hooks/usePostEngagementCounts';
 
 interface PostDetailModalMobileProps {
   postId: string;
@@ -61,14 +59,11 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [loading, setLoading] = useState(true);
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [likersOpen, setLikersOpen] = useState(false);
-  const [likersPostId, setLikersPostId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
   const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
   const [currentMediaIndexes, setCurrentMediaIndexes] = useState<Record<string, number>>({});
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const { counts } = usePostEngagementCounts(posts.map((p) => p.id));
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -369,26 +364,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   if (loading || posts.length === 0) {
     return (
-      <div className="fixed inset-0 z-[3000] bg-background">
-        {/* Header with iOS safe area during loading */}
-        <div className="bg-background sticky top-0 z-20 flex items-center px-4 pt-safe pb-3">
-          {(locationId || userId || showBackButton) && (
-            <button
-              onClick={onClose}
-              className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              <span className="font-semibold">
-                {backLabel || (locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' }))}
-              </span>
-            </button>
-          )}
-        </div>
-        <div className="flex items-center justify-center h-[50vh]">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
+      <div className="fixed inset-0 z-[3000] bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -417,7 +394,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           const hasMultipleMedia = post.media_urls.length > 1;
           
           return (
-            <article key={post.id} data-post-id={post.id} className="post-compact pb-1" style={{ scrollMarginTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}>
+            <article key={post.id} data-post-id={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-2" />}
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -477,17 +454,15 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                       className="w-full" 
                       gutter={false}
                       setApi={(api) => {
-                        if (!api || carouselApis[post.id] === api) return;
-                        setCarouselApis(prev => {
-                          if (prev[post.id] === api) return prev;
-                          return { ...prev, [post.id]: api };
-                        });
-                        api.on('select', () => {
-                          setCurrentMediaIndexes(prev => ({ 
-                            ...prev, 
-                            [post.id]: api.selectedScrollSnap() 
-                          }));
-                        });
+                        setCarouselApis(prev => ({ ...prev, [post.id]: api }));
+                        if (api) {
+                          api.on('select', () => {
+                            setCurrentMediaIndexes(prev => ({ 
+                              ...prev, 
+                              [post.id]: api.selectedScrollSnap() 
+                            }));
+                          });
+                        }
                       }}
                     >
                       <CarouselContent className="-ml-0">
@@ -562,9 +537,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
                 <PostActions
                   postId={post.id}
-                  likesCount={counts[post.id]?.likes ?? post.likes_count ?? 0}
-                  commentsCount={counts[post.id]?.comments ?? post.comments_count ?? 0}
-                  sharesCount={counts[post.id]?.shares ?? post.shares_count ?? 0}
+                  likesCount={post.likes_count || 0}
+                  commentsCount={post.comments_count || 0}
+                  sharesCount={post.shares_count || 0}
                   locationId={post.location_id}
                   locationName={post.locations?.name}
                   onCommentClick={handleCommentClick}
@@ -572,7 +547,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                 />
 
                 {/* Timestamp */}
-                <p className="text-xs text-muted-foreground text-left">
+                <p className="text-xs text-muted-foreground uppercase text-left">
                   {formatPostDate(post.created_at, t)}
                 </p>
               </div>
@@ -603,18 +578,6 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           onClose={() => setShareOpen(false)}
           onShare={async () => true}
           postId={posts[0].id}
-        />
-      )}
-
-      {/* Likers Drawer */}
-      {likersPostId && (
-        <LikersDrawer
-          isOpen={likersOpen}
-          onClose={() => {
-            setLikersOpen(false);
-            setLikersPostId(null);
-          }}
-          postId={likersPostId}
         />
       )}
     </>

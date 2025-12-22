@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 
 interface ProfilePictureEditorProps {
   isOpen: boolean;
@@ -17,7 +17,6 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   onClose,
   currentAvatarUrl
 }) => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
@@ -29,13 +28,13 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert(t('pleaseSelectImage', { ns: 'common' }));
+        alert('Please select an image file');
         return;
       }
 
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        alert(t('fileSizeTooLarge', { ns: 'common' }));
+        alert('File size must be less than 5MB');
         return;
       }
 
@@ -87,7 +86,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       setSelectedFile(null);
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      alert(t('failedToUploadProfilePicture', { ns: 'common' }));
+      alert('Failed to upload profile picture. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -117,7 +116,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       setSelectedFile(null);
     } catch (error) {
       console.error('Error removing avatar:', error);
-      alert(t('failedToRemoveProfilePicture', { ns: 'common' }));
+      alert('Failed to remove profile picture. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -130,7 +129,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t('profilePicture', { ns: 'common' })}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Profile Picture</h2>
           <button 
             onClick={onClose} 
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -175,12 +174,12 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
               >
                 <Upload className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-600">{t('choosePhoto', { ns: 'common' })}</span>
+                <span className="text-gray-600">Choose a photo</span>
               </label>
             </div>
 
             <div className="text-xs text-gray-500 text-center">
-              {t('imageFileFormats', { ns: 'common' })}
+              JPG, PNG, or GIF. Max file size 5MB.
             </div>
           </div>
         </div>
@@ -194,7 +193,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
               disabled={uploading}
               className="flex-1"
             >
-              {t('remove', { ns: 'common' })}
+              Remove
             </Button>
           )}
           <Button
@@ -203,7 +202,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
             disabled={uploading}
             className="flex-1"
           >
-            {t('cancel', { ns: 'common' })}
+            Cancel
           </Button>
           <Button
             onClick={handleUpload}
@@ -213,10 +212,10 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
             {uploading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                {t('uploading', { ns: 'common' })}
+                Uploading...
               </div>
             ) : (
-              t('save', { ns: 'common' })
+              'Save'
             )}
           </Button>
         </div>

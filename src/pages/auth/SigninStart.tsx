@@ -49,8 +49,8 @@ const SigninStart = () => {
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
-    document.title = t('auth:signInTitle', { defaultValue: 'Sign In - Spott' });
-  }, [t]);
+    document.title = 'Accedi - Spott';
+  }, []);
 
   useEffect(() => {
     if (user) {

@@ -411,21 +411,21 @@ const TripsGrid: React.FC<TripsGridProps> = ({
       <Dialog open={!!editingTrip} onOpenChange={open => !open && setEditingTrip(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('trips:editTrip')}</DialogTitle>
+            <DialogTitle>Edit Trip</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">{t('add:name')}</label>
-              <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('trips:tripName')} />
+              <label className="text-sm font-medium">Name</label>
+              <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Trip name" />
             </div>
             <div>
-              <label className="text-sm font-medium">{t('add:description')}</label>
-              <Textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} placeholder={t('trips:optionalDescription')} rows={3} />
+              <label className="text-sm font-medium">Description</label>
+              <Textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} placeholder="Optional description" rows={3} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTrip(null)}>
-              {t('common:cancel')}
+              Cancel
             </Button>
             <Button onClick={handleSaveEdit}>
               Save Changes

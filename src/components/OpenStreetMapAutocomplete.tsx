@@ -73,13 +73,10 @@ const OpenStreetMapAutocomplete = ({
       const combinedResults: SearchResult[] = [];
 
       // 1. Search our database first (instant, no API cost)
-      // CRITICAL: Only return locations WITH valid coordinates to prevent post tagging issues
       const { data: dbLocations } = await supabase
         .from('locations')
         .select('id, name, address, city, latitude, longitude')
         .or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
         .limit(20); // Get more to deduplicate
 
       if (dbLocations) {

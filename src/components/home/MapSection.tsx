@@ -58,10 +58,12 @@ const MapSection = ({
   const { t } = useTranslation();
   
   // Use global filter context - single source of truth
-  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, isFriendsDropdownOpen, isFilterExpanded } = useMapFilter();
+  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded } = useMapFilter();
 
-  // Cleanup timeout on unmount (legacy - no longer used but keeping for safety)
+  // Hide filters when map is moving
   const moveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
   React.useEffect(() => {
     return () => {
       if (moveTimeoutRef.current) {
@@ -210,13 +212,27 @@ const MapSection = ({
   };
 
   const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
-    // Update map bounds for dynamic loading - keep filters always visible
+    // Hide filters immediately when movement starts
+    setFiltersVisible(false);
+    
+    // Clear existing timeout
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+    }
+    
+    // Show filters after 500ms of no movement
+    moveTimeoutRef.current = setTimeout(() => {
+      setFiltersVisible(true);
+    }, 500);
+    
+    // Update map bounds for dynamic loading
     setMapBounds({
       north: bounds.getNorth(),
       south: bounds.getSouth(),
       east: bounds.getEast(),
       west: bounds.getWest(),
     });
+    console.log('🗺️ Map moved - loading pins within bounds');
   };
 
   return (
@@ -273,10 +289,11 @@ const MapSection = ({
         {/* Map Category Filters - Hide when list view is open */}
         {!isListViewOpen && (
           <div className={cn(
-            "z-[2000] w-full",
+            "z-[1100] w-full transition-opacity duration-300",
             isExpanded
               ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
-              : "absolute top-4 left-0 right-0 px-1"
+              : "absolute top-4 left-0 right-0 px-1",
+            filtersVisible ? "opacity-100" : "opacity-0"
           )}>
             <div className="flex justify-center w-full">
               <MapCategoryFilters currentCity={currentCity} />
@@ -284,17 +301,18 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Filter Dropdown - Bottom Left */}
+        {/* Map Filter Dropdown and Sharing Controls - Bottom Left */}
         {!isListViewOpen && (
           <div 
             className={cn(
-              "left-3 z-[2000] flex items-center gap-2",
-              isExpanded ? 'fixed' : 'absolute'
+              "left-3 z-[1000] transition-opacity duration-300 flex items-center gap-2",
+              isExpanded ? 'fixed' : 'absolute',
+              filtersVisible ? "opacity-100" : "opacity-0"
             )}
             style={{
               bottom: isExpanded 
-                ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
-                : 'calc(6.5rem + env(safe-area-inset-bottom, 0px))'
+                ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
+                : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
             }}
           >
             <MapFilterDropdown />
@@ -305,14 +323,14 @@ const MapSection = ({
         {!isListViewOpen && (
         <div 
           className={cn(
-            "right-3 z-[2000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-opacity duration-150",
+            "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-all duration-150",
             isExpanded ? 'fixed' : 'absolute',
-            !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
+            filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
           )} 
           style={{
             bottom: isExpanded 
-              ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
-              : 'calc(6.5rem + env(safe-area-inset-bottom, 0px))'
+              ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
+              : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
           }}
           data-has-sharing={false}>
           {/* Expand/Collapse Button */}

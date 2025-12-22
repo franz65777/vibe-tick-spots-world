@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Clock, X, Users } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 interface RecentSearch {
   id: string;
@@ -23,7 +23,6 @@ interface RecentSearchesProps {
 }
 
 const RecentSearches = ({ searchMode, onSearchClick, onUserClick }: RecentSearchesProps) => {
-  const { t } = useTranslation();
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
 
   useEffect(() => {
@@ -95,7 +94,7 @@ const RecentSearches = ({ searchMode, onSearchClick, onUserClick }: RecentSearch
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-gray-400" />
-          <h3 className="font-medium text-gray-900">{t('recentSearches', { ns: 'explore' })}</h3>
+          <h3 className="font-medium text-gray-900">Recent Searches</h3>
         </div>
         <Button
           variant="ghost"
@@ -103,7 +102,7 @@ const RecentSearches = ({ searchMode, onSearchClick, onUserClick }: RecentSearch
           onClick={clearAllSearches}
           className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700"
         >
-          {t('clearAll', { ns: 'common' })}
+          Clear all
         </Button>
       </div>
 
@@ -135,7 +134,7 @@ const RecentSearches = ({ searchMode, onSearchClick, onUserClick }: RecentSearch
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm text-gray-900 truncate">{search.query}</p>
-                  <p className="text-xs text-gray-500">{t('locationSearch', { ns: 'explore' })}</p>
+                  <p className="text-xs text-gray-500">Location search</p>
                 </div>
               </>
             )}

@@ -109,10 +109,10 @@ const NewBottomNavigation = () => {
     localStorage.setItem('accountMode', mode);
     if (mode === 'business') {
       navigate('/business');
-      toast.success(t('switchedToBusiness', { ns: 'settings', defaultValue: 'Switched to Business Account' }));
+      toast.success('Switched to Business Account');
     } else {
       navigate('/profile');
-      toast.success(t('switchedToPersonal', { ns: 'settings', defaultValue: 'Switched to Personal Account' }));
+      toast.success('Switched to Personal Account');
     }
   };
 

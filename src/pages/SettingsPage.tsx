@@ -35,8 +35,8 @@ const languages = [
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
   { code: 'ko', label: '한국어', flag: '🇰🇷' },
   { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
 ];
 
 const normalizeLanguage = (lang: string) =>
@@ -64,67 +64,30 @@ const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      // Always start from local preference so UI switches instantly
-      const stored = normalizeLanguage(localStorage.getItem('i18nextLng') || 'en');
-      console.info('🌐 SettingsPage load language:', { stored, i18nLanguage: i18n.language });
-      setLanguage(stored);
-      if (i18n.language !== stored) {
-        try {
-          await i18n.changeLanguage(stored);
-          console.info('🌐 SettingsPage applied stored language:', {
-            after: i18n.language,
-            hasCommon: i18n.hasResourceBundle(stored, 'common'),
-            hasSettings: i18n.hasResourceBundle(stored, 'settings'),
-          });
-        } catch (e) {
-          console.warn('🌐 SettingsPage failed to apply stored language:', e);
-        }
-      }
-
       if (!user?.id) return;
-
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('language')
         .eq('id', user.id)
         .single();
-
-      // If read fails or language is missing, do NOT force English.
-      if (error || !data?.language) return;
-
-      const normalizedLang = normalizeLanguage(data.language);
+      const langFromDb = data?.language || 'en';
+      const normalizedLang = normalizeLanguage(langFromDb);
       setLanguage(normalizedLang);
       localStorage.setItem('i18nextLng', normalizedLang);
-      if (i18n.language !== normalizedLang) {
-        await i18n.changeLanguage(normalizedLang);
-      }
+      i18n.changeLanguage(normalizedLang);
     };
-
     load();
   }, [user?.id]);
 
   const handleLanguageChange = async (newLanguage: string) => {
     const normalized = normalizeLanguage(newLanguage);
-
-    console.info('🌐 Language change requested:', { newLanguage, normalized, before: i18n.language });
-
-    // Switch UI immediately (don't block on DB)
     setLanguage(normalized);
-    localStorage.setItem('i18nextLng', normalized);
-    try {
-      await i18n.changeLanguage(normalized);
-      console.info('🌐 Language changed:', {
-        after: i18n.language,
-        hasCommon: i18n.hasResourceBundle(normalized, 'common'),
-        hasSettings: i18n.hasResourceBundle(normalized, 'settings'),
-      });
-    } catch (e) {
-      console.warn('🌐 i18n.changeLanguage failed:', e);
-    }
 
     const tForLang = i18n.getFixedT(normalized, 'settings');
-
+    
     if (!user?.id) {
+      localStorage.setItem('i18nextLng', normalized);
+      await i18n.changeLanguage(normalized);
       toast.success(tForLang('languageSaved'));
       return;
     }
@@ -136,9 +99,10 @@ const SettingsPage: React.FC = () => {
         .update({ language: normalized })
         .eq('id', user.id);
       if (error) throw error;
+      localStorage.setItem('i18nextLng', normalized);
+      await i18n.changeLanguage(normalized);
       toast.success(tForLang('languageSaved'));
     } catch (e: any) {
-      // Keep the local language, just warn that persistence failed
       toast.error(e?.message || tForLang('failedToSave'));
     } finally {
       setSaving(false);
@@ -151,14 +115,14 @@ const SettingsPage: React.FC = () => {
       navigate('/auth');
     } catch (error) {
       console.error('Error logging out:', error);
-      toast.error(t('logoutFailed', { ns: 'settings' }));
+      toast.error('Failed to logout');
     }
   };
 
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4 pt-[calc(env(safe-area-inset-top)+12px)] sticky top-0 z-10 bg-background">
+      <div className="flex items-center gap-3 p-4 pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background">
         <button
           onClick={() => navigate('/profile')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -221,8 +185,8 @@ const SettingsPage: React.FC = () => {
                 <div className="text-left">
                   <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
-                    {hasValidBusinessAccount
-                      ? t('manageBusinessAccount', { ns: 'settings' })
+                    {hasValidBusinessAccount 
+                      ? 'Gestisci il tuo account business' 
                       : t('requestBusinessAccount', { ns: 'settings' })}
                   </div>
                 </div>
@@ -292,9 +256,9 @@ const SettingsPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 text-muted-foreground" />
                   <div className="text-left">
-                    <div className="font-medium">{t('adminAnalyticsTitle', { ns: 'settings' })}</div>
+                    <div className="font-medium">Admin Analytics</div>
                     <div className="text-sm text-muted-foreground">
-                      {t('adminAnalyticsDesc', { ns: 'settings' })}
+                      View retention metrics and data management
                     </div>
                   </div>
                 </div>

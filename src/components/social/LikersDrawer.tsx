@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,6 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Search } from 'lucide-react';
-
-const PAGE_SIZE = 50;
 
 interface Liker {
   user_id: string;
@@ -32,13 +30,8 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   const [likers, setLikers] = useState<Liker[]>([]);
   const [filteredLikers, setFilteredLikers] = useState<Liker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
   const [followLoading, setFollowLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const listRef = useRef<HTMLDivElement>(null);
-  const followingIdsRef = useRef<Set<string>>(new Set());
 
   // Hide bottom navigation when drawer is open
   useEffect(() => {
@@ -54,15 +47,8 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
 
   useEffect(() => {
     if (isOpen && postId) {
-      // reset state and load first page
-      setLikers([]);
-      setFilteredLikers([]);
-      setSearchQuery('');
-      setHasMore(true);
-      setPage(0);
-      loadPage(0, true);
+      loadLikers();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, postId]);
 
   useEffect(() => {
@@ -77,113 +63,72 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
     }
   }, [searchQuery, likers]);
 
-  const ensureFollowingIds = async () => {
-    if (!user?.id) {
-      followingIdsRef.current = new Set();
-      return;
-    }
-
-    const { data: follows, error } = await supabase
-      .from('follows')
-      .select('following_id')
-      .eq('follower_id', user.id);
-
-    if (!error) {
-      followingIdsRef.current = new Set(follows?.map((f) => f.following_id) || []);
-    }
-  };
-
-  const loadPage = async (pageToLoad: number, initial = false) => {
-    if (!postId) return;
-
-    if (initial) {
-      setLoading(true);
-      await ensureFollowingIds();
-    } else {
-      setLoadingMore(true);
-    }
-
+  const loadLikers = async () => {
+    setLoading(true);
     try {
-      const from = pageToLoad * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
+      // Get all likes for this post with user profiles
       const { data: likes, error } = await supabase
         .from('post_likes')
-        .select('user_id, created_at')
+        .select(`
+          user_id,
+          profiles:user_id (
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
         .eq('post_id', postId)
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching likes:', error);
-        if (initial) setLikers([]);
-        setHasMore(false);
+        setLikers([]);
+        setLoading(false);
         return;
       }
 
-      const batch = likes || [];
-      if (batch.length < PAGE_SIZE) setHasMore(false);
-
-      if (batch.length === 0) {
-        if (initial) setLikers([]);
+      if (!likes || likes.length === 0) {
+        setLikers([]);
+        setLoading(false);
         return;
       }
 
-      const userIds = batch.map((l) => l.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        return;
+      // Get current user's follows
+      let followingIds = new Set<string>();
+      if (user?.id) {
+        const { data: follows } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+        followingIds = new Set(follows?.map(f => f.following_id) || []);
       }
 
-      const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
-      const followingIds = followingIdsRef.current;
-
-      const likersBatch: Liker[] = batch
-        .map((like) => {
-          const profile = profileMap.get(like.user_id);
+      // Map likes to Liker format
+      const likersList = likes
+        .map(like => {
+          const profile = like.profiles as any;
           if (!profile) return null;
+          
           return {
             user_id: like.user_id,
             username: profile.username || 'User',
             full_name: profile.full_name || null,
             avatar_url: profile.avatar_url || null,
-            is_followed: followingIds.has(like.user_id),
+            is_followed: followingIds.has(like.user_id)
           };
         })
         .filter((u): u is Liker => u !== null);
 
-      setLikers((prev) => {
-        const seen = new Set(prev.map((p) => p.user_id));
-        const merged = [...prev];
-        for (const l of likersBatch) {
-          if (!seen.has(l.user_id)) {
-            seen.add(l.user_id);
-            merged.push(l);
-          }
-        }
-        return merged;
-      });
+      // Prioritize followed users, then others
+      const followedUsers = likersList.filter(u => u.is_followed);
+      const otherUsers = likersList.filter(u => !u.is_followed);
 
-      setPage(pageToLoad);
-    } catch (e) {
-      console.error('Error loading likers:', e);
+      setLikers([...followedUsers, ...otherUsers]);
+    } catch (error) {
+      console.error('Error loading likers:', error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const handleListScroll = () => {
-    const el = listRef.current;
-    if (!el || loading || loadingMore || !hasMore) return;
-    // load more when within 200px of bottom
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
-      loadPage(page + 1, false);
     }
   };
 
@@ -230,8 +175,6 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   return (
     <Drawer
       open={isOpen}
-      modal={false}
-      shouldScaleBackground={false}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -240,7 +183,7 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
         <DrawerHeader className="border-b-0 pb-2">
           <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-2" />
           <DrawerTitle className="text-center">
-            {t('likes', { ns: 'common', defaultValue: 'Likes' })}
+            "{t('likes', { ns: 'common', defaultValue: 'Likes' })}"
           </DrawerTitle>
         </DrawerHeader>
         
@@ -257,7 +200,7 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
           </div>
         </div>
 
-        <div ref={listRef} onScroll={handleListScroll} className="flex-1 overflow-y-auto px-4 pb-6">
+        <div className="flex-1 overflow-y-auto px-4 pb-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -314,18 +257,6 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
                   )}
                 </div>
               ))}
-
-              {hasMore && !searchQuery && (
-                <div className="flex items-center justify-center py-4">
-                  {loadingMore ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Button variant="secondary" size="sm" onClick={() => loadPage(page + 1, false)}>
-                      {t('loadMore', { ns: 'common', defaultValue: 'Load more' })}
-                    </Button>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>

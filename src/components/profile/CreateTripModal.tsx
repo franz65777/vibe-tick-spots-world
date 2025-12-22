@@ -66,7 +66,7 @@ const CreateTripModal = ({ isOpen, onClose, onCreateTrip }: CreateTripModalProps
 
   const handleSubmit = async () => {
     if (!name.trim() || !user) {
-      toast.error(t('trips.pleaseEnterTripName'));
+      toast.error('Please enter a trip name');
       return;
     }
 
@@ -127,7 +127,7 @@ const CreateTripModal = ({ isOpen, onClose, onCreateTrip }: CreateTripModalProps
       onClose();
     } catch (error) {
       console.error('Error creating trip:', error);
-      toast.error(t('trips.failedToCreateTrip'));
+      toast.error('Failed to create trip');
     } finally {
       setLoading(false);
     }

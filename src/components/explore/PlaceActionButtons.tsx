@@ -97,7 +97,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Navigation className="w-5 h-5" />
-          <span className="text-xs">{t('directions', { ns: 'navigation' })}</span>
+          <span className="text-xs">Directions</span>
         </Button>
 
         <Button
@@ -107,7 +107,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Share2 className="w-5 h-5" />
-          <span className="text-xs">{t('share', { ns: 'common' })}</span>
+          <span className="text-xs">Share</span>
         </Button>
 
         <Button
@@ -129,9 +129,9 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
       <Dialog open={directionsModalOpen} onOpenChange={setDirectionsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('chooseMapApp', { ns: 'common' })}</DialogTitle>
+            <DialogTitle>Choose Map App</DialogTitle>
             <DialogDescription>
-              {t('getDirections', { ns: 'common' })} {place.name}
+              Select your preferred navigation app to get directions to {place.name}
             </DialogDescription>
           </DialogHeader>
 
@@ -146,9 +146,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
               </div>
               <div className="text-left">
                 <div className="font-semibold">Google Maps</div>
-                <div className="text-xs text-muted-foreground">
-                  {t('navigation.navigateWithGoogle', { defaultValue: 'Navigate with Google Maps' })}
-                </div>
+                <div className="text-xs text-muted-foreground">Navigate with Google Maps</div>
               </div>
             </Button>
 
@@ -162,9 +160,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
               </div>
               <div className="text-left">
                 <div className="font-semibold">Apple Maps</div>
-                <div className="text-xs text-muted-foreground">
-                  {t('navigation.navigateWithApple', { defaultValue: 'Navigate with Apple Maps' })}
-                </div>
+                <div className="text-xs text-muted-foreground">Navigate with Apple Maps</div>
               </div>
             </Button>
 
@@ -178,7 +174,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
               </div>
               <div className="text-left">
                 <div className="font-semibold">Waze</div>
-                <div className="text-xs text-muted-foreground">{t('navigateWithWaze', { ns: 'navigation' })}</div>
+                <div className="text-xs text-muted-foreground">Navigate with Waze</div>
               </div>
             </Button>
           </div>

@@ -318,7 +318,7 @@ const PlaceCard = ({
           {place.addedBy && (
             <div className="mt-3 pt-3">
               <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>{t('discoveredBy', { ns: 'home' })}</span>
+                <span>Discovered by</span>
                 <span className="font-medium text-gray-700">
                   {typeof place.addedBy === 'string' ? place.addedBy : place.addedBy.name}
                 </span>

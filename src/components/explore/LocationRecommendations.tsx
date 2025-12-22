@@ -1,8 +1,8 @@
+
 import { MapPin } from 'lucide-react';
 import PlaceCard from '@/components/home/PlaceCard';
 import { LocationRecommendation } from '@/services/searchService';
 import { Place } from '@/types/place';
-import { useTranslation } from 'react-i18next';
 
 interface LocationRecommendationsProps {
   recommendations: LocationRecommendation[];
@@ -21,13 +21,11 @@ const LocationRecommendations = ({
   onLocationLike,
   likedPlaces 
 }: LocationRecommendationsProps) => {
-  const { t } = useTranslation();
-  
   if (recommendations.length === 0) {
     return (
       <div className="text-center py-8">
         <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-600">{t('noRecommendations', { ns: 'explore' })}</p>
+        <p className="text-gray-600">No recommendations available</p>
       </div>
     );
   }
@@ -85,8 +83,8 @@ const LocationRecommendations = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">{t('recommendedForYou', { ns: 'explore' })}</h3>
-        <span className="text-sm text-gray-500">{recommendations.length} {t('places', { ns: 'common' })}</span>
+        <h3 className="text-lg font-semibold text-gray-900">Recommended for you</h3>
+        <span className="text-sm text-gray-500">{recommendations.length} places</span>
       </div>
       
       <div className="space-y-4">

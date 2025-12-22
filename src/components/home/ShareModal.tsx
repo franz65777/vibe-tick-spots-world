@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { X, Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
 
 interface Friend {
   id: string;
@@ -39,7 +38,6 @@ interface ShareModalProps {
 }
 
 const ShareModal = ({ isOpen, onClose, item, itemType, onShare, place }: ShareModalProps) => {
-  const { t } = useTranslation();
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -93,7 +91,7 @@ const ShareModal = ({ isOpen, onClose, item, itemType, onShare, place }: ShareMo
       <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold">{t('common.share')} {getItemName()}</h2>
+          <h2 className="text-lg font-semibold">Share {getItemName()}</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
@@ -106,7 +104,7 @@ const ShareModal = ({ isOpen, onClose, item, itemType, onShare, place }: ShareMo
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('share.searchFriends')}
+              placeholder="Search friends"
               className="pl-10 rounded-full border-gray-300"
             />
           </div>
@@ -135,7 +133,7 @@ const ShareModal = ({ isOpen, onClose, item, itemType, onShare, place }: ShareMo
                 <div className="flex-1">
                   <h3 className="font-medium text-sm">{friend.name}</h3>
                   <p className="text-xs text-gray-500">
-                    {friend.isOnline ? t('share.activeNow') : t('share.offline')}
+                    {friend.isOnline ? 'Active now' : 'Offline'}
                   </p>
                 </div>
 
@@ -162,7 +160,7 @@ const ShareModal = ({ isOpen, onClose, item, itemType, onShare, place }: ShareMo
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
           >
             <Send className="w-4 h-4 mr-2" />
-            {t('share.shareWith', { count: selectedFriends.size })}
+            Share with {selectedFriends.size} friend{selectedFriends.size !== 1 ? 's' : ''}
           </Button>
         </div>
       </div>

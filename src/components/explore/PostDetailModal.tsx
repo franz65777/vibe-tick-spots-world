@@ -16,7 +16,6 @@ import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
-import { LikersDrawer } from '@/components/social/LikersDrawer';
 import { ReviewModal } from './ReviewModal';
 import { getPostReviews, type PostReview } from '@/services/reviewService';
 import { getLocationRanking } from '@/services/locationRankingService';
@@ -64,7 +63,7 @@ interface PostData {
 
 export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', openCommentsOnLoad, openShareOnLoad }: PostDetailModalProps) => {
   const { user } = useAuth();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const engagement = useSocialEngagement(postId);
   const { savePlace, isPlaceSaved } = useSavedPlaces();
@@ -80,7 +79,6 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
   const [mediaAspectRatio, setMediaAspectRatio] = useState<'vertical' | 'horizontal'>('vertical');
   const [sharesCount, setSharesCount] = useState<number>(0);
   const [shareOpen, setShareOpen] = useState(false);
-  const [likersOpen, setLikersOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviews, setReviews] = useState<PostReview[]>([]);
   const [locationRanking, setLocationRanking] = useState<number | null>(null);
@@ -335,8 +333,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
         <div className="text-center p-6">
-          <p className="text-white text-lg mb-4">{t('explore:noResults')}</p>
-          <Button onClick={onClose} variant="outline">{t('common:close')}</Button>
+          <p className="text-white text-lg mb-4">Post not found</p>
+          <Button onClick={onClose} variant="outline">Close</Button>
         </div>
       </div>
     );
@@ -466,7 +464,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
                         <Trash2 className="w-4 h-4 mr-2" />
-                        {t('delete', { ns: 'common' })}
+                        Delete post
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -491,16 +489,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                     <button onClick={handleLikePost} disabled={likingPost}>
                       <Heart className={`w-5 h-5 ${engagement.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if ((engagement.likeCount ?? 0) > 0) setLikersOpen(true);
-                      }}
-                      className="text-sm font-medium"
-                      disabled={(engagement.likeCount ?? 0) === 0}
-                    >
-                      {engagement.likeCount}
-                    </button>
+                    <span className="text-sm font-medium">{engagement.likeCount}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setCommentsDrawerOpen(true)}>
@@ -527,15 +516,15 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('common:delete')}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('business:confirmDeletePost')}
+              Are you sure you want to delete this post? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common:cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeletePost} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleting ? t('common:loading') : t('common:delete')}
+              {deleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -555,14 +544,6 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         onShare={engagement.sharePost}
-        postId={postId}
-      />
-
-      {/* Likers Drawer */}
-      <LikersDrawer
-        isOpen={likersOpen}
-        onClose={() => setLikersOpen(false)}
-        postId={postId}
       />
 
       {/* Review Modal */}

@@ -3,14 +3,12 @@ import { Trophy, Target, Clock, Award } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useChallenges } from '@/hooks/useChallenges';
-import { useTranslation } from 'react-i18next';
 
 interface ChallengesSectionProps {
   city?: string;
 }
 
 const ChallengesSection = ({ city }: ChallengesSectionProps) => {
-  const { t } = useTranslation();
   const { challenges, loading } = useChallenges(city);
 
   const getChallengeIcon = (type: string) => {
@@ -48,8 +46,8 @@ const ChallengesSection = ({ city }: ChallengesSectionProps) => {
     return (
       <Card className="p-6 text-center">
         <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-        <h3 className="font-semibold text-lg mb-2">{t('gamification:noChallenges')}</h3>
-        <p className="text-sm text-muted-foreground">{t('gamification:checkBackSoon')}</p>
+        <h3 className="font-semibold text-lg mb-2">No Active Challenges</h3>
+        <p className="text-sm text-muted-foreground">Check back soon for new challenges!</p>
       </Card>
     );
   }
@@ -58,7 +56,7 @@ const ChallengesSection = ({ city }: ChallengesSectionProps) => {
     <Card className="p-6">
       <div className="flex items-center gap-2 mb-4">
         <Trophy className="w-6 h-6 text-primary" />
-        <h3 className="text-xl font-bold">{t('gamification:activeChallenges')}</h3>
+        <h3 className="text-xl font-bold">Active Challenges</h3>
       </div>
 
       <div className="space-y-3">

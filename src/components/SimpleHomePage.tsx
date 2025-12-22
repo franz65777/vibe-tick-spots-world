@@ -4,10 +4,8 @@ import { useMapPins } from '@/hooks/useMapPins';
 import { Place } from '@/types/place';
 import Header from './home/Header';
 import FilterButtons from './home/FilterButtons';
-import { useTranslation } from 'react-i18next';
 
 const SimpleHomePage = () => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('following');
@@ -127,10 +125,10 @@ const SimpleHomePage = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">{t('noLocationsFound', { ns: 'explore' })}</p>
+                  <p className="text-muted-foreground">No places found</p>
                   {activeFilter === 'following' && (
                     <p className="text-muted-foreground/70 text-sm mt-2">
-                      {t('followUsersToSee', { ns: 'explore' })}
+                      Follow some users to see their favorite places here
                     </p>
                   )}
                 </div>

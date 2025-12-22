@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPostReview, updatePostReview, hasUserReviewedPost, type PostReview } from '@/services/reviewService';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 interface ReviewModalProps {
   postId: string;
@@ -24,7 +23,6 @@ export const ReviewModal = ({
   onClose,
   onReviewSubmitted,
 }: ReviewModalProps) => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -55,17 +53,17 @@ export const ReviewModal = ({
 
   const handleSubmit = async () => {
     if (!user?.id) {
-      toast.error(t('pleaseSignIn', { ns: 'common' }));
+      toast.error('Please sign in to leave a review');
       return;
     }
 
     if (rating === 0) {
-      toast.error(t('pleaseSelectRating', { ns: 'reviews' }));
+      toast.error('Please select a rating');
       return;
     }
 
     if (comment.trim().length === 0) {
-      toast.error(t('pleaseWriteComment', { ns: 'reviews' }));
+      toast.error('Please write a comment');
       return;
     }
 
@@ -76,26 +74,26 @@ export const ReviewModal = ({
         // Update existing review
         const success = await updatePostReview(existingReview.id, comment.trim(), rating);
         if (success) {
-          toast.success(t('reviewUpdated', { ns: 'reviews' }));
+          toast.success('Review updated successfully!');
           onReviewSubmitted?.();
           onClose();
         } else {
-          toast.error(t('failedToUpdateReview', { ns: 'reviews' }));
+          toast.error('Failed to update review');
         }
       } else {
         // Create new review
         const review = await createPostReview(postId, user.id, locationId, comment.trim(), rating);
         if (review) {
-          toast.success(t('reviewSubmitted', { ns: 'reviews' }));
+          toast.success('Review submitted successfully!');
           onReviewSubmitted?.();
           onClose();
         } else {
-          toast.error(t('failedToSubmitReview', { ns: 'reviews' }));
+          toast.error('Failed to submit review');
         }
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error(t('somethingWentWrong', { ns: 'common' }));
+      toast.error('Something went wrong');
     } finally {
       setSubmitting(false);
     }
@@ -109,9 +107,9 @@ export const ReviewModal = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
-          <h2 className="text-xl font-bold text-gray-900">
-            {existingReview ? t('editReview', { ns: 'reviews' }) : t('writeReview', { ns: 'reviews' })}
-          </h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              {existingReview ? 'Edit Review' : 'Write a Review'}
+            </h2>
             {locationName && (
               <p className="text-sm text-gray-500 mt-0.5">{locationName}</p>
             )}
@@ -131,7 +129,7 @@ export const ReviewModal = ({
           {/* Rating Selector */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-3">
-              {t('rateExperience', { ns: 'reviews' })}
+              Rate your experience (1-10)
             </label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
@@ -159,7 +157,7 @@ export const ReviewModal = ({
                   ))}
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  {rating}/10 - {rating >= 8 ? t('excellent', { ns: 'reviews' }) : rating >= 6 ? t('good', { ns: 'reviews' }) : rating >= 4 ? t('average', { ns: 'reviews' }) : t('poor', { ns: 'reviews' })}
+                  {rating}/10 - {rating >= 8 ? 'Excellent' : rating >= 6 ? 'Good' : rating >= 4 ? 'Average' : 'Poor'}
                 </span>
               </div>
             )}
@@ -168,12 +166,12 @@ export const ReviewModal = ({
           {/* Comment */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
-              {t('yourReview', { ns: 'reviews' })}
+              Your review
             </label>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder={t('shareYourExperience', { ns: 'reviews' })}
+              placeholder="Share your experience at this location..."
               className="min-h-[120px] resize-none"
               maxLength={500}
             />
@@ -188,7 +186,7 @@ export const ReviewModal = ({
             disabled={submitting || rating === 0 || comment.trim().length === 0}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl"
           >
-            {submitting ? t('submitting', { ns: 'common' }) : existingReview ? t('updateReview', { ns: 'reviews' }) : t('submitReview', { ns: 'reviews' })}
+            {submitting ? 'Submitting...' : existingReview ? 'Update Review' : 'Submit Review'}
           </Button>
         </div>
       </div>

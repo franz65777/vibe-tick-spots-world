@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { X, MapPin, Camera, Star, Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,20 +15,19 @@ interface AddLocationModalProps {
 }
 
 const CATEGORY_OPTIONS = [
-  { id: 'restaurant', icon: '🍽️' },
-  { id: 'cafe', icon: '☕' },
-  { id: 'bar', icon: '🍺' },
-  { id: 'shopping', icon: '🛍️' },
-  { id: 'entertainment', icon: '🎬' },
-  { id: 'park', icon: '🌳' },
-  { id: 'museum', icon: '🏛️' },
-  { id: 'hotel', icon: '🏨' },
-  { id: 'gym', icon: '💪' },
-  { id: 'other', icon: '📍' }
+  { id: 'restaurant', label: 'Restaurant', icon: '🍽️' },
+  { id: 'cafe', label: 'Café', icon: '☕' },
+  { id: 'bar', label: 'Bar', icon: '🍺' },
+  { id: 'shopping', label: 'Shopping', icon: '🛍️' },
+  { id: 'entertainment', label: 'Entertainment', icon: '🎬' },
+  { id: 'park', label: 'Park', icon: '🌳' },
+  { id: 'museum', label: 'Museum', icon: '🏛️' },
+  { id: 'hotel', label: 'Hotel', icon: '🏨' },
+  { id: 'gym', label: 'Gym', icon: '💪' },
+  { id: 'other', label: 'Other', icon: '📍' }
 ];
 
 const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddLocationModalProps) => {
-  const { t } = useTranslation();
   const [step, setStep] = useState<'location' | 'details' | 'review'>('location');
   const [location, setLocation] = useState<{
     place_id: string;
@@ -151,10 +149,10 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
           {step === 'location' && (
             <div className="p-6 space-y-6">
               <div>
-                <h4 className="font-semibold mb-3">{t('add:searchForPlace')}</h4>
+                <h4 className="font-semibold mb-3">Search for a place</h4>
                 <OpenStreetMapAutocomplete
                   onPlaceSelect={handleLocationSelect}
-                  placeholder={t('add:searchPlaceholder')}
+                  placeholder="Search restaurants, cafes, attractions..."
                 />
               </div>
 
@@ -162,19 +160,19 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                 <div>
                   <div className="flex items-center justify-center mb-4">
                     <div className="h-px bg-gray-200 flex-1"></div>
-                    <span className="px-4 text-sm text-gray-500">{t('add:or')}</span>
+                    <span className="px-4 text-sm text-gray-500">OR</span>
                     <div className="h-px bg-gray-200 flex-1"></div>
                   </div>
 
                   <div className="border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold mb-2">{t('add:addCustomLocation')}</h4>
+                    <h4 className="font-semibold mb-2">Add custom location</h4>
                     <p className="text-sm text-gray-500 mb-3">
-                      {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                      You clicked at: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
                     </p>
                     <Input
                       value={locationName}
                       onChange={(e) => setLocationName(e.target.value)}
-                      placeholder={t('add:enterLocationName')}
+                      placeholder="Enter location name..."
                       className="mb-3"
                     />
                     <Button
@@ -183,7 +181,7 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                       className="w-full"
                     >
                       <MapPin className="w-4 h-4 mr-2" />
-                      {t('add:useThisLocation')}
+                      Use This Location
                     </Button>
                   </div>
                 </div>
@@ -203,18 +201,18 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('add:locationName')}
+                  Location Name
                 </label>
                 <Input
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
-                  placeholder={t('add:enterCustomName')}
+                  placeholder="Enter a custom name..."
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  {t('add:category')}
+                  Category
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {CATEGORY_OPTIONS.map((cat) => (
@@ -228,7 +226,7 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                       }`}
                     >
                       <span className="text-lg">{cat.icon}</span>
-                      <span className="text-sm font-medium">{t(`categories:${cat.id}`)}</span>
+                      <span className="text-sm font-medium">{cat.label}</span>
                     </button>
                   ))}
                 </div>
@@ -236,7 +234,7 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('add:yourRating')}
+                  Your Rating
                 </label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -255,30 +253,30 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('add:description')}
+                  Description
                 </label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('add:whatMakesSpecial')}
+                  placeholder="What makes this place special?"
                   rows={3}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('add:tags')}
+                  Tags
                 </label>
                 <div className="flex gap-2 mb-2">
                   <Input
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    placeholder={t('add:addTag')}
+                    placeholder="Add a tag..."
                     onKeyPress={(e) => e.key === 'Enter' && addTag()}
                     className="flex-1"
                   />
                   <Button onClick={addTag} variant="outline" size="sm">
-                    {t('common:add')}
+                    Add
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -300,7 +298,7 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                 className="w-full"
                 disabled={!category || !locationName.trim()}
               >
-                {t('add:continue')}
+                Continue
               </Button>
             </div>
           )}
@@ -308,27 +306,27 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
           {step === 'review' && location && (
             <div className="p-6 space-y-6">
               <div className="bg-gray-50 rounded-xl p-4">
-                <h4 className="font-semibold mb-3">{t('add:reviewYourLocation')}</h4>
+                <h4 className="font-semibold mb-3">Review Your Location</h4>
                 
                 <div className="space-y-3 text-sm">
                   <div>
-                    <span className="font-medium text-gray-700">{t('add:name')}:</span>
+                    <span className="font-medium text-gray-700">Name:</span>
                     <span className="ml-2">{locationName}</span>
                   </div>
                   
                   <div>
-                    <span className="font-medium text-gray-700">{t('add:category')}:</span>
-                    <span className="ml-2 capitalize">{t(`categories:${category}`)}</span>
+                    <span className="font-medium text-gray-700">Category:</span>
+                    <span className="ml-2 capitalize">{category}</span>
                   </div>
                   
                   <div>
-                    <span className="font-medium text-gray-700">{t('common:addressNotAvailable', { defaultValue: 'Address' })}:</span>
+                    <span className="font-medium text-gray-700">Address:</span>
                     <span className="ml-2">{location.address}</span>
                   </div>
                   
                   {rating > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-700">{t('add:yourRating')}:</span>
+                      <span className="font-medium text-gray-700">Rating:</span>
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
@@ -344,14 +342,14 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                   
                   {description && (
                     <div>
-                      <span className="font-medium text-gray-700">{t('add:description')}:</span>
+                      <span className="font-medium text-gray-700">Description:</span>
                       <p className="mt-1 text-gray-600">{description}</p>
                     </div>
                   )}
                   
                   {tags.length > 0 && (
                     <div>
-                      <span className="font-medium text-gray-700">{t('add:tags')}:</span>
+                      <span className="font-medium text-gray-700">Tags:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tags.map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
@@ -371,7 +369,7 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                   className="flex-1"
                   disabled={loading}
                 >
-                  {t('common:back')}
+                  Back
                 </Button>
                 <Button
                   onClick={handleSave}
@@ -381,10 +379,10 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('common:loading')}...
+                      Saving...
                     </>
                   ) : (
-                    t('add:saveLocation')
+                    'Save Location'
                   )}
                 </Button>
               </div>

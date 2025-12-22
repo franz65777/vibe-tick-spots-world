@@ -10,7 +10,6 @@ import { reservationService, TimeSlot } from '@/services/reservationService';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { useTranslation } from 'react-i18next';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -20,7 +19,6 @@ interface BookingModalProps {
 }
 
 const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModalProps) => {
-  const { t } = useTranslation();
   const { profile } = useProfile();
   const [step, setStep] = useState<'date' | 'time' | 'details' | 'confirmation'>('date');
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -79,11 +77,11 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
     setLoading(false);
 
     if (result.error) {
-      toast.error(t('bookingFailed', { ns: 'booking' }), { description: result.error });
+      toast.error('Booking failed', { description: result.error });
     } else {
       setStep('confirmation');
-      toast.success(t('tableBooked', { ns: 'booking' }), { 
-        description: t('confirmationCode', { ns: 'booking', code: result.data?.confirmation_code }) 
+      toast.success('Table booked!', { 
+        description: `Confirmation code: ${result.data?.confirmation_code}` 
       });
     }
   };
@@ -101,14 +99,14 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary" />
-            {t('bookTableAt', { ns: 'booking', name: locationName })}
+            Book a Table at {locationName}
           </DialogTitle>
         </DialogHeader>
 
         {step === 'date' && (
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-semibold mb-2 block">{t('selectDate', { ns: 'booking' })}</Label>
+              <Label className="text-sm font-semibold mb-2 block">Select Date</Label>
               <CalendarComponent
                 mode="single"
                 selected={selectedDate}
@@ -118,7 +116,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
               />
             </div>
             <div>
-              <Label className="text-sm font-semibold mb-2 block">{t('partySize', { ns: 'booking' })}</Label>
+              <Label className="text-sm font-semibold mb-2 block">Party Size</Label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -129,7 +127,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 </Button>
                 <div className="flex items-center gap-2 px-4 py-2 border rounded-md flex-1 justify-center">
                   <Users className="w-4 h-4" />
-                  <span className="font-semibold">{partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</span>
+                  <span className="font-semibold">{partySize} {partySize === 1 ? 'Guest' : 'Guests'}</span>
                 </div>
                 <Button
                   variant="outline"
@@ -146,11 +144,11 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
         {step === 'time' && (
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => setStep('date')}>
-              ← {t('backToDate', { ns: 'booking' })}
+              ← Back to Date
             </Button>
             <div>
               <Label className="text-sm font-semibold mb-2 block">
-                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} • {partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}
+                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} • {partySize} {partySize === 1 ? 'Guest' : 'Guests'}
               </Label>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -158,7 +156,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 </div>
               ) : timeSlots.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {t('noAvailableTimeSlots', { ns: 'booking' })}
+                  No available time slots for this date
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
@@ -183,38 +181,38 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
         {step === 'details' && (
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => setStep('time')}>
-              ← {t('backToTime', { ns: 'booking' })}
+              ← Back to Time
             </Button>
             <div className="bg-muted p-3 rounded-lg text-sm">
-              <div className="font-semibold mb-1">{t('bookingSummary', { ns: 'booking' })}</div>
+              <div className="font-semibold mb-1">Booking Summary</div>
               <div>{format(selectedDate!, 'EEEE, MMMM d, yyyy')}</div>
-              <div>{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')} • {partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</div>
+              <div>{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')} • {partySize} {partySize === 1 ? 'Guest' : 'Guests'}</div>
             </div>
 
             <div className="space-y-3">
               <div>
-                <Label htmlFor="name">{t('name', { ns: 'booking' })} *</Label>
+                <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={t('yourName', { ns: 'booking' })}
+                  placeholder="Your name"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="email">{t('email', { ns: 'booking' })} *</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder={t('yourEmail', { ns: 'booking' })}
+                  placeholder="your@email.com"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="phone">{t('phoneNumber', { ns: 'booking' })}</Label>
+                <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -224,12 +222,12 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 />
               </div>
               <div>
-                <Label htmlFor="requests">{t('specialRequests', { ns: 'booking' })}</Label>
+                <Label htmlFor="requests">Special Requests</Label>
                 <Textarea
                   id="requests"
                   value={formData.specialRequests}
                   onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                  placeholder={t('dietaryRestrictions', { ns: 'booking' })}
+                  placeholder="Dietary restrictions, seating preferences, etc."
                   rows={3}
                 />
               </div>
@@ -240,7 +238,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
               className="w-full"
               disabled={loading || !formData.name || !formData.email}
             >
-              {loading ? t('booking', { ns: 'booking' }) : t('confirmBooking', { ns: 'booking' })}
+              {loading ? 'Booking...' : 'Confirm Booking'}
             </Button>
           </div>
         )}
@@ -251,30 +249,30 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
               <Check className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2">{t('bookingConfirmed', { ns: 'booking' })}</h3>
+              <h3 className="text-xl font-bold mb-2">Booking Confirmed!</h3>
               <p className="text-muted-foreground mb-4">
-                {t('tableReserved', { ns: 'booking', name: locationName })}
+                Your table at {locationName} is reserved
               </p>
               <div className="bg-muted p-4 rounded-lg text-left space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('date', { ns: 'booking' })}:</span>
+                  <span className="text-muted-foreground">Date:</span>
                   <span className="font-semibold">{selectedDate && format(selectedDate, 'MMM d, yyyy')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('time', { ns: 'booking' })}:</span>
+                  <span className="text-muted-foreground">Time:</span>
                   <span className="font-semibold">{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('partySize', { ns: 'booking' })}:</span>
-                  <span className="font-semibold">{partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</span>
+                  <span className="text-muted-foreground">Party Size:</span>
+                  <span className="font-semibold">{partySize} {partySize === 1 ? 'Guest' : 'Guests'}</span>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                {t('confirmationSent', { ns: 'booking' })}
+                A confirmation has been sent to your email and notifications.
               </p>
             </div>
             <Button onClick={resetAndClose} className="w-full">
-              {t('done', { ns: 'common' })}
+              Done
             </Button>
           </div>
         )}

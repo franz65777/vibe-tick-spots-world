@@ -729,7 +729,7 @@ const LeafletMapSetup = ({
       }
     }
 
-    // Hide/show other individual markers (keep ONLY the selected pin visible)
+    // Hide/show other individual markers
     clusterGroup.eachLayer((layer: any) => {
       const isSelected = selectedMarker && layer === selectedMarker;
       const hasSelection = !!selectedId;
@@ -747,7 +747,7 @@ const LeafletMapSetup = ({
       }
     });
 
-    // Hide cluster icons whenever a pin is selected (post-open or map-open)
+    // Hide/show cluster icons using CSS class for reliability
     if (selectedId) {
       mapContainer.classList.add('hide-clusters');
     } else {
@@ -965,12 +965,12 @@ const LeafletMapSetup = ({
         console.error('Error updating notifications:', notifError);
       }
       
-      toast.success(t('locationSharingEnded', { ns: 'common', defaultValue: 'Location sharing ended' }));
+      toast.success('Condivisione posizione terminata');
       refetchShares();
       setUserActiveShare(null);
     } catch (error) {
       console.error('Error ending share:', error);
-      toast.error(t('errorEndingShare', { ns: 'common', defaultValue: 'Error ending share' }));
+      toast.error('Errore terminando la condivisione');
     }
   };
 
@@ -1007,6 +1007,7 @@ const LeafletMapSetup = ({
           handleEndSharing={handleEndSharing}
           handleUpdateLocation={handleUpdateLocation}
           t={t}
+          filtersVisible={filtersVisible}
         />
       )}
 
@@ -1054,13 +1055,7 @@ const LeafletMapSetup = ({
           }}
           onClose={() => onCloseSelectedPlace?.()}
           onPostSelected={(postId) => setSelectedPostFromPin(postId)}
-          onBack={
-            fromMessages && onBackToMessages
-              ? onBackToMessages
-              : (selectedPlace as any).sourcePostId
-                ? () => navigate('/feed', { state: { restorePostId: (selectedPlace as any).sourcePostId } })
-                : undefined
-          }
+          onBack={fromMessages && onBackToMessages ? onBackToMessages : undefined}
         />
       )}
 
@@ -1152,13 +1147,15 @@ const SharingControls = ({
   fullScreen, 
   handleEndSharing, 
   handleUpdateLocation,
-  t
+  t,
+  filtersVisible = true
 }: { 
   userActiveShare: any; 
   fullScreen?: boolean; 
   handleEndSharing: () => void; 
   handleUpdateLocation: () => void;
   t: any;
+  filtersVisible?: boolean;
 }) => {
   const { isFilterExpanded, isFriendsDropdownOpen, filterDropdownRightEdge } = useMapFilter();
   
@@ -1169,7 +1166,7 @@ const SharingControls = ({
   
   return (
     <div 
-      className={`${fullScreen ? 'fixed' : 'absolute'} z-[1000] flex gap-1.5`}
+      className={`${fullScreen ? 'fixed' : 'absolute'} z-[1000] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       style={{ 
         left: `${leftPosition}px`,
         bottom: fullScreen 

@@ -8,13 +8,11 @@ import { Calendar, Users, TrendingUp, Activity, MapPin, Zap } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DataFixUtility from '@/components/admin/DataFixUtility';
-import { useTranslation } from 'react-i18next';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
 export default function AdminAnalyticsPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [dateRange, setDateRange] = useState('30');
 
@@ -43,9 +41,9 @@ export default function AdminAnalyticsPage() {
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <h1 className="text-2xl font-bold">{t('accessDenied', { ns: 'common' })}</h1>
-        <p className="text-muted-foreground">{t('noPermission', { ns: 'common' })}</p>
-        <Button onClick={() => navigate('/')}>{t('goHome', { ns: 'common' })}</Button>
+        <h1 className="text-2xl font-bold">Access Denied</h1>
+        <p className="text-muted-foreground">You don't have permission to view this page.</p>
+        <Button onClick={() => navigate('/')}>Go Home</Button>
       </div>
     );
   }
@@ -56,17 +54,17 @@ export default function AdminAnalyticsPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('retentionAnalytics', { ns: 'admin' })}</h1>
-          <p className="text-muted-foreground">{t('monitorUserEngagement', { ns: 'admin' })}</p>
+          <h1 className="text-3xl font-bold">Retention Analytics</h1>
+          <p className="text-muted-foreground">Monitor user engagement and retention metrics</p>
         </div>
         <Select value={dateRange} onValueChange={setDateRange}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7">{t('last7Days', { ns: 'admin' })}</SelectItem>
-            <SelectItem value="30">{t('last30Days', { ns: 'admin' })}</SelectItem>
-            <SelectItem value="90">{t('last90Days', { ns: 'admin' })}</SelectItem>
+            <SelectItem value="7">Last 7 days</SelectItem>
+            <SelectItem value="30">Last 30 days</SelectItem>
+            <SelectItem value="90">Last 90 days</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -78,40 +76,40 @@ export default function AdminAnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dailyActiveUsers', { ns: 'admin' })}</CardTitle>
+            <CardTitle className="text-sm font-medium">Daily Active Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dau}</div>
-            <p className="text-xs text-muted-foreground">{t('today', { ns: 'common' })}</p>
+            <p className="text-xs text-muted-foreground">Today</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('monthlyActiveUsers', { ns: 'admin' })}</CardTitle>
+            <CardTitle className="text-sm font-medium">Monthly Active Users</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{mau}</div>
-            <p className="text-xs text-muted-foreground">{t('thisMonth', { ns: 'admin' })}</p>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dauMauRatio', { ns: 'admin' })}</CardTitle>
+            <CardTitle className="text-sm font-medium">DAU/MAU Ratio</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dauMauRatio}%</div>
-            <p className="text-xs text-muted-foreground">{t('stickinessMetric', { ns: 'admin' })}</p>
+            <p className="text-xs text-muted-foreground">Stickiness metric</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('avgDay1Retention', { ns: 'admin' })}</CardTitle>
+            <CardTitle className="text-sm font-medium">Avg Day 1 Retention</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -120,24 +118,24 @@ export default function AdminAnalyticsPage() {
                 ? (day1Retention.reduce((sum, c) => sum + c.retention_rate, 0) / day1Retention.length).toFixed(1)
                 : '0'}%
             </div>
-            <p className="text-xs text-muted-foreground">{t('lastDays', { ns: 'admin', days: dateRange })}</p>
+            <p className="text-xs text-muted-foreground">Last {dateRange} days</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="cohorts" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="cohorts">{t('retentionCohorts', { ns: 'admin' })}</TabsTrigger>
-          <TabsTrigger value="city">{t('byCity', { ns: 'admin' })}</TabsTrigger>
-          <TabsTrigger value="features">{t('featureUsage', { ns: 'admin' })}</TabsTrigger>
+          <TabsTrigger value="cohorts">Retention Cohorts</TabsTrigger>
+          <TabsTrigger value="city">By City</TabsTrigger>
+          <TabsTrigger value="features">Feature Usage</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cohorts" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t('day1Retention', { ns: 'admin' })}</CardTitle>
-                <CardDescription>{t('usersReturningNextDay', { ns: 'admin' })}</CardDescription>
+                <CardTitle>Day 1 Retention</CardTitle>
+                <CardDescription>Users returning the next day</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -147,7 +145,7 @@ export default function AdminAnalyticsPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="retention_rate" stroke={COLORS[0]} name={t('retentionPercent', { ns: 'admin' })} />
+                    <Line type="monotone" dataKey="retention_rate" stroke={COLORS[0]} name="Retention %" />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -155,8 +153,8 @@ export default function AdminAnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>{t('day7Retention', { ns: 'admin' })}</CardTitle>
-                <CardDescription>{t('usersReturningAfterWeek', { ns: 'admin' })}</CardDescription>
+                <CardTitle>Day 7 Retention</CardTitle>
+                <CardDescription>Users returning after a week</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -166,7 +164,7 @@ export default function AdminAnalyticsPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="retention_rate" stroke={COLORS[1]} name={t('retentionPercent', { ns: 'admin' })} />
+                    <Line type="monotone" dataKey="retention_rate" stroke={COLORS[1]} name="Retention %" />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -174,8 +172,8 @@ export default function AdminAnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>{t('day30Retention', { ns: 'admin' })}</CardTitle>
-                <CardDescription>{t('usersReturningAfterMonth', { ns: 'admin' })}</CardDescription>
+                <CardTitle>Day 30 Retention</CardTitle>
+                <CardDescription>Users returning after a month</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -185,7 +183,7 @@ export default function AdminAnalyticsPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="retention_rate" stroke={COLORS[2]} name={t('retentionPercent', { ns: 'admin' })} />
+                    <Line type="monotone" dataKey="retention_rate" stroke={COLORS[2]} name="Retention %" />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -198,9 +196,9 @@ export default function AdminAnalyticsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                {t('retentionByCity', { ns: 'admin' })}
+                Retention by City
               </CardTitle>
-              <CardDescription>{t('compareRetentionAcrossCities', { ns: 'admin' })}</CardDescription>
+              <CardDescription>Compare retention rates across cities</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -210,8 +208,8 @@ export default function AdminAnalyticsPage() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="day1_rate" fill={COLORS[0]} name={t('day1Percent', { ns: 'admin' })} />
-                  <Bar dataKey="day7_rate" fill={COLORS[1]} name={t('day7Percent', { ns: 'admin' })} />
+                  <Bar dataKey="day1_rate" fill={COLORS[0]} name="Day 1 %" />
+                  <Bar dataKey="day7_rate" fill={COLORS[1]} name="Day 7 %" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -224,9 +222,9 @@ export default function AdminAnalyticsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
-                  {t('featureUsageDistribution', { ns: 'admin' })}
+                  Feature Usage Distribution
                 </CardTitle>
-                <CardDescription>{t('mostPopularFeatures', { ns: 'admin' })}</CardDescription>
+                <CardDescription>Most popular features</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -253,8 +251,8 @@ export default function AdminAnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>{t('featureEngagement', { ns: 'admin' })}</CardTitle>
-                <CardDescription>{t('totalUsageAndUniqueUsers', { ns: 'admin' })}</CardDescription>
+                <CardTitle>Feature Engagement</CardTitle>
+                <CardDescription>Total usage and unique users</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -264,7 +262,7 @@ export default function AdminAnalyticsPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="unique_users" fill={COLORS[0]} name={t('uniqueUsers', { ns: 'admin' })} />
+                    <Bar dataKey="unique_users" fill={COLORS[0]} name="Unique Users" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

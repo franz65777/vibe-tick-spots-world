@@ -1,11 +1,11 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, memo, lazy, Suspense } from 'react';
+import React, { useEffect, useState, memo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronDown } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useStories } from '@/hooks/useStories';
@@ -25,7 +25,6 @@ const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
 const FeedPage = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   
@@ -189,43 +188,24 @@ const FeedPage = memo(() => {
     }
   };
 
-  const handleLocationClick = (
-    postId: string,
-    locationId: string,
-    latitude: number,
-    longitude: number,
-    locationName: string | null,
-    category: string | null,
-    e: React.MouseEvent
-  ) => {
+  const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
-
-    // Save current scroll position to restore smoothly when coming back
-    const scrollTop = feedScrollRef.current?.scrollTop ?? 0;
-    try {
-      sessionStorage.setItem('feedRestorePostId', postId);
-      sessionStorage.setItem('feedScrollTop', String(scrollTop));
-    } catch {
-      // ignore
-    }
-
     navigate('/', {
       state: {
         centerMap: {
           lat: latitude,
           lng: longitude,
           locationId: locationId,
-          shouldFocus: true,
+          shouldFocus: true
         },
         openPinDetail: {
           id: locationId,
           name: locationName || '',
           lat: latitude,
           lng: longitude,
-          category: category || 'restaurant',
-          sourcePostId: postId,
-        },
-      },
+          sourcePostId: postId
+        }
+      }
     });
   };
 
@@ -296,59 +276,22 @@ const FeedPage = memo(() => {
       );
 
       toast({
-        title: t('postShared', { ns: 'common' }),
-        description: t('sharedWithCount', { ns: 'common', count: recipientIds.length }),
+        title: "✅ Post condiviso!",
+        description: `Condiviso con ${recipientIds.length} ${recipientIds.length === 1 ? 'persona' : 'persone'}`,
       });
 
       return true;
     } catch (error) {
       console.error('Error sharing post:', error);
       toast({
-        title: t('error', { ns: 'common' }),
-        description: t('failedToSharePost', { ns: 'common' }),
+        title: "Error",
+        description: "Failed to share post",
         variant: "destructive",
       });
       return false;
     }
   };
-  const feedScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Restore scroll position smoothly when returning from a pin opened from feed
-  useLayoutEffect(() => {
-    const stateRestorePostId = (location.state as any)?.restorePostId as string | undefined;
-    const restorePostId = stateRestorePostId || sessionStorage.getItem('feedRestorePostId') || undefined;
-    const restoreScrollTopRaw = sessionStorage.getItem('feedScrollTop');
-    const restoreScrollTop = restoreScrollTopRaw ? Number(restoreScrollTopRaw) : null;
-
-    if (!restorePostId && restoreScrollTop === null) return;
-
-    const container = feedScrollRef.current;
-    if (!container) return;
-
-    // First restore previous scrollTop (prevents the "flash" to top)
-    if (restoreScrollTop !== null && Number.isFinite(restoreScrollTop)) {
-      container.scrollTop = restoreScrollTop;
-    }
-
-    // Then align exactly to the post if we can find it
-    if (restorePostId) {
-      const postEl = container.querySelector?.(`[data-post-id="${restorePostId}"]`) as HTMLElement | null;
-      if (postEl) postEl.scrollIntoView({ behavior: 'instant' as any, block: 'start' });
-    }
-
-    // Clear restore markers
-    try {
-      sessionStorage.removeItem('feedRestorePostId');
-      sessionStorage.removeItem('feedScrollTop');
-    } catch {
-      // ignore
-    }
-
-    // Clear router state so it doesn't re-run
-    if (stateRestorePostId) {
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.state, location.pathname, navigate]);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
@@ -366,7 +309,9 @@ const FeedPage = memo(() => {
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-popover border-border shadow-md">
+              <DropdownMenuContent align="start" className="w-56 border-[1.5px] border-transparent shadow-sm
+                [background-image:linear-gradient(hsl(var(--popover)),hsl(var(--popover))),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+                [background-origin:border-box] [background-clip:padding-box,border-box]">
                 <DropdownMenuItem 
                   onClick={() => setFeedType('forYou')}
                   className="cursor-pointer focus:bg-accent"
@@ -391,7 +336,7 @@ const FeedPage = memo(() => {
         </div>
 
         {/* Feed Content */}
-        <div ref={feedScrollRef} className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
           {feedItems.length === 0 && loading ? (
             <div className="py-4 w-full">
               {[1,2,3].map((i) => (

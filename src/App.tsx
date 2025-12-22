@@ -81,40 +81,16 @@ function AppContent() {
   useEffect(() => {
     const loadLang = async () => {
       if (!user?.id) return;
-
-      // Priority: localStorage first (instant, never overridden by DB in this session)
-      const stored = localStorage.getItem('i18nextLng');
-      if (stored && i18n.language !== stored) {
-        try {
-          await i18n.changeLanguage(stored);
-        } catch {
-          // ignore
-        }
-      }
-
-      // Only use DB as a fallback when there's no local preference yet (e.g. fresh device)
-      if (stored) return;
-
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('language')
         .eq('id', user.id)
         .single();
-
-      if (error || !data?.language) return;
-
-      const lang = data.language;
+      const lang = data?.language || 'en';
       localStorage.setItem('userLanguage', lang);
       localStorage.setItem('i18nextLng', lang);
-      if (i18n.language !== lang) {
-        try {
-          await i18n.changeLanguage(lang);
-        } catch {
-          // ignore
-        }
-      }
+      try { i18n.changeLanguage(lang); } catch {}
     };
-
     loadLang();
   }, [user?.id]);
 

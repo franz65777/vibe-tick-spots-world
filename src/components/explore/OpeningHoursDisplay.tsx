@@ -24,37 +24,19 @@ const dayIndexToKey: Record<number, string> = {
   6: 'saturday'
 };
 
-// Languages that use 12-hour clock format (AM/PM)
-const TWELVE_HOUR_LANGUAGES = ['en', 'fil', 'tl']; // English, Filipino, Tagalog
-
-// Convert 24h time to 12h format
-const convert24hTo12h = (time24: string): string => {
-  return time24.replace(/(\d{1,2}):(\d{2})/g, (_match, h, m) => {
-    let hour = parseInt(h, 10);
-    const period = hour >= 12 ? 'PM' : 'AM';
-    if (hour > 12) hour -= 12;
-    if (hour === 0) hour = 12;
-    return `${hour}:${m} ${period}`;
-  });
-};
-
 // Format hours string based on current language (12h vs 24h)
 const formatTodayHoursForLocale = (todayHours: string | null, language: string): string | null => {
   if (!todayHours) return null;
 
-  const lang = language.toLowerCase().split('-')[0]; // Get base language code
-  const uses12HourClock = TWELVE_HOUR_LANGUAGES.includes(lang);
+  const lang = language.toLowerCase();
+  const uses12HourClock = lang.startsWith('en'); // English uses 12h, others 24h
 
   if (uses12HourClock) {
-    // Check if already has AM/PM
-    if (/(am|pm)/i.test(todayHours)) {
-      return todayHours;
-    }
-    // Convert 24h format to 12h format for English users
-    return convert24hTo12h(todayHours);
+    return todayHours;
   }
 
-  // For 24h languages, convert any 12h times to 24h
+  // If the string mixes 24h and 12h (e.g. "12:00 – 15:00, 6:00 – 11:00 PM"),
+  // propagate the AM/PM to the start time when missing.
   let result = todayHours.replace(
     /(\d{1,2}(?::\d{2})?)\s*[–-]\s*(\d{1,2}(?::\d{2})?)\s*(AM|PM)\b/gi,
     (_m, start, end, period) => {
@@ -64,7 +46,7 @@ const formatTodayHoursForLocale = (todayHours: string | null, language: string):
     }
   );
 
-  // Convert any 12h times to 24h
+  // Convert any 12h times to 24h. Handles: "9:00 PM", "9 PM", "9:00PM", "9PM"
   result = result.replace(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\b/gi, (_match, h, m, period) => {
     let hour = parseInt(h, 10);
     const minutes = m || '00';

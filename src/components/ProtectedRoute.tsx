@@ -1,14 +1,13 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { t } = useTranslation();
   const { user, loading } = useAuth();
 
   console.log('ProtectedRoute: loading =', loading, 'user =', user?.email);
@@ -19,7 +18,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       <div className="min-h-screen bg-white flex items-center justify-center pt-[env(safe-area-inset-top)]">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('loading', { ns: 'common' })}</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );

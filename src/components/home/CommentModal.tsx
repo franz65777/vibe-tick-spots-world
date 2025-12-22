@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, Send, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,6 @@ import { commentService, Comment } from '@/services/commentService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useTranslation } from 'react-i18next';
 
 interface Place {
   id: string;
@@ -21,7 +21,6 @@ interface CommentModalProps {
 }
 
 const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalProps) => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -93,7 +92,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
       <div className="bg-white rounded-t-2xl w-full max-w-md h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold">{t('comments', { ns: 'common' })}</h2>
+          <h2 className="text-lg font-semibold">Comments</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
@@ -113,7 +112,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">{t('noCommentsYet', { ns: 'common', defaultValue: 'No comments yet. Be the first to share your thoughts!' })}</p>
+              <p className="text-sm">No comments yet. Be the first to share your thoughts!</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -174,7 +173,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
               <Input
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder={t('addPlaceholder', { ns: 'common', defaultValue: 'Add a comment...' })}
+                placeholder="Add a comment..."
                 className="pr-10 rounded-full border-gray-300"
                 onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
                 disabled={submitting}

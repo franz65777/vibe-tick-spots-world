@@ -341,7 +341,7 @@ const CreateListPage = () => {
   return (
     <div className="fixed inset-0 z-[10001] flex flex-col bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between py-4 pt-[calc(env(safe-area-inset-top)+24px)] pl-[calc(env(safe-area-inset-left)+16px)] pr-[calc(env(safe-area-inset-right)+16px)]">
+      <div className="flex items-center justify-between px-4 py-4 pt-safe">
         <button
           onClick={handleClose}
           className="p-2 hover:bg-accent rounded-full transition-colors"
@@ -368,7 +368,7 @@ const CreateListPage = () => {
 
       {/* Content */}
       <ScrollArea className="flex-1">
-        <div className="py-4 space-y-5 pl-[calc(env(safe-area-inset-left)+16px)] pr-[calc(env(safe-area-inset-right)+16px)]">
+        <div className="px-4 py-4 space-y-5">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">
@@ -592,7 +592,7 @@ const CreateListPage = () => {
       </ScrollArea>
 
       {/* Footer Actions */}
-      <div className="pt-4 flex gap-3 pl-[calc(env(safe-area-inset-left)+16px)] pr-[calc(env(safe-area-inset-right)+16px)] pb-[calc(env(safe-area-inset-bottom)+16px)]">
+      <div className="p-4 pb-safe flex gap-3">
         {isEditMode ? (
           <>
             <Button

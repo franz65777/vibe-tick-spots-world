@@ -25,7 +25,7 @@ interface MessagesModalProps {
 const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -259,7 +259,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                 <Input
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder={t('messages:searchForPeople')}
+                  placeholder="Search for people..."
                   className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                   autoFocus
                 />
@@ -300,12 +300,12 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                 </div>
               ) : searchQuery.trim() ? (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">{t('noUsersFound', { ns: 'common' })}</p>
+                  <p className="text-gray-500 dark:text-gray-400">No users found</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                   <p className="text-gray-500 dark:text-gray-400">
-                    {t('searchToStartConversation', { ns: 'messages' })}
+                    Search for people to start a conversation
                   </p>
                 </div>
               )}
@@ -323,13 +323,13 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
             ) : threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <p className="font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('noMessagesYet', { ns: 'messages' })}
+                  No messages yet
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                  {t('startConversation', { ns: 'messages' })}
+                  Start a conversation with someone
                 </p>
                 <Button onClick={() => setView('search')} className="rounded-full">
-                  {t('newMessage', { ns: 'messages' })}
+                  New Message
                 </Button>
               </div>
             ) : (
@@ -468,7 +468,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder={t('messages:typeMessage')}
+                  placeholder="Type a message..."
                   className="flex-1 rounded-2xl bg-gray-50 dark:bg-gray-800"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {

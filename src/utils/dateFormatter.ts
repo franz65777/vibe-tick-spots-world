@@ -19,7 +19,7 @@ export function formatPostDate(dateString: string, t: TFunction): string {
     const diffHours = Math.floor(diffMinutes / 60);
     
     if (diffMinutes < 60) {
-      return t('minutes', { ns: 'common', count: diffMinutes, defaultValue: '{{count}} minuti' });
+      return t('minutesShort', { ns: 'common', count: diffMinutes, defaultValue: '{{count}}m' });
     } else if (diffHours < 24) {
       return t('hoursShort', { ns: 'common', count: diffHours, defaultValue: '{{count}}h' });
     } else if (diffDays < 7) {

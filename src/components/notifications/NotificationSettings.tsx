@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 interface BusinessNotificationSetting {
   businessId: string;
@@ -19,7 +18,6 @@ interface BusinessNotificationSetting {
 }
 
 const NotificationSettings = () => {
-  const { t } = useTranslation();
   const [globalSettings, setGlobalSettings] = useState({
     allNotifications: true,
     geographicRadius: 25, // miles
@@ -62,8 +60,8 @@ const NotificationSettings = () => {
         const newMuted = !setting.isMuted;
         toast.success(
           newMuted 
-            ? t('mutedNotificationsFrom', { ns: 'notifications', name: setting.businessName, defaultValue: 'Muted notifications from {{name}}' })
-            : t('unmutedNotificationsFrom', { ns: 'notifications', name: setting.businessName, defaultValue: 'Unmuted notifications from {{name}}' })
+            ? `Muted notifications from ${setting.businessName}` 
+            : `Unmuted notifications from ${setting.businessName}`
         );
         return { ...setting, isMuted: newMuted };
       }
@@ -257,21 +255,21 @@ const NotificationSettings = () => {
                 variant="outline"
                 onClick={() => {
                   setBusinessSettings(prev => prev.map(setting => ({ ...setting, isMuted: false })));
-                  toast.success(t('unmutedAllBusinesses', { ns: 'notifications', defaultValue: 'Unmuted all businesses' }));
+                  toast.success('Unmuted all businesses');
                 }}
               >
                 <Bell className="w-4 h-4 mr-2" />
-                {t('unmuteAll', { ns: 'notifications', defaultValue: 'Unmute All' })}
+                Unmute All
               </Button>
               <Button
                 variant="outline"
                 onClick={() => {
                   setBusinessSettings(prev => prev.map(setting => ({ ...setting, isMuted: true })));
-                  toast.success(t('mutedAllBusinesses', { ns: 'notifications', defaultValue: 'Muted all businesses' }));
+                  toast.success('Muted all businesses');
                 }}
               >
                 <BellOff className="w-4 h-4 mr-2" />
-                {t('muteAll', { ns: 'notifications', defaultValue: 'Mute All' })}
+                Mute All
               </Button>
               <Button
                 variant="outline"
@@ -280,10 +278,10 @@ const NotificationSettings = () => {
                     ...setting, 
                     allowedTypes: ['event', 'discount', 'announcement'] 
                   })));
-                  toast.success(t('enabledAllTypes', { ns: 'notifications', defaultValue: 'Enabled all notification types' }));
+                  toast.success('Enabled all notification types');
                 }}
               >
-                {t('enableAllTypes', { ns: 'notifications', defaultValue: 'Enable All Types' })}
+                Enable All Types
               </Button>
             </div>
           </CardContent>

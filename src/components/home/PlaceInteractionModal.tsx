@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Users, MessageSquare, Send, Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { commentService, Comment } from '@/services/commentService';
 import { messageService } from '@/services/messageService';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
 
 interface PlaceInteractionModalProps {
   isOpen: boolean;
@@ -18,7 +18,6 @@ interface PlaceInteractionModalProps {
 }
 
 const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractionModalProps) => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -93,7 +92,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
               )}
               <div>
                 <h3 className="font-bold text-lg">
-                  {mode === 'comments' ? t('travelStories', { ns: 'common' }) : t('shareDiscovery', { ns: 'common' })}
+                  {mode === 'comments' ? 'Travel Stories' : 'Share Discovery'}
                 </h3>
                 <p className="text-white/80 text-sm">{place?.name}</p>
               </div>
@@ -121,7 +120,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                 ) : comments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm">{t('beFirstToShare', { ns: 'common' })}</p>
+                    <p className="text-sm">Be the first to share your experience!</p>
                   </div>
                 ) : (
                   comments.map((comment) => (
@@ -149,7 +148,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                               {comment.likes_count}
                             </button>
                             <button className="text-xs text-gray-500 hover:text-blue-500 transition-colors">
-                              {t('reply', { ns: 'common' })}
+                              Reply
                             </button>
                           </div>
                         </div>
@@ -171,7 +170,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                 </Avatar>
                 <div className="flex-1 flex gap-2">
                   <Textarea
-                    placeholder={t('shareYourExperiencePlaceholder', { ns: 'common' })}
+                    placeholder="Share your experience at this place..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     className="resize-none border-gray-200 rounded-xl text-sm"
@@ -192,7 +191,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
           /* Share section */
           <div className="flex-1 p-4">
             <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-3">{t('shareWithFriends', { ns: 'common' })}</h4>
+              <h4 className="font-medium text-gray-900 mb-3">Share with friends</h4>
               <div className="space-y-3">
                 {shareUsers.map((shareUser) => (
                   <div key={shareUser.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
@@ -213,7 +212,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                       size="sm"
                       className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full text-xs px-4"
                     >
-                      {t('send', { ns: 'common' })}
+                      Send
                     </Button>
                   </div>
                 ))}

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
-import { useTranslation } from 'react-i18next';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -13,7 +12,6 @@ interface NotificationsModalProps {
 }
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
 
@@ -59,7 +57,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-xl text-foreground">{t('notifications', { ns: 'common' })}</h3>
+            <h3 className="font-bold text-xl text-foreground">Notifications</h3>
             {unreadCount > 0 && (
               <div className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-[20px] text-center">
                 {unreadCount}
@@ -84,9 +82,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-muted-foreground text-sm">
-                  {t('loadingNotifications', { ns: 'notifications' })}
-                </span>
+                <span className="text-muted-foreground text-sm">Loading notifications…</span>
               </div>
             </div>
           ) : notifications.length === 0 ? (
@@ -94,12 +90,8 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
               <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
                 <Bell className="w-7 h-7 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">
-                {t('allCaughtUp', { ns: 'notifications' })}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {t('noNewNotifications', { ns: 'notifications' })}
-              </p>
+              <h3 className="font-semibold text-foreground mb-1">All caught up!</h3>
+              <p className="text-muted-foreground text-sm">No new notifications</p>
             </div>
           ) : (
             <div className="w-full">

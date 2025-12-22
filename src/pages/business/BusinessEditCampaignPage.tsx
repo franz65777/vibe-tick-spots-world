@@ -255,7 +255,7 @@ const BusinessEditCampaignPage = () => {
                 id="discount"
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
-                placeholder={t('discountPlaceholder', { ns: 'business' })}
+                placeholder="e.g., 20% off, €10 off"
               />
             </div>
           )}

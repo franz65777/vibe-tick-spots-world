@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Send, Users, Calendar, Eye, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 interface NotificationComposerProps {
   locationId: string;
@@ -14,7 +14,6 @@ interface NotificationComposerProps {
 }
 
 const NotificationComposer = ({ locationId, savedByCount }: NotificationComposerProps) => {
-  const { t } = useTranslation();
   const [notificationData, setNotificationData] = useState({
     title: '',
     message: '',
@@ -26,7 +25,7 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
 
   const handleSendNotification = async () => {
     if (!notificationData.title || !notificationData.message) {
-      toast.error(t('fillAllFields', { ns: 'business' }));
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -35,7 +34,7 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
       // Mock API call - replace with actual implementation
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      toast.success(t('notificationSentToUsers', { ns: 'business', count: savedByCount, defaultValue: 'Notification sent to {{count}} users!' }));
+      toast.success(`Notification sent to ${savedByCount} users!`);
       setNotificationData({
         title: '',
         message: '',
@@ -44,7 +43,7 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
       });
       setShowPreview(false);
     } catch (error) {
-      toast.error(t('failedToSendNotification', { ns: 'business', defaultValue: 'Failed to send notification' }));
+      toast.error('Failed to send notification');
     } finally {
       setSending(false);
     }
@@ -101,30 +100,30 @@ const NotificationComposer = ({ locationId, savedByCount }: NotificationComposer
 
           <div>
             <Label htmlFor="title" className="text-sm font-medium text-gray-700">
-              {t('notificationTitle', { ns: 'business' })} *
+              Notification Title *
             </Label>
             <Input
               id="title"
               value={notificationData.title}
               onChange={(e) => setNotificationData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder={t('enterNotificationTitle', { ns: 'business' })}
+              placeholder="Enter notification title..."
               className="mt-1"
               maxLength={50}
             />
             <p className="text-xs text-gray-500 mt-1">
-              {notificationData.title.length}/50 {t('characters', { ns: 'common' })}
+              {notificationData.title.length}/50 characters
             </p>
           </div>
 
           <div>
             <Label htmlFor="message" className="text-sm font-medium text-gray-700">
-              {t('message', { ns: 'business' })} *
+              Message *
             </Label>
             <Textarea
               id="message"
               value={notificationData.message}
               onChange={(e) => setNotificationData(prev => ({ ...prev, message: e.target.value }))}
-              placeholder={t('enterYourMessage', { ns: 'business' })}
+              placeholder="Enter your message..."
               className="mt-1 min-h-[100px]"
               maxLength={200}
             />

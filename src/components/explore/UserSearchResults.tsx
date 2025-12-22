@@ -2,7 +2,6 @@ import React from 'react';
 import { Clock, TrendingUp, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useTranslation } from 'react-i18next';
 
 interface UserSearchResultsProps {
   searchQuery: string;
@@ -23,8 +22,6 @@ const UserSearchResults = ({
   onFollowUser,
   onRecentSearchClick,
 }: UserSearchResultsProps) => {
-  const { t } = useTranslation();
-  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -89,9 +86,9 @@ const UserSearchResults = ({
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4">
         <Users className="h-12 w-12 text-muted-foreground mb-3" />
-        <p className="text-muted-foreground text-center">{t('noUsersFound', { ns: 'common' })}</p>
+        <p className="text-muted-foreground text-center">No users found</p>
         <p className="text-sm text-muted-foreground text-center mt-1">
-          {t('tryDifferentUsername', { ns: 'explore' })}
+          Try searching for a different username
         </p>
       </div>
     );
@@ -104,7 +101,7 @@ const UserSearchResults = ({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">{t('recentSearches', { ns: 'explore' })}</h3>
+            <h3 className="text-sm font-semibold text-foreground">Recent Searches</h3>
           </div>
           <div className="space-y-1">
             {recentSearches.map((search) => (
@@ -126,7 +123,7 @@ const UserSearchResults = ({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">{t('suggestedUsers', { ns: 'explore' })}</h3>
+            <h3 className="text-sm font-semibold text-foreground">Suggested Users</h3>
           </div>
           <div className="space-y-1">
             {suggestedUsers.map((user) => renderUserCard(user))}
@@ -137,9 +134,9 @@ const UserSearchResults = ({
       {recentSearches.length === 0 && suggestedUsers.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 px-4">
           <Users className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground text-center">{t('startSearchingPeople', { ns: 'explore' })}</p>
+          <p className="text-muted-foreground text-center">Start searching for people</p>
           <p className="text-sm text-muted-foreground text-center mt-1">
-            {t('findFriendsDiscover', { ns: 'explore' })}
+            Find friends and discover new profiles
           </p>
         </div>
       )}

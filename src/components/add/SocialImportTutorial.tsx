@@ -14,18 +14,18 @@ export const SocialImportTutorial = ({ open, onClose }: SocialImportTutorialProp
   const steps = [
     {
       icon: Instagram,
-      title: t('socialImport.step1Title', { ns: 'add' }),
-      description: t('socialImport.step1Desc', { ns: 'add' })
+      title: t('socialImport.step1Title', 'Open Instagram'),
+      description: t('socialImport.step1Desc', 'Find a post with a tagged location you want to save')
     },
     {
       icon: Share2,
-      title: t('socialImport.step2Title', { ns: 'add' }),
-      description: t('socialImport.step2Desc', { ns: 'add' })
+      title: t('socialImport.step2Title', 'Tap Share'),
+      description: t('socialImport.step2Desc', 'Tap the share button on the post')
     },
     {
       icon: Smartphone,
-      title: t('socialImport.step3Title', { ns: 'add' }),
-      description: t('socialImport.step3Desc', { ns: 'add' })
+      title: t('socialImport.step3Title', 'Select Spott'),
+      description: t('socialImport.step3Desc', 'Choose Spott from the share menu to import the location')
     }
   ];
 
@@ -35,13 +35,13 @@ export const SocialImportTutorial = ({ open, onClose }: SocialImportTutorialProp
         <DialogHeader>
           <DialogTitle className="text-center flex items-center justify-center gap-2">
             <Instagram className="w-5 h-5 text-pink-500" />
-            {t('socialImport.title', { ns: 'add' })}
+            {t('socialImport.title', 'Import from Instagram')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <p className="text-sm text-muted-foreground text-center">
-            {t('socialImport.intro', { ns: 'add' })}
+            {t('socialImport.intro', 'Save locations from Instagram posts directly to Spott')}
           </p>
 
           <div className="space-y-4">
@@ -53,7 +53,7 @@ export const SocialImportTutorial = ({ open, onClose }: SocialImportTutorialProp
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">
-                      {t('socialImport.step', { ns: 'add' })} {index + 1}
+                      {t('socialImport.step', 'Step')} {index + 1}
                     </span>
                   </div>
                   <h4 className="font-medium text-sm">{step.title}</h4>
@@ -68,13 +68,13 @@ export const SocialImportTutorial = ({ open, onClose }: SocialImportTutorialProp
 
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-xs text-muted-foreground text-center">
-              {t('socialImport.note', { ns: 'add' })}
+              {t('socialImport.note', 'Make sure Spott is installed and you\'re logged in')}
             </p>
           </div>
         </div>
 
         <Button onClick={onClose} className="w-full">
-          {t('gotIt', { ns: 'common' })}
+          {t('common.gotIt', 'Got it!')}
         </Button>
       </DialogContent>
     </Dialog>
