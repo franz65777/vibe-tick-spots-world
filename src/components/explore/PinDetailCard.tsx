@@ -837,7 +837,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Opening Hours and Saved By Users Row - Directly under buttons */}
-          <div className="px-4 -mt-1 pb-1">
+          <div className="px-4 -mt-2 pb-0">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
@@ -1050,8 +1050,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                               decoding="async"
                             />
                             {/* User Avatar Overlay */}
-                            <div className="absolute top-2 left-2 pointer-events-none">
-                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                            <div className="absolute top-3 left-3 pointer-events-none z-10">
+                              <Avatar className="w-7 h-7 border-2 border-white shadow-lg">
                                 <AvatarImage src={post.profiles?.avatar_url} />
                                 <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                                   {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
