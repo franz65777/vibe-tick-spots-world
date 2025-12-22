@@ -42,12 +42,22 @@ export const PostActions = ({
 }: PostActionsProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { isLiked, likeCount, toggleLike, comments } = useSocialEngagement(postId);
+  const { 
+    isLiked, 
+    likeCount, 
+    commentCount, 
+    shareCount, 
+    toggleLike 
+  } = useSocialEngagement(postId, { 
+    likes: likesCount, 
+    comments: commentsCount, 
+    shares: sharesCount 
+  });
   
-  // Use hook values as primary, fallback to props for initial render
-  const localLikesCount = likeCount ?? likesCount;
-  const localCommentsCount = comments?.length ?? commentsCount;
-  const [localSharesCount, setLocalSharesCount] = useState(sharesCount);
+  // Use hook values when loaded (not null), otherwise fallback to props
+  const displayLikesCount = likeCount !== null ? likeCount : likesCount;
+  const displayCommentsCount = commentCount !== null ? commentCount : commentsCount;
+  const displaySharesCount = shareCount !== null ? shareCount : sharesCount;
   
   const [isLocationSaved, setIsLocationSaved] = useState(false);
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
@@ -55,33 +65,6 @@ export const PostActions = ({
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Sync shares count from props
-  useEffect(() => {
-    setLocalSharesCount(sharesCount);
-  }, [sharesCount]);
-
-  // Subscribe to real-time share count updates only (likes/comments handled by useSocialEngagement)
-  useEffect(() => {
-    const sharesChannel = supabase
-      .channel(`post-shares-live-${postId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'post_shares', filter: `post_id=eq.${postId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setLocalSharesCount(prev => prev + 1);
-          } else if (payload.eventType === 'DELETE') {
-            setLocalSharesCount(prev => Math.max(0, prev - 1));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(sharesChannel);
-    };
-  }, [postId]);
 
   // Load location save status
   useEffect(() => {
@@ -217,7 +200,7 @@ export const PostActions = ({
 
   const handleLikeCountClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (localLikesCount > 0) {
+    if (displayLikesCount > 0) {
       setShowLikersModal(true);
     }
   };
@@ -314,9 +297,9 @@ export const PostActions = ({
       <button
         onClick={handleLikeCountClick}
         className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-        disabled={localLikesCount === 0}
+        disabled={displayLikesCount === 0}
       >
-        {localLikesCount || 0}
+        {displayLikesCount}
       </button>
 
       {/* Comment button */}
@@ -328,7 +311,7 @@ export const PostActions = ({
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <MessageCircle className="w-6 h-6" />
-        <span className="text-sm font-semibold">{localCommentsCount || 0}</span>
+        <span className="text-sm font-semibold">{displayCommentsCount}</span>
       </button>
 
       {/* Share button */}
@@ -340,7 +323,7 @@ export const PostActions = ({
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <Share2 className="w-5 h-5" />
-        <span className="text-sm font-semibold">{localSharesCount || 0}</span>
+        <span className="text-sm font-semibold">{displaySharesCount}</span>
       </button>
 
       {/* Pin/Save button with dropdown */}
