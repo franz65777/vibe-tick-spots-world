@@ -261,87 +261,93 @@ const MapFilterDropdown = () => {
         </div>
       )}
 
-      {/* Active filter circle button */}
-      <div
-        className={cn(
-          "flex items-center gap-1.5 rounded-full transition-all duration-300 relative",
-          "bg-popover text-popover-foreground border border-border shadow-lg",
-          isFilterExpanded ? "pr-1.5" : "pr-2.5"
-        )}
-      >
-        <button
-          onClick={handleMainButtonClick}
-          className={cn(
-            "w-9 h-9 rounded-full flex items-center justify-center overflow-hidden transition-all",
-            "bg-primary/10 border border-primary/20"
-          )}
-        >
-        {activeFilter === 'following' && selectedUser ? (
-            <div className="relative">
-              <Avatar className="w-6 h-6 border border-background">
-                <AvatarImage src={selectedUser.avatar_url || ''} />
-                <AvatarFallback className="text-[8px]">
-                  {selectedUser.username?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {hasMultipleSelected && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full flex items-center justify-center border border-background">
-                  <span className="text-[8px] font-bold text-primary-foreground">+</span>
-                </div>
-              )}
+      {/* Active filter control (only 2 buttons) */}
+      <div className="relative">
+        {/* Filter picker popover */}
+        {isFilterExpanded && (
+          <div className="absolute bottom-full left-0 mb-2 bg-popover text-popover-foreground rounded-2xl border border-border shadow-lg z-[2100] min-w-[180px] overflow-hidden">
+            <div className="p-2">
+              {mapFilters
+                .filter((f) => f.id !== activeFilter)
+                .map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => {
+                      handleFilterSelect(filter.id);
+                      setIsFilterExpanded(false);
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors',
+                      'hover:bg-accent'
+                    )}
+                  >
+                    <img
+                      src={filter.icon}
+                      alt={filter.name}
+                      className={cn('object-contain', filter.iconSize)}
+                    />
+                    <span className="text-sm font-medium text-foreground">{filter.name}</span>
+                  </button>
+                ))}
             </div>
-          ) : (
-            <img 
-              src={activeFilterData.icon} 
-              alt={activeFilterData.name}
-              className={cn("object-contain", activeFilterData.iconSize)}
-            />
-          )}
-        </button>
-        {!isFilterExpanded && (
-          <span className="text-xs font-medium text-foreground whitespace-nowrap">
-            {activeFilterData.name}
-          </span>
+          </div>
         )}
-        <button
-          onClick={() => {
-            setIsFilterExpanded(!isFilterExpanded);
-            setIsFriendsDropdownOpen(false);
-          }}
-          className="p-0.5"
+
+        <div
+          className={cn(
+            'flex items-center gap-1.5 rounded-full transition-all duration-200 relative',
+            'bg-popover text-popover-foreground border border-border shadow-lg'
+          )}
         >
-          <ChevronRight className={cn(
-            "w-4 h-4 text-muted-foreground transition-transform duration-300",
-            isFilterExpanded && "rotate-180"
-          )} />
-        </button>
+          <button
+            onClick={handleMainButtonClick}
+            className={cn(
+              'w-9 h-9 rounded-full flex items-center justify-center overflow-hidden transition-all',
+              'bg-primary/10 border border-primary/20'
+            )}
+            aria-label={t('mapFilters:locationsTitle', { defaultValue: 'Locations' })}
+          >
+            {activeFilter === 'following' && selectedUser ? (
+              <div className="relative">
+                <Avatar className="w-6 h-6 border border-background">
+                  <AvatarImage src={selectedUser.avatar_url || ''} />
+                  <AvatarFallback className="text-[8px]">
+                    {selectedUser.username?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {hasMultipleSelected && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full flex items-center justify-center border border-background">
+                    <span className="text-[8px] font-bold text-primary-foreground">+</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <img
+                src={activeFilterData.icon}
+                alt={activeFilterData.name}
+                className={cn('object-contain', activeFilterData.iconSize)}
+              />
+            )}
+          </button>
+
+          <button
+            onClick={() => {
+              setIsFilterExpanded(!isFilterExpanded);
+              setIsFriendsDropdownOpen(false);
+            }}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            aria-label={t('common:more', { defaultValue: 'More' })}
+          >
+            <ChevronRight
+              className={cn(
+                'w-4 h-4 text-muted-foreground transition-transform duration-200',
+                isFilterExpanded && 'rotate-180'
+              )}
+            />
+          </button>
+        </div>
       </div>
 
-      {/* Expanded filter options - horizontal */}
-      <div className={cn(
-        "flex items-center gap-1.5 ml-1.5 overflow-hidden transition-all duration-300",
-        isFilterExpanded ? "max-w-[250px] opacity-100" : "max-w-0 opacity-0"
-      )}>
-        {mapFilters.filter(f => f.id !== activeFilter).map((filter) => (
-          <button
-            key={filter.id}
-            onClick={() => handleFilterSelect(filter.id)}
-            className={cn(
-              "flex items-center gap-1.5 px-2 h-9 rounded-full transition-all duration-200",
-              "bg-popover text-popover-foreground border border-border hover:bg-accent shadow-lg"
-            )}
-          >
-            <img 
-              src={filter.icon} 
-              alt={filter.name}
-              className={cn("object-contain", filter.iconSize)}
-            />
-            <span className="text-xs font-medium text-foreground whitespace-nowrap">
-              {filter.name}
-            </span>
-          </button>
-        ))}
-      </div>
     </div>
   );
 };
