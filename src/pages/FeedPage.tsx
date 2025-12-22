@@ -191,6 +191,11 @@ const FeedPage = memo(() => {
 
   const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Get full location data from the post
+    const post = feedItems.find(i => i.id === postId) as any;
+    const location = post?.locations;
+    
     navigate('/', {
       state: {
         centerMap: {
@@ -201,10 +206,10 @@ const FeedPage = memo(() => {
         },
         openPinDetail: {
           id: locationId,
-          name: locationName || '',
+          name: locationName || location?.name || '',
           lat: latitude,
           lng: longitude,
-          category: (feedItems.find(i => i.id === postId) as any)?.locations?.category || 'restaurant',
+          category: location?.category || 'restaurant',
           sourcePostId: postId
         }
       }
