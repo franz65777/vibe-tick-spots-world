@@ -836,8 +836,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             )}
           </div>
 
-          {/* Opening Hours and Saved By Users Row - Closer to action buttons */}
-          <div className="px-4 pt-1 pb-2">
+          {/* Opening Hours and Saved By Users Row - Directly under buttons */}
+          <div className="px-4 -mt-1 pb-1">
             <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
@@ -939,7 +939,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           )}
 
           {/* Tabs and Content */}
-          <div className="flex-1 overflow-hidden flex flex-col mt-1">
+          <div className="flex-1 overflow-hidden flex flex-col -mt-1">
             {/* Tab Navigation with Horizontal Scroll */}
             <div 
               className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
@@ -986,7 +986,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             {/* Tab Content */}
             <div 
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
+              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)] overscroll-contain"
+              style={{ 
+                transform: 'translateZ(0)',
+                WebkitOverflowScrolling: 'touch'
+              }}
               onScroll={(e) => {
                 const currentScrollY = e.currentTarget.scrollTop;
                 
@@ -1008,7 +1012,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               }}
             >
               {activeTab === 'posts' ? (
-                <div className="px-4 py-4">
+                <div className="px-4 py-2">
                   {postsLoading && posts.length === 0 ? (
                     <div className="flex justify-center py-8">
                       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
