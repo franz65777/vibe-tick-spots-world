@@ -304,8 +304,8 @@ const FeedPage = memo(() => {
     } catch (error) {
       console.error('Error sharing post:', error);
       toast({
-        title: "Error",
-        description: "Failed to share post",
+        title: t('error', { ns: 'common' }),
+        description: t('failedToSharePost', { ns: 'common' }),
         variant: "destructive",
       });
       return false;

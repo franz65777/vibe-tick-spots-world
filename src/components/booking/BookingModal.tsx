@@ -79,11 +79,11 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
     setLoading(false);
 
     if (result.error) {
-      toast.error('Booking failed', { description: result.error });
+      toast.error(t('bookingFailed', { ns: 'booking' }), { description: result.error });
     } else {
       setStep('confirmation');
-      toast.success('Table booked!', { 
-        description: `Confirmation code: ${result.data?.confirmation_code}` 
+      toast.success(t('tableBooked', { ns: 'booking' }), { 
+        description: t('confirmationCode', { ns: 'booking', code: result.data?.confirmation_code }) 
       });
     }
   };
@@ -101,14 +101,14 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary" />
-            Book a Table at {locationName}
+            {t('bookTableAt', { ns: 'booking', name: locationName })}
           </DialogTitle>
         </DialogHeader>
 
         {step === 'date' && (
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Select Date</Label>
+              <Label className="text-sm font-semibold mb-2 block">{t('selectDate', { ns: 'booking' })}</Label>
               <CalendarComponent
                 mode="single"
                 selected={selectedDate}
@@ -118,7 +118,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
               />
             </div>
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Party Size</Label>
+              <Label className="text-sm font-semibold mb-2 block">{t('partySize', { ns: 'booking' })}</Label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -129,7 +129,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 </Button>
                 <div className="flex items-center gap-2 px-4 py-2 border rounded-md flex-1 justify-center">
                   <Users className="w-4 h-4" />
-                  <span className="font-semibold">{partySize} {partySize === 1 ? 'Guest' : 'Guests'}</span>
+                  <span className="font-semibold">{partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</span>
                 </div>
                 <Button
                   variant="outline"
@@ -146,11 +146,11 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
         {step === 'time' && (
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => setStep('date')}>
-              ← Back to Date
+              ← {t('backToDate', { ns: 'booking' })}
             </Button>
             <div>
               <Label className="text-sm font-semibold mb-2 block">
-                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} • {partySize} {partySize === 1 ? 'Guest' : 'Guests'}
+                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} • {partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}
               </Label>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -158,7 +158,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 </div>
               ) : timeSlots.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No available time slots for this date
+                  {t('noAvailableTimeSlots', { ns: 'booking' })}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
@@ -183,10 +183,10 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
         {step === 'details' && (
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => setStep('time')}>
-              ← Back to Time
+              ← {t('backToTime', { ns: 'booking' })}
             </Button>
             <div className="bg-muted p-3 rounded-lg text-sm">
-              <div className="font-semibold mb-1">Booking Summary</div>
+              <div className="font-semibold mb-1">{t('bookingSummary', { ns: 'booking' })}</div>
               <div>{format(selectedDate!, 'EEEE, MMMM d, yyyy')}</div>
               <div>{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')} • {partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</div>
             </div>
@@ -240,7 +240,7 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
               className="w-full"
               disabled={loading || !formData.name || !formData.email}
             >
-              {loading ? 'Booking...' : 'Confirm Booking'}
+              {loading ? t('booking', { ns: 'booking' }) : t('confirmBooking', { ns: 'booking' })}
             </Button>
           </div>
         )}
@@ -251,30 +251,30 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
               <Check className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2">Booking Confirmed!</h3>
+              <h3 className="text-xl font-bold mb-2">{t('bookingConfirmed', { ns: 'booking' })}</h3>
               <p className="text-muted-foreground mb-4">
-                Your table at {locationName} is reserved
+                {t('tableReserved', { ns: 'booking', name: locationName })}
               </p>
               <div className="bg-muted p-4 rounded-lg text-left space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date:</span>
+                  <span className="text-muted-foreground">{t('date', { ns: 'booking' })}:</span>
                   <span className="font-semibold">{selectedDate && format(selectedDate, 'MMM d, yyyy')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Time:</span>
+                  <span className="text-muted-foreground">{t('time', { ns: 'booking' })}:</span>
                   <span className="font-semibold">{selectedTime && format(new Date(`2000-01-01T${selectedTime}`), 'h:mm a')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Party Size:</span>
-                  <span className="font-semibold">{partySize} {partySize === 1 ? 'Guest' : 'Guests'}</span>
+                  <span className="text-muted-foreground">{t('partySize', { ns: 'booking' })}:</span>
+                  <span className="font-semibold">{partySize} {partySize === 1 ? t('guest', { ns: 'booking' }) : t('guests', { ns: 'booking' })}</span>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                A confirmation has been sent to your email and notifications.
+                {t('confirmationSent', { ns: 'booking' })}
               </p>
             </div>
             <Button onClick={resetAndClose} className="w-full">
-              Done
+              {t('done', { ns: 'common' })}
             </Button>
           </div>
         )}
