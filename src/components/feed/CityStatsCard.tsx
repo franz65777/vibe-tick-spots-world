@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TrendingUp, ChevronUp, ChevronDown } from 'lucide-react';
+import { MapPin, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -128,10 +128,7 @@ const CityStatsCard = memo(() => {
   // Minimized view - very compact
   if (isMinimized) {
     return (
-      <div 
-        className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 px-4 py-3 shadow-sm border border-border/50 cursor-pointer hover:shadow-md transition-shadow"
-        onClick={() => navigate('/explore')}
-      >
+      <div className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 px-4 py-3 shadow-sm border border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={globeAnimation} alt="" className="w-8 h-8 object-contain" />
@@ -142,10 +139,7 @@ const CityStatsCard = memo(() => {
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{totalPlaces.toLocaleString()} {t('places', { defaultValue: 'places' })}</span>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsMinimized(false);
-              }}
+              onClick={() => setIsMinimized(false)}
               className="w-7 h-7 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
             >
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -157,10 +151,7 @@ const CityStatsCard = memo(() => {
   }
 
   return (
-    <div 
-      className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 p-5 shadow-sm border border-border/50 cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => navigate('/explore')}
-    >
+    <div className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 p-5 shadow-sm border border-border/50">
       {/* Header with title and minimize button + GIF */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
@@ -168,15 +159,12 @@ const CityStatsCard = memo(() => {
             {userCity ? t('yourCityGrowing', { defaultValue: 'your city is growing!' }) : t('discoverPlaces', { defaultValue: 'discover places' })}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {t('curatedByPeople', { defaultValue: 'every place is saved by real users. no scraped data, just authentic recommendations.' })}
+            {t('curatedByFriends', { defaultValue: 'every place is saved by your network of friends with only authentic recommendations.' })}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMinimized(true);
-            }}
+            onClick={() => setIsMinimized(true)}
             className="w-7 h-7 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
           >
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -190,7 +178,7 @@ const CityStatsCard = memo(() => {
         {/* Total places */}
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-primary" />
+            <MapPin className="w-4 h-4 text-primary" />
             <span className="font-medium text-muted-foreground uppercase tracking-wide text-xs">{t('totalPlaces', { defaultValue: 'TOTAL PLACES' })}</span>
           </div>
           <span className="font-bold text-foreground">{totalPlaces.toLocaleString()}</span>
@@ -222,12 +210,9 @@ const CityStatsCard = memo(() => {
       {/* CTA Button */}
       <button 
         className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate('/add');
-        }}
+        onClick={() => navigate('/')}
       >
-        {t('startBuilding', { defaultValue: 'start building' })}
+        {t('saveMore', { defaultValue: 'save more' })}
       </button>
     </div>
   );

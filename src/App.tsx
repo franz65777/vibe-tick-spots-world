@@ -48,6 +48,7 @@ const CreateListPage = lazy(() => import('@/pages/CreateListPage'));
 const SaveLocationPage = lazy(() => import('@/pages/SaveLocationPage'));
 const UserPlacesPage = lazy(() => import('@/pages/UserPlacesPage'));
 const RewardsPage = lazy(() => import('@/pages/RewardsPage'));
+const FolderDetailPage = lazy(() => import('@/pages/FolderDetailPage'));
 
 // Auth pages - not lazy loaded as they're needed immediately
 import SigninStart from '@/pages/auth/SigninStart';
@@ -146,6 +147,7 @@ function AppContent() {
           <Route path="/save-location" element={<SaveLocationPage />} />
           <Route path="/user-places/:userId" element={<UserPlacesPage />} />
           <Route path="/rewards" element={<RewardsPage />} />
+          <Route path="/folder/:folderId" element={<FolderDetailPage />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
