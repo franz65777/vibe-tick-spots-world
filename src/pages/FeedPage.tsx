@@ -133,6 +133,7 @@ const FeedPage = memo(() => {
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -223,10 +224,11 @@ const FeedPage = memo(() => {
 
   const handleCommentClick = async (postId: string) => {
     setCommentPostId(postId);
-    // Load comments before opening to avoid temporary empty state
+    setCommentsLoading(true);
+    setCommentDrawerOpen(true);
     const postComments = await getPostComments(postId);
     setComments(postComments);
-    setCommentDrawerOpen(true);
+    setCommentsLoading(false);
   };
 
   const handleAddComment = async (content: string) => {
@@ -337,7 +339,7 @@ const FeedPage = memo(() => {
 
         {/* Feed Content */}
         <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
-          {feedItems.length === 0 && loading ? (
+          {loading ? (
             <div className="py-4 w-full">
               {[1,2,3].map((i) => (
                 <div key={i} className="space-y-3">
@@ -400,10 +402,12 @@ const FeedPage = memo(() => {
             setCommentDrawerOpen(false);
             setCommentPostId(null);
             setComments([]);
+            setCommentsLoading(false);
           }}
           comments={comments}
           onAddComment={handleAddComment}
           onDeleteComment={handleDeleteComment}
+          isLoading={commentsLoading}
         />
 
         {/* Share Modal */}

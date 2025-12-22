@@ -20,6 +20,7 @@ interface CommentDrawerProps {
   comments: Comment[];
   onAddComment: (content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
 interface CommentLikeState {
@@ -32,6 +33,7 @@ export const CommentDrawer = ({
   comments,
   onAddComment,
   onDeleteComment,
+  isLoading = false,
 }: CommentDrawerProps) => {
   const { user } = useAuth();
   const { profile } = useOptimizedProfile();
@@ -193,7 +195,22 @@ export const CommentDrawer = ({
 
           {/* Comments List */}
           <ScrollArea className="flex-1 px-4">
-            {comments.length === 0 ? (
+            {isLoading ? (
+              <div className="py-8 space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex gap-2.5 animate-pulse">
+                    <div className="w-9 h-9 rounded-full bg-muted shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="bg-muted rounded-2xl px-3.5 py-4 space-y-2">
+                        <div className="h-3 w-20 bg-muted-foreground/20 rounded" />
+                        <div className="h-3 w-full bg-muted-foreground/20 rounded" />
+                        <div className="h-3 w-2/3 bg-muted-foreground/20 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : comments.length === 0 ? (
               <div className="py-16 text-center flex flex-col items-center">
                 <img 
                   src={noCommentsIcon} 

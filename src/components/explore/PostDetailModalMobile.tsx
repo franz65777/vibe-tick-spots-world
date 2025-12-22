@@ -58,6 +58,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
@@ -255,9 +256,11 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     }
   };
   const handleCommentClick = async () => {
+    setCommentsLoading(true);
     setCommentsDrawerOpen(true);
     const postComments = await getPostComments(postId);
     setComments(postComments);
+    setCommentsLoading(false);
   };
 
   const handleAddComment = async (content: string, postId: string) => {
@@ -578,10 +581,12 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
         onClose={() => {
           setCommentsDrawerOpen(false);
           setComments([]);
+          setCommentsLoading(false);
         }}
         comments={comments}
         onAddComment={(content) => handleAddComment(content, postId)}
         onDeleteComment={handleDeleteComment}
+        isLoading={commentsLoading}
       />
 
       {/* Share Modal */}
