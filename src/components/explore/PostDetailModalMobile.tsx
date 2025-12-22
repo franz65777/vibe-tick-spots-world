@@ -263,11 +263,21 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     setCommentsLoading(false);
   };
 
-  const handleAddComment = async (content: string, postId: string) => {
+  const bumpLocalPostCount = (targetPostId: string, field: 'comments_count' | 'shares_count', delta: number) => {
+    setPosts(prev =>
+      prev.map(p =>
+        p.id === targetPostId
+          ? { ...p, [field]: Math.max(0, ((p as any)[field] || 0) + delta) }
+          : p
+      )
+    );
+  };
+
+  const handleAddComment = async (content: string, targetPostId: string) => {
     if (!user?.id) return;
     const newComment = await addPostComment(
-      postId, 
-      user.id, 
+      targetPostId,
+      user.id,
       content,
       t('comments.added', 'Commento aggiunto'),
       t('comments.addFailed', 'Impossibile aggiungere il commento'),
@@ -275,21 +285,21 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     );
     if (newComment) {
       setComments(prev => [...prev, newComment]);
-      loadPostData();
+      bumpLocalPostCount(targetPostId, 'comments_count', 1);
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
     if (!user?.id) return;
     const success = await deletePostComment(
-      commentId, 
+      commentId,
       user.id,
       t('comments.deleted', 'Commento eliminato'),
       t('comments.deleteFailed', 'Impossibile eliminare il commento')
     );
     if (success) {
       setComments(prev => prev.filter(c => c.id !== commentId));
-      loadPostData();
+      bumpLocalPostCount(postId, 'comments_count', -1);
     }
   };
 
@@ -563,8 +573,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                   onShareClick={() => setShareOpen(true)}
                 />
 
-                {/* Timestamp */}
-                <p className="text-xs text-muted-foreground uppercase text-left">
+                {/* Timestamp (same style as feed) */}
+                <p className="text-xs text-muted-foreground text-left mt-0">
                   {formatPostDate(post.created_at, t, i18n.language)}
                 </p>
               </div>

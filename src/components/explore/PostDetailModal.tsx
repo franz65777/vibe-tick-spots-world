@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { getDateFnsLocale } from '@/utils/dateFnsLocales';
+import { formatPostDate } from '@/utils/dateFormatter';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
@@ -63,7 +64,7 @@ interface PostData {
 
 export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', openCommentsOnLoad, openShareOnLoad }: PostDetailModalProps) => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const engagement = useSocialEngagement(postId);
   const { savePlace, isPlaceSaved } = useSavedPlaces();
@@ -477,8 +478,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                 {post.caption && (
                   <div className="space-y-1">
                     <p className="text-sm leading-relaxed">{post.caption}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
+                    <p className="text-xs text-muted-foreground text-left mt-0">
+                      {formatPostDate(post.created_at, t, i18n.language)}
                     </p>
                   </div>
                 )}

@@ -150,6 +150,65 @@ const FeedPage = memo(() => {
     };
   }, [commentDrawerOpen, shareModalOpen]);
 
+  // Keep post counts live in the feed without needing N realtime channels (one per post)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const postIdSet = new Set<string>(feedItems.map((p: any) => p.id));
+    if (postIdSet.size === 0) return;
+
+    const queryKey = feedType === 'promotions' ? ['promotions-feed', user.id] : ['feed', user.id];
+
+    const bumpCount = (postId: string, field: 'comments_count' | 'shares_count', delta: number) => {
+      queryClient.setQueryData<any[]>(queryKey, (prev) => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map((p: any) =>
+          p.id === postId ? { ...p, [field]: Math.max(0, (p[field] || 0) + delta) } : p
+        );
+      });
+    };
+
+    const ch = supabase
+      .channel(`feed-counts-${feedType}-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_comments' },
+        (payload) => {
+          const postId = (payload.new as any)?.post_id as string | undefined;
+          if (postId && postIdSet.has(postId)) bumpCount(postId, 'comments_count', 1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_comments' },
+        (payload) => {
+          const postId = (payload.old as any)?.post_id as string | undefined;
+          if (postId && postIdSet.has(postId)) bumpCount(postId, 'comments_count', -1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_shares' },
+        (payload) => {
+          const postId = (payload.new as any)?.post_id as string | undefined;
+          if (postId && postIdSet.has(postId)) bumpCount(postId, 'shares_count', 1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_shares' },
+        (payload) => {
+          const postId = (payload.old as any)?.post_id as string | undefined;
+          if (postId && postIdSet.has(postId)) bumpCount(postId, 'shares_count', -1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user?.id, feedType, feedItems.length]);
+
   // Carica likes quando cambiano i feedItems
   useEffect(() => {
     if (!user?.id || feedItems.length === 0) return;
@@ -239,23 +298,42 @@ const FeedPage = memo(() => {
 
   const handleAddComment = async (content: string) => {
     if (!user?.id || !commentPostId) return;
-    
+
     const newComment = await addPostComment(commentPostId, user.id, content);
     if (newComment) {
       setComments(prev => [...prev, newComment]);
-      // Invalida cache per aggiornare count
-      queryClient.invalidateQueries({ queryKey: ['feed', user.id] });
+
+      const queryKey = feedType === 'promotions' ? ['promotions-feed', user.id] : ['feed', user.id];
+      queryClient.setQueryData<any[]>(queryKey, (prev) => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map((p: any) =>
+          p.id === commentPostId
+            ? { ...p, comments_count: (p.comments_count || 0) + 1 }
+            : p
+        );
+      });
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
     if (!user?.id) return;
-    
+
     const success = await deletePostComment(commentId, user.id);
     if (success) {
       setComments(prev => prev.filter(c => c.id !== commentId));
-      // Invalida cache per aggiornare count
-      queryClient.invalidateQueries({ queryKey: ['feed', user.id] });
+
+      // Best-effort: when we delete, decrement the visible post count too
+      if (commentPostId) {
+        const queryKey = feedType === 'promotions' ? ['promotions-feed', user.id] : ['feed', user.id];
+        queryClient.setQueryData<any[]>(queryKey, (prev) => {
+          if (!Array.isArray(prev)) return prev;
+          return prev.map((p: any) =>
+            p.id === commentPostId
+              ? { ...p, comments_count: Math.max(0, (p.comments_count || 0) - 1) }
+              : p
+          );
+        });
+      }
     }
   };
 
@@ -265,7 +343,7 @@ const FeedPage = memo(() => {
   };
 
   const handleShare = async (recipientIds: string[]) => {
-    if (!sharePostId) return false;
+    if (!sharePostId || !user?.id) return false;
     
     const postItem = feedItems.find(item => item.id === sharePostId);
     if (!postItem) return false;
@@ -282,6 +360,20 @@ const FeedPage = memo(() => {
           messageService.sendPostShare(recipientId, postData)
         )
       );
+
+      // Record share count (for live counters)
+      await supabase.from('post_shares').insert({ user_id: user.id, post_id: sharePostId });
+
+      // Optimistically bump local feed count
+      const queryKey = feedType === 'promotions' ? ['promotions-feed', user.id] : ['feed', user.id];
+      queryClient.setQueryData<any[]>(queryKey, (prev) => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map((p: any) =>
+          p.id === sharePostId
+            ? { ...p, shares_count: (p.shares_count || 0) + 1 }
+            : p
+        );
+      });
 
       toast({
         title: "✅ Post condiviso!",
