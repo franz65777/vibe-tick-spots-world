@@ -109,6 +109,12 @@ export const NewAddPage = () => {
       return;
     }
 
+    // Extract coordinates - OSM provides coordinates.lat/lng, Google provides geometry.location.lat()/lng()
+    const lat = location.coordinates?.lat ?? location.lat ?? location.geometry?.location?.lat?.();
+    const lng = location.coordinates?.lng ?? location.lng ?? location.geometry?.location?.lng?.();
+    
+    console.log('📍 Location selected:', location.name, 'coordinates:', { lat, lng });
+
     // Auto-detect category from place types
     const types = location.types || [];
     let category = 'place';
@@ -141,10 +147,11 @@ export const NewAddPage = () => {
       place_id: location.id || `osm_${Date.now()}`,
       name: location.name,
       formatted_address: location.address,
+      city: location.city,
       geometry: {
         location: {
-          lat: () => location.lat,
-          lng: () => location.lng
+          lat: () => lat,
+          lng: () => lng
         }
       },
       types: location.types || []
@@ -233,7 +240,8 @@ export const NewAddPage = () => {
       if (!locationId) {
         if (lat == null || lng == null) {
           console.error('❌ Cannot create location without coordinates');
-          toast.error(t('invalidLocation', { ns: 'add', defaultValue: 'Invalid location - please select a location with valid coordinates' }));
+          toast.error(t('invalidLocation', { ns: 'add' }));
+          setIsUploading(false);
           return;
         }
         
@@ -288,8 +296,8 @@ export const NewAddPage = () => {
       // Clean up
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       
-      // Navigate to explore page to show the new post
-      navigate('/explore');
+      // Navigate to home page after successful post
+      navigate('/');
       
     } catch (error) {
       console.error('❌ Error creating post:', error);
