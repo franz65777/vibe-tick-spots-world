@@ -6,6 +6,122 @@ import { toast } from 'sonner';
  * Handles likes, comments, shares across posts with proper notifications
  */
 
+// Notification translations for all supported languages
+const notificationTranslations: Record<string, Record<string, string>> = {
+  en: {
+    new_like_title: 'New like',
+    new_like_message: '{{username}} liked your post',
+    new_comment_title: 'New comment',
+    new_comment_message: '{{username}} commented on your post',
+  },
+  it: {
+    new_like_title: 'Nuovo mi piace',
+    new_like_message: '{{username}} ha messo mi piace al tuo post',
+    new_comment_title: 'Nuovo commento',
+    new_comment_message: '{{username}} ha commentato il tuo post',
+  },
+  es: {
+    new_like_title: 'Nuevo me gusta',
+    new_like_message: '{{username}} le dio me gusta a tu publicación',
+    new_comment_title: 'Nuevo comentario',
+    new_comment_message: '{{username}} comentó en tu publicación',
+  },
+  fr: {
+    new_like_title: 'Nouveau j\'aime',
+    new_like_message: '{{username}} a aimé votre publication',
+    new_comment_title: 'Nouveau commentaire',
+    new_comment_message: '{{username}} a commenté votre publication',
+  },
+  de: {
+    new_like_title: 'Neues Like',
+    new_like_message: '{{username}} gefällt dein Beitrag',
+    new_comment_title: 'Neuer Kommentar',
+    new_comment_message: '{{username}} hat deinen Beitrag kommentiert',
+  },
+  pt: {
+    new_like_title: 'Nova curtida',
+    new_like_message: '{{username}} curtiu sua publicação',
+    new_comment_title: 'Novo comentário',
+    new_comment_message: '{{username}} comentou na sua publicação',
+  },
+  zh: {
+    new_like_title: '新点赞',
+    new_like_message: '{{username}} 点赞了你的帖子',
+    new_comment_title: '新评论',
+    new_comment_message: '{{username}} 评论了你的帖子',
+  },
+  ja: {
+    new_like_title: '新しいいいね',
+    new_like_message: '{{username}}があなたの投稿にいいねしました',
+    new_comment_title: '新しいコメント',
+    new_comment_message: '{{username}}があなたの投稿にコメントしました',
+  },
+  ko: {
+    new_like_title: '새 좋아요',
+    new_like_message: '{{username}}님이 게시물을 좋아합니다',
+    new_comment_title: '새 댓글',
+    new_comment_message: '{{username}}님이 댓글을 남겼습니다',
+  },
+  ar: {
+    new_like_title: 'إعجاب جديد',
+    new_like_message: '{{username}} أعجب بمنشورك',
+    new_comment_title: 'تعليق جديد',
+    new_comment_message: '{{username}} علق على منشورك',
+  },
+  hi: {
+    new_like_title: 'नई लाइक',
+    new_like_message: '{{username}} ने आपकी पोस्ट को लाइक किया',
+    new_comment_title: 'नई टिप्पणी',
+    new_comment_message: '{{username}} ने आपकी पोस्ट पर टिप्पणी की',
+  },
+  ru: {
+    new_like_title: 'Новый лайк',
+    new_like_message: '{{username}} понравилась ваша публикация',
+    new_comment_title: 'Новый комментарий',
+    new_comment_message: '{{username}} прокомментировал вашу публикацию',
+  },
+  tr: {
+    new_like_title: 'Yeni beğeni',
+    new_like_message: '{{username}} gönderinizi beğendi',
+    new_comment_title: 'Yeni yorum',
+    new_comment_message: '{{username}} gönderinize yorum yaptı',
+  },
+};
+
+// Helper function to get localized notification text
+async function getLocalizedNotificationText(
+  userId: string,
+  type: 'new_like' | 'new_comment',
+  username: string
+): Promise<{ title: string; message: string }> {
+  try {
+    // Get user's language preference
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', userId)
+      .single();
+    
+    let lang = profile?.language || 'en';
+    if (lang === 'zh-CN') lang = 'zh';
+    
+    const translations = notificationTranslations[lang] || notificationTranslations.en;
+    
+    const title = translations[`${type}_title`] || notificationTranslations.en[`${type}_title`];
+    let message = translations[`${type}_message`] || notificationTranslations.en[`${type}_message`];
+    message = message.replace('{{username}}', username);
+    
+    return { title, message };
+  } catch (error) {
+    console.error('Error getting localized notification:', error);
+    const translations = notificationTranslations.en;
+    return {
+      title: translations[`${type}_title`],
+      message: translations[`${type}_message`].replace('{{username}}', username),
+    };
+  }
+}
+
 // ============= LIKES =============
 
 export async function togglePostLike(postId: string, userId: string): Promise<boolean> {
@@ -45,11 +161,18 @@ export async function togglePostLike(postId: string, userId: string): Promise<bo
           .eq('id', userId)
           .single();
 
+        // Get localized notification text
+        const { title, message } = await getLocalizedNotificationText(
+          post.user_id,
+          'new_like',
+          liker?.username || 'Someone'
+        );
+
         await supabase.from('notifications').insert({
           user_id: post.user_id,
           type: 'like',
-          title: 'New like',
-          message: `${liker?.username || 'Someone'} liked your ${post.content_type === 'review' ? 'review' : 'post'}`,
+          title,
+          message,
           data: {
             post_id: postId,
             user_id: userId,
@@ -259,11 +382,18 @@ export async function addPostComment(
 
     // Create notification if not own post
     if (post && post.user_id !== userId) {
+      // Get localized notification text
+      const { title, message } = await getLocalizedNotificationText(
+        post.user_id,
+        'new_comment',
+        profile?.username || 'Someone'
+      );
+
       await supabase.from('notifications').insert({
         user_id: post.user_id,
         type: 'comment',
-        title: 'New comment',
-        message: `${profile?.username || 'Someone'} commented: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? '...' : ''}"`,
+        title,
+        message: `${message}: "${trimmed.slice(0, 50)}${trimmed.length > 50 ? '...' : ''}"`,
         data: {
           post_id: postId,
           user_id: userId,

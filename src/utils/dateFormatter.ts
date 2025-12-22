@@ -1,4 +1,5 @@
 import { TFunction } from 'i18next';
+import i18next from 'i18next';
 
 /**
  * Formats post dates based on age:
@@ -29,13 +30,33 @@ export function formatPostDate(dateString: string, t: TFunction): string {
     }
   }
   
-  // 4+ weeks old - show formatted date
+  // 4+ weeks old - show formatted date in user's language
   const day = date.getDate();
   const month = date.getMonth(); // 0-11
   const year = date.getFullYear();
   const currentYear = now.getFullYear();
   
-  const monthName = t(`months.${month}`, { ns: 'common', defaultValue: date.toLocaleString(undefined, { month: 'long' }) });
+  // Get locale from i18next
+  const lang = i18next.language || 'en';
+  const localeMap: Record<string, string> = {
+    'en': 'en-US',
+    'it': 'it-IT',
+    'es': 'es-ES',
+    'fr': 'fr-FR',
+    'de': 'de-DE',
+    'pt': 'pt-BR',
+    'zh': 'zh-CN',
+    'ja': 'ja-JP',
+    'ko': 'ko-KR',
+    'ar': 'ar-SA',
+    'hi': 'hi-IN',
+    'ru': 'ru-RU',
+    'tr': 'tr-TR',
+  };
+  const locale = localeMap[lang] || lang;
+  
+  // Use browser's Intl API for proper localization
+  const monthName = date.toLocaleString(locale, { month: 'long' });
   
   // Different year - include year
   if (year !== currentYear) {
