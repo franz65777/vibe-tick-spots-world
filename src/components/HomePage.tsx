@@ -207,6 +207,31 @@ const HomePage = memo(() => {
         }
         usedState = true;
       }
+      // Handle location from folder/list click
+      if (state?.selectedLocation) {
+        const locData = state.selectedLocation;
+        const placeToShow: Place = {
+          id: locData.id,
+          name: locData.name,
+          category: locData.category,
+          coordinates: locData.coordinates || { lat: locData.latitude, lng: locData.longitude },
+          address: locData.address || '',
+          city: locData.city,
+          isFollowing: false,
+          isNew: false,
+          likes: 0,
+          visitors: [],
+          google_place_id: locData.google_place_id
+        };
+        if (placeToShow.coordinates) {
+          setMapCenter(placeToShow.coordinates);
+        }
+        setInitialPinToShow(placeToShow);
+        if (state.returnTo) {
+          setReturnTo(state.returnTo);
+        }
+        usedState = true;
+      }
       // Open a specific location by id from notifications
       if (state?.openLocationId) {
         try {
