@@ -385,9 +385,8 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
   // Show skeleton loading state instead of spinner for smoother UX
   if (loading && !folder) {
     return (
-      <div className="fixed inset-0 z-[10000] flex items-end justify-center animate-in fade-in duration-200">
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        <div className="relative w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
+      <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
           <div className="relative aspect-[4/3] bg-muted animate-pulse" />
           <div className="p-6 space-y-4">
             <div className="h-8 w-2/3 bg-muted rounded animate-pulse" />
@@ -406,15 +405,13 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
     <>
       <div 
         className={cn(
-          "fixed inset-0 z-[10000] flex items-end justify-center animate-in fade-in duration-200",
+          "fixed inset-0 z-[10000] flex items-end justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200",
           selectedLocation && "hidden"
         )}
         onClick={handleClose}
       >
-        {/* Semi-transparent backdrop that shows content behind */}
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
         <div 
-          className="relative w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+          className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Cover Image */}
