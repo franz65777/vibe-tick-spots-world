@@ -836,9 +836,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             )}
           </div>
 
-          {/* Opening Hours and Saved By Users Row - Directly under buttons */}
-          <div className="px-4 pt-0 pb-1 overflow-visible">
-            <div className="flex items-center justify-between gap-4 overflow-visible">
+          {/* Opening Hours and Saved By Users Row - Closer to action buttons */}
+          <div className="px-4 pt-1 pb-2">
+            <div className="flex items-center justify-between gap-4">
               {/* Opening Hours */}
               <OpeningHoursDisplay 
                 coordinates={place.coordinates} 
@@ -856,10 +856,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     e.stopPropagation();
                     setSavedByOpen(true);
                   }}
-                  className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity overflow-visible"
+                  className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity"
                 >
                   {savedByUsers.slice(0, 2).map((savedUser) => (
-                    <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background overflow-visible">
+                    <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background">
                       <AvatarImage src={savedUser.avatar_url || undefined} />
                       <AvatarFallback className="text-xs bg-primary/20 text-primary">
                         {savedUser.username?.[0]?.toUpperCase() || 'U'}
@@ -867,7 +867,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     </Avatar>
                   ))}
                   {savedByTotalCount > 2 && (
-                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center overflow-visible">
+                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center">
                       <span className="text-[10px] font-medium text-muted-foreground">+{savedByTotalCount - 2}</span>
                     </div>
                   )}
@@ -939,7 +939,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           )}
 
           {/* Tabs and Content */}
-          <div className="flex-1 overflow-hidden flex flex-col -mt-1">
+          <div className="flex-1 overflow-hidden flex flex-col mt-1">
             {/* Tab Navigation with Horizontal Scroll */}
             <div 
               className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
@@ -986,11 +986,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             {/* Tab Content */}
             <div 
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)] overscroll-contain"
-              style={{ 
-                transform: 'translateZ(0)',
-                WebkitOverflowScrolling: 'touch'
-              }}
+              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
               onScroll={(e) => {
                 const currentScrollY = e.currentTarget.scrollTop;
                 
@@ -1012,7 +1008,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               }}
             >
               {activeTab === 'posts' ? (
-                <div className="px-4 py-2">
+                <div className="px-4 py-4">
                   {postsLoading && posts.length === 0 ? (
                     <div className="flex justify-center py-8">
                       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1050,8 +1046,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                               decoding="async"
                             />
                             {/* User Avatar Overlay */}
-                            <div className="absolute top-3 left-3 pointer-events-none z-10">
-                              <Avatar className="w-7 h-7 border-2 border-white shadow-lg">
+                            <div className="absolute top-2 left-2 pointer-events-none">
+                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
                                 <AvatarImage src={post.profiles?.avatar_url} />
                                 <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                                   {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
