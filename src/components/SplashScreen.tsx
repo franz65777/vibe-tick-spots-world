@@ -6,9 +6,33 @@ interface SplashScreenProps {
   minDisplayTime?: number;
 }
 
+// Preload critical pages during splash to improve loading performance
+const preloadCriticalPages = () => {
+  const pagesToPreload = [
+    () => import('@/components/ExplorePage'),
+    () => import('@/components/ProfilePage'),
+    () => import('@/pages/NotificationsPage'),
+    () => import('@/pages/MessagesPage'),
+    () => import('@/pages/FeedPage'),
+    () => import('@/pages/DiscoverPage'),
+  ];
+
+  // Start preloading all pages in parallel
+  pagesToPreload.forEach(loader => {
+    loader().catch(() => {
+      // Silently ignore preload errors
+    });
+  });
+};
+
 const SplashScreen = ({ onComplete, minDisplayTime = 2500 }: SplashScreenProps) => {
   const [videoEnded, setVideoEnded] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+
+  // Start preloading pages immediately when splash mounts
+  useEffect(() => {
+    preloadCriticalPages();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {

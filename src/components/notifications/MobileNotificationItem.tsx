@@ -729,11 +729,10 @@ const MobileNotificationItem = ({
     );
   };
 
-  // Check if this is a review like notification - reviews have no post_image
-  const isReviewLike = notification.type === 'like' && !notification.data?.post_image;
-  // Check if comment on a review (no post_image + review content_type)
-  const isReviewComment =
-    notification.type === 'comment' && !notification.data?.post_image && notification.data?.content_type === 'review';
+  // Check if this is a review notification (content_type === 'review')
+  const isReview = notification.data?.content_type === 'review';
+  const isReviewLike = notification.type === 'like' && isReview;
+  const isReviewComment = notification.type === 'comment' && isReview;
 
   return (
     <>
@@ -879,17 +878,6 @@ const MobileNotificationItem = ({
                   >
                     {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
                   </Button>
-                ) : notification.data?.post_image ? (
-                  <div 
-                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
-                    onClick={handlePostClick}
-                  >
-                    <img
-                      src={notification.data.post_image}
-                      alt="Post"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
                 ) : isReviewLike ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
@@ -910,6 +898,17 @@ const MobileNotificationItem = ({
                       src={reviewCommentIcon}
                       alt="Review comment"
                       className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : notification.data?.post_image ? (
+                  <div 
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
+                    onClick={handlePostClick}
+                  >
+                    <img
+                      src={notification.data.post_image}
+                      alt="Post"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 ) : null}
