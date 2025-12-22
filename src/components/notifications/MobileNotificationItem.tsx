@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2 } from 'lucide-react';
 import reviewIcon from '@/assets/review-icon.png';
+import reviewCommentIcon from '@/assets/review-comment-icon.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -631,8 +632,11 @@ const MobileNotificationItem = ({
           </span>
         );
       case 'comment':
+        // Check if commenting on a review
+        const isReviewComment = notification.data?.content_type === 'review';
+        const commentTranslationKey = isReviewComment ? 'commentedOnYourReview' : 'commentedOnYourPost';
         return (
-          <div className="space-y-1">
+          <>
             <span className="text-foreground text-[13px] leading-tight">
               <span 
                 className="font-semibold cursor-pointer hover:underline" 
@@ -640,14 +644,14 @@ const MobileNotificationItem = ({
               >
                 {displayUsername}
               </span>
-              {' '}{t('commentedOnYourPost', { ns: 'notifications' })}
+              {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(commentTranslationKey, { ns: 'notifications' })}</span>
             </span>
             {notification.data?.comment_text && (
-              <p className="text-muted-foreground text-[12px] line-clamp-2">
+              <p className="text-muted-foreground text-[12px] inline ml-1">
                 {notification.data.comment_text}
               </p>
             )}
-          </div>
+          </>
         );
       case 'story_reply':
         return (
@@ -727,6 +731,7 @@ const MobileNotificationItem = ({
 
   // Check if this is a review like notification - reviews have no post_image
   const isReviewLike = notification.type === 'like' && !notification.data?.post_image;
+  // Check if comment on a review (no post_image + review content_type)
   const isReviewComment =
     notification.type === 'comment' && !notification.data?.post_image && notification.data?.content_type === 'review';
 
@@ -874,17 +879,6 @@ const MobileNotificationItem = ({
                   >
                     {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
                   </Button>
-                ) : notification.type === 'comment' && notification.data?.comment_id ? (
-                  <Button
-                    onClick={handleCommentLike}
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full"
-                  >
-                    <Heart 
-                      className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
-                    />
-                  </Button>
                 ) : notification.data?.post_image ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
@@ -896,7 +890,7 @@ const MobileNotificationItem = ({
                       className="w-full h-full object-cover"
                     />
                   </div>
-                ) : isReviewLike || isReviewComment ? (
+                ) : isReviewLike ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
                     onClick={handlePostClick}
@@ -904,6 +898,17 @@ const MobileNotificationItem = ({
                     <img
                       src={reviewIcon}
                       alt="Review"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : isReviewComment ? (
+                  <div 
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
+                    onClick={handlePostClick}
+                  >
+                    <img
+                      src={reviewCommentIcon}
+                      alt="Review comment"
                       className="w-full h-full object-contain"
                     />
                   </div>
