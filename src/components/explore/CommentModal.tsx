@@ -19,7 +19,7 @@ interface CommentModalProps {
 
 const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -67,7 +67,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-blue-600" />
-            Comments • {place?.name}
+            {t('common.comments.title')} • {place?.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -79,8 +79,8 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p>No comments yet</p>
-              <p className="text-sm">Be the first to share your thoughts!</p>
+              <p>{t('common.comments.noComments')}</p>
+              <p className="text-sm">{t('common.comments.beFirst')}</p>
             </div>
           ) : (
             comments.map((comment) => (
@@ -119,7 +119,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
             <Textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
+              placeholder={t('common.comments.addPlaceholder')}
               className="min-h-[40px] max-h-24 resize-none text-sm"
               rows={1}
             />

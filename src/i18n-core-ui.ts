@@ -19,6 +19,13 @@ export const coreUiTranslations = {
     common: {
       viewYourStory: 'Vedi la tua storia',
       settingsAlt: 'Impostazioni',
+      loading: 'Caricamento',
+      comments: {
+        title: 'Commenti',
+        addPlaceholder: 'Aggiungi un commento...',
+        noComments: 'Nessun commento',
+        beFirst: 'Sii il primo a commentare!'
+      },
       userProfile: {
         allLocations: 'tutti i luoghi',
         visitedLocations: 'visitati',
@@ -43,6 +50,19 @@ export const coreUiTranslations = {
     profile: {
       posts: 'Post',
     },
+    share: {
+      searchFriends: 'Cerca amici',
+      searchPeople: 'Cerca persone...',
+      activeNow: 'Attivo ora',
+      offline: 'Offline',
+      shareWith: 'Condividi con {{count}} amico/i',
+      usersSelected: '{{count}} utente/i selezionato/i',
+      noUsersFound: 'Nessun utente trovato',
+      sending: 'Invio in corso...',
+      sendToUsers: 'Invia a {{count}} utente/i',
+      posting: 'Pubblicazione...',
+      post: 'Pubblica'
+    },
   },
 
   es: {
@@ -62,6 +82,13 @@ export const coreUiTranslations = {
     common: {
       viewYourStory: 'Ver tu historia',
       settingsAlt: 'Ajustes',
+      loading: 'Cargando',
+      comments: {
+        title: 'Comentarios',
+        addPlaceholder: 'Añade un comentario...',
+        noComments: 'Sin comentarios',
+        beFirst: '¡Sé el primero en comentar!'
+      },
       userProfile: {
         allLocations: 'todas las ubicaciones',
         visitedLocations: 'visitadas',
@@ -86,6 +113,19 @@ export const coreUiTranslations = {
     profile: {
       posts: 'Publicaciones',
     },
+    share: {
+      searchFriends: 'Buscar amigos',
+      searchPeople: 'Buscar personas...',
+      activeNow: 'Activo ahora',
+      offline: 'Sin conexión',
+      shareWith: 'Compartir con {{count}} amigo(s)',
+      usersSelected: '{{count}} usuario(s) seleccionado(s)',
+      noUsersFound: 'No se encontraron usuarios',
+      sending: 'Enviando...',
+      sendToUsers: 'Enviar a {{count}} usuario(s)',
+      posting: 'Publicando...',
+      post: 'Publicar'
+    },
   },
 
   fr: {
@@ -105,6 +145,13 @@ export const coreUiTranslations = {
     common: {
       viewYourStory: 'Voir votre story',
       settingsAlt: 'Paramètres',
+      loading: 'Chargement',
+      comments: {
+        title: 'Commentaires',
+        addPlaceholder: 'Ajouter un commentaire...',
+        noComments: 'Aucun commentaire',
+        beFirst: 'Soyez le premier à commenter!'
+      },
       userProfile: {
         allLocations: 'tous les lieux',
         visitedLocations: 'visités',
@@ -129,6 +176,19 @@ export const coreUiTranslations = {
     profile: {
       posts: 'Publications',
     },
+    share: {
+      searchFriends: 'Rechercher des amis',
+      searchPeople: 'Rechercher des personnes...',
+      activeNow: 'Actif maintenant',
+      offline: 'Hors ligne',
+      shareWith: 'Partager avec {{count}} ami(s)',
+      usersSelected: '{{count}} utilisateur(s) sélectionné(s)',
+      noUsersFound: 'Aucun utilisateur trouvé',
+      sending: 'Envoi en cours...',
+      sendToUsers: 'Envoyer à {{count}} utilisateur(s)',
+      posting: 'Publication...',
+      post: 'Publier'
+    },
   },
 
   de: {
@@ -148,6 +208,13 @@ export const coreUiTranslations = {
     common: {
       viewYourStory: 'Deine Story ansehen',
       settingsAlt: 'Einstellungen',
+      loading: 'Laden',
+      comments: {
+        title: 'Kommentare',
+        addPlaceholder: 'Kommentar hinzufügen...',
+        noComments: 'Noch keine Kommentare',
+        beFirst: 'Sei der Erste, der kommentiert!'
+      },
       userProfile: {
         allLocations: 'alle Orte',
         visitedLocations: 'besucht',
@@ -172,6 +239,19 @@ export const coreUiTranslations = {
     profile: {
       posts: 'Beiträge',
     },
+    share: {
+      searchFriends: 'Freunde suchen',
+      searchPeople: 'Personen suchen...',
+      activeNow: 'Gerade aktiv',
+      offline: 'Offline',
+      shareWith: 'Mit {{count}} Freund(en) teilen',
+      usersSelected: '{{count}} Benutzer ausgewählt',
+      noUsersFound: 'Keine Benutzer gefunden',
+      sending: 'Senden...',
+      sendToUsers: 'An {{count}} Benutzer senden',
+      posting: 'Posten...',
+      post: 'Posten'
+    },
   },
 
   pt: {
@@ -191,6 +271,13 @@ export const coreUiTranslations = {
     common: {
       viewYourStory: 'Ver seu story',
       settingsAlt: 'Configurações',
+      loading: 'Carregando',
+      comments: {
+        title: 'Comentários',
+        addPlaceholder: 'Adicionar um comentário...',
+        noComments: 'Sem comentários',
+        beFirst: 'Seja o primeiro a comentar!'
+      },
       userProfile: {
         allLocations: 'todos os locais',
         visitedLocations: 'visitados',
@@ -215,6 +302,19 @@ export const coreUiTranslations = {
     profile: {
       posts: 'Publicações',
     },
+    share: {
+      searchFriends: 'Pesquisar amigos',
+      searchPeople: 'Pesquisar pessoas...',
+      activeNow: 'Ativo agora',
+      offline: 'Offline',
+      shareWith: 'Compartilhar com {{count}} amigo(s)',
+      usersSelected: '{{count}} usuário(s) selecionado(s)',
+      noUsersFound: 'Nenhum usuário encontrado',
+      sending: 'Enviando...',
+      sendToUsers: 'Enviar para {{count}} usuário(s)',
+      posting: 'Publicando...',
+      post: 'Publicar'
+    },
   },
 
   tr: {
@@ -234,6 +334,13 @@ export const coreUiTranslations = {
     common: {
       viewYourStory: 'Hikayeni görüntüle',
       settingsAlt: 'Ayarlar',
+      loading: 'Yükleniyor',
+      comments: {
+        title: 'Yorumlar',
+        addPlaceholder: 'Yorum ekle...',
+        noComments: 'Henüz yorum yok',
+        beFirst: 'İlk yorumu sen yap!'
+      },
       userProfile: {
         allLocations: 'tüm konumlar',
         visitedLocations: 'ziyaret edilen',
@@ -257,6 +364,19 @@ export const coreUiTranslations = {
     },
     profile: {
       posts: 'Gönderiler',
+    },
+    share: {
+      searchFriends: 'Arkadaş ara',
+      searchPeople: 'Kişi ara...',
+      activeNow: 'Şu an aktif',
+      offline: 'Çevrimdışı',
+      shareWith: '{{count}} arkadaşla paylaş',
+      usersSelected: '{{count}} kullanıcı seçildi',
+      noUsersFound: 'Kullanıcı bulunamadı',
+      sending: 'Gönderiliyor...',
+      sendToUsers: '{{count}} kullanıcıya gönder',
+      posting: 'Yayınlanıyor...',
+      post: 'Yayınla'
     },
   },
 } as const;

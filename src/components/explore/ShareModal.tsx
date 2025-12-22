@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { messageService } from '@/services/messageService';
 import { Place } from '@/types/place';
+import { useTranslation } from 'react-i18next';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface User {
 }
 
 const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -158,7 +160,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Share {place?.name}</DialogTitle>
+            <DialogTitle>{t('common.share')} {place?.name}</DialogTitle>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -173,7 +175,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search people..."
+              placeholder={t('share.searchPeople')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -183,7 +185,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
           {/* Selected count */}
           {selectedUsers.size > 0 && (
             <div className="text-sm text-gray-600">
-              {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
+              {t('share.usersSelected', { count: selectedUsers.size })}
             </div>
           )}
 
@@ -195,7 +197,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">No users found</p>
+                <p className="text-sm">{t('share.noUsersFound')}</p>
               </div>
             ) : (
               users.map((u) => (
@@ -237,7 +239,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
             className="w-full"
           >
             <Send className="w-4 h-4 mr-2" />
-            {sending ? 'Sending...' : `Send to ${selectedUsers.size} user${selectedUsers.size !== 1 ? 's' : ''}`}
+            {sending ? t('share.sending') : t('share.sendToUsers', { count: selectedUsers.size })}
           </Button>
         </div>
       </DialogContent>

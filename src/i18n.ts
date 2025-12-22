@@ -297,6 +297,19 @@ const resources = {
       shareError: 'Error sharing position',
       aFriend: 'A friend'
     },
+    share: {
+      searchFriends: 'Search friends',
+      searchPeople: 'Search people...',
+      activeNow: 'Active now',
+      offline: 'Offline',
+      shareWith: 'Share with {{count}} friend(s)',
+      usersSelected: '{{count}} user(s) selected',
+      noUsersFound: 'No users found',
+      sending: 'Sending...',
+      sendToUsers: 'Send to {{count}} user(s)',
+      posting: 'Posting...',
+      post: 'Post'
+    },
     mapFilters: {
       following: 'Following',
       followingDesc: 'Places from people you follow',

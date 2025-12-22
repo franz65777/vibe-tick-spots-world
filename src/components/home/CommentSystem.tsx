@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { commentService, Comment } from '@/services/commentService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface CommentSystemProps {
   placeId: string;
@@ -13,6 +14,7 @@ interface CommentSystemProps {
 }
 
 const CommentSystem = ({ placeId, isOpen, onClose }: CommentSystemProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -82,7 +84,7 @@ const CommentSystem = ({ placeId, isOpen, onClose }: CommentSystemProps) => {
         <div className="flex justify-between items-center p-4 border-b border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
-            Comments
+            {t('common.comments.title')}
           </h3>
           <Button onClick={onClose} variant="ghost" size="sm">
             ✕
@@ -94,13 +96,13 @@ const CommentSystem = ({ placeId, isOpen, onClose }: CommentSystemProps) => {
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading comments...</p>
+              <p className="text-gray-500 mt-2">{t('common.loading')}</p>
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-8">
               <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No comments yet</p>
-              <p className="text-gray-400 text-sm">Be the first to share your thoughts!</p>
+              <p className="text-gray-500">{t('common.comments.noComments')}</p>
+              <p className="text-gray-400 text-sm">{t('common.comments.beFirst')}</p>
             </div>
           ) : (
             comments.map((comment) => (
@@ -166,7 +168,7 @@ const CommentSystem = ({ placeId, isOpen, onClose }: CommentSystemProps) => {
                 <Textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
+                  placeholder={t('common.comments.addPlaceholder')}
                   className="min-h-[80px] resize-none border-gray-200 rounded-xl focus:border-blue-400 focus:ring-blue-400"
                 />
                 <div className="flex justify-end mt-2">
@@ -177,7 +179,7 @@ const CommentSystem = ({ placeId, isOpen, onClose }: CommentSystemProps) => {
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     <Send className="w-4 h-4 mr-2" />
-                    {submitting ? 'Posting...' : 'Post'}
+                    {submitting ? t('share.posting') : t('share.post')}
                   </Button>
                 </div>
               </div>
