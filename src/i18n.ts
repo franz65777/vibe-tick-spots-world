@@ -5313,6 +5313,11 @@ const resources: Record<string, any> = {
   }
 };
 
+// Merge comprehensive translations (bulk strings) into resources
+Object.entries(comprehensiveTranslations).forEach(([lang, namespaces]) => {
+  resources[lang] = deepMerge((resources as any)[lang] || {}, namespaces as any);
+});
+
 // Merge auth translations into resources (using deepMerge to preserve nested objects)
 Object.keys(authTranslations).forEach(lang => {
   if (resources[lang]) {
@@ -5587,23 +5592,8 @@ Object.entries(categoriesKeys).forEach(([key, translations]) => {
   });
 });
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour', 'booking', 'reviews'],
-    defaultNS: 'common',
-    interpolation: {
-      escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-      lookupLocalStorage: 'i18nextLng',
-    },
-  });
+// NOTE: i18n initialization moved to the end of this file so all translation keys
+// added via ensureNamespace are present at init time.
 
 // Add new comprehensive keys for all languages
 const newKeys = {
@@ -6279,4 +6269,52 @@ Object.entries(commonKeysAllLanguages).forEach(([lang, namespaces]) => {
   });
 });
 
+// Initialize i18n AFTER all merges/ensureNamespace calls
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: 'en',
+    ns: [
+      'common',
+      'notifications',
+      'categories',
+      'profile',
+      'mapFilters',
+      'navigation',
+      'business',
+      'search',
+      'badges',
+      'gamification',
+      'messages',
+      'settings',
+      'leaderboard',
+      'home',
+      'explore',
+      'add',
+      'auth',
+      'terms',
+      'privacy',
+      'trips',
+      'ai',
+      'onboarding',
+      'homeMenu',
+      'sharePosition',
+      'signup',
+      'createList',
+      'guidedTour',
+      'booking',
+      'reviews',
+    ],
+    defaultNS: 'common',
+    interpolation: { escapeValue: false },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
+    },
+  });
+
 export default i18n;
+
