@@ -58,40 +58,7 @@ const allowedFoursquareCategoryIds = [
   '10001', // Entertainment
 ];
 
-// Fetch street-level photo from Mapillary API (FREE with API key)
-// Returns the closest street-view image near the given coordinates
-async function fetchMapillaryPhoto(lat: number, lng: number): Promise<string | null> {
-  const MAPILLARY_ACCESS_TOKEN = Deno.env.get('MAPILLARY_ACCESS_TOKEN');
-  if (!MAPILLARY_ACCESS_TOKEN) {
-    console.log('Mapillary token not configured');
-    return null;
-  }
-  
-  try {
-    // Search for images within ~50 meters of the location
-    const radius = 0.0005; // ~50m in degrees
-    const bbox = `${lng - radius},${lat - radius},${lng + radius},${lat + radius}`;
-    
-    const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_ACCESS_TOKEN}&fields=id,thumb_256_url,thumb_1024_url&bbox=${bbox}&limit=1`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.log(`Mapillary API error: ${response.status}`);
-      return null;
-    }
-    
-    const data = await response.json();
-    if (data.data && data.data.length > 0) {
-      // Return the 256px thumbnail for fast loading
-      return data.data[0].thumb_256_url || data.data[0].thumb_1024_url || null;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Mapillary fetch error:', error);
-    return null;
-  }
-}
+// No photo fetching - frontend uses category icons and business profile images
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -246,26 +213,8 @@ serve(async (req) => {
 
         places = places.slice(0, limit);
         
-        // Fetch Mapillary street-level photos for first 6 places (async)
-        const placesWithPhotos = await Promise.all(
-          places.slice(0, 6).map(async (p: any) => {
-            const photoUrl = await fetchMapillaryPhoto(p.lat, p.lng);
-            return {
-              fsq_id: p.fsq_id,
-              name: p.name,
-              category: p.category,
-              address: p.address,
-              city: p.city,
-              lat: p.lat,
-              lng: p.lng,
-              distance: p.distance,
-              photo_url: photoUrl
-            };
-          })
-        );
-        
-        // Add remaining places without photos (faster response)
-        const remainingPlaces = places.slice(6).map((p: any) => ({
+        // Return places without photos - frontend uses category icons
+        const placesFormatted = places.map((p: any) => ({
           fsq_id: p.fsq_id,
           name: p.name,
           category: p.category,
@@ -277,8 +226,8 @@ serve(async (req) => {
           photo_url: null
         }));
 
-        console.log(`Fast OSM returning ${placesWithPhotos.length + remainingPlaces.length} places with Mapillary photos`);
-        return new Response(JSON.stringify({ places: [...placesWithPhotos, ...remainingPlaces] }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.log(`Fast OSM returning ${placesFormatted.length} places`);
+        return new Response(JSON.stringify({ places: placesFormatted }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       } catch (e) {
         console.error('Fast OSM path failed:', e);
       }
@@ -493,26 +442,8 @@ serve(async (req) => {
         // Trim to requested limit
         places = places.slice(0, limit);
         
-        // Fetch Mapillary street-level photos for first 6 places (async)
-        const placesWithPhotos = await Promise.all(
-          places.slice(0, 6).map(async (p: any) => {
-            const photoUrl = await fetchMapillaryPhoto(p.lat, p.lng);
-            return {
-              fsq_id: p.fsq_id,
-              name: p.name,
-              category: p.category,
-              address: p.address,
-              city: p.city,
-              lat: p.lat,
-              lng: p.lng,
-              distance: p.distance,
-              photo_url: photoUrl
-            };
-          })
-        );
-        
-        // Add remaining places without photos (faster response)
-        const remainingPlaces = places.slice(6).map((p: any) => ({
+        // Return places without photos - frontend uses category icons
+        const placesFormatted = places.map((p: any) => ({
           fsq_id: p.fsq_id,
           name: p.name,
           category: p.category,
@@ -524,9 +455,9 @@ serve(async (req) => {
           photo_url: null
         }));
         
-        console.log(`OSM fallback returning ${placesWithPhotos.length + remainingPlaces.length} places with Mapillary photos`);
+        console.log(`OSM fallback returning ${placesFormatted.length} places`);
         return new Response(
-          JSON.stringify({ places: [...placesWithPhotos, ...remainingPlaces] }),
+          JSON.stringify({ places: placesFormatted }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (e) {

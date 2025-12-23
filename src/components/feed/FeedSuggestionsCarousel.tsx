@@ -155,10 +155,17 @@ const FeedSuggestionsCarousel = memo(() => {
         return preferredDiscover.includes(n);
       };
 
-      // 3) Pull internal DB locations near the user (but NOT already saved by the user)
+      // 3) Pull internal DB locations near the user with business profile images
       const { data: dbLocations, error: dbErr } = await supabase
         .from('locations')
-        .select('id, name, category, city, address, image_url, latitude, longitude, google_place_id')
+        .select(`
+          id, name, category, city, address, image_url, latitude, longitude, google_place_id,
+          business_profiles!business_profiles_location_id_fkey (
+            id,
+            user_id,
+            profiles:user_id (avatar_url)
+          )
+        `)
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .limit(500);
@@ -199,20 +206,26 @@ const FeedSuggestionsCarousel = memo(() => {
         });
       }
 
-      const internalCandidates: SuggestedLocation[] = internalSample.map((loc: any) => ({
-        id: loc.id,
-        name: loc.name,
-        category: loc.category,
-        city: loc.city,
-        address: loc.address,
-        image_url: loc.image_url,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        google_place_id: loc.google_place_id,
-        save_count: internalCounts.get(loc.id) || 0,
-        saved_by: [],
-        source: 'db',
-      }));
+      const internalCandidates: SuggestedLocation[] = internalSample.map((loc: any) => {
+        // Get business profile image if available
+        const businessProfile = loc.business_profiles?.[0];
+        const businessImage = businessProfile?.profiles?.avatar_url || null;
+        
+        return {
+          id: loc.id,
+          name: loc.name,
+          category: loc.category,
+          city: loc.city,
+          address: loc.address,
+          image_url: businessImage || loc.image_url, // Prefer business image
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          google_place_id: loc.google_place_id,
+          save_count: internalCounts.get(loc.id) || 0,
+          saved_by: [],
+          source: 'db',
+        };
+      });
 
       // 4) Discover NEW (never-saved-on-app) places around the user via edge function
       // Dynamic radius: start small (500m), expand if not enough results
@@ -278,7 +291,7 @@ const FeedSuggestionsCarousel = memo(() => {
             category: p.category || 'place',
             city: p.city || null,
             address: p.address || null,
-            image_url: p.photo_url || null, // Use Foursquare photo if available
+            image_url: null, // Discover places use category icons
             latitude: Number(p.lat),
             longitude: Number(p.lng),
             save_count: 0,
@@ -460,7 +473,7 @@ const FeedSuggestionsCarousel = memo(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
-            const cardWidth = 224 + 12; // w-56 (224px) + gap-3 (12px)
+            const cardWidth = 192 + 12; // w-48 (192px) + gap-3 (12px)
             scrollContainerRef.current.scrollLeft = idx * cardWidth;
           }
           sessionStorage.removeItem('suggestions_clicked_index');
@@ -556,11 +569,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-52 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-2xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
+              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
             >
-              <div className="flex gap-2.5 p-2">
-                {/* Image */}
-                <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0">
+              <div className="flex gap-2 p-2">
+                {/* Image/Icon */}
+                <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -572,70 +585,52 @@ const FeedSuggestionsCarousel = memo(() => {
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-8 h-8' : 'w-7 h-7'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-6 h-6' : 'w-5 h-5'}`}
                       />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <TruncatedText 
                     text={loc.name} 
-                    className="font-semibold text-sm text-foreground leading-tight"
+                    className="font-semibold text-xs text-foreground leading-tight"
                   />
-                  <p className="text-[11px] text-muted-foreground">
-                    {distance !== null ? (
-                      <span>{formatDistance(distance)} {t('away', { ns: 'feed' })}</span>
-                    ) : (
-                      <span>{loc.city || loc.category}</span>
-                    )}
-                  </p>
-
-                  {/* Saved by OR "Be the first" */}
-                  <div className="flex items-center justify-between mt-0.5">
-                    <div className="flex items-center gap-1">
-                      {loc.source === 'discover' ? (
-                        <span className="text-[10px] font-medium text-primary">
-                          {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
-                        </span>
-                      ) : loc.saved_by.length > 0 ? (
-                        <>
-                          <div className="flex -space-x-1.5">
-                            {loc.saved_by.slice(0, 3).map((saver, idx) => (
-                              <Avatar key={idx} className="h-4 w-4 border border-background">
-                                <AvatarImage src={saver.avatar_url || undefined} />
-                                <AvatarFallback className="text-[6px] bg-primary/10">
-                                  {saver.username?.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                          </div>
-                          {loc.save_count > 0 && (
-                            <span className="text-[9px] text-muted-foreground ml-0.5">
-                              {loc.save_count === 1 
-                                ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1' })
-                                : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count}` })
-                              }
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground">
-                          {t('noSavesYet', { ns: 'feed', defaultValue: 'No saves yet' })}
-                        </span>
-                      )}
-                    </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <SaveLocationDropdown
-                        isSaved={false}
-                        onSave={(tag) => handleSaveLocation(loc, tag)}
-                        onUnsave={() => {}}
-                        variant="ghost"
-                        size="icon"
-                      />
-                    </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground">
+                      {distance !== null ? formatDistance(distance) : (loc.city || loc.category)}
+                    </span>
+                    {loc.source === 'discover' ? (
+                      <span className="text-[9px] font-medium text-primary">
+                        {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be first!' })}
+                      </span>
+                    ) : loc.saved_by.length > 0 ? (
+                      <div className="flex items-center gap-0.5">
+                        <div className="flex -space-x-1">
+                          {loc.saved_by.slice(0, 2).map((saver, idx) => (
+                            <Avatar key={idx} className="h-3.5 w-3.5 border border-background">
+                              <AvatarImage src={saver.avatar_url || undefined} />
+                              <AvatarFallback className="text-[5px] bg-primary/10">
+                                {saver.username?.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
+                </div>
+
+                {/* Save button */}
+                <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                  <SaveLocationDropdown
+                    isSaved={false}
+                    onSave={(tag) => handleSaveLocation(loc, tag)}
+                    onUnsave={() => {}}
+                    variant="ghost"
+                    size="icon"
+                  />
                 </div>
               </div>
             </div>
