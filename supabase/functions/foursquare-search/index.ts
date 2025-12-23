@@ -225,7 +225,7 @@ serve(async (req) => {
       radius: String(Math.round(providedRadiusKm * 1000)),
       limit: String(limit),
       sort: 'DISTANCE',
-      fields: 'fsq_id,name,location,geocodes,categories,distance'
+      fields: 'fsq_id,name,location,geocodes,categories,distance,photos'
     });
 
     if (query) {
@@ -487,6 +487,16 @@ serve(async (req) => {
         const address = place.location?.formatted_address || 
                        `${place.location?.address || ''} ${place.location?.locality || ''}`.trim();
 
+        // Extract photo URL from Foursquare photos array
+        let photoUrl: string | null = null;
+        if (place.photos && Array.isArray(place.photos) && place.photos.length > 0) {
+          const photo = place.photos[0];
+          // Foursquare photo URL format: {prefix}{size}{suffix}
+          if (photo.prefix && photo.suffix) {
+            photoUrl = `${photo.prefix}300x200${photo.suffix}`;
+          }
+        }
+
         return {
           fsq_id: place.fsq_id,
           name: place.name,
@@ -496,6 +506,7 @@ serve(async (req) => {
           lat: location?.latitude,
           lng: location?.longitude,
           distance: place.distance,
+          photo_url: photoUrl,
         };
       })
       .filter((place: any) => place !== null); // Remove null entries
