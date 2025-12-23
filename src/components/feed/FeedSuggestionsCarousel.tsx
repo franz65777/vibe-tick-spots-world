@@ -646,21 +646,28 @@ const FeedSuggestionsCarousel = memo(() => {
                     </span>
                   </div>
                   
-                  <div className="flex items-end justify-between gap-1">
+                  <div className="flex items-center justify-between gap-1 mt-0.5">
                     {loc.source === 'discover' ? (
                       <span className="text-[11px] font-medium text-primary leading-tight">
                         {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
                       </span>
                     ) : loc.saved_by.length > 0 ? (
-                      <div className="flex -space-x-1">
-                        {loc.saved_by.slice(0, 2).map((saver, sidx) => (
-                          <Avatar key={sidx} className="h-4 w-4 border border-background">
-                            <AvatarImage src={saver.avatar_url || undefined} />
-                            <AvatarFallback className="text-[6px] bg-primary/10">
-                              {saver.username?.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex -space-x-1.5">
+                          {loc.saved_by.slice(0, 2).map((saver, sidx) => (
+                            <Avatar key={sidx} className="h-6 w-6 border-2 border-background">
+                              <AvatarImage src={saver.avatar_url || undefined} />
+                              <AvatarFallback className="text-[8px] bg-primary/10">
+                                {saver.username?.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">
+                          {loc.saved_by.length === 1 
+                            ? t('savedByOne', { ns: 'feed', defaultValue: '1 saved' })
+                            : t('savedByCount', { ns: 'feed', defaultValue: '{{count}} saved', count: loc.saved_by.length })}
+                        </span>
                       </div>
                     ) : <span />}
                     
