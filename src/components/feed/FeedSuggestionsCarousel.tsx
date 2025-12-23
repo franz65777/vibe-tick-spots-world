@@ -271,21 +271,33 @@ const FeedSuggestionsCarousel = memo(() => {
           return d <= 50;
         });
 
-      // 5) Rank + pick exactly 10 cards:
-      //    Priority order: 1) proximity (most important), 2) save_count, 3) category preference
-      const allCandidates = [...discoverCandidates, ...internalCandidates];
+      // 5) Merge candidates and DEDUPLICATE by name (case-insensitive) and id
+      const allCandidates = [...internalCandidates, ...discoverCandidates];
+      const seenNames = new Set<string>();
+      const seenIds = new Set<string>();
+      const uniqueCandidates = allCandidates.filter((c) => {
+        const normName = c.name.toLowerCase().trim();
+        const normId = (c.google_place_id || c.id).toLowerCase();
+        if (seenNames.has(normName) || seenIds.has(normId)) return false;
+        seenNames.add(normName);
+        seenIds.add(normId);
+        return true;
+      });
 
-      const ranked = allCandidates
+      // 6) For big cities, limit to 3km max; otherwise 10km
+      const MAX_DISTANCE_KM = 3;
+
+      const ranked = uniqueCandidates
         .map((c) => ({
           c,
           d: calculateDistance(userLocation.lat, userLocation.lng, c.latitude, c.longitude),
           pref: isPreferred(c.category) ? 1 : 0,
         }))
+        .filter((x) => x.d <= MAX_DISTANCE_KM) // strict proximity filter
         .sort((a, b) => {
           // 1) Proximity is most important - strict distance sorting
-          // Only treat as equal if within 100m
           const distDiff = a.d - b.d;
-          if (Math.abs(distDiff) > 0.1) return distDiff; // 100m threshold
+          if (Math.abs(distDiff) > 0.05) return distDiff; // 50m threshold
           
           // 2) For very close places, prefer ones with more saves
           const saveDiff = (b.c.save_count || 0) - (a.c.save_count || 0);
@@ -502,8 +514,12 @@ const FeedSuggestionsCarousel = memo(() => {
         <h3 className="font-bold text-foreground">{t('recommendedForYou', { ns: 'feed' })}</h3>
       </div>
 
-      {/* Horizontal scroll */}
-      <div ref={scrollContainerRef} className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+      {/* Horizontal scroll - GPU accelerated for smooth scrolling */}
+      <div 
+        ref={scrollContainerRef} 
+        className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
+        style={{ willChange: 'scroll-position', WebkitOverflowScrolling: 'touch' }}
+      >
         {suggestions.map((loc, idx) => {
           const categoryImage = getCategoryImage(loc.category);
           const isBiggerIcon = shouldHaveBiggerIcon(loc.category);
@@ -521,7 +537,7 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-56 bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-2xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 hover:shadow-xl transition-shadow text-left cursor-pointer"
+              className="shrink-0 w-56 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-2xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
             >
               <div className="flex gap-2 p-2">
                 {/* Image */}
