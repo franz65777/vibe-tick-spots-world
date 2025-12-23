@@ -16,12 +16,14 @@ interface SuggestedLocation {
   name: string;
   category: string;
   city: string | null;
+  address?: string | null;
   image_url: string | null;
   latitude: number;
   longitude: number;
   save_count: number;
   saved_by: Array<{ avatar_url: string | null; username: string }>;
   google_place_id?: string | null;
+  source: 'db' | 'discover';
 }
 
 // Marquee component for overflowing text - animates when visible on mobile
@@ -123,62 +125,65 @@ const FeedSuggestionsCarousel = memo(() => {
   const { data: suggestions = [], isLoading } = useQuery({
     queryKey: ['feed-suggestions', user?.id, userLocation?.lat, userLocation?.lng],
     queryFn: async () => {
-      if (!user?.id) return [];
-      
-      // Get user's saved locations to determine preferences and exclude
-      const { data: userSavedRaw, error: userSavedError } = await supabase
-        .from('user_saved_locations')
-        .select('location_id, locations(category)')
-        .eq('user_id', user.id);
+      if (!user?.id || !userLocation) return [];
 
-      // Fallback if relationship select fails for any reason
-      const userSaved = userSavedError
-        ? (await supabase
-            .from('user_saved_locations')
-            .select('location_id')
-            .eq('user_id', user.id)).data
-        : userSavedRaw;
+      // 1) Build an "exclude set" of everything the user already saved
+      const [userSavedInternalRes, userSavedPlacesRes] = await Promise.all([
+        supabase
+          .from('user_saved_locations')
+          .select('location_id, locations(google_place_id, category)')
+          .eq('user_id', user.id),
+        supabase
+          .from('saved_places')
+          .select('place_id, place_category')
+          .eq('user_id', user.id),
+      ]);
 
-      const savedIds = new Set(userSaved?.map((s: any) => s.location_id) || []);
-      
-      // Calculate user's preferred categories based on their saves
-      const categoryCounts = new Map<string, number>();
-      (userSavedRaw || []).forEach((save: any) => {
-        const category = save.locations?.category;
-        if (category) {
-          categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
-        }
+      const userSavedInternal = userSavedInternalRes.data || [];
+      const userSavedPlaces = userSavedPlacesRes.data || [];
+
+      const exclude = new Set<string>();
+      userSavedInternal.forEach((s: any) => {
+        if (s.location_id) exclude.add(s.location_id);
+        if (s.locations?.google_place_id) exclude.add(s.locations.google_place_id);
       });
-      
-      // Get top 3 preferred categories
+      userSavedPlaces.forEach((p: any) => {
+        if (p.place_id) exclude.add(p.place_id);
+      });
+
+      // 2) Determine preferred categories (from both internal + google saved)
+      const categoryCounts = new Map<string, number>();
+      userSavedInternal.forEach((save: any) => {
+        const cat = save.locations?.category;
+        if (cat) categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+      });
+      userSavedPlaces.forEach((sp: any) => {
+        const cat = sp.place_category;
+        if (cat) categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+      });
       const preferredCategories = Array.from(categoryCounts.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([cat]) => cat);
 
-      // Fetch all nearby locations (both saved by others and new)
-      const { data: locations, error } = await supabase
+      // 3) Pull internal DB locations near the user (but NOT already saved by the user)
+      const { data: dbLocations, error: dbErr } = await supabase
         .from('locations')
-        .select('id, name, category, city, image_url, latitude, longitude')
+        .select('id, name, category, city, address, image_url, latitude, longitude, google_place_id')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(500);
 
-      if (error) throw error;
+      if (dbErr) throw dbErr;
 
-      // Filter out already saved by user
-      let candidates = (locations || []).filter((loc) => !savedIds.has(loc.id));
-
-      // Filter by distance (strict max 50km)
-      if (userLocation) {
-        candidates = candidates.filter((loc) => {
-          const distance = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
-          return distance <= 50;
-        });
-
-        // Score and sort: prioritize preferred categories + closest distance
-        candidates.sort((a, b) => {
+      const internalCandidates = (dbLocations || [])
+        .filter((loc: any) => {
+          if (exclude.has(loc.id)) return false;
+          if (loc.google_place_id && exclude.has(loc.google_place_id)) return false;
+          const d = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
+          return d <= 50;
+        })
+        .sort((a: any, b: any) => {
           const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
           const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
 
@@ -187,111 +192,131 @@ const FeedSuggestionsCarousel = memo(() => {
           const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0;
           const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
 
-          const finalA = scoreA - distA;
-          const finalB = scoreB - distB;
-          return finalB - finalA;
+          return (scoreB - distB) - (scoreA - distA);
+        });
+
+      const internalGoogleIds = new Set<string>();
+      internalCandidates.forEach((l: any) => {
+        if (l.google_place_id) internalGoogleIds.add(l.google_place_id);
+      });
+
+      // 4) Discover NEW (never-saved-on-app) places around the user via edge function
+      const { data: discoverData, error: discoverErr } = await supabase.functions.invoke('foursquare-search', {
+        body: {
+          lat: userLocation.lat,
+          lng: userLocation.lng,
+          radiusKm: 25,
+          limit: 40,
+        }
+      });
+
+      if (discoverErr) {
+        console.error('foursquare-search error:', discoverErr);
+      }
+
+      const rawPlaces: any[] = discoverData?.places || [];
+
+      const discoverCandidates: SuggestedLocation[] = rawPlaces
+        .map((p: any) => {
+          const placeId = String(p.fsq_id);
+          return {
+            id: placeId,
+            google_place_id: placeId,
+            name: p.name,
+            category: p.category || 'place',
+            city: p.city || null,
+            address: p.address || null,
+            image_url: null,
+            latitude: Number(p.lat),
+            longitude: Number(p.lng),
+            save_count: 0,
+            saved_by: [],
+            source: 'discover',
+          } as SuggestedLocation;
+        })
+        .filter((p) => {
+          if (!p.id || !p.latitude || !p.longitude) return false;
+          if (exclude.has(p.id)) return false; // already saved by user
+          if (internalGoogleIds.has(p.id)) return false; // already exists in DB => it's not "never saved on app"
+          const d = calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude);
+          return d <= 50;
+        })
+        .sort((a, b) => {
+          const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+          const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+          const prefA = preferredCategories.indexOf(a.category);
+          const prefB = preferredCategories.indexOf(b.category);
+          const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0;
+          const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
+          return (scoreB - distB) - (scoreA - distA);
+        });
+
+      // 5) Compose exactly 10 cards:
+      //    - Prefer discover (never saved on app)
+      //    - Then fill with internal (saved by others, but NOT by the user)
+      const chosen: SuggestedLocation[] = [];
+
+      for (const p of discoverCandidates) {
+        if (chosen.length >= 10) break;
+        chosen.push(p);
+      }
+
+      for (const loc of internalCandidates) {
+        if (chosen.length >= 10) break;
+        chosen.push({
+          id: loc.id,
+          name: loc.name,
+          category: loc.category,
+          city: loc.city,
+          address: loc.address,
+          image_url: loc.image_url,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          google_place_id: loc.google_place_id,
+          save_count: 0,
+          saved_by: [],
+          source: 'db',
         });
       }
 
-      const radiusKm = 50;
-
-      // Collect up to 10 candidates, preferring at least a few with save_count = 0 (new discoveries)
-      const results: SuggestedLocation[] = [];
-      let zeroSavedIncluded = 0;
-
-      for (const loc of candidates) {
-        if (results.length >= 10) break;
-
-        const distance = calculateDistance(userLocation!.lat, userLocation!.lng, loc.latitude, loc.longitude);
-        if (distance > radiusKm) continue;
-
-        const { count } = await supabase
+      // 6) Hydrate save_count + saved_by ONLY for DB locations (discover ones are 0 by definition)
+      const dbIds = chosen.filter((c) => c.source === 'db').map((c) => c.id);
+      if (dbIds.length > 0) {
+        const { data: uslRows } = await supabase
           .from('user_saved_locations')
-          .select('*', { count: 'exact', head: true })
-          .eq('location_id', loc.id);
+          .select('location_id, user_id')
+          .in('location_id', dbIds);
 
-        const saveCount = count || 0;
+        const rows = uslRows || [];
+        const counts = new Map<string, number>();
+        const firstUsersByLoc = new Map<string, string[]>();
 
-        // If we already have 10, stop
-        if (results.length >= 10) break;
+        rows.forEach((r: any) => {
+          counts.set(r.location_id, (counts.get(r.location_id) || 0) + 1);
+          const arr = firstUsersByLoc.get(r.location_id) || [];
+          if (arr.length < 3 && !arr.includes(r.user_id)) arr.push(r.user_id);
+          firstUsersByLoc.set(r.location_id, arr);
+        });
 
-        // Soft preference: include up to 3 totally-new locations early if available
-        const shouldPreferZeroSaved = saveCount === 0 && zeroSavedIncluded < 3;
-        const shouldSkipForNow = saveCount > 0 && results.length < 7 && zeroSavedIncluded < 3;
-        if (shouldSkipForNow) {
-          // keep scanning for a zero-saved option first
-          continue;
+        const profileIds = Array.from(new Set(Array.from(firstUsersByLoc.values()).flat()));
+        let profilesMap = new Map<string, { avatar_url: string | null; username: string }>();
+        if (profileIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, avatar_url, username')
+            .in('id', profileIds);
+          (profiles || []).forEach((p: any) => profilesMap.set(p.id, { avatar_url: p.avatar_url, username: p.username }));
         }
 
-        // Get a few users who saved this (only if there are saves)
-        let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
-        if (saveCount > 0) {
-          const { data: savers } = await supabase
-            .from('user_saved_locations')
-            .select('user_id')
-            .eq('location_id', loc.id)
-            .limit(3);
-
-          if (savers && savers.length > 0) {
-            const { data: profiles } = await supabase
-              .from('profiles')
-              .select('avatar_url, username')
-              .in('id', savers.map((s) => s.user_id));
-            savedBy = profiles || [];
-          }
-        }
-
-        results.push({
-          ...loc,
-          save_count: saveCount,
-          saved_by: savedBy,
-        } as SuggestedLocation);
-
-        if (saveCount === 0) zeroSavedIncluded += 1;
+        chosen.forEach((c) => {
+          if (c.source !== 'db') return;
+          c.save_count = counts.get(c.id) || 0;
+          const uids = firstUsersByLoc.get(c.id) || [];
+          c.saved_by = uids.map((uid) => profilesMap.get(uid)).filter(Boolean) as any;
+        });
       }
 
-      // If we skipped too many non-zero early, fill remaining slots with the best remaining
-      if (results.length < 10) {
-        for (const loc of candidates) {
-          if (results.length >= 10) break;
-          if (results.some((r) => r.id === loc.id)) continue;
-
-          const distance = calculateDistance(userLocation!.lat, userLocation!.lng, loc.latitude, loc.longitude);
-          if (distance > radiusKm) continue;
-
-          const { count } = await supabase
-            .from('user_saved_locations')
-            .select('*', { count: 'exact', head: true })
-            .eq('location_id', loc.id);
-
-          const saveCount = count || 0;
-
-          let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
-          if (saveCount > 0) {
-            const { data: savers } = await supabase
-              .from('user_saved_locations')
-              .select('user_id')
-              .eq('location_id', loc.id)
-              .limit(3);
-
-            if (savers && savers.length > 0) {
-              const { data: profiles } = await supabase
-                .from('profiles')
-                .select('avatar_url, username')
-                .in('id', savers.map((s) => s.user_id));
-              savedBy = profiles || [];
-            }
-          }
-
-          results.push({
-            ...loc,
-            save_count: saveCount,
-            saved_by: savedBy,
-          } as SuggestedLocation);
-        }
-      }
-
-      return results;
+      return chosen;
     },
     enabled: !!user?.id && !!userLocation,
     staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
@@ -335,24 +360,58 @@ const FeedSuggestionsCarousel = memo(() => {
     }
 
     try {
+      let locationId = loc.id;
+
+      // If this is a discovered (never-saved) place, create it in `locations` first
+      if (loc.source === 'discover') {
+        const { data: existing } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', loc.google_place_id || loc.id)
+          .maybeSingle();
+
+        if (existing?.id) {
+          locationId = existing.id;
+        } else {
+          const { data: created, error: createErr } = await supabase
+            .from('locations')
+            .insert({
+              name: loc.name,
+              category: loc.category,
+              city: loc.city,
+              address: loc.address || null,
+              image_url: null,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              google_place_id: loc.google_place_id || loc.id,
+            })
+            .select('id')
+            .maybeSingle();
+
+          if (createErr) throw createErr;
+          if (!created?.id) throw new Error('Could not create location');
+          locationId = created.id;
+        }
+      }
+
       const { error } = await supabase
         .from('user_saved_locations')
         .upsert({
           user_id: user.id,
-          location_id: loc.id,
+          location_id: locationId,
           save_tag: tag,
         }, { onConflict: 'user_id,location_id' });
 
       if (error) throw error;
 
       toast.success(t('locationSaved', { ns: 'common' }));
-      
-      // Remove from cached suggestions + refetch to ensure savedIds are up-to-date
+
+      // Remove from cached suggestions + refetch to ensure excludes are recalculated
       queryClient.setQueryData<SuggestedLocation[]>(
         ['feed-suggestions', user.id, userLocation?.lat, userLocation?.lng],
         (prev) => prev?.filter((s) => s.id !== loc.id) || []
       );
-      queryClient.invalidateQueries({ queryKey: ['feed-suggestions', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['feed-suggestions', user.id, userLocation?.lat, userLocation?.lng] });
     } catch (error) {
       console.error('Error saving location:', error);
       toast.error(t('errorSavingLocation', { ns: 'common' }));
