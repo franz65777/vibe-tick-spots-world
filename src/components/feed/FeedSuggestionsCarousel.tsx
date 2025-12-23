@@ -569,11 +569,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-52 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
+              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
             >
-              <div className="flex gap-2 p-2">
-                {/* Image/Icon */}
-                <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0">
+              <div className="flex items-center gap-3 p-3">
+                {/* Image/Icon - Square like reference */}
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted/30">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -581,49 +581,47 @@ const FeedSuggestionsCarousel = memo(() => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-muted/30 flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center">
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-6 h-6' : 'w-5 h-5'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-9 h-9' : 'w-8 h-8'}`}
                       />
                     </div>
                   )}
                 </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                {/* Info - Stacked vertically */}
+                <div className="flex-1 min-w-0 flex flex-col">
                   <TruncatedText 
                     text={loc.name} 
-                    className="font-semibold text-xs text-foreground leading-tight"
+                    className="font-bold text-sm text-foreground leading-tight"
                   />
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">
-                      {distance !== null ? formatDistance(distance) : (loc.city || loc.category)}
+                  <span className="text-xs text-muted-foreground mt-0.5">
+                    {distance !== null ? `${formatDistance(distance)} ${t('away', { ns: 'common', defaultValue: 'away' })}` : (loc.city || loc.category)}
+                  </span>
+                  {loc.source === 'discover' ? (
+                    <span className="text-xs font-medium text-primary mt-1">
+                      {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
                     </span>
-                    {loc.source === 'discover' ? (
-                      <span className="text-[9px] font-medium text-primary">
-                        {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be first!' })}
-                      </span>
-                    ) : loc.saved_by.length > 0 ? (
-                      <div className="flex items-center gap-0.5">
-                        <div className="flex -space-x-1">
-                          {loc.saved_by.slice(0, 2).map((saver, idx) => (
-                            <Avatar key={idx} className="h-3.5 w-3.5 border border-background">
-                              <AvatarImage src={saver.avatar_url || undefined} />
-                              <AvatarFallback className="text-[5px] bg-primary/10">
-                                {saver.username?.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
+                  ) : loc.saved_by.length > 0 ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="flex -space-x-1">
+                        {loc.saved_by.slice(0, 2).map((saver, sidx) => (
+                          <Avatar key={sidx} className="h-4 w-4 border border-background">
+                            <AvatarImage src={saver.avatar_url || undefined} />
+                            <AvatarFallback className="text-[6px] bg-primary/10">
+                              {saver.username?.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
                       </div>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Save button */}
-                <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                <div onClick={(e) => e.stopPropagation()} className="shrink-0 self-end">
                   <SaveLocationDropdown
                     isSaved={false}
                     onSave={(tag) => handleSaveLocation(loc, tag)}
