@@ -26,7 +26,19 @@ interface SuggestedLocation {
   source: 'db' | 'discover';
 }
 
-// Simple truncated text component - no animation for better scroll performance
+// Scrolling text component for long names
+const ScrollingText = memo(({ text, className }: { text: string; className?: string }) => (
+  <div className={`overflow-hidden ${className}`}>
+    <div className="animate-marquee whitespace-nowrap hover:animation-paused">
+      <span className="inline-block pr-8">{text}</span>
+      <span className="inline-block pr-8">{text}</span>
+    </div>
+  </div>
+));
+
+ScrollingText.displayName = 'ScrollingText';
+
+// Simple truncated text component
 const TruncatedText = memo(({ text, className }: { text: string; className?: string }) => (
   <div className={`truncate ${className}`}>{text}</div>
 ));
@@ -473,7 +485,7 @@ const FeedSuggestionsCarousel = memo(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
-            const cardWidth = 208 + 12; // w-52 (208px) + gap-3 (12px)
+            const cardWidth = 192 + 12; // w-48 (192px) + gap-3 (12px)
             scrollContainerRef.current.scrollLeft = idx * cardWidth;
           }
           sessionStorage.removeItem('suggestions_clicked_index');
@@ -569,11 +581,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-52 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-3"
+              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-2.5"
             >
-              <div className="flex items-start gap-3">
-                {/* Image/Icon - Square */}
-                <div className="relative w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 bg-muted/30">
+              <div className="flex items-start gap-2.5">
+                {/* Image/Icon - Smaller square */}
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted/30">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -585,27 +597,33 @@ const FeedSuggestionsCarousel = memo(() => {
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-10 h-10' : 'w-9 h-9'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-8 h-8' : 'w-7 h-7'}`}
                       />
                     </div>
                   )}
                 </div>
 
                 {/* Info + Save button column */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between h-[72px]">
-                  <div>
-                    <TruncatedText 
-                      text={loc.name} 
-                      className="font-bold text-sm text-foreground leading-tight"
-                    />
-                    <span className="text-xs text-muted-foreground block mt-0.5">
+                <div className="flex-1 min-w-0 flex flex-col justify-between h-14">
+                  <div className="min-w-0">
+                    {loc.name.length > 12 ? (
+                      <ScrollingText 
+                        text={loc.name} 
+                        className="font-bold text-sm text-foreground leading-tight"
+                      />
+                    ) : (
+                      <div className="font-bold text-sm text-foreground leading-tight truncate">
+                        {loc.name}
+                      </div>
+                    )}
+                    <span className="text-xs text-muted-foreground block">
                       {distance !== null ? `${formatDistance(distance)} ${t('away', { ns: 'common', defaultValue: 'away' })}` : (loc.city || loc.category)}
                     </span>
                   </div>
                   
-                  <div className="flex items-end justify-between">
+                  <div className="flex items-end justify-between gap-1">
                     {loc.source === 'discover' ? (
-                      <span className="text-xs font-medium text-primary leading-tight">
+                      <span className="text-[11px] font-medium text-primary leading-tight">
                         {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
                       </span>
                     ) : loc.saved_by.length > 0 ? (
@@ -621,7 +639,7 @@ const FeedSuggestionsCarousel = memo(() => {
                       </div>
                     ) : <span />}
                     
-                    <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <div onClick={(e) => e.stopPropagation()} className="shrink-0 -mr-1 -mb-1">
                       <SaveLocationDropdown
                         isSaved={false}
                         onSave={(tag) => handleSaveLocation(loc, tag)}
