@@ -645,8 +645,8 @@ const resources = {
       discoverPeople: 'Discover People',
       pickedForYou: 'picked for you',
       nearby: 'nearby',
-      savedTimes: 'saved {{count}} times',
-      savedOnce: 'saved 1 time'
+      savedByUsers: 'saved by {{count}} users',
+      savedByUser: 'saved by 1 user'
     },
       badges: {
         newBadgeUnlocked: 'New Badge Unlocked',
@@ -1565,8 +1565,8 @@ const resources = {
       discoverPeople: 'Descubrir Personas',
       pickedForYou: 'seleccionado para ti',
       nearby: 'cerca',
-      savedTimes: 'guardado {{count}} veces',
-      savedOnce: 'guardado 1 vez'
+      savedByUsers: 'guardado por {{count}} usuarios',
+      savedByUser: 'guardado por 1 usuario'
     },
     badges: {
       cityWanderer: 'Explorador de Ciudades',
@@ -2528,8 +2528,8 @@ const resources = {
       discoverPeople: 'Scopri Persone',
       pickedForYou: 'scelto per te',
       nearby: 'vicino',
-      savedTimes: 'salvato {{count}} volte',
-      savedOnce: 'salvato 1 volta'
+      savedByUsers: 'salvato da {{count}} utenti',
+      savedByUser: 'salvato da 1 utente'
     },
     badges: {
       cityWanderer: 'Vagabondo delle Città',
@@ -3422,8 +3422,8 @@ const resources = {
       discoverPeople: 'Découvrir des personnes',
       pickedForYou: 'sélectionné pour vous',
       nearby: 'à proximité',
-      savedTimes: 'enregistré {{count}} fois',
-      savedOnce: 'enregistré 1 fois'
+      savedByUsers: 'enregistré par {{count}} utilisateurs',
+      savedByUser: 'enregistré par 1 utilisateur'
     },
     badges: {
       cityWanderer: 'Explorateur de villes',
@@ -4224,8 +4224,8 @@ const resources = {
       discoverPeople: 'Personen entdecken',
       pickedForYou: 'für dich ausgewählt',
       nearby: 'in der Nähe',
-      savedTimes: '{{count}} mal gespeichert',
-      savedOnce: '1 mal gespeichert'
+      savedByUsers: 'von {{count}} Nutzern gespeichert',
+      savedByUser: 'von 1 Nutzer gespeichert'
     },
     badges: {
       cityWanderer: 'Städtewanderer',
@@ -4964,8 +4964,8 @@ const resources = {
       discoverPeople: 'Descobrir pessoas',
       pickedForYou: 'escolhido para você',
       nearby: 'próximo',
-      savedTimes: 'salvo {{count}} vezes',
-      savedOnce: 'salvo 1 vez'
+      savedByUsers: 'salvo por {{count}} usuários',
+      savedByUser: 'salvo por 1 usuário'
     },
       badges: {
         newBadgeUnlocked: 'Novo Badge Desbloqueado',
@@ -5653,8 +5653,8 @@ const resources = {
       discoverPeople: '发现好友',
       pickedForYou: '为你精选',
       nearby: '附近',
-      savedTimes: '已保存{{count}}次',
-      savedOnce: '已保存1次'
+      savedByUsers: '{{count}}位用户已保存',
+      savedByUser: '1位用户已保存'
     },
     badges: {
       cityWanderer: '城市漫游者',
@@ -6286,8 +6286,8 @@ const resources = {
       discoverPeople: '人を探す',
       pickedForYou: 'あなたへのおすすめ',
       nearby: '近く',
-      savedTimes: '{{count}}回保存',
-      savedOnce: '1回保存'
+      savedByUsers: '{{count}}人のユーザーが保存',
+      savedByUser: '1人のユーザーが保存'
     },
     badges: {
       newBadgeUnlocked: '新しいバッジをアンロック',
@@ -6959,8 +6959,8 @@ const resources = {
       discoverPeople: '사람 찾기',
       pickedForYou: '당신을 위한 추천',
       nearby: '근처',
-      savedTimes: '{{count}}번 저장됨',
-      savedOnce: '1번 저장됨'
+      savedByUsers: '{{count}}명의 사용자가 저장',
+      savedByUser: '1명의 사용자가 저장'
     },
     badges: {
       cityWanderer: '도시 방랑자',
@@ -7615,8 +7615,8 @@ const resources = {
       discoverPeople: 'اكتشف الأشخاص',
       pickedForYou: 'مختار لك',
       nearby: 'قريب',
-      savedTimes: 'تم الحفظ {{count}} مرات',
-      savedOnce: 'تم الحفظ مرة واحدة'
+      savedByUsers: 'محفوظ من قبل {{count}} مستخدمين',
+      savedByUser: 'محفوظ من قبل مستخدم واحد'
     },
     badges: {
       cityWanderer: 'متجول المدينة',
@@ -8924,8 +8924,8 @@ const resources = {
       discoverPeople: 'Найти людей',
       pickedForYou: 'выбрано для вас',
       nearby: 'рядом',
-      savedTimes: 'сохранено {{count}} раз',
-      savedOnce: 'сохранено 1 раз'
+      savedByUsers: 'сохранено {{count}} пользователями',
+      savedByUser: 'сохранено 1 пользователем'
     },
     badges: {
       cityWanderer: 'Городской странник',

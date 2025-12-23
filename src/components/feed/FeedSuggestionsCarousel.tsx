@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Bookmark } from 'lucide-react';
@@ -19,12 +19,81 @@ interface SuggestedLocation {
   saved_by: Array<{ avatar_url: string | null; username: string }>;
 }
 
+// Marquee component for overflowing text
+const MarqueeText = memo(({ text, className }: { text: string; className?: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (containerRef.current && textRef.current) {
+        setShouldAnimate(textRef.current.scrollWidth > containerRef.current.clientWidth);
+      }
+    };
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [text]);
+
+  return (
+    <div ref={containerRef} className={`overflow-hidden whitespace-nowrap ${className}`}>
+      <span
+        ref={textRef}
+        className={shouldAnimate ? 'inline-block animate-marquee' : ''}
+        style={shouldAnimate ? { animationDuration: `${Math.max(text.length * 0.15, 3)}s` } : {}}
+      >
+        {text}
+      </span>
+    </div>
+  );
+});
+
+MarqueeText.displayName = 'MarqueeText';
+
+// Calculate distance between two coordinates in km
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const formatDistance = (km: number): string => {
+  if (km < 1) {
+    return `${Math.round(km * 1000)}m`;
+  }
+  return `${km.toFixed(1)}km`;
+};
+
 const FeedSuggestionsCarousel = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState<SuggestedLocation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        () => {
+          // Silently fail - distance won't be shown
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -132,6 +201,16 @@ const FeedSuggestionsCarousel = memo(() => {
     });
   };
 
+  // Check if category should have bigger icon
+  const shouldHaveBiggerIcon = (category: string): boolean => {
+    const lowerCategory = category.toLowerCase();
+    return lowerCategory.includes('restaurant') || 
+           lowerCategory.includes('ristorante') ||
+           lowerCategory.includes('hotel') ||
+           lowerCategory.includes('food') ||
+           lowerCategory.includes('dining');
+  };
+
   return (
     <div className="py-4">
       {/* Header */}
@@ -145,6 +224,12 @@ const FeedSuggestionsCarousel = memo(() => {
           const CategoryIcon = getCategoryIcon(loc.category);
           const categoryImage = getCategoryImage(loc.category);
           const categoryColor = getCategoryColor(loc.category);
+          const isBiggerIcon = shouldHaveBiggerIcon(loc.category);
+
+          // Calculate distance if user location is available
+          const distance = userLocation 
+            ? calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude)
+            : null;
 
           return (
             <button
@@ -166,23 +251,30 @@ const FeedSuggestionsCarousel = memo(() => {
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className="w-16 h-16 object-contain"
+                        className={`object-contain ${isBiggerIcon ? 'w-20 h-20' : 'w-16 h-16'}`}
                       />
                     </div>
                   )}
                   {/* Distance badge */}
                   <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                    {t('nearby', { ns: 'feed' })}
+                    {distance !== null ? formatDistance(distance) : t('nearby', { ns: 'feed' })}
                   </div>
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                   <div>
-                    <h4 className="font-bold text-foreground line-clamp-1">{loc.name}</h4>
+                    <MarqueeText 
+                      text={loc.name} 
+                      className="font-bold text-foreground"
+                    />
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <CategoryIcon className={`w-3.5 h-3.5 ${categoryColor}`} />
-                      <span>{loc.category}</span>
+                      <CategoryIcon className={`shrink-0 ${isBiggerIcon ? 'w-4 h-4' : 'w-3.5 h-3.5'} ${categoryColor}`} />
+                      {distance !== null ? (
+                        <span>{formatDistance(distance)} {t('away', { ns: 'common', defaultValue: 'away' })}</span>
+                      ) : (
+                        <span>{loc.city || loc.category}</span>
+                      )}
                     </p>
                   </div>
 
@@ -204,8 +296,8 @@ const FeedSuggestionsCarousel = memo(() => {
                       {loc.save_count > 0 && (
                         <span className="text-xs text-muted-foreground ml-1">
                           {loc.save_count === 1 
-                            ? t('savedOnce', { ns: 'feed' })
-                            : t('savedTimes', { ns: 'feed', count: loc.save_count })
+                            ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1 user' })
+                            : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count} users` })
                           }
                         </span>
                       )}
