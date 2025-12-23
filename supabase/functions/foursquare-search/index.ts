@@ -123,17 +123,26 @@ serve(async (req) => {
         const results = await Promise.all(fetchPromises);
         const allResults = results.flat();
 
-        const toCategory = (item: any): string => {
+        const toCategory = (item: any, searchTerm: string): string => {
           const cls = String(item.class || '').toLowerCase();
           const typ = String(item.type || '').toLowerCase();
           const name = String(item.namedetails?.name || item.display_name || '').toLowerCase();
-          if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('food')) return 'restaurant';
-          if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine')) return 'bar';
-          if (typ.includes('cafe') || name.includes('cafe') || name.includes('coffee')) return 'cafe';
-          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake')) return 'bakery';
-          if ((cls === 'tourism' && (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house'))) || name.includes('hotel') || name.includes('hostel')) return 'hotel';
-          if ((cls === 'tourism' && typ.includes('museum')) || name.includes('museum')) return 'museum';
+          // Direct OSM type matching first
+          if (typ.includes('museum') || name.includes('museo') || name.includes('museum')) return 'museum';
+          if (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house') || name.includes('hotel') || name.includes('hostel')) return 'hotel';
           if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
+          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake') || name.includes('panett') || name.includes('pasticc') || name.includes('forno')) return 'bakery';
+          if (typ.includes('cafe') || name.includes('cafe') || name.includes('caffè') || name.includes('coffee')) return 'cafe';
+          if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine') || name.includes('birr')) return 'bar';
+          if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('ristorante') || name.includes('pizzeria') || name.includes('trattoria') || name.includes('osteria') || name.includes('food')) return 'restaurant';
+          // Fallback: use the search term category if nothing matched
+          const q = (searchTerm || '').toLowerCase();
+          if (q.includes('museum')) return 'museum';
+          if (q.includes('hotel')) return 'hotel';
+          if (q.includes('cinema') || q.includes('entertainment')) return 'entertainment';
+          if (q.includes('bakery')) return 'bakery';
+          if (q.includes('cafe')) return 'cafe';
+          if (q.includes('bar')) return 'bar';
           return 'restaurant';
         };
 
@@ -160,8 +169,13 @@ serve(async (req) => {
           return Math.max(0, Math.min(1, score + containsBonus));
         };
 
-        let places = allResults.map((item: any) => {
-          const mapped = toCategory(item);
+        // Carry the searchTerm that produced each batch so we can pass it to toCategory
+        const placesWithTerm = queries.flatMap((searchTerm, idx) => {
+          return (results[idx] || []).map((item: any) => ({ item, searchTerm }));
+        });
+
+        let places = placesWithTerm.map(({ item, searchTerm }: { item: any; searchTerm: string }) => {
+          const mapped = toCategory(item, searchTerm);
           const plat = parseFloat(item.lat); const plng = parseFloat(item.lon);
           const distance = haversine(lat, lng, plat, plng);
           if (isNaN(plat) || isNaN(plng) || distance > Math.round(providedRadiusKm * 1000)) return null;
@@ -254,18 +268,26 @@ serve(async (req) => {
         
         console.log(`OSM returned ${allResults.length} total results`);
         
-        const toCategory = (item: any): string => {
+        const toCategory = (item: any, searchTerm: string): string => {
           const cls = String(item.class || '').toLowerCase();
           const typ = String(item.type || '').toLowerCase();
           const name = String(item.namedetails?.name || item.display_name || '').toLowerCase();
-          if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('food')) return 'restaurant';
-          if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine')) return 'bar';
-          if (typ.includes('cafe') || name.includes('cafe') || name.includes('coffee')) return 'cafe';
-          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake')) return 'bakery';
-          if ((cls === 'tourism' && (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house'))) || name.includes('hotel') || name.includes('hostel')) return 'hotel';
-          if ((cls === 'tourism' && typ.includes('museum')) || name.includes('museum')) return 'museum';
+          // Direct OSM type matching first
+          if (typ.includes('museum') || name.includes('museo') || name.includes('museum')) return 'museum';
+          if (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house') || name.includes('hotel') || name.includes('hostel')) return 'hotel';
           if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
-          // Fallback to restaurant so we never drop otherwise good results
+          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake') || name.includes('panett') || name.includes('pasticc') || name.includes('forno')) return 'bakery';
+          if (typ.includes('cafe') || name.includes('cafe') || name.includes('caffè') || name.includes('coffee')) return 'cafe';
+          if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine') || name.includes('birr')) return 'bar';
+          if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('ristorante') || name.includes('pizzeria') || name.includes('trattoria') || name.includes('osteria') || name.includes('food')) return 'restaurant';
+          // Fallback: use the search term category if nothing matched
+          const q = (searchTerm || '').toLowerCase();
+          if (q.includes('museum')) return 'museum';
+          if (q.includes('hotel')) return 'hotel';
+          if (q.includes('cinema') || q.includes('entertainment')) return 'entertainment';
+          if (q.includes('bakery')) return 'bakery';
+          if (q.includes('cafe')) return 'cafe';
+          if (q.includes('bar')) return 'bar';
           return 'restaurant';
         };
         
@@ -313,13 +335,15 @@ serve(async (req) => {
         };
         // Map raw OSM results to our shape and rank by proximity and name similarity (if query provided)
         let places = allResults.map((item: any) => {
-          const mapped = toCategory(item);
+          const searchTerm = query || '';
+          const mapped = toCategory(item, searchTerm);
           const plat = parseFloat(item.lat);
           const plng = parseFloat(item.lon);
           const distance = haversine(lat, lng, plat, plng);
           
-          // Filter by distance (1km radius for faster results)
-          if (isNaN(plat) || isNaN(plng) || distance > 1000) return null;
+          // Filter by distance - use requested radius (max 50km), not hardcoded 1km
+          const maxDist = Math.round(providedRadiusKm * 1000);
+          if (isNaN(plat) || isNaN(plng) || distance > maxDist) return null;
           
           const addressObj = item.address || {};
           const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';
