@@ -116,7 +116,7 @@ const FeedSuggestionsCarousel = memo(() => {
   
   // Track visible cards for marquee animation - must be before any return
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
-  const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Get user's current location
   useEffect(() => {
@@ -561,7 +561,7 @@ const FeedSuggestionsCarousel = memo(() => {
           const isCardVisible = visibleCards.has(loc.id);
           
           return (
-            <button
+            <div
               key={loc.id}
               ref={(el) => {
                 if (el) cardRefs.current.set(loc.id, el);
@@ -569,7 +569,10 @@ const FeedSuggestionsCarousel = memo(() => {
               }}
               data-location-id={loc.id}
               onClick={() => handleLocationClick(loc)}
-              className="shrink-0 w-72 bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc)}
+              className="shrink-0 w-72 bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
             >
               <div className="flex gap-3 p-3">
                 {/* Image */}
@@ -654,7 +657,7 @@ const FeedSuggestionsCarousel = memo(() => {
                   </div>
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
