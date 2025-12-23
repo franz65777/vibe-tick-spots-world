@@ -50,12 +50,18 @@
     }
   }
   
-  @keyframes marquee-once {
+  @keyframes marquee-bounce {
     0% {
       transform: translateX(0);
     }
+    40% {
+      transform: translateX(-40%);
+    }
+    60% {
+      transform: translateX(-40%);
+    }
     100% {
-      transform: translateX(-30%);
+      transform: translateX(0);
     }
   }
   
@@ -64,8 +70,8 @@
     will-change: transform;
   }
   
-  .animate-marquee-once {
-    animation: marquee-once 3s ease-out forwards;
+  .animate-marquee-bounce {
+    animation: marquee-bounce 4s ease-in-out;
     will-change: transform;
   }
   
