@@ -124,46 +124,72 @@ const FeedSuggestionsCarousel = memo(() => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Get popular locations that user hasn't saved
+      // Get user's saved locations to determine preferences and exclude
       const { data: userSaved } = await supabase
         .from('user_saved_locations')
-        .select('location_id')
+        .select('location_id, locations(category)')
         .eq('user_id', user.id);
 
       const savedIds = new Set(userSaved?.map(s => s.location_id) || []);
+      
+      // Calculate user's preferred categories based on their saves
+      const categoryCounts = new Map<string, number>();
+      userSaved?.forEach((save: any) => {
+        const category = save.locations?.category;
+        if (category) {
+          categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+        }
+      });
+      
+      // Get top 3 preferred categories
+      const preferredCategories = Array.from(categoryCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([cat]) => cat);
 
-      // Fetch more locations to filter by distance
+      // Fetch all nearby locations (both saved by others and new)
       const { data: locations, error } = await supabase
         .from('locations')
         .select('id, name, category, city, image_url, latitude, longitude')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (error) throw error;
 
-      // Filter out already saved
-      let unsaved = (locations || []).filter(loc => !savedIds.has(loc.id));
+      // Filter out already saved by user
+      let candidates = (locations || []).filter(loc => !savedIds.has(loc.id));
 
       // Filter by distance (max 50km) if user location is available
       if (userLocation) {
-        unsaved = unsaved.filter(loc => {
+        candidates = candidates.filter(loc => {
           const distance = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
           return distance <= 50; // Max 50km
         });
 
-        // Sort by distance (closest first)
-        unsaved.sort((a, b) => {
+        // Score and sort: prioritize preferred categories + closest distance
+        candidates.sort((a, b) => {
           const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
           const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
-          return distA - distB;
+          
+          // Category preference boost (preferred categories get priority)
+          const prefA = preferredCategories.indexOf(a.category);
+          const prefB = preferredCategories.indexOf(b.category);
+          const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0; // 30, 20, 10 for top 3 categories
+          const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
+          
+          // Combine: category preference + inverse distance
+          const finalA = scoreA - distA;
+          const finalB = scoreB - distB;
+          
+          return finalB - finalA;
         });
       }
 
-      // Get save counts for each location
+      // Get save counts for top 10 candidates
       const withCounts = await Promise.all(
-        unsaved.slice(0, 10).map(async (loc) => {
+        candidates.slice(0, 10).map(async (loc) => {
           const { count } = await supabase
             .from('user_saved_locations')
             .select('*', { count: 'exact', head: true })
