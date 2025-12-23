@@ -556,11 +556,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-56 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-2xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
+              className="shrink-0 w-52 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-2xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
             >
-              <div className="flex gap-2 p-2">
+              <div className="flex gap-2.5 p-2">
                 {/* Image */}
-                <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
+                <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -572,33 +572,31 @@ const FeedSuggestionsCarousel = memo(() => {
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-10 h-10' : 'w-9 h-9'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-8 h-8' : 'w-7 h-7'}`}
                       />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                  <div>
-                    <TruncatedText 
-                      text={loc.name} 
-                      className="font-semibold text-sm text-foreground"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {distance !== null ? (
-                        <span>{formatDistance(distance)} {t('away', { ns: 'feed' })}</span>
-                      ) : (
-                        <span>{loc.city || loc.category}</span>
-                      )}
-                    </p>
-                  </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                  <TruncatedText 
+                    text={loc.name} 
+                    className="font-semibold text-sm text-foreground leading-tight"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {distance !== null ? (
+                      <span>{formatDistance(distance)} {t('away', { ns: 'feed' })}</span>
+                    ) : (
+                      <span>{loc.city || loc.category}</span>
+                    )}
+                  </p>
 
                   {/* Saved by OR "Be the first" */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mt-0.5">
                     <div className="flex items-center gap-1">
                       {loc.source === 'discover' ? (
-                        <span className="text-[11px] font-medium text-primary">
+                        <span className="text-[10px] font-medium text-primary">
                           {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
                         </span>
                       ) : loc.saved_by.length > 0 ? (
@@ -614,16 +612,16 @@ const FeedSuggestionsCarousel = memo(() => {
                             ))}
                           </div>
                           {loc.save_count > 0 && (
-                            <span className="text-[10px] text-muted-foreground ml-1">
+                            <span className="text-[9px] text-muted-foreground ml-0.5">
                               {loc.save_count === 1 
-                                ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1 user' })
-                                : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count} users` })
+                                ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1' })
+                                : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count}` })
                               }
                             </span>
                           )}
                         </>
                       ) : (
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground">
                           {t('noSavesYet', { ns: 'feed', defaultValue: 'No saves yet' })}
                         </span>
                       )}

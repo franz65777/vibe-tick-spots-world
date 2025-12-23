@@ -58,66 +58,25 @@ const allowedFoursquareCategoryIds = [
   '10001', // Entertainment
 ];
 
-// Fetch photo from Wikimedia Commons using Geosearch API (FREE, no API key needed)
-async function fetchWikimediaPhoto(lat: number, lng: number, placeName: string): Promise<string | null> {
-  try {
-    // First try to find images near the coordinates
-    const geoSearchUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=geosearch&prop=imageinfo&iiprop=url&iiurlwidth=300&ggscoord=${lat}|${lng}&ggsradius=100&ggslimit=5&format=json&origin=*`;
-    
-    const response = await fetch(geoSearchUrl, {
-      headers: {
-        'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      const pages = data.query?.pages;
-      
-      if (pages) {
-        // Find the first image that looks like a photo (not a map or icon)
-        for (const pageId of Object.keys(pages)) {
-          const page = pages[pageId];
-          const imageInfo = page.imageinfo?.[0];
-          if (imageInfo?.thumburl) {
-            const url = imageInfo.thumburl.toLowerCase();
-            // Skip maps, icons, logos, and other non-photo images
-            if (!url.includes('map') && !url.includes('logo') && !url.includes('icon') && 
-                !url.includes('flag') && !url.includes('coat_of_arms') && !url.includes('diagram')) {
-              return imageInfo.thumburl;
-            }
-          }
-        }
-      }
-    }
-    
-    // Fallback: search by place name on Wikipedia
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(placeName)}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=300&format=json&origin=*`;
-    
-    const searchResponse = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
-      }
-    });
-    
-    if (searchResponse.ok) {
-      const searchData = await searchResponse.json();
-      const searchPages = searchData.query?.pages;
-      
-      if (searchPages) {
-        for (const pageId of Object.keys(searchPages)) {
-          const page = searchPages[pageId];
-          if (page.thumbnail?.source) {
-            return page.thumbnail.source;
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.log(`Wikimedia photo fetch failed for ${placeName}:`, e);
-  }
+// Get a relevant category image from Unsplash Source (FREE, no API key needed)
+// Uses category-based search to get contextually relevant photos
+function getUnsplashCategoryImage(category: string): string {
+  // Map our categories to good Unsplash search terms
+  const categoryToSearch: Record<string, string> = {
+    'restaurant': 'restaurant-food-dining',
+    'cafe': 'coffee-shop-cafe',
+    'bar': 'bar-cocktail-drinks',
+    'bakery': 'bakery-pastry-bread',
+    'hotel': 'hotel-room-luxury',
+    'museum': 'museum-art-gallery',
+    'entertainment': 'cinema-theater-entertainment',
+  };
   
-  return null;
+  const searchTerm = categoryToSearch[category.toLowerCase()] || 'restaurant-food';
+  
+  // Use Unsplash Source for random category images (completely free, no API key)
+  // Adding a unique seed based on category to get consistent but varied images
+  return `https://source.unsplash.com/300x300/?${searchTerm}`;
 }
 
 serve(async (req) => {
@@ -273,16 +232,18 @@ serve(async (req) => {
 
         places = places.slice(0, limit);
         
-        // Fetch photos from Wikimedia Commons in parallel (limit to first 6 for speed)
-        const placesWithPhotos = await Promise.all(
-          places.map(async (p: any, idx: number) => {
-            let photo_url = null;
-            if (idx < 6) { // Only fetch photos for first 6 places to keep it fast
-              photo_url = await fetchWikimediaPhoto(p.lat, p.lng, p.name);
-            }
-            return { fsq_id: p.fsq_id, name: p.name, category: p.category, address: p.address, city: p.city, lat: p.lat, lng: p.lng, distance: p.distance, photo_url };
-          })
-        );
+        // Add category-based images from Unsplash (fast, no API calls needed)
+        const placesWithPhotos = places.map((p: any) => ({
+          fsq_id: p.fsq_id,
+          name: p.name,
+          category: p.category,
+          address: p.address,
+          city: p.city,
+          lat: p.lat,
+          lng: p.lng,
+          distance: p.distance,
+          photo_url: getUnsplashCategoryImage(p.category)
+        }));
 
         console.log(`Fast OSM returning ${placesWithPhotos.length} places with photos`);
         return new Response(JSON.stringify({ places: placesWithPhotos }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -500,26 +461,18 @@ serve(async (req) => {
         // Trim to requested limit
         places = places.slice(0, limit);
         
-        // Fetch photos from Wikimedia Commons in parallel (limit to first 6 for speed)
-        const placesWithPhotos = await Promise.all(
-          places.map(async (p: any, idx: number) => {
-            let photo_url = null;
-            if (idx < 6) { // Only fetch photos for first 6 places to keep it fast
-              photo_url = await fetchWikimediaPhoto(p.lat, p.lng, p.name);
-            }
-            return {
-              fsq_id: p.fsq_id,
-              name: p.name,
-              category: p.category,
-              address: p.address,
-              city: p.city,
-              lat: p.lat,
-              lng: p.lng,
-              distance: p.distance,
-              photo_url,
-            };
-          })
-        );
+        // Add category-based images from Unsplash (fast, no API calls needed)
+        const placesWithPhotos = places.map((p: any) => ({
+          fsq_id: p.fsq_id,
+          name: p.name,
+          category: p.category,
+          address: p.address,
+          city: p.city,
+          lat: p.lat,
+          lng: p.lng,
+          distance: p.distance,
+          photo_url: getUnsplashCategoryImage(p.category)
+        }));
         
         console.log(`OSM fallback returning ${placesWithPhotos.length} places with photos`);
         return new Response(
