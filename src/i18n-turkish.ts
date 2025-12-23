@@ -93,6 +93,12 @@ export const turkishTranslations = {
         enterComment: 'Lütfen bir yorum girin'
       }
     },
+    feed: {
+      beFirstToSave: 'İlk kaydeden sen ol!',
+      noSavesYet: 'Henüz kaydetme yok',
+      savedByUser: '1 kullanıcı kaydetti',
+      savedByUsers: '{{count}} kullanıcı kaydetti'
+    },
     home: {
       filters: {
         trending: 'Trend',
@@ -191,3 +197,4 @@ export const turkishTranslations = {
     }
   }
 };
+

@@ -26,51 +26,65 @@ interface SuggestedLocation {
   source: 'db' | 'discover';
 }
 
-// Marquee component for overflowing text - animates when visible on mobile
-const MarqueeText = memo(({ text, className, isVisible }: { text: string; className?: string; isVisible: boolean }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
+// Marquee component for overflowing text - animates once when visible on mobile
+const MarqueeText = memo(
+  ({ text, className, isVisible }: { text: string; className?: string; isVisible: boolean }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const measureRef = useRef<HTMLSpanElement>(null);
+    const [isOverflowing, setIsOverflowing] = useState(false);
+    const [hasPlayed, setHasPlayed] = useState(false);
 
-  useEffect(() => {
-    const checkOverflow = () => {
-      if (containerRef.current && textRef.current) {
-        setIsOverflowing(textRef.current.scrollWidth > containerRef.current.clientWidth);
-      }
-    };
-    const timer = setTimeout(checkOverflow, 100);
-    window.addEventListener('resize', checkOverflow);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', checkOverflow);
-    };
-  }, [text]);
+    useEffect(() => {
+      setHasPlayed(false);
+    }, [text]);
 
-  const shouldAnimate = isOverflowing && isVisible;
+    useEffect(() => {
+      const checkOverflow = () => {
+        if (containerRef.current && measureRef.current) {
+          setIsOverflowing(measureRef.current.scrollWidth > containerRef.current.clientWidth);
+        }
+      };
+      const timer = setTimeout(checkOverflow, 100);
+      window.addEventListener('resize', checkOverflow);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('resize', checkOverflow);
+      };
+    }, [text]);
 
-  return (
-    <div 
-      ref={containerRef} 
-      className={`overflow-hidden whitespace-nowrap ${className}`}
-    >
-      {shouldAnimate ? (
+    const shouldAnimate = isOverflowing && isVisible && !hasPlayed;
+
+    return (
+      <div ref={containerRef} className={`relative overflow-hidden whitespace-nowrap ${className}`}>
+        {/* hidden measurement element to avoid layout shift */}
         <span
-          className="inline-block"
-          style={{
-            animation: `marquee ${Math.max(text.length * 0.15, 3)}s linear 1`,
-            animationFillMode: 'both',
-          }}
+          ref={measureRef}
+          className="pointer-events-none absolute -z-10 opacity-0 whitespace-nowrap"
         >
           {text}
-          <span className="mx-4">•</span>
-          {text}
         </span>
-      ) : (
-        <span ref={textRef} className="truncate block">{text}</span>
-      )}
-    </div>
-  );
-});
+
+        {shouldAnimate ? (
+          <span
+            className="inline-block"
+            onAnimationEnd={() => setHasPlayed(true)}
+            style={{
+              animation: `marquee ${Math.max(text.length * 0.15, 3)}s linear 1`,
+              animationFillMode: 'none',
+            }}
+          >
+            {text}
+            <span className="mx-4">•</span>
+            {text}
+          </span>
+        ) : (
+          <span className="truncate block">{text}</span>
+        )}
+      </div>
+    );
+  }
+);
+
 
 MarqueeText.displayName = 'MarqueeText';
 
@@ -127,6 +141,20 @@ const FeedSuggestionsCarousel = memo(() => {
     queryFn: async () => {
       if (!user?.id || !userLocation) return [];
 
+      const normalizeCategoryForDiscover = (cat: string): string => {
+        const c = (cat || '').toLowerCase().trim();
+        if (!c) return '';
+        if (c.includes('ristor')) return 'restaurant';
+        if (c.includes('restaurant')) return 'restaurant';
+        if (c.includes('bar')) return 'bar';
+        if (c.includes('cafe') || c.includes('caff') || c.includes('coffee')) return 'cafe';
+        if (c.includes('bakery') || c.includes('panett') || c.includes('pasticc')) return 'bakery';
+        if (c.includes('hotel')) return 'hotel';
+        if (c.includes('museum') || c.includes('museo')) return 'museum';
+        if (c.includes('cinema')) return 'cinema';
+        return c;
+      };
+
       // 1) Build an "exclude set" of everything the user already saved
       const [userSavedInternalRes, userSavedPlacesRes] = await Promise.all([
         supabase
@@ -161,10 +189,20 @@ const FeedSuggestionsCarousel = memo(() => {
         const cat = sp.place_category;
         if (cat) categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
       });
-      const preferredCategories = Array.from(categoryCounts.entries())
+
+      const preferredCategoriesRaw = Array.from(categoryCounts.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([cat]) => cat);
+
+      const preferredDiscover = Array.from(
+        new Set(preferredCategoriesRaw.map(normalizeCategoryForDiscover).filter(Boolean))
+      );
+
+      const isPreferred = (cat: string) => {
+        const n = normalizeCategoryForDiscover(cat);
+        return preferredDiscover.includes(n);
+      };
 
       // 3) Pull internal DB locations near the user (but NOT already saved by the user)
       const { data: dbLocations, error: dbErr } = await supabase
@@ -176,56 +214,78 @@ const FeedSuggestionsCarousel = memo(() => {
 
       if (dbErr) throw dbErr;
 
-      const internalCandidates = (dbLocations || [])
+      const internalRaw = (dbLocations || [])
         .filter((loc: any) => {
           if (exclude.has(loc.id)) return false;
           if (loc.google_place_id && exclude.has(loc.google_place_id)) return false;
           const d = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
           return d <= 50;
         })
-        .sort((a: any, b: any) => {
-          const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
-          const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
-
-          const prefA = preferredCategories.indexOf(a.category);
-          const prefB = preferredCategories.indexOf(b.category);
-          const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0;
-          const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
-
-          return (scoreB - distB) - (scoreA - distA);
-        });
+        .map((loc: any) => ({
+          ...loc,
+          _distanceKm: calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude),
+        }))
+        .sort((a: any, b: any) => a._distanceKm - b._distanceKm);
 
       const internalGoogleIds = new Set<string>();
-      internalCandidates.forEach((l: any) => {
+      internalRaw.forEach((l: any) => {
         if (l.google_place_id) internalGoogleIds.add(l.google_place_id);
       });
 
-      // 4) Discover NEW (never-saved-on-app) places around the user via edge function
-      //    Use user's preferred categories to request more targeted results
-      const categoryQueries = preferredCategories.length > 0 ? preferredCategories : ['restaurant', 'bar', 'cafe'];
+      // Fetch save_count for the nearest internal candidates (used as tie-breaker)
+      const internalSample = internalRaw.slice(0, 200);
+      const internalSampleIds = internalSample.map((l: any) => l.id);
 
-      // Fetch in parallel for each preferred category to maximize diversity
-      const discoverPromises = categoryQueries.map((cat) =>
-        supabase.functions.invoke('foursquare-search', {
-          body: {
-            lat: userLocation.lat,
-            lng: userLocation.lng,
-            radiusKm: 25,
-            limit: 15,
-            query: cat,
-          }
-        })
+      const internalCounts = new Map<string, number>();
+      if (internalSampleIds.length > 0) {
+        const { data: uslRows } = await supabase
+          .from('user_saved_locations')
+          .select('location_id')
+          .in('location_id', internalSampleIds);
+
+        (uslRows || []).forEach((r: any) => {
+          internalCounts.set(r.location_id, (internalCounts.get(r.location_id) || 0) + 1);
+        });
+      }
+
+      const internalCandidates: SuggestedLocation[] = internalSample.map((loc: any) => ({
+        id: loc.id,
+        name: loc.name,
+        category: loc.category,
+        city: loc.city,
+        address: loc.address,
+        image_url: loc.image_url,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        google_place_id: loc.google_place_id,
+        save_count: internalCounts.get(loc.id) || 0,
+        saved_by: [],
+        source: 'db',
+      }));
+
+      // 4) Discover NEW (never-saved-on-app) places around the user via edge function
+      const fallbackDiscover = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'cinema'];
+      const categoryQueries = Array.from(new Set([...preferredDiscover, ...fallbackDiscover])).filter(Boolean).slice(0, 6);
+
+      const discoverResults = await Promise.all(
+        categoryQueries.map((cat) =>
+          supabase.functions.invoke('foursquare-search', {
+            body: {
+              lat: userLocation.lat,
+              lng: userLocation.lng,
+              radiusKm: 50,
+              limit: 25,
+              query: cat,
+            },
+          })
+        )
       );
 
-      const discoverResults = await Promise.all(discoverPromises);
       const allRawPlaces: any[] = [];
       discoverResults.forEach((res) => {
-        if (!res.error && res.data?.places) {
-          allRawPlaces.push(...res.data.places);
-        }
+        if (!res.error && res.data?.places) allRawPlaces.push(...res.data.places);
       });
 
-      // Dedupe by fsq_id
       const seenFsq = new Set<string>();
       const rawPlaces = allRawPlaces.filter((p: any) => {
         const id = String(p.fsq_id || '');
@@ -255,51 +315,34 @@ const FeedSuggestionsCarousel = memo(() => {
         .filter((p) => {
           if (!p.id || !p.latitude || !p.longitude) return false;
           if (exclude.has(p.id)) return false; // already saved by user
-          if (internalGoogleIds.has(p.id)) return false; // already exists in DB => it's not "never saved on app"
+          if (internalGoogleIds.has(p.id)) return false; // already exists in DB
           const d = calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude);
           return d <= 50;
-        })
+        });
+
+      // 5) Rank + pick exactly 10 cards:
+      //    1) distance
+      //    2) category preference
+      //    3) likes/save_count (only meaningful for DB locations)
+      const allCandidates = [...discoverCandidates, ...internalCandidates];
+
+      const DIST_EPS = 0.2; // km - treat very close places as ties
+      const ranked = allCandidates
+        .map((c) => ({
+          c,
+          d: calculateDistance(userLocation.lat, userLocation.lng, c.latitude, c.longitude),
+          pref: isPreferred(c.category) ? 1 : 0,
+        }))
         .sort((a, b) => {
-          const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
-          const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
-          const prefA = preferredCategories.indexOf(a.category);
-          const prefB = preferredCategories.indexOf(b.category);
-          // If category is preferred, give massive boost
-          const scoreA = prefA >= 0 ? (3 - prefA) * 50 : 0;
-          const scoreB = prefB >= 0 ? (3 - prefB) * 50 : 0;
-          return (scoreB - distB) - (scoreA - distA);
-        });
+          if (Math.abs(a.d - b.d) > DIST_EPS) return a.d - b.d;
+          if (a.pref !== b.pref) return b.pref - a.pref;
+          return (b.c.save_count || 0) - (a.c.save_count || 0);
+        })
+        .slice(0, 10)
+        .map((x) => x.c);
 
-      // 5) Compose exactly 10 cards:
-      //    - Prefer discover (never saved on app)
-      //    - Then fill with internal (saved by others, but NOT by the user)
-      const chosen: SuggestedLocation[] = [];
-
-      for (const p of discoverCandidates) {
-        if (chosen.length >= 10) break;
-        chosen.push(p);
-      }
-
-      for (const loc of internalCandidates) {
-        if (chosen.length >= 10) break;
-        chosen.push({
-          id: loc.id,
-          name: loc.name,
-          category: loc.category,
-          city: loc.city,
-          address: loc.address,
-          image_url: loc.image_url,
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-          google_place_id: loc.google_place_id,
-          save_count: 0,
-          saved_by: [],
-          source: 'db',
-        });
-      }
-
-      // 6) Hydrate save_count + saved_by ONLY for DB locations (discover ones are 0 by definition)
-      const dbIds = chosen.filter((c) => c.source === 'db').map((c) => c.id);
+      // 6) Hydrate saved_by ONLY for DB locations
+      const dbIds = ranked.filter((c) => c.source === 'db').map((c) => c.id);
       if (dbIds.length > 0) {
         const { data: uslRows } = await supabase
           .from('user_saved_locations')
@@ -307,11 +350,9 @@ const FeedSuggestionsCarousel = memo(() => {
           .in('location_id', dbIds);
 
         const rows = uslRows || [];
-        const counts = new Map<string, number>();
         const firstUsersByLoc = new Map<string, string[]>();
 
         rows.forEach((r: any) => {
-          counts.set(r.location_id, (counts.get(r.location_id) || 0) + 1);
           const arr = firstUsersByLoc.get(r.location_id) || [];
           if (arr.length < 3 && !arr.includes(r.user_id)) arr.push(r.user_id);
           firstUsersByLoc.set(r.location_id, arr);
@@ -327,15 +368,14 @@ const FeedSuggestionsCarousel = memo(() => {
           (profiles || []).forEach((p: any) => profilesMap.set(p.id, { avatar_url: p.avatar_url, username: p.username }));
         }
 
-        chosen.forEach((c) => {
+        ranked.forEach((c) => {
           if (c.source !== 'db') return;
-          c.save_count = counts.get(c.id) || 0;
           const uids = firstUsersByLoc.get(c.id) || [];
           c.saved_by = uids.map((uid) => profilesMap.get(uid)).filter(Boolean) as any;
         });
       }
 
-      return chosen;
+      return ranked;
     },
     enabled: !!user?.id && !!userLocation,
     staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
@@ -568,11 +608,11 @@ const FeedSuggestionsCarousel = memo(() => {
                     </p>
                   </div>
 
-                  {/* Saved by OR "Be the first" badge */}
+                  {/* Saved by OR "Be the first" */}
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-1">
                       {loc.source === 'discover' ? (
-                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-medium text-primary">
                           {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
                         </span>
                       ) : loc.saved_by.length > 0 ? (
