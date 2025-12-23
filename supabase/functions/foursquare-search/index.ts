@@ -98,10 +98,13 @@ serve(async (req) => {
         const top = lat + dy;
         const bottom = lat - dy;
 
-        const queries = query ? [query] : ['restaurant', 'cafe', 'bar'];
+        // Search across ALL our 7 categories to get a diverse set of results
+        const queries = query ? [query] : ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'cinema'];
+
+        const limitPerQuery = Math.ceil(limit / queries.length) + 5; // Extra buffer per query
 
         const fetchPromises = queries.map(async (searchTerm) => {
-          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=${limit}&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=${limitPerQuery}&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
           try {
             const osmRes = await fetch(nominatimUrl, {
               headers: {

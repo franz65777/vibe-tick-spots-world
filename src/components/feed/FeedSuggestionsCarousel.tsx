@@ -201,20 +201,38 @@ const FeedSuggestionsCarousel = memo(() => {
       });
 
       // 4) Discover NEW (never-saved-on-app) places around the user via edge function
-      const { data: discoverData, error: discoverErr } = await supabase.functions.invoke('foursquare-search', {
-        body: {
-          lat: userLocation.lat,
-          lng: userLocation.lng,
-          radiusKm: 25,
-          limit: 40,
+      //    Use user's preferred categories to request more targeted results
+      const categoryQueries = preferredCategories.length > 0 ? preferredCategories : ['restaurant', 'bar', 'cafe'];
+
+      // Fetch in parallel for each preferred category to maximize diversity
+      const discoverPromises = categoryQueries.map((cat) =>
+        supabase.functions.invoke('foursquare-search', {
+          body: {
+            lat: userLocation.lat,
+            lng: userLocation.lng,
+            radiusKm: 25,
+            limit: 15,
+            query: cat,
+          }
+        })
+      );
+
+      const discoverResults = await Promise.all(discoverPromises);
+      const allRawPlaces: any[] = [];
+      discoverResults.forEach((res) => {
+        if (!res.error && res.data?.places) {
+          allRawPlaces.push(...res.data.places);
         }
       });
 
-      if (discoverErr) {
-        console.error('foursquare-search error:', discoverErr);
-      }
-
-      const rawPlaces: any[] = discoverData?.places || [];
+      // Dedupe by fsq_id
+      const seenFsq = new Set<string>();
+      const rawPlaces = allRawPlaces.filter((p: any) => {
+        const id = String(p.fsq_id || '');
+        if (!id || seenFsq.has(id)) return false;
+        seenFsq.add(id);
+        return true;
+      });
 
       const discoverCandidates: SuggestedLocation[] = rawPlaces
         .map((p: any) => {
@@ -246,8 +264,9 @@ const FeedSuggestionsCarousel = memo(() => {
           const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
           const prefA = preferredCategories.indexOf(a.category);
           const prefB = preferredCategories.indexOf(b.category);
-          const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0;
-          const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
+          // If category is preferred, give massive boost
+          const scoreA = prefA >= 0 ? (3 - prefA) * 50 : 0;
+          const scoreB = prefB >= 0 ? (3 - prefB) * 50 : 0;
           return (scoreB - distB) - (scoreA - distA);
         });
 
@@ -549,27 +568,37 @@ const FeedSuggestionsCarousel = memo(() => {
                     </p>
                   </div>
 
-                  {/* Saved by */}
+                  {/* Saved by OR "Be the first" badge */}
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-1">
-                      {loc.saved_by.length > 0 && (
-                        <div className="flex -space-x-1.5">
-                          {loc.saved_by.slice(0, 3).map((saver, idx) => (
-                            <Avatar key={idx} className="h-5 w-5 border border-background">
-                              <AvatarImage src={saver.avatar_url || undefined} />
-                              <AvatarFallback className="text-[8px] bg-primary/10">
-                                {saver.username?.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
-                      )}
-                      {loc.save_count > 0 && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                          {loc.save_count === 1 
-                            ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1 user' })
-                            : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count} users` })
-                          }
+                      {loc.source === 'discover' ? (
+                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                          {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
+                        </span>
+                      ) : loc.saved_by.length > 0 ? (
+                        <>
+                          <div className="flex -space-x-1.5">
+                            {loc.saved_by.slice(0, 3).map((saver, idx) => (
+                              <Avatar key={idx} className="h-5 w-5 border border-background">
+                                <AvatarImage src={saver.avatar_url || undefined} />
+                                <AvatarFallback className="text-[8px] bg-primary/10">
+                                  {saver.username?.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                          </div>
+                          {loc.save_count > 0 && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              {loc.save_count === 1 
+                                ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1 user' })
+                                : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count} users` })
+                              }
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {t('noSavesYet', { ns: 'feed', defaultValue: 'No saves yet' })}
                         </span>
                       )}
                     </div>
