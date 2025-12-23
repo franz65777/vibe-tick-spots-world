@@ -165,13 +165,23 @@ const FeedPage = memo(() => {
   const loading = feedType === 'promotions' ? promotionsLoading : feedLoading;
   
   // Restore scroll position when returning to feed from location card
-  // Uses useLayoutEffect to restore before paint, triggers when feed items are loaded from cache
-  React.useLayoutEffect(() => {
+  const hasRestoredScroll = useRef(false);
+  
+  useEffect(() => {
     const savedScroll = sessionStorage.getItem('feed_scroll_position');
-    if (savedScroll && scrollContainerRef.current && feedItems.length > 0) {
+    if (savedScroll && scrollContainerRef.current && feedItems.length > 0 && !hasRestoredScroll.current) {
+      hasRestoredScroll.current = true;
       const scrollValue = parseInt(savedScroll, 10);
-      scrollContainerRef.current.scrollTop = scrollValue;
-      sessionStorage.removeItem('feed_scroll_position');
+      
+      // Wait for images and content to render before scrolling
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollValue;
+            sessionStorage.removeItem('feed_scroll_position');
+          }
+        });
+      });
     }
   }, [feedItems.length]);
 
