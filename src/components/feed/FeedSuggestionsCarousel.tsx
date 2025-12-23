@@ -55,7 +55,8 @@ const MarqueeText = memo(({ text, className, isVisible }: { text: string; classN
         <span
           className="inline-block"
           style={{
-            animation: `marquee ${Math.max(text.length * 0.15, 3)}s linear infinite`,
+            animation: `marquee ${Math.max(text.length * 0.15, 3)}s linear 1`,
+            animationFillMode: 'both',
           }}
         >
           {text}
@@ -161,65 +162,132 @@ const FeedSuggestionsCarousel = memo(() => {
       // Filter out already saved by user
       let candidates = (locations || []).filter(loc => !savedIds.has(loc.id));
 
-      // Filter by distance (max 50km) if user location is available
+      // Filter by distance (default max 50km) if user location is available
       if (userLocation) {
-        candidates = candidates.filter(loc => {
+        candidates = candidates.filter((loc) => {
           const distance = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
-          return distance <= 50; // Max 50km
+          return distance <= 200; // pre-filter wider, final radius applied below to ensure we can reach 10 items
         });
 
         // Score and sort: prioritize preferred categories + closest distance
         candidates.sort((a, b) => {
           const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
           const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
-          
+
           // Category preference boost (preferred categories get priority)
           const prefA = preferredCategories.indexOf(a.category);
           const prefB = preferredCategories.indexOf(b.category);
           const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0; // 30, 20, 10 for top 3 categories
           const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
-          
+
           // Combine: category preference + inverse distance
           const finalA = scoreA - distA;
           const finalB = scoreB - distB;
-          
+
           return finalB - finalA;
         });
       }
 
-      // Get save counts for top 10 candidates
-      const withCounts = await Promise.all(
-        candidates.slice(0, 10).map(async (loc) => {
-          const { count } = await supabase
-            .from('user_saved_locations')
-            .select('*', { count: 'exact', head: true })
-            .eq('location_id', loc.id);
+      // Ensure we can show at least 10 items: widen radius if needed
+      const radiusKm = candidates.length >= 10 ? 50 : 200;
 
-          // Get a few users who saved this
+      // Collect up to 10 candidates, preferring at least a few with save_count = 0 (new discoveries)
+      const results: SuggestedLocation[] = [];
+      let zeroSavedIncluded = 0;
+
+      for (const loc of candidates) {
+        if (results.length >= 10) break;
+
+        const distance = calculateDistance(userLocation!.lat, userLocation!.lng, loc.latitude, loc.longitude);
+        if (distance > radiusKm) continue;
+
+        const { count } = await supabase
+          .from('user_saved_locations')
+          .select('*', { count: 'exact', head: true })
+          .eq('location_id', loc.id);
+
+        const saveCount = count || 0;
+
+        // If we already have 10, stop
+        if (results.length >= 10) break;
+
+        // Soft preference: include up to 3 totally-new locations early if available
+        const shouldPreferZeroSaved = saveCount === 0 && zeroSavedIncluded < 3;
+        const shouldSkipForNow = saveCount > 0 && results.length < 7 && zeroSavedIncluded < 3;
+        if (shouldSkipForNow) {
+          // keep scanning for a zero-saved option first
+          continue;
+        }
+
+        // Get a few users who saved this (only if there are saves)
+        let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
+        if (saveCount > 0) {
           const { data: savers } = await supabase
             .from('user_saved_locations')
             .select('user_id')
             .eq('location_id', loc.id)
             .limit(3);
 
-          let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
           if (savers && savers.length > 0) {
             const { data: profiles } = await supabase
               .from('profiles')
               .select('avatar_url, username')
-              .in('id', savers.map(s => s.user_id));
+              .in('id', savers.map((s) => s.user_id));
             savedBy = profiles || [];
           }
+        }
 
-          return {
+        results.push({
+          ...loc,
+          save_count: saveCount,
+          saved_by: savedBy,
+        } as SuggestedLocation);
+
+        if (saveCount === 0) zeroSavedIncluded += 1;
+      }
+
+      // If we skipped too many non-zero early, fill remaining slots with the best remaining
+      if (results.length < 10) {
+        for (const loc of candidates) {
+          if (results.length >= 10) break;
+          if (results.some((r) => r.id === loc.id)) continue;
+
+          const distance = calculateDistance(userLocation!.lat, userLocation!.lng, loc.latitude, loc.longitude);
+          if (distance > radiusKm) continue;
+
+          const { count } = await supabase
+            .from('user_saved_locations')
+            .select('*', { count: 'exact', head: true })
+            .eq('location_id', loc.id);
+
+          const saveCount = count || 0;
+
+          let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
+          if (saveCount > 0) {
+            const { data: savers } = await supabase
+              .from('user_saved_locations')
+              .select('user_id')
+              .eq('location_id', loc.id)
+              .limit(3);
+
+            if (savers && savers.length > 0) {
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('avatar_url, username')
+                .in('id', savers.map((s) => s.user_id));
+              savedBy = profiles || [];
+            }
+          }
+
+          results.push({
             ...loc,
-            save_count: count || 0,
-            saved_by: savedBy
-          };
-        })
-      );
+            save_count: saveCount,
+            saved_by: savedBy,
+          } as SuggestedLocation);
+        }
+      }
 
-      return withCounts as SuggestedLocation[];
+      return results;
     },
     enabled: !!user?.id && !!userLocation,
     staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
