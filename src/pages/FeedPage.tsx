@@ -52,6 +52,21 @@ const FeedPage = memo(() => {
     return () => window.removeEventListener('feed:open-folder', handleOpenFolder as any);
   }, []);
   
+  // Restore scroll position when returning to feed from location card
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('feed_scroll_position');
+    if (savedScroll && scrollContainerRef.current) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = parseInt(savedScroll, 10);
+            sessionStorage.removeItem('feed_scroll_position');
+          }
+        }, 100);
+      });
+    }
+  }, []);
+  
   // Handle folder close
   const handleFolderClose = useCallback(() => {
     setOpenFolderId(null);
@@ -286,6 +301,10 @@ const FeedPage = memo(() => {
   const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
     
+    // Save current scroll position before navigating
+    const scrollY = scrollContainerRef.current?.scrollTop || 0;
+    sessionStorage.setItem('feed_scroll_position', String(scrollY));
+    
     // Get full location data from the post
     const post = feedItems.find(i => i.id === postId) as any;
     const location = post?.locations;
@@ -305,7 +324,8 @@ const FeedPage = memo(() => {
           lng: longitude,
           category: location?.category || 'restaurant',
           sourcePostId: postId
-        }
+        },
+        returnTo: '/feed'
       }
     });
   };
