@@ -215,6 +215,7 @@ const FeedSuggestionsCarousel = memo(() => {
       }));
 
       // 4) Discover NEW (never-saved-on-app) places around the user via edge function
+      // Use small radius (1km) to get truly nearby places
       const fallbackDiscover = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'cinema'];
       const categoryQueries = Array.from(new Set([...preferredDiscover, ...fallbackDiscover])).filter(Boolean).slice(0, 6);
 
@@ -224,8 +225,8 @@ const FeedSuggestionsCarousel = memo(() => {
             body: {
               lat: userLocation.lat,
               lng: userLocation.lng,
-              radiusKm: 50,
-              limit: 25,
+              radiusKm: 1, // Small radius for truly nearby places
+              limit: 15,
               query: cat,
             },
           })
@@ -237,6 +238,7 @@ const FeedSuggestionsCarousel = memo(() => {
         if (!res.error && res.data?.places) allRawPlaces.push(...res.data.places);
       });
 
+      // Deduplicate by fsq_id only (NOT by name - chains can have same name)
       const seenFsq = new Set<string>();
       const rawPlaces = allRawPlaces.filter((p: any) => {
         const id = String(p.fsq_id || '');
@@ -267,19 +269,15 @@ const FeedSuggestionsCarousel = memo(() => {
           if (!p.id || !p.latitude || !p.longitude) return false;
           if (exclude.has(p.id)) return false; // already saved by user
           if (internalGoogleIds.has(p.id)) return false; // already exists in DB
-          const d = calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude);
-          return d <= 50;
+          return true;
         });
 
-      // 5) Merge candidates and DEDUPLICATE by name (case-insensitive) and id
+      // 5) Merge candidates - deduplicate by ID only (NOT by name - chains have same name)
       const allCandidates = [...internalCandidates, ...discoverCandidates];
-      const seenNames = new Set<string>();
       const seenIds = new Set<string>();
       const uniqueCandidates = allCandidates.filter((c) => {
-        const normName = c.name.toLowerCase().trim();
         const normId = (c.google_place_id || c.id).toLowerCase();
-        if (seenNames.has(normName) || seenIds.has(normId)) return false;
-        seenNames.add(normName);
+        if (seenIds.has(normId)) return false;
         seenIds.add(normId);
         return true;
       });
