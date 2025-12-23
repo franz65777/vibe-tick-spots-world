@@ -172,7 +172,8 @@ const HomePage = memo(() => {
           isNew: false,
           likes: 0,
           visitors: [],
-          sourcePostId: pin.sourcePostId // Pass sourcePostId if exists
+          sourcePostId: pin.sourcePostId, // Pass sourcePostId if exists
+          google_place_id: pin.google_place_id || undefined, // Pass google_place_id for opening hours
         };
         // Add returnTo for back navigation from feed sections
         if (state.returnTo) {
