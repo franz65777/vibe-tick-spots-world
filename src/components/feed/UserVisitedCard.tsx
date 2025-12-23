@@ -1,16 +1,18 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
-import { it, enUS, es, fr, de } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { getCategoryImage } from '@/utils/categoryIcons';
+import { formatPostDate } from '@/utils/dateFormatter';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import { type SaveTag } from '@/utils/saveTags';
+import { locationInteractionService } from '@/services/locationInteractionService';
 
 export interface VisitedSaveActivity {
   id: string;
@@ -31,21 +33,61 @@ interface UserVisitedCardProps {
   activity: VisitedSaveActivity;
 }
 
-const getDateLocale = (lang: string) => {
-  switch (lang) {
-    case 'it': return it;
-    case 'es': return es;
-    case 'fr': return fr;
-    case 'de': return de;
-    default: return enUS;
-  }
-};
-
 const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedTag, setSavedTag] = useState<SaveTag | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
+
+  // Check if location is already saved and liked
+  useEffect(() => {
+    const checkSaveAndLikeStatus = async () => {
+      if (!user?.id || !activity.location_id) return;
+
+      try {
+        // Check saved status
+        const { data: savedData } = await supabase
+          .from('user_saved_locations')
+          .select('save_tag')
+          .eq('user_id', user.id)
+          .eq('location_id', activity.location_id)
+          .maybeSingle();
+
+        if (savedData) {
+          setIsSaved(true);
+          setSavedTag(savedData.save_tag as SaveTag);
+        }
+
+        // Check like status
+        const { data: likeData } = await supabase
+          .from('location_likes')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('location_id', activity.location_id)
+          .maybeSingle();
+
+        setIsLiked(!!likeData);
+
+        // Get like count
+        const { count } = await supabase
+          .from('location_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('location_id', activity.location_id);
+
+        setLikeCount(count || 0);
+      } catch (err) {
+        console.error('Error checking save/like status:', err);
+      }
+    };
+
+    checkSaveAndLikeStatus();
+  }, [user?.id, activity.location_id]);
 
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -96,12 +138,86 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
     }
   };
 
+  const handleSaveLocation = async (tag: SaveTag) => {
+    if (!user?.id || !activity.location_id) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_saved_locations')
+        .upsert({
+          user_id: user.id,
+          location_id: activity.location_id,
+          save_tag: tag,
+        }, { onConflict: 'user_id,location_id' });
+
+      if (error) throw error;
+
+      setIsSaved(true);
+      setSavedTag(tag);
+      toast.success(t('locationSaved', { defaultValue: 'Location saved!' }));
+    } catch (err) {
+      console.error('Error saving location:', err);
+    }
+  };
+
+  const handleUnsaveLocation = async () => {
+    if (!user?.id || !activity.location_id) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_saved_locations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('location_id', activity.location_id);
+
+      if (error) throw error;
+
+      setIsSaved(false);
+      setSavedTag(null);
+      toast.success(t('locationUnsaved', { defaultValue: 'Location removed!' }));
+    } catch (err) {
+      console.error('Error unsaving location:', err);
+    }
+  };
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user?.id || !activity.location_id || isLiking) return;
+
+    setIsLiking(true);
+    try {
+      const result = await locationInteractionService.toggleLocationLike(activity.location_id);
+      setIsLiked(result.liked);
+      setLikeCount(result.count);
+
+      // Send notification to the user who saved this location (activity owner)
+      if (result.liked && activity.user_id !== user.id) {
+        await supabase.from('notifications').insert({
+          user_id: activity.user_id,
+          type: 'location_like',
+          title: t('newLike', { ns: 'notifications', defaultValue: 'New Like' }),
+          message: t('likedYourVisit', { 
+            ns: 'notifications', 
+            defaultValue: '{{username}} liked your visit to {{location}}',
+            username: user.user_metadata?.username || 'Someone',
+            location: activity.location_name
+          }),
+          data: {
+            location_id: activity.location_id,
+            location_name: activity.location_name,
+            liker_id: user.id,
+          },
+        });
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
   const categoryIcon = getCategoryImage(activity.location_category);
-  const dateLocale = getDateLocale(i18n.language);
-  const formattedDate = formatDistanceToNow(new Date(activity.created_at), { 
-    addSuffix: true, 
-    locale: dateLocale 
-  });
+  const formattedDate = formatPostDate(activity.created_at, t, i18n.language);
 
   return (
     <div className="mx-4">
@@ -111,9 +227,9 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
         className="bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl shadow-lg shadow-black/5 dark:shadow-black/20 overflow-hidden cursor-pointer"
       >
         <div className="p-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             {/* Avatar */}
-            <button onClick={handleUserClick} className="shrink-0">
+            <button onClick={handleUserClick} className="shrink-0 mt-0.5">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={activity.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
@@ -134,6 +250,10 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 <span className="text-xs text-muted-foreground">
                   {t('visited', { ns: 'common', defaultValue: 'visited' })}
                 </span>
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">
+                  {formattedDate}
+                </span>
               </div>
 
               <h4 className="font-bold text-foreground text-sm truncate">
@@ -146,28 +266,62 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                   <span>{activity.location_city}</span>
                 )}
               </p>
+
+              {/* Follow button inline for non-following */}
+              {!activity.is_following && user?.id !== activity.user_id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs mt-1.5 bg-background/50 rounded-full px-3"
+                  onClick={handleFollow}
+                >
+                  <UserPlus className="w-3 h-3 mr-1" />
+                  {t('follow', { defaultValue: 'Follow' })}
+                </Button>
+              )}
             </div>
 
-            {/* Follow button */}
-            {!activity.is_following && user?.id !== activity.user_id && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs shrink-0 bg-background/50 rounded-full px-3"
-                onClick={handleFollow}
+            {/* Right side: Save & Like buttons stacked */}
+            <div className="flex flex-col items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              {/* Save button */}
+              {isSaved && savedTag ? (
+                <button 
+                  onClick={() => handleUnsaveLocation()}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+                >
+                  <img 
+                    src={getCategoryImage(savedTag)} 
+                    alt="" 
+                    className="w-5 h-5"
+                  />
+                </button>
+              ) : (
+                <SaveLocationDropdown
+                  isSaved={false}
+                  onSave={handleSaveLocation}
+                  onUnsave={handleUnsaveLocation}
+                  variant="ghost"
+                  size="icon"
+                />
+              )}
+
+              {/* Like button */}
+              <button
+                onClick={handleLike}
+                disabled={isLiking}
+                className="w-8 h-8 flex flex-col items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
               >
-                <UserPlus className="w-3.5 h-3.5 mr-1" />
-                {t('follow', { defaultValue: 'Follow' })}
-              </Button>
-            )}
+                <Heart 
+                  className={`w-4 h-4 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} 
+                />
+                {likeCount > 0 && (
+                  <span className="text-[10px] text-muted-foreground -mt-0.5">{likeCount}</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      
-      {/* Date below the card */}
-      <p className="text-xs text-muted-foreground mt-1.5 px-1">
-        {formattedDate}
-      </p>
     </div>
   );
 });

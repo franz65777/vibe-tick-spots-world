@@ -608,7 +608,7 @@ const FeedPage = memo(() => {
                 return mergedFeed.map((entry, index) => {
                   if (entry.type === 'visited') {
                     return (
-                      <div key={`visited-${entry.data.id}`} className="py-3">
+                      <div key={`visited-${entry.data.id}`} className="py-1">
                         <UserVisitedCard activity={entry.data} />
                       </div>
                     );
