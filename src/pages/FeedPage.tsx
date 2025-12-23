@@ -647,8 +647,8 @@ const FeedPage = memo(() => {
                         </Suspense>
                       )}
 
-                      {/* Insert suggestions carousel after 5th post */}
-                      {feedType === 'forYou' && currentPostIndex === 4 && (
+                      {/* Insert suggestions carousel after 3rd post (one post after lists) */}
+                      {feedType === 'forYou' && currentPostIndex === 2 && (
                         <Suspense fallback={null}>
                           <FeedSuggestionsCarousel />
                         </Suspense>
