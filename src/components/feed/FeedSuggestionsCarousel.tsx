@@ -96,6 +96,10 @@ const FeedSuggestionsCarousel = memo(() => {
   const [suggestions, setSuggestions] = useState<SuggestedLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Track visible cards for marquee animation - must be before any return
+  const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
+  const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   // Get user's current location
   useEffect(() => {
@@ -198,43 +202,7 @@ const FeedSuggestionsCarousel = memo(() => {
     fetchSuggestions();
   }, [user?.id]);
 
-  if (loading || suggestions.length === 0) return null;
-
-  const handleLocationClick = (loc: SuggestedLocation) => {
-    navigate('/', {
-      state: {
-        centerMap: {
-          lat: loc.latitude,
-          lng: loc.longitude,
-          locationId: loc.id,
-          shouldFocus: true
-        },
-        openPinDetail: {
-          id: loc.id,
-          name: loc.name,
-          lat: loc.latitude,
-          lng: loc.longitude,
-          category: loc.category
-        }
-      }
-    });
-  };
-
-  // Check if category should have bigger icon
-  const shouldHaveBiggerIcon = (category: string): boolean => {
-    const lowerCategory = category.toLowerCase();
-    return lowerCategory.includes('restaurant') || 
-           lowerCategory.includes('ristorante') ||
-           lowerCategory.includes('hotel') ||
-           lowerCategory.includes('food') ||
-           lowerCategory.includes('dining');
-  };
-
-  // Track visible cards for marquee animation
-  const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
-  const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  
-  // IntersectionObserver for mobile marquee
+  // IntersectionObserver for mobile marquee - must be before any return
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -263,7 +231,7 @@ const FeedSuggestionsCarousel = memo(() => {
     return () => observer.disconnect();
   }, [suggestions]);
 
-  // Save location handler
+  // Save location handler - must be before any return
   const handleSaveLocation = useCallback(async (loc: SuggestedLocation, tag: SaveTag) => {
     if (!user?.id) {
       toast.error(t('loginRequired', { ns: 'common' }));
@@ -271,10 +239,8 @@ const FeedSuggestionsCarousel = memo(() => {
     }
 
     try {
-      // First check if there's an existing location in our database
       let locationId = loc.id;
       
-      // Insert into user_saved_locations
       const { error } = await supabase
         .from('user_saved_locations')
         .upsert({
@@ -287,13 +253,45 @@ const FeedSuggestionsCarousel = memo(() => {
 
       toast.success(t('locationSaved', { ns: 'common' }));
       
-      // Remove from suggestions after saving
       setSuggestions(prev => prev.filter(s => s.id !== loc.id));
     } catch (error) {
       console.error('Error saving location:', error);
       toast.error(t('errorSavingLocation', { ns: 'common' }));
     }
   }, [user?.id, t]);
+
+  // Check if category should have bigger icon
+  const shouldHaveBiggerIcon = (category: string): boolean => {
+    const lowerCategory = category.toLowerCase();
+    return lowerCategory.includes('restaurant') || 
+           lowerCategory.includes('ristorante') ||
+           lowerCategory.includes('hotel') ||
+           lowerCategory.includes('food') ||
+           lowerCategory.includes('dining');
+  };
+
+  const handleLocationClick = (loc: SuggestedLocation) => {
+    navigate('/', {
+      state: {
+        centerMap: {
+          lat: loc.latitude,
+          lng: loc.longitude,
+          locationId: loc.id,
+          shouldFocus: true
+        },
+        openPinDetail: {
+          id: loc.id,
+          name: loc.name,
+          lat: loc.latitude,
+          lng: loc.longitude,
+          category: loc.category
+        }
+      }
+    });
+  };
+
+  // Early return AFTER all hooks
+  if (loading || suggestions.length === 0) return null;
 
   return (
     <div className="py-4">

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import ColorfulGradientBackground from '@/components/common/ColorfulGradientBackground';
-import { List } from 'lucide-react';
+import listIcon from '@/assets/list-icon.png';
 
 interface FolderItem {
   id: string;
@@ -133,7 +133,7 @@ const FeedListsCarousel = memo(() => {
     <div className="py-4">
       {/* Header */}
       <div className="px-4 mb-3 flex items-center gap-2">
-        <List className="w-5 h-5 text-foreground" />
+        <img src={listIcon} alt="" className="w-5 h-5 object-contain" />
         <h3 className="font-bold text-foreground">{t('listsForYou', { defaultValue: 'lists for you' })}</h3>
       </div>
 
