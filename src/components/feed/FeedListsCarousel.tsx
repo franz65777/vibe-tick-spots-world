@@ -1,10 +1,10 @@
-import { memo, useEffect, useState } from 'react';
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import ColorfulGradientBackground from '@/components/common/ColorfulGradientBackground';
+import { useQuery } from '@tanstack/react-query';
 import listIcon from '@/assets/list-icon.png';
 
 interface FolderItem {
@@ -21,113 +21,105 @@ interface FolderItem {
 const FeedListsCarousel = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { location: geoLocation } = useGeolocation();
-  const [lists, setLists] = useState<FolderItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user?.id) return;
+  // Use React Query for caching - data persists when returning from location card
+  const { data: lists = [], isLoading } = useQuery({
+    queryKey: ['feed-lists', user?.id, geoLocation?.city],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const userCity = geoLocation?.city;
+      
+      // Get public folders that have locations in user's proximity
+      let query = supabase
+        .from('saved_folders')
+        .select(`
+          id,
+          name,
+          cover_image_url,
+          color,
+          is_private,
+          profiles!saved_folders_user_id_fkey (username)
+        `)
+        .eq('is_private', false)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-    const fetchLists = async () => {
-      try {
-        // Get user's current city from geolocation
-        const userCity = geoLocation?.city;
-        
-        // Get public folders that have locations in user's proximity
-        let query = supabase
-          .from('saved_folders')
-          .select(`
-            id,
-            name,
-            cover_image_url,
-            color,
-            is_private,
-            profiles!saved_folders_user_id_fkey (username)
-          `)
-          .eq('is_private', false)
-          .order('created_at', { ascending: false })
-          .limit(20);
+      const { data: folders, error } = await query;
 
-        const { data: folders, error } = await query;
+      if (error) throw error;
 
-        if (error) throw error;
+      // Filter folders that have locations near user's city
+      const foldersWithProximity = await Promise.all(
+        (folders || []).map(async (folder: any) => {
+          // Get locations in this folder
+          const { data: folderLocations } = await supabase
+            .from('folder_locations')
+            .select('location_id')
+            .eq('folder_id', folder.id);
 
-        // Filter folders that have locations near user's city
-        const foldersWithProximity = await Promise.all(
-          (folders || []).map(async (folder: any) => {
-            // Get locations in this folder
-            const { data: folderLocations } = await supabase
-              .from('folder_locations')
-              .select('location_id')
-              .eq('folder_id', folder.id);
-
-            if (!folderLocations || folderLocations.length === 0) {
-              return null;
-            }
-
-            const locationIds = folderLocations.map(fl => fl.location_id);
-
-            // Check if any location is in user's city or nearby
-            let hasNearbyLocation = false;
-            
-            if (userCity && geoLocation?.latitude && geoLocation?.longitude) {
-              const { data: nearbyLocations } = await supabase
-                .from('locations')
-                .select('id, city, latitude, longitude')
-                .in('id', locationIds);
-
-              if (nearbyLocations) {
-                hasNearbyLocation = nearbyLocations.some(loc => {
-                  // Check if same city
-                  if (loc.city?.toLowerCase() === userCity.toLowerCase()) {
-                    return true;
-                  }
-                  // Check if within ~50km radius
-                  if (loc.latitude && loc.longitude && geoLocation.latitude && geoLocation.longitude) {
-                    const distance = Math.sqrt(
-                      Math.pow(loc.latitude - geoLocation.latitude, 2) +
-                      Math.pow(loc.longitude - geoLocation.longitude, 2)
-                    );
-                    return distance < 0.5; // Approximately 50km
-                  }
-                  return false;
-                });
-              }
-            }
-
-            // If no geolocation, show all public folders
-            if (!userCity || hasNearbyLocation) {
-              return {
-                id: folder.id,
-                name: folder.name,
-                cover_image_url: folder.cover_image_url,
-                color: folder.color,
-                is_private: folder.is_private,
-                location_count: locationIds.length,
-                visited_count: 0,
-                owner_username: folder.profiles?.username || 'user'
-              };
-            }
-
+          if (!folderLocations || folderLocations.length === 0) {
             return null;
-          })
-        );
+          }
 
-        // Filter out null entries and limit to 10
-        const validFolders = foldersWithProximity.filter(f => f !== null).slice(0, 10);
-        setLists(validFolders);
-      } catch (err) {
-        console.error('Error fetching lists:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+          const locationIds = folderLocations.map(fl => fl.location_id);
 
-    fetchLists();
-  }, [user?.id, geoLocation?.city, geoLocation?.latitude, geoLocation?.longitude]);
+          // Check if any location is in user's city or nearby
+          let hasNearbyLocation = false;
+          
+          if (userCity && geoLocation?.latitude && geoLocation?.longitude) {
+            const { data: nearbyLocations } = await supabase
+              .from('locations')
+              .select('id, city, latitude, longitude')
+              .in('id', locationIds);
 
-  if (loading || lists.length === 0) return null;
+            if (nearbyLocations) {
+              hasNearbyLocation = nearbyLocations.some(loc => {
+                // Check if same city
+                if (loc.city?.toLowerCase() === userCity.toLowerCase()) {
+                  return true;
+                }
+                // Check if within ~50km radius
+                if (loc.latitude && loc.longitude && geoLocation.latitude && geoLocation.longitude) {
+                  const distance = Math.sqrt(
+                    Math.pow(loc.latitude - geoLocation.latitude, 2) +
+                    Math.pow(loc.longitude - geoLocation.longitude, 2)
+                  );
+                  return distance < 0.5; // Approximately 50km
+                }
+                return false;
+              });
+            }
+          }
+
+          // If no geolocation, show all public folders
+          if (!userCity || hasNearbyLocation) {
+            return {
+              id: folder.id,
+              name: folder.name,
+              cover_image_url: folder.cover_image_url,
+              color: folder.color,
+              is_private: folder.is_private,
+              location_count: locationIds.length,
+              visited_count: 0,
+              owner_username: folder.profiles?.username || 'user'
+            };
+          }
+
+          return null;
+        })
+      );
+
+      // Filter out null entries and limit to 10
+      return foldersWithProximity.filter((f): f is FolderItem => f !== null).slice(0, 10);
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Cache for 30 minutes
+  });
+
+  if (isLoading || lists.length === 0) return null;
 
   return (
     <div className="py-4">
