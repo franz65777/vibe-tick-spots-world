@@ -53,8 +53,7 @@ const ScrollingText = memo(({ text, className }: { text: string; className?: str
   return (
     <div ref={scrollRef} className={`overflow-hidden ${className}`}>
       <div 
-        className={`whitespace-nowrap ${isVisible ? 'animate-marquee-once' : ''}`}
-        style={{ animationFillMode: 'forwards' }}
+        className={`whitespace-nowrap ${isVisible ? 'animate-marquee-bounce' : ''}`}
       >
         {text}
       </div>
@@ -511,7 +510,7 @@ const FeedSuggestionsCarousel = memo(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
-            const cardWidth = 192 + 12; // w-48 (192px) + gap-3 (12px)
+            const cardWidth = 224 + 12; // w-56 (224px) + gap-3 (12px)
             scrollContainerRef.current.scrollLeft = idx * cardWidth;
           }
           sessionStorage.removeItem('suggestions_clicked_index');
@@ -607,7 +606,7 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-3"
+              className="shrink-0 w-56 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-3"
             >
               <div className="flex items-start gap-2.5">
                 {/* Image/Icon - Square */}
