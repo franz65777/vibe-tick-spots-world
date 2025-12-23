@@ -126,16 +126,24 @@ const FeedSuggestionsCarousel = memo(() => {
       if (!user?.id) return [];
       
       // Get user's saved locations to determine preferences and exclude
-      const { data: userSaved } = await supabase
+      const { data: userSavedRaw, error: userSavedError } = await supabase
         .from('user_saved_locations')
         .select('location_id, locations(category)')
         .eq('user_id', user.id);
 
-      const savedIds = new Set(userSaved?.map(s => s.location_id) || []);
+      // Fallback if relationship select fails for any reason
+      const userSaved = userSavedError
+        ? (await supabase
+            .from('user_saved_locations')
+            .select('location_id')
+            .eq('user_id', user.id)).data
+        : userSavedRaw;
+
+      const savedIds = new Set(userSaved?.map((s: any) => s.location_id) || []);
       
       // Calculate user's preferred categories based on their saves
       const categoryCounts = new Map<string, number>();
-      userSaved?.forEach((save: any) => {
+      (userSavedRaw || []).forEach((save: any) => {
         const category = save.locations?.category;
         if (category) {
           categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
@@ -160,13 +168,13 @@ const FeedSuggestionsCarousel = memo(() => {
       if (error) throw error;
 
       // Filter out already saved by user
-      let candidates = (locations || []).filter(loc => !savedIds.has(loc.id));
+      let candidates = (locations || []).filter((loc) => !savedIds.has(loc.id));
 
-      // Filter by distance (default max 50km) if user location is available
+      // Filter by distance (strict max 50km)
       if (userLocation) {
         candidates = candidates.filter((loc) => {
           const distance = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
-          return distance <= 200; // pre-filter wider, final radius applied below to ensure we can reach 10 items
+          return distance <= 50;
         });
 
         // Score and sort: prioritize preferred categories + closest distance
@@ -174,22 +182,18 @@ const FeedSuggestionsCarousel = memo(() => {
           const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
           const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
 
-          // Category preference boost (preferred categories get priority)
           const prefA = preferredCategories.indexOf(a.category);
           const prefB = preferredCategories.indexOf(b.category);
-          const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0; // 30, 20, 10 for top 3 categories
+          const scoreA = prefA >= 0 ? (3 - prefA) * 10 : 0;
           const scoreB = prefB >= 0 ? (3 - prefB) * 10 : 0;
 
-          // Combine: category preference + inverse distance
           const finalA = scoreA - distA;
           const finalB = scoreB - distB;
-
           return finalB - finalA;
         });
       }
 
-      // Ensure we can show at least 10 items: widen radius if needed
-      const radiusKm = candidates.length >= 10 ? 50 : 200;
+      const radiusKm = 50;
 
       // Collect up to 10 candidates, preferring at least a few with save_count = 0 (new discoveries)
       const results: SuggestedLocation[] = [];
@@ -343,15 +347,17 @@ const FeedSuggestionsCarousel = memo(() => {
 
       toast.success(t('locationSaved', { ns: 'common' }));
       
-      // Remove from cached suggestions
-      queryClient.setQueryData<SuggestedLocation[]>(['feed-suggestions', user.id], (prev) => 
-        prev?.filter(s => s.id !== loc.id) || []
+      // Remove from cached suggestions + refetch to ensure savedIds are up-to-date
+      queryClient.setQueryData<SuggestedLocation[]>(
+        ['feed-suggestions', user.id, userLocation?.lat, userLocation?.lng],
+        (prev) => prev?.filter((s) => s.id !== loc.id) || []
       );
+      queryClient.invalidateQueries({ queryKey: ['feed-suggestions', user.id] });
     } catch (error) {
       console.error('Error saving location:', error);
       toast.error(t('errorSavingLocation', { ns: 'common' }));
     }
-  }, [user?.id, t, queryClient]);
+  }, [user?.id, userLocation?.lat, userLocation?.lng, t, queryClient]);
 
   // Check if category should have bigger icon
   const shouldHaveBiggerIcon = (category: string): boolean => {
