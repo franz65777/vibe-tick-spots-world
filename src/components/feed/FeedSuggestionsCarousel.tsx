@@ -278,7 +278,7 @@ const FeedSuggestionsCarousel = memo(() => {
             category: p.category || 'place',
             city: p.city || null,
             address: p.address || null,
-            image_url: null,
+            image_url: p.photo_url || null, // Use Foursquare photo if available
             latitude: Number(p.lat),
             longitude: Number(p.lng),
             save_count: 0,
