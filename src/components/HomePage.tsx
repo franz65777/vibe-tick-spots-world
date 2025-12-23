@@ -174,6 +174,11 @@ const HomePage = memo(() => {
           visitors: [],
           sourcePostId: pin.sourcePostId // Pass sourcePostId if exists
         };
+        // Add returnTo for back navigation from feed sections
+        if (state.returnTo) {
+          (placeToShow as any).returnTo = state.returnTo;
+          setReturnTo(state.returnTo);
+        }
         setInitialPinToShow(placeToShow);
         usedState = true;
       }

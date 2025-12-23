@@ -1,6 +1,8 @@
 
-import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, Image, RefreshCw } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw } from 'lucide-react';
 import deleteIcon from '@/assets/icon-delete.png';
+import cameraIcon3d from '@/assets/icon-camera-3d.png';
+import starIcon3d from '@/assets/icon-star-3d.png';
 import React from 'react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
@@ -189,14 +191,14 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               onClick={() => setPostFilter('photos')}
               className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
             >
-              <Image className="w-4 h-4" />
+              <img src={cameraIcon3d} alt="" className="w-5 h-5 object-contain" />
               <span className="font-medium">{t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}</span>
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setPostFilter('reviews')}
               className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
             >
-              <Star className="w-4 h-4" />
+              <img src={starIcon3d} alt="" className="w-5 h-5 object-contain" />
               <span className="font-medium">{t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
