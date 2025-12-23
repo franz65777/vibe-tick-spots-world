@@ -19,20 +19,19 @@ interface SuggestedLocation {
   saved_by: Array<{ avatar_url: string | null; username: string }>;
 }
 
-// Marquee component for overflowing text
+// Marquee component for overflowing text - animates only on hover
 const MarqueeText = memo(({ text, className }: { text: string; className?: string }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current && textRef.current) {
-        const isOverflowing = textRef.current.scrollWidth > containerRef.current.clientWidth;
-        setShouldAnimate(isOverflowing);
+        setIsOverflowing(textRef.current.scrollWidth > containerRef.current.clientWidth);
       }
     };
-    // Check after a small delay to ensure proper rendering
     const timer = setTimeout(checkOverflow, 100);
     window.addEventListener('resize', checkOverflow);
     return () => {
@@ -41,27 +40,27 @@ const MarqueeText = memo(({ text, className }: { text: string; className?: strin
     };
   }, [text]);
 
-  if (!shouldAnimate) {
-    return (
-      <div ref={containerRef} className={`overflow-hidden whitespace-nowrap ${className}`}>
-        <span ref={textRef}>{text}</span>
-      </div>
-    );
-  }
-
   return (
-    <div ref={containerRef} className={`overflow-hidden whitespace-nowrap ${className}`}>
-      <span
-        ref={textRef}
-        className="inline-block"
-        style={{
-          animation: `marquee ${Math.max(text.length * 0.2, 4)}s linear infinite`,
-        }}
-      >
-        {text}
-        <span className="mx-4">•</span>
-        {text}
-      </span>
+    <div 
+      ref={containerRef} 
+      className={`overflow-hidden whitespace-nowrap ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {isOverflowing && isHovered ? (
+        <span
+          className="inline-block"
+          style={{
+            animation: `marquee ${Math.max(text.length * 0.15, 3)}s linear infinite`,
+          }}
+        >
+          {text}
+          <span className="mx-4">•</span>
+          {text}
+        </span>
+      ) : (
+        <span ref={textRef} className="truncate block">{text}</span>
+      )}
     </div>
   );
 });
@@ -232,7 +231,7 @@ const FeedSuggestionsCarousel = memo(() => {
     <div className="py-4">
       {/* Header */}
       <div className="px-4 mb-3">
-        <h3 className="font-bold text-foreground">{t('pickedForYou', { ns: 'feed' })}</h3>
+        <h3 className="font-bold text-foreground">{t('nearYou', { ns: 'feed' })}</h3>
       </div>
 
       {/* Horizontal scroll */}
@@ -272,10 +271,6 @@ const FeedSuggestionsCarousel = memo(() => {
                       />
                     </div>
                   )}
-                  {/* Distance badge */}
-                  <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                    {distance !== null ? formatDistance(distance) : t('nearby', { ns: 'feed' })}
-                  </div>
                 </div>
 
                 {/* Info */}
