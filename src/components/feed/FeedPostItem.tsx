@@ -58,6 +58,9 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
   const createdAt = item.created_at;
   const isExpanded = expandedCaptions.has(postId);
   const contentType = item.content_type;
+
+  const isReview = !!rating && rating > 0;
+  const isReviewOnly = isReview && mediaUrls.length === 0;
   
   // Get promotion type icon
   const getPromotionIcon = () => {
@@ -90,6 +93,59 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       default:
         return null;
     }
+  };
+
+  const renderReviewCaption = () => {
+    if (!caption) return null;
+
+    const firstLine = caption.split('\n')[0];
+    const MAX_FIRST_LINE_LENGTH = 80;
+    const hasMultipleLines = caption.trim().length > firstLine.trim().length;
+    const firstLineIsTooLong = firstLine.length > MAX_FIRST_LINE_LENGTH;
+    const hasMoreContent = hasMultipleLines || firstLineIsTooLong;
+    const displayFirstLine = firstLineIsTooLong && !isExpanded
+      ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
+      : firstLine;
+
+    return (
+      <div className="text-sm text-left">
+        <span className="text-foreground">
+          {isExpanded ? (
+            <>
+              <span className="whitespace-pre-wrap">{caption}</span>
+              {' '}
+              {hasMoreContent && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCaption(postId);
+                  }}
+                  className="text-muted-foreground hover:text-foreground font-medium"
+                >
+                  {t('less')}
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <span>{displayFirstLine}</span>
+              {hasMoreContent && '... '}
+              {hasMoreContent && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCaption(postId);
+                  }}
+                  className="text-muted-foreground hover:text-foreground font-medium"
+                >
+                  {t('more')}
+                </button>
+              )}
+            </>
+          )}
+        </span>
+      </div>
+    );
   };
 
   const renderCaption = () => {
@@ -307,6 +363,9 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
 
       {/* Post Actions */}
       <div className="post-compact-actions space-y-1">
+        {/* Review-only caption (rating present, no media): show under header, above buttons, without username repetition */}
+        {isReviewOnly && renderReviewCaption()}
+
         <PostActions
           postId={postId}
           likesCount={item.likes_count || 0}
@@ -360,8 +419,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           </div>
         )}
 
-        {/* Caption */}
-        {caption && renderCaption()}
+        {/* Caption (regular posts, and reviews WITH media) */}
+        {caption && !isReviewOnly && renderCaption()}
 
         {/* Timestamp - tighter spacing */}
         <p className="text-xs text-muted-foreground text-left mt-0">
