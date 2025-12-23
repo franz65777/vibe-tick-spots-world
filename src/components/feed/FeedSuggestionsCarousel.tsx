@@ -473,7 +473,7 @@ const FeedSuggestionsCarousel = memo(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
-            const cardWidth = 192 + 12; // w-48 (192px) + gap-3 (12px)
+            const cardWidth = 208 + 12; // w-52 (208px) + gap-3 (12px)
             scrollContainerRef.current.scrollLeft = idx * cardWidth;
           }
           sessionStorage.removeItem('suggestions_clicked_index');
@@ -569,11 +569,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu"
+              className="shrink-0 w-52 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-3"
             >
-              <div className="flex items-center gap-3 p-3">
-                {/* Image/Icon - Square like reference */}
-                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted/30">
+              <div className="flex items-start gap-3">
+                {/* Image/Icon - Square */}
+                <div className="relative w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 bg-muted/30">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -585,27 +585,30 @@ const FeedSuggestionsCarousel = memo(() => {
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-9 h-9' : 'w-8 h-8'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-10 h-10' : 'w-9 h-9'}`}
                       />
                     </div>
                   )}
                 </div>
 
-                {/* Info - Stacked vertically */}
-                <div className="flex-1 min-w-0 flex flex-col">
-                  <TruncatedText 
-                    text={loc.name} 
-                    className="font-bold text-sm text-foreground leading-tight"
-                  />
-                  <span className="text-xs text-muted-foreground mt-0.5">
-                    {distance !== null ? `${formatDistance(distance)} ${t('away', { ns: 'common', defaultValue: 'away' })}` : (loc.city || loc.category)}
-                  </span>
-                  {loc.source === 'discover' ? (
-                    <span className="text-xs font-medium text-primary mt-1">
-                      {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
+                {/* Info + Save button column */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between h-[72px]">
+                  <div>
+                    <TruncatedText 
+                      text={loc.name} 
+                      className="font-bold text-sm text-foreground leading-tight"
+                    />
+                    <span className="text-xs text-muted-foreground block mt-0.5">
+                      {distance !== null ? `${formatDistance(distance)} ${t('away', { ns: 'common', defaultValue: 'away' })}` : (loc.city || loc.category)}
                     </span>
-                  ) : loc.saved_by.length > 0 ? (
-                    <div className="flex items-center gap-1 mt-1">
+                  </div>
+                  
+                  <div className="flex items-end justify-between">
+                    {loc.source === 'discover' ? (
+                      <span className="text-xs font-medium text-primary leading-tight">
+                        {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
+                      </span>
+                    ) : loc.saved_by.length > 0 ? (
                       <div className="flex -space-x-1">
                         {loc.saved_by.slice(0, 2).map((saver, sidx) => (
                           <Avatar key={sidx} className="h-4 w-4 border border-background">
@@ -616,19 +619,18 @@ const FeedSuggestionsCarousel = memo(() => {
                           </Avatar>
                         ))}
                       </div>
+                    ) : <span />}
+                    
+                    <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                      <SaveLocationDropdown
+                        isSaved={false}
+                        onSave={(tag) => handleSaveLocation(loc, tag)}
+                        onUnsave={() => {}}
+                        variant="ghost"
+                        size="icon"
+                      />
                     </div>
-                  ) : null}
-                </div>
-
-                {/* Save button */}
-                <div onClick={(e) => e.stopPropagation()} className="shrink-0 self-end">
-                  <SaveLocationDropdown
-                    isSaved={false}
-                    onSave={(tag) => handleSaveLocation(loc, tag)}
-                    onUnsave={() => {}}
-                    variant="ghost"
-                    size="icon"
-                  />
+                  </div>
                 </div>
               </div>
             </div>

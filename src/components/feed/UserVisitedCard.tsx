@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
+import { it, enUS, es, fr, de } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
@@ -30,8 +31,18 @@ interface UserVisitedCardProps {
   activity: VisitedSaveActivity;
 }
 
+const getDateLocale = (lang: string) => {
+  switch (lang) {
+    case 'it': return it;
+    case 'es': return es;
+    case 'fr': return fr;
+    case 'de': return de;
+    default: return enUS;
+  }
+};
+
 const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -86,14 +97,15 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
   };
 
   const categoryIcon = getCategoryImage(activity.location_category);
+  const dateLocale = getDateLocale(i18n.language);
+  const formattedDate = formatDistanceToNow(new Date(activity.created_at), { 
+    addSuffix: true, 
+    locale: dateLocale 
+  });
 
   return (
     <div className="mx-4">
-      {/* Date outside the card */}
-      <p className="text-xs text-muted-foreground mb-1.5 px-1">
-        {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-      </p>
-      
+      {/* Card */}
       <div
         onClick={handleCardClick}
         className="bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl shadow-lg shadow-black/5 dark:shadow-black/20 overflow-hidden cursor-pointer"
@@ -119,9 +131,8 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 >
                   {activity.username}
                 </button>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <img src={categoryIcon} alt="" className="w-3.5 h-3.5" />
-                  {t('been', { ns: 'common', defaultValue: 'visited' })}
+                <span className="text-xs text-muted-foreground">
+                  {t('visited', { ns: 'common', defaultValue: 'visited' })}
                 </span>
               </div>
 
@@ -130,12 +141,9 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
               </h4>
 
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <span>{activity.location_category}</span>
+                <img src={categoryIcon} alt="" className="w-3.5 h-3.5" />
                 {activity.location_city && (
-                  <>
-                    <span>•</span>
-                    <span>{activity.location_city}</span>
-                  </>
+                  <span>{activity.location_city}</span>
                 )}
               </p>
             </div>
@@ -155,6 +163,11 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
           </div>
         </div>
       </div>
+      
+      {/* Date below the card */}
+      <p className="text-xs text-muted-foreground mt-1.5 px-1">
+        {formattedDate}
+      </p>
     </div>
   );
 });
