@@ -63,13 +63,16 @@ const FolderDetailPage = () => {
     });
   };
 
+  // Render with a gradient background to avoid white space above the modal
   return (
-    <FolderDetailModal
-      folderId={folderId}
-      isOpen={true}
-      onClose={handleClose}
-      onLocationClick={handleLocationClick}
-    />
+    <div className="fixed inset-0 bg-gradient-to-b from-muted/50 to-background z-[9999]">
+      <FolderDetailModal
+        folderId={folderId}
+        isOpen={true}
+        onClose={handleClose}
+        onLocationClick={handleLocationClick}
+      />
+    </div>
   );
 };
 

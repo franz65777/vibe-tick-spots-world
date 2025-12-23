@@ -679,15 +679,22 @@ const LeafletMapSetup = ({
       selectedMarkerOriginalClusterRef.current = false;
     }
 
-    // If selected place exists but has no marker (new/temporary location), create a temporary marker
-    if (selectedPlace && selectedPlace.coordinates?.lat && selectedPlace.coordinates?.lng && !selectedMarker && !tempMarkerRef.current) {
+    // If selected place exists but has no marker (new/temporary location OR location from list not in current places array), create a temporary marker
+    // This handles: 1) temporary unsaved locations, 2) locations selected from folders/lists that aren't in current map bounds
+    const needsTempMarker = selectedPlace && 
+      selectedPlace.coordinates?.lat && 
+      selectedPlace.coordinates?.lng && 
+      !selectedMarker && 
+      !tempMarkerRef.current;
+      
+    if (needsTempMarker) {
       tempMarkerSavedRef.current = false; // Reset saved state for new temp markers
       
       const icon = createLeafletCustomMarker({
         category: selectedPlace.category || 'attraction',
-        isSaved: false,
-        isRecommended: false,
-        recommendationScore: 0,
+        isSaved: selectedPlace.isSaved || false,
+        isRecommended: selectedPlace.isRecommended || false,
+        recommendationScore: selectedPlace.recommendationScore || 0,
         friendAvatars: [],
         isDarkMode,
         hasCampaign: false,
@@ -709,6 +716,8 @@ const LeafletMapSetup = ({
         el.style.pointerEvents = 'auto';
         el.style.zIndex = '5000';
       }
+      
+      console.log('🗺️ Created temp marker for selected place:', selectedPlace.name);
     }
 
     // If we have a selected marker (from places array), remove it from cluster and add directly to map

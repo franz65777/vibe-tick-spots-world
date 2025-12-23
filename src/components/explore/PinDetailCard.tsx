@@ -1187,6 +1187,21 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             setFolderDetailOpen(false);
             setIsListOpen(false);
           }}
+          onLocationClick={(locationData) => {
+            // Close the folder modal and navigate to home with the selected location
+            setSelectedFolderId(null);
+            setFolderDetailOpen(false);
+            setIsListOpen(false);
+            // Close PinDetailCard too
+            onClose();
+            // Navigate to home with the location data so the map updates
+            navigate('/', {
+              state: {
+                selectedLocation: locationData,
+                returnTo: window.location.pathname
+              }
+            });
+          }}
         />
       )}
     </>

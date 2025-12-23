@@ -143,9 +143,9 @@ const FeedListsCarousel = memo(() => {
           <button
             key={list.id}
             onClick={() => {
-              // Save current scroll position before navigating
-              const scrollContainer = document.querySelector('.overflow-y-scroll');
-              const scrollY = scrollContainer?.scrollTop || window.scrollY;
+              // Save current scroll position before navigating - use data attribute for reliability
+              const scrollContainer = document.querySelector('[data-feed-scroll-container]');
+              const scrollY = scrollContainer?.scrollTop || 0;
               navigate(`/folder/${list.id}`, { state: { from: '/feed', scrollY } });
             }}
             className="shrink-0 w-40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"

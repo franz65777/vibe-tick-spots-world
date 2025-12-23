@@ -45,12 +45,15 @@ const FeedPage = memo(() => {
     const state = location.state as any;
     if (state?.restoreScroll !== undefined && !hasRestoredScroll.current) {
       hasRestoredScroll.current = true;
-      // Small delay to ensure content is rendered
-      setTimeout(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = state.restoreScroll;
-        }
-      }, 50);
+      // Use requestAnimationFrame + timeout to ensure DOM is ready
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = state.restoreScroll;
+            console.log('📜 Restored feed scroll to:', state.restoreScroll);
+          }
+        }, 100);
+      });
       // Clear the state to prevent re-scrolling on subsequent renders
       window.history.replaceState({}, document.title);
     }
@@ -468,7 +471,7 @@ const FeedPage = memo(() => {
         </div>
 
         {/* Feed Content */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+        <div ref={scrollContainerRef} data-feed-scroll-container className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
           {loading ? (
             <div className="py-4 w-full">
               {[1,2,3].map((i) => (
