@@ -124,6 +124,8 @@ const FeedFriendSaving = memo(() => {
 
   const handleUserClick = (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Save scroll position before navigating
+    sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ scrollTop: window.scrollY }));
     navigate(`/profile/${userId}`);
   };
 

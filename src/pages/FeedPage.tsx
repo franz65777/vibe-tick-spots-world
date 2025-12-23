@@ -347,7 +347,11 @@ const FeedPage = memo(() => {
       setSelectedUserStoryIndex(0); // Always start from the first story of this user
       setStoriesViewerOpen(true);
     } else {
-      // SEMPRE naviga al profilo pubblico, mai al dashboard business
+      // Save scroll position before navigating to profile
+      const container = scrollContainerRef.current;
+      if (container) {
+        sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ scrollTop: container.scrollTop }));
+      }
       navigate(`/profile/${userId}`);
     }
   };
