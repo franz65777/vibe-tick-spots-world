@@ -99,9 +99,11 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
     checkSaveAndLikeStatus();
   }, [user?.id, activity.location_id]);
 
-  // Store scroll position before navigation
+  // Store scroll position before navigation using same format as FeedPage
   const storeScrollPosition = () => {
-    sessionStorage.setItem('feed_scroll_position', window.scrollY.toString());
+    sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ 
+      scrollTop: window.scrollY 
+    }));
   };
 
   const handleUserClick = (e: React.MouseEvent) => {
@@ -239,13 +241,6 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
   return (
     <div className="mx-4">
-      {/* Date outside the card */}
-      <div className="flex items-center gap-1.5 mb-1.5 px-1">
-        <span className="text-xs text-muted-foreground">
-          {formattedDate}
-        </span>
-      </div>
-
       {/* Card */}
       <div
         onClick={handleCardClick}
@@ -265,7 +260,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              {/* Top row: username, visited, follow button */}
+              {/* Top row: username, visited, date, follow button */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={handleUserClick}
@@ -276,7 +271,11 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 <span className="text-xs text-muted-foreground">
                   {t('visited', { ns: 'common', defaultValue: 'visited' })}
                 </span>
-                {/* Follow button next to visited text */}
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">
+                  {formattedDate}
+                </span>
+                {/* Follow button next to date */}
                 {!activity.is_following && user?.id !== activity.user_id && (
                   <Button
                     variant="outline"
