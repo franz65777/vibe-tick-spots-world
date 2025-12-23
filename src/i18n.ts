@@ -647,7 +647,9 @@ const resources = {
       nearby: 'nearby',
       away: 'away',
       savedByUsers: 'saved by {{count}} users',
-      savedByUser: 'saved by 1 user'
+      savedByUser: 'saved by 1 user',
+      beFirstToSave: 'Be the first to save!',
+      noSavesYet: 'No saves yet'
     },
       badges: {
         newBadgeUnlocked: 'New Badge Unlocked',
@@ -1568,7 +1570,9 @@ const resources = {
       nearby: 'cerca',
       away: 'de distancia',
       savedByUsers: 'guardado por {{count}} usuarios',
-      savedByUser: 'guardado por 1 usuario'
+      savedByUser: 'guardado por 1 usuario',
+      beFirstToSave: '¡Sé el primero en guardar!',
+      noSavesYet: 'Sin guardados aún'
     },
     badges: {
       cityWanderer: 'Explorador de Ciudades',
@@ -2532,7 +2536,9 @@ const resources = {
       nearby: 'vicino',
       away: 'di distanza',
       savedByUsers: 'salvato da {{count}} utenti',
-      savedByUser: 'salvato da 1 utente'
+      savedByUser: 'salvato da 1 utente',
+      beFirstToSave: 'Sii il primo a salvare!',
+      noSavesYet: 'Nessun salvataggio ancora'
     },
     badges: {
       cityWanderer: 'Vagabondo delle Città',
@@ -3427,7 +3433,9 @@ const resources = {
       nearby: 'à proximité',
       away: 'de distance',
       savedByUsers: 'enregistré par {{count}} utilisateurs',
-      savedByUser: 'enregistré par 1 utilisateur'
+      savedByUser: 'enregistré par 1 utilisateur',
+      beFirstToSave: 'Soyez le premier à enregistrer!',
+      noSavesYet: 'Pas encore enregistré'
     },
     badges: {
       cityWanderer: 'Explorateur de villes',
@@ -4230,7 +4238,9 @@ const resources = {
       nearby: 'in der Nähe',
       away: 'entfernt',
       savedByUsers: 'von {{count}} Nutzern gespeichert',
-      savedByUser: 'von 1 Nutzer gespeichert'
+      savedByUser: 'von 1 Nutzer gespeichert',
+      beFirstToSave: 'Sei der Erste!',
+      noSavesYet: 'Noch nicht gespeichert'
     },
     badges: {
       cityWanderer: 'Städtewanderer',
@@ -4971,7 +4981,9 @@ const resources = {
       nearby: 'próximo',
       away: 'de distância',
       savedByUsers: 'salvo por {{count}} usuários',
-      savedByUser: 'salvo por 1 usuário'
+      savedByUser: 'salvo por 1 usuário',
+      beFirstToSave: 'Seja o primeiro a salvar!',
+      noSavesYet: 'Nenhum salvo ainda'
     },
       badges: {
         newBadgeUnlocked: 'Novo Badge Desbloqueado',
@@ -5661,7 +5673,9 @@ const resources = {
       nearby: '附近',
       away: '距离',
       savedByUsers: '{{count}}位用户已保存',
-      savedByUser: '1位用户已保存'
+      savedByUser: '1位用户已保存',
+      beFirstToSave: '成为第一个保存者！',
+      noSavesYet: '暂无保存'
     },
     badges: {
       cityWanderer: '城市漫游者',
@@ -6295,7 +6309,9 @@ const resources = {
       nearby: '近く',
       away: '先',
       savedByUsers: '{{count}}人のユーザーが保存',
-      savedByUser: '1人のユーザーが保存'
+      savedByUser: '1人のユーザーが保存',
+      beFirstToSave: '最初に保存しよう！',
+      noSavesYet: 'まだ保存されていません'
     },
     badges: {
       newBadgeUnlocked: '新しいバッジをアンロック',
@@ -6969,7 +6985,9 @@ const resources = {
       nearby: '근처',
       away: '거리',
       savedByUsers: '{{count}}명의 사용자가 저장',
-      savedByUser: '1명의 사용자가 저장'
+      savedByUser: '1명의 사용자가 저장',
+      beFirstToSave: '첫 번째로 저장하세요!',
+      noSavesYet: '아직 저장 없음'
     },
     badges: {
       cityWanderer: '도시 방랑자',
@@ -7626,7 +7644,9 @@ const resources = {
       nearby: 'قريب',
       away: 'بعيداً',
       savedByUsers: 'محفوظ من قبل {{count}} مستخدمين',
-      savedByUser: 'محفوظ من قبل مستخدم واحد'
+      savedByUser: 'محفوظ من قبل مستخدم واحد',
+      beFirstToSave: 'كن أول من يحفظ!',
+      noSavesYet: 'لا توجد حفظات بعد'
     },
     badges: {
       cityWanderer: 'متجول المدينة',
@@ -8936,7 +8956,9 @@ const resources = {
       nearby: 'рядом',
       away: 'расстояние',
       savedByUsers: 'сохранено {{count}} пользователями',
-      savedByUser: 'сохранено 1 пользователем'
+      savedByUser: 'сохранено 1 пользователем',
+      beFirstToSave: 'Будь первым!',
+      noSavesYet: 'Ещё не сохранено'
     },
     badges: {
       cityWanderer: 'Городской странник',
