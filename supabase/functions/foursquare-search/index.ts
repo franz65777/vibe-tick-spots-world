@@ -74,9 +74,11 @@ serve(async (req) => {
     const query = reqData?.query;
     let limit = typeof reqData?.limit === 'number' ? reqData.limit : 10;
     const fast: boolean = Boolean(reqData?.fast);
-    const providedRadiusKm = typeof reqData?.radiusKm === 'number' 
-      ? Math.max(0.2, Math.min(2.0, reqData.radiusKm)) 
-      : (fast ? 0.5 : 1.0);
+    // Support larger radiuses for “discover new places near me” use-cases.
+    // Keep a sane upper bound to protect rate limits and response time.
+    const providedRadiusKm = typeof reqData?.radiusKm === 'number'
+      ? Math.max(0.2, Math.min(50.0, reqData.radiusKm))
+      : (fast ? 0.5 : 5.0);
 
     if (!lat || !lng) {
       return new Response(
