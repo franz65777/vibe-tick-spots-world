@@ -26,15 +26,41 @@ interface SuggestedLocation {
   source: 'db' | 'discover';
 }
 
-// Scrolling text component for long names
-const ScrollingText = memo(({ text, className }: { text: string; className?: string }) => (
-  <div className={`overflow-hidden ${className}`}>
-    <div className="animate-marquee whitespace-nowrap hover:animation-paused">
-      <span className="inline-block pr-8">{text}</span>
-      <span className="inline-block pr-8">{text}</span>
+// Scrolling text component - single animation on visibility
+const ScrollingText = memo(({ text, className }: { text: string; className?: string }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setIsVisible(true);
+          setHasAnimated(true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasAnimated]);
+
+  return (
+    <div ref={scrollRef} className={`overflow-hidden ${className}`}>
+      <div 
+        className={`whitespace-nowrap ${isVisible ? 'animate-marquee-once' : ''}`}
+        style={{ animationFillMode: 'forwards' }}
+      >
+        {text}
+      </div>
     </div>
-  </div>
-));
+  );
+});
 
 ScrollingText.displayName = 'ScrollingText';
 
@@ -581,11 +607,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-2.5"
+              className="shrink-0 w-48 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-3"
             >
               <div className="flex items-start gap-2.5">
-                {/* Image/Icon - Smaller square */}
-                <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted/30">
+                {/* Image/Icon - Square */}
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted/30">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -604,7 +630,7 @@ const FeedSuggestionsCarousel = memo(() => {
                 </div>
 
                 {/* Info + Save button column */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between h-14">
+                <div className="flex-1 min-w-0 flex flex-col justify-between h-16">
                   <div className="min-w-0">
                     {loc.name.length > 12 ? (
                       <ScrollingText 
