@@ -270,12 +270,29 @@ const FeedSuggestionsCarousel = memo(() => {
 
   // Handle location click - same behavior as post location clicks
   const handleLocationClick = useCallback((loc: SuggestedLocation) => {
-    // Save scroll position like post location clicks do
-    const feedContainer = document.querySelector('[data-feed-scroll-container]');
-    if (feedContainer) {
+    // Save an anchor (top visible feed post + its visual offset) so we restore the *exact* same point
+    const container = document.querySelector('[data-feed-scroll-container]') as HTMLDivElement | null;
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      const postEls = Array.from(container.querySelectorAll<HTMLElement>('[data-feed-post-id]'));
+
+      const firstVisible = postEls.find((el) => {
+        const r = el.getBoundingClientRect();
+        return r.bottom > containerRect.top + 1; // at least partially visible
+      });
+
+      const postId = firstVisible?.getAttribute('data-feed-post-id') || undefined;
+      const offset = firstVisible
+        ? firstVisible.getBoundingClientRect().top - containerRect.top
+        : undefined;
+
       sessionStorage.setItem(
         'feed_scroll_anchor',
-        JSON.stringify({ scrollTop: feedContainer.scrollTop })
+        JSON.stringify({
+          postId,
+          offset,
+          scrollTop: container.scrollTop,
+        })
       );
     }
 
@@ -285,7 +302,7 @@ const FeedSuggestionsCarousel = memo(() => {
           lat: loc.latitude,
           lng: loc.longitude,
           locationId: loc.id,
-          shouldFocus: true
+          shouldFocus: true,
         },
         openPinDetail: {
           id: loc.id,
@@ -293,10 +310,10 @@ const FeedSuggestionsCarousel = memo(() => {
           lat: loc.latitude,
           lng: loc.longitude,
           category: loc.category,
-          sourceSection: 'nearYou'
+          sourceSection: 'nearYou',
         },
-        returnTo: '/feed'
-      }
+        returnTo: '/feed',
+      },
     });
   }, [navigate]);
 
