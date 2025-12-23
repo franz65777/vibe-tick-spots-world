@@ -19,6 +19,7 @@ import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
 import FolderDetailModal from '@/components/profile/FolderDetailModal';
+import PinDetailCard from '@/components/explore/PinDetailCard';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
@@ -42,6 +43,9 @@ const FeedPage = memo(() => {
   // Folder modal state - managed within FeedPage to keep feed mounted
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   
+  // Location overlay state - keep feed mounted when viewing a location
+  const [openLocationData, setOpenLocationData] = useState<any>(null);
+  
   // Listen for folder open events from FeedListsCarousel
   useEffect(() => {
     const handleOpenFolder = (e: CustomEvent<{ folderId: string }>) => {
@@ -52,36 +56,21 @@ const FeedPage = memo(() => {
     return () => window.removeEventListener('feed:open-folder', handleOpenFolder as any);
   }, []);
   
-  // Restore scroll position when returning to feed from location card
-  useEffect(() => {
-    const savedScroll = sessionStorage.getItem('feed_scroll_position');
-    if (savedScroll && scrollContainerRef.current) {
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = parseInt(savedScroll, 10);
-            sessionStorage.removeItem('feed_scroll_position');
-          }
-        }, 100);
-      });
-    }
-  }, []);
-  
   // Handle folder close
   const handleFolderClose = useCallback(() => {
     setOpenFolderId(null);
   }, []);
   
-  // Handle location click from folder
+  // Handle location click from folder - show as overlay instead of navigating
   const handleFolderLocationClick = useCallback((locationData: any) => {
     setOpenFolderId(null);
-    navigate('/', { 
-      state: { 
-        selectedLocation: locationData,
-        returnTo: '/feed'
-      } 
-    });
-  }, [navigate]);
+    setOpenLocationData(locationData);
+  }, []);
+  
+  // Handle location overlay close
+  const handleLocationClose = useCallback(() => {
+    setOpenLocationData(null);
+  }, []);
   
   // Usa React Query per feed "Per te" - post degli utenti seguiti (esclusi business post)
   const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
@@ -301,32 +290,20 @@ const FeedPage = memo(() => {
   const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Save current scroll position before navigating
-    const scrollY = scrollContainerRef.current?.scrollTop || 0;
-    sessionStorage.setItem('feed_scroll_position', String(scrollY));
-    
     // Get full location data from the post
     const post = feedItems.find(i => i.id === postId) as any;
     const location = post?.locations;
     
-    navigate('/', {
-      state: {
-        centerMap: {
-          lat: latitude,
-          lng: longitude,
-          locationId: locationId,
-          shouldFocus: true
-        },
-        openPinDetail: {
-          id: locationId,
-          name: locationName || location?.name || '',
-          lat: latitude,
-          lng: longitude,
-          category: location?.category || 'restaurant',
-          sourcePostId: postId
-        },
-        returnTo: '/feed'
-      }
+    // Show location as overlay instead of navigating - keeps feed mounted
+    setOpenLocationData({
+      id: locationId,
+      name: locationName || location?.name || '',
+      coordinates: { lat: latitude, lng: longitude },
+      category: location?.category || 'restaurant',
+      address: location?.address,
+      city: location?.city,
+      google_place_id: location?.google_place_id,
+      sourcePostId: postId
     });
   };
 
@@ -648,6 +625,21 @@ const FeedPage = memo(() => {
               onClose={handleFolderClose}
               onLocationClick={handleFolderLocationClick}
             />
+          </div>
+        )}
+
+        {/* Location Detail Overlay - keeps feed mounted and preserves scroll */}
+        {openLocationData && (
+          <div className="fixed inset-0 z-[9999] bg-black/60">
+            <div className="absolute inset-x-0 bottom-0 top-0 flex items-end">
+              <div className="w-full max-h-[85vh] overflow-hidden">
+                <PinDetailCard
+                  place={openLocationData}
+                  onClose={handleLocationClose}
+                  onBack={handleLocationClose}
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
