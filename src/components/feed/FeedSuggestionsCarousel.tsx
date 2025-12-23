@@ -508,9 +508,16 @@ const FeedSuggestionsCarousel = memo(() => {
     const savedIndex = sessionStorage.getItem('suggestions_clicked_index');
     if (savedIndex !== null && scrollContainerRef.current && suggestions.length > 0) {
       const idx = parseInt(savedIndex, 10);
-      const cardWidth = 288 + 12; // w-64 (256px) + gap-3 (12px)
-      scrollContainerRef.current.scrollLeft = idx * cardWidth;
-      sessionStorage.removeItem('suggestions_clicked_index');
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            const cardWidth = 256 + 12; // w-64 (256px) + gap-3 (12px)
+            scrollContainerRef.current.scrollLeft = idx * cardWidth;
+          }
+          sessionStorage.removeItem('suggestions_clicked_index');
+        });
+      });
     }
   }, [suggestions]);
 
@@ -603,7 +610,7 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-64 bg-background/60 backdrop-blur-xl rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
+              className="shrink-0 w-64 bg-card/70 dark:bg-card/50 backdrop-blur-xl border border-border/30 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
             >
               <div className="flex gap-2.5 p-2.5">
                 {/* Image */}

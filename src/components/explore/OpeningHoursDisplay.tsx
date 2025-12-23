@@ -24,9 +24,24 @@ const dayIndexToKey: Record<number, string> = {
   6: 'saturday'
 };
 
+// Check if hours string indicates 24h operation
+const is24Hours = (hours: string): boolean => {
+  const lower = hours.toLowerCase().trim();
+  return lower.includes('24 hours') || 
+         lower.includes('24h') || 
+         lower === 'open 24 hours' ||
+         lower === '00:00 – 24:00' ||
+         lower === '00:00 - 24:00';
+};
+
 // Format hours string based on current language (12h vs 24h)
-const formatTodayHoursForLocale = (todayHours: string | null, language: string): string | null => {
+const formatTodayHoursForLocale = (todayHours: string | null, language: string, t: (key: string, options?: any) => string): string | null => {
   if (!todayHours) return null;
+
+  // Handle "Open 24 hours" or similar - return localized version without "Open"
+  if (is24Hours(todayHours)) {
+    return t('openingHours.24hours', { defaultValue: '24h' });
+  }
 
   const lang = language.toLowerCase();
   const uses12HourClock = lang.startsWith('en'); // English uses 12h, others 24h
@@ -89,7 +104,7 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   const containerRef = useRef<HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
-  const formattedHours = formatTodayHoursForLocale(todayHours, i18n.language || 'en');
+  const formattedHours = formatTodayHoursForLocale(todayHours, i18n.language || 'en', t);
   const dayKey = dayIndexToKey[dayIndex] || 'monday';
   const translatedDayName = t(`days.${dayKey}`, { defaultValue: dayKey.charAt(0).toUpperCase() + dayKey.slice(1) });
 
