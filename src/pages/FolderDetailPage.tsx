@@ -63,9 +63,9 @@ const FolderDetailPage = () => {
     });
   };
 
-  // Render with a gradient background to avoid white space above the modal
+  // Render with a dark semi-transparent background to show content underneath
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-muted/50 to-background z-[9999]">
+    <div className="fixed inset-0 bg-black/60 z-[9999]">
       <FolderDetailModal
         folderId={folderId}
         isOpen={true}

@@ -143,10 +143,11 @@ const FeedListsCarousel = memo(() => {
           <button
             key={list.id}
             onClick={() => {
-              // Save current scroll position before navigating - use data attribute for reliability
-              const scrollContainer = document.querySelector('[data-feed-scroll-container]');
-              const scrollY = scrollContainer?.scrollTop || 0;
-              navigate(`/folder/${list.id}`, { state: { from: '/feed', scrollY } });
+              // Dispatch event to open folder modal directly in FeedPage
+              // This keeps the feed mounted and preserves scroll position
+              window.dispatchEvent(new CustomEvent('feed:open-folder', { 
+                detail: { folderId: list.id } 
+              }));
             }}
             className="shrink-0 w-40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
           >

@@ -1,11 +1,11 @@
-import React, { useEffect, useState, memo, lazy, Suspense, useRef } from 'react';
+import React, { useEffect, useState, memo, lazy, Suspense, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronDown } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useStories } from '@/hooks/useStories';
@@ -18,6 +18,7 @@ import { messageService } from '@/services/messageService';
 import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
+import FolderDetailModal from '@/components/profile/FolderDetailModal';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
@@ -29,35 +30,43 @@ const FeedFriendSaving = lazy(() => import('@/components/feed/FeedFriendSaving')
 const FeedPage = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const hasRestoredScroll = useRef(false);
   
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('feed');
   
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
-  // Restore scroll position when returning from folder page
+  // Folder modal state - managed within FeedPage to keep feed mounted
+  const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  
+  // Listen for folder open events from FeedListsCarousel
   useEffect(() => {
-    const state = location.state as any;
-    if (state?.restoreScroll !== undefined && !hasRestoredScroll.current) {
-      hasRestoredScroll.current = true;
-      // Use requestAnimationFrame + timeout to ensure DOM is ready
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = state.restoreScroll;
-            console.log('📜 Restored feed scroll to:', state.restoreScroll);
-          }
-        }, 100);
-      });
-      // Clear the state to prevent re-scrolling on subsequent renders
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
+    const handleOpenFolder = (e: CustomEvent<{ folderId: string }>) => {
+      setOpenFolderId(e.detail.folderId);
+    };
+    
+    window.addEventListener('feed:open-folder', handleOpenFolder as any);
+    return () => window.removeEventListener('feed:open-folder', handleOpenFolder as any);
+  }, []);
+  
+  // Handle folder close
+  const handleFolderClose = useCallback(() => {
+    setOpenFolderId(null);
+  }, []);
+  
+  // Handle location click from folder
+  const handleFolderLocationClick = useCallback((locationData: any) => {
+    setOpenFolderId(null);
+    navigate('/', { 
+      state: { 
+        selectedLocation: locationData,
+        returnTo: '/feed'
+      } 
+    });
+  }, [navigate]);
   
   // Usa React Query per feed "Per te" - post degli utenti seguiti (esclusi business post)
   const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
@@ -608,6 +617,18 @@ const FeedPage = memo(() => {
             }}
             onStoryViewed={() => {}}
           />
+        )}
+
+        {/* Folder Modal - rendered as overlay to keep feed mounted and preserve scroll */}
+        {openFolderId && (
+          <div className="fixed inset-0 z-[9999]">
+            <FolderDetailModal
+              folderId={openFolderId}
+              isOpen={true}
+              onClose={handleFolderClose}
+              onLocationClick={handleFolderLocationClick}
+            />
+          </div>
         )}
       </div>
     </div>
