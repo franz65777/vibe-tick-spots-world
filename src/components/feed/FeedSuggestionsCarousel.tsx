@@ -118,8 +118,11 @@ const FeedSuggestionsCarousel = memo(() => {
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  // Get user's current location
+  // Get user's current location - only fetch once
   useEffect(() => {
+    // Skip if already fetched
+    if (userLocation) return;
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -130,14 +133,21 @@ const FeedSuggestionsCarousel = memo(() => {
         },
         () => {
           // Silently fail - distance won't be shown
-        }
+        },
+        { maximumAge: 60000, timeout: 10000 } // Use cached location for 1 minute
       );
     }
-  }, []);
+  }, [userLocation]);
+
+  // Round location to 3 decimal places (~100m precision) to keep query key stable
+  const stableLocation = userLocation ? {
+    lat: Math.round(userLocation.lat * 1000) / 1000,
+    lng: Math.round(userLocation.lng * 1000) / 1000
+  } : null;
 
   // Use React Query for caching - data persists when returning from location card
   const { data: suggestions = [], isLoading } = useQuery({
-    queryKey: ['feed-suggestions', user?.id, userLocation?.lat, userLocation?.lng],
+    queryKey: ['feed-suggestions', user?.id, stableLocation?.lat, stableLocation?.lng],
     queryFn: async () => {
       if (!user?.id || !userLocation) return [];
 
@@ -466,11 +476,13 @@ const FeedSuggestionsCarousel = memo(() => {
       toast.success(t('locationSaved', { ns: 'common' }));
 
       // Remove from cached suggestions + refetch to ensure excludes are recalculated
+      const stableLat = userLocation ? Math.round(userLocation.lat * 1000) / 1000 : null;
+      const stableLng = userLocation ? Math.round(userLocation.lng * 1000) / 1000 : null;
       queryClient.setQueryData<SuggestedLocation[]>(
-        ['feed-suggestions', user.id, userLocation?.lat, userLocation?.lng],
+        ['feed-suggestions', user.id, stableLat, stableLng],
         (prev) => prev?.filter((s) => s.id !== loc.id) || []
       );
-      queryClient.invalidateQueries({ queryKey: ['feed-suggestions', user.id, userLocation?.lat, userLocation?.lng] });
+      queryClient.invalidateQueries({ queryKey: ['feed-suggestions', user.id, stableLat, stableLng] });
     } catch (error) {
       console.error('Error saving location:', error);
       toast.error(t('errorSavingLocation', { ns: 'common' }));
