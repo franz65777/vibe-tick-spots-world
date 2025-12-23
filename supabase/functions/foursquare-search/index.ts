@@ -58,25 +58,39 @@ const allowedFoursquareCategoryIds = [
   '10001', // Entertainment
 ];
 
-// Get a relevant category image from Unsplash Source (FREE, no API key needed)
-// Uses category-based search to get contextually relevant photos
-function getUnsplashCategoryImage(category: string): string {
-  // Map our categories to good Unsplash search terms
-  const categoryToSearch: Record<string, string> = {
-    'restaurant': 'restaurant-food-dining',
-    'cafe': 'coffee-shop-cafe',
-    'bar': 'bar-cocktail-drinks',
-    'bakery': 'bakery-pastry-bread',
-    'hotel': 'hotel-room-luxury',
-    'museum': 'museum-art-gallery',
-    'entertainment': 'cinema-theater-entertainment',
-  };
+// Fetch street-level photo from Mapillary API (FREE with API key)
+// Returns the closest street-view image near the given coordinates
+async function fetchMapillaryPhoto(lat: number, lng: number): Promise<string | null> {
+  const MAPILLARY_ACCESS_TOKEN = Deno.env.get('MAPILLARY_ACCESS_TOKEN');
+  if (!MAPILLARY_ACCESS_TOKEN) {
+    console.log('Mapillary token not configured');
+    return null;
+  }
   
-  const searchTerm = categoryToSearch[category.toLowerCase()] || 'restaurant-food';
-  
-  // Use Unsplash Source for random category images (completely free, no API key)
-  // Adding a unique seed based on category to get consistent but varied images
-  return `https://source.unsplash.com/300x300/?${searchTerm}`;
+  try {
+    // Search for images within ~50 meters of the location
+    const radius = 0.0005; // ~50m in degrees
+    const bbox = `${lng - radius},${lat - radius},${lng + radius},${lat + radius}`;
+    
+    const url = `https://graph.mapillary.com/images?access_token=${MAPILLARY_ACCESS_TOKEN}&fields=id,thumb_256_url,thumb_1024_url&bbox=${bbox}&limit=1`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.log(`Mapillary API error: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    if (data.data && data.data.length > 0) {
+      // Return the 256px thumbnail for fast loading
+      return data.data[0].thumb_256_url || data.data[0].thumb_1024_url || null;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Mapillary fetch error:', error);
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -232,8 +246,26 @@ serve(async (req) => {
 
         places = places.slice(0, limit);
         
-        // Add category-based images from Unsplash (fast, no API calls needed)
-        const placesWithPhotos = places.map((p: any) => ({
+        // Fetch Mapillary street-level photos for first 6 places (async)
+        const placesWithPhotos = await Promise.all(
+          places.slice(0, 6).map(async (p: any) => {
+            const photoUrl = await fetchMapillaryPhoto(p.lat, p.lng);
+            return {
+              fsq_id: p.fsq_id,
+              name: p.name,
+              category: p.category,
+              address: p.address,
+              city: p.city,
+              lat: p.lat,
+              lng: p.lng,
+              distance: p.distance,
+              photo_url: photoUrl
+            };
+          })
+        );
+        
+        // Add remaining places without photos (faster response)
+        const remainingPlaces = places.slice(6).map((p: any) => ({
           fsq_id: p.fsq_id,
           name: p.name,
           category: p.category,
@@ -242,11 +274,11 @@ serve(async (req) => {
           lat: p.lat,
           lng: p.lng,
           distance: p.distance,
-          photo_url: getUnsplashCategoryImage(p.category)
+          photo_url: null
         }));
 
-        console.log(`Fast OSM returning ${placesWithPhotos.length} places with photos`);
-        return new Response(JSON.stringify({ places: placesWithPhotos }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.log(`Fast OSM returning ${placesWithPhotos.length + remainingPlaces.length} places with Mapillary photos`);
+        return new Response(JSON.stringify({ places: [...placesWithPhotos, ...remainingPlaces] }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       } catch (e) {
         console.error('Fast OSM path failed:', e);
       }
@@ -461,8 +493,26 @@ serve(async (req) => {
         // Trim to requested limit
         places = places.slice(0, limit);
         
-        // Add category-based images from Unsplash (fast, no API calls needed)
-        const placesWithPhotos = places.map((p: any) => ({
+        // Fetch Mapillary street-level photos for first 6 places (async)
+        const placesWithPhotos = await Promise.all(
+          places.slice(0, 6).map(async (p: any) => {
+            const photoUrl = await fetchMapillaryPhoto(p.lat, p.lng);
+            return {
+              fsq_id: p.fsq_id,
+              name: p.name,
+              category: p.category,
+              address: p.address,
+              city: p.city,
+              lat: p.lat,
+              lng: p.lng,
+              distance: p.distance,
+              photo_url: photoUrl
+            };
+          })
+        );
+        
+        // Add remaining places without photos (faster response)
+        const remainingPlaces = places.slice(6).map((p: any) => ({
           fsq_id: p.fsq_id,
           name: p.name,
           category: p.category,
@@ -471,12 +521,12 @@ serve(async (req) => {
           lat: p.lat,
           lng: p.lng,
           distance: p.distance,
-          photo_url: getUnsplashCategoryImage(p.category)
+          photo_url: null
         }));
         
-        console.log(`OSM fallback returning ${placesWithPhotos.length} places with photos`);
+        console.log(`OSM fallback returning ${placesWithPhotos.length + remainingPlaces.length} places with Mapillary photos`);
         return new Response(
-          JSON.stringify({ places: placesWithPhotos }),
+          JSON.stringify({ places: [...placesWithPhotos, ...remainingPlaces] }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (e) {
