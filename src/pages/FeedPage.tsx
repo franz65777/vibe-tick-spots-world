@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo, lazy, Suspense, useRef, useCallback } from 'react';
+import React, { useEffect, useState, memo, lazy, Suspense, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
@@ -19,13 +19,14 @@ import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
 import FolderDetailModal from '@/components/profile/FolderDetailModal';
+import { useVisitedSaves } from '@/hooks/useVisitedSaves';
+import UserVisitedCard from '@/components/feed/UserVisitedCard';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
 const CityStatsCard = lazy(() => import('@/components/feed/CityStatsCard'));
 const FeedListsCarousel = lazy(() => import('@/components/feed/FeedListsCarousel'));
 const FeedSuggestionsCarousel = lazy(() => import('@/components/feed/FeedSuggestionsCarousel'));
-const FeedFriendSaving = lazy(() => import('@/components/feed/FeedFriendSaving'));
 
 const FeedPage = memo(() => {
   const { user } = useAuth();
@@ -165,6 +166,35 @@ const FeedPage = memo(() => {
   // Seleziona il feed appropriato in base al tipo
   const feedItems = feedType === 'promotions' ? promotionsFeed : forYouFeed;
   const loading = feedType === 'promotions' ? promotionsLoading : feedLoading;
+  
+  // Fetch visited saves for interleaving in feed
+  const { data: visitedSaves = [] } = useVisitedSaves();
+  
+  // Merge posts and visited saves chronologically
+  type FeedEntry = 
+    | { type: 'post'; data: any; created_at: string }
+    | { type: 'visited'; data: typeof visitedSaves[0]; created_at: string };
+  
+  const mergedFeed = useMemo(() => {
+    if (feedType !== 'forYou') return feedItems.map(item => ({ type: 'post' as const, data: item, created_at: item.created_at }));
+    
+    const postEntries: FeedEntry[] = feedItems.map(item => ({
+      type: 'post',
+      data: item,
+      created_at: item.created_at,
+    }));
+    
+    const visitedEntries: FeedEntry[] = visitedSaves.map(save => ({
+      type: 'visited',
+      data: save,
+      created_at: save.created_at,
+    }));
+    
+    // Merge and sort chronologically
+    return [...postEntries, ...visitedEntries].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [feedItems, visitedSaves, feedType]);
   
   // Restore scroll position when returning to feed from location card
   const hasRestoredScroll = useRef(false);
@@ -571,53 +601,62 @@ const FeedPage = memo(() => {
                 </Suspense>
               )}
 
-              {/* Feed items with interleaved discovery sections */}
-              {feedItems.map((item, index) => {
-                const profile = item.profiles as any;
-                const userId = item.user_id;
-                const userHasStory = stories.some(s => s.user_id === userId);
+              {/* Feed items merged chronologically with visited saves */}
+              {(() => {
+                let postIndex = 0; // Track actual post index for carousel insertion
+                
+                return mergedFeed.map((entry, index) => {
+                  if (entry.type === 'visited') {
+                    return (
+                      <div key={`visited-${entry.data.id}`} className="py-3">
+                        <UserVisitedCard activity={entry.data} />
+                      </div>
+                    );
+                  }
+                  
+                  // It's a post
+                  const item = entry.data;
+                  const profile = item.profiles as any;
+                  const userId = item.user_id;
+                  const userHasStory = stories.some(s => s.user_id === userId);
+                  const currentPostIndex = postIndex;
+                  postIndex++;
 
-                return (
-                  <div key={item.id} className="contents">
-                    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                      <FeedPostItem
-                        item={item}
-                        profile={profile}
-                        userHasStory={userHasStory}
-                        postLikes={postLikes}
-                        expandedCaptions={expandedCaptions}
-                        isPromotionFeed={feedType === 'promotions'}
-                        onAvatarClick={handleAvatarClick}
-                        onLocationClick={handleLocationClick}
-                        onCommentClick={handleCommentClick}
-                        onShareClick={handleShareClick}
-                        onToggleCaption={toggleCaption}
-                      />
-                    </Suspense>
-
-                    {/* Insert lists carousel after 2nd post */}
-                    {feedType === 'forYou' && index === 1 && (
-                      <Suspense fallback={null}>
-                        <FeedListsCarousel />
+                  return (
+                    <div key={item.id} className="contents">
+                      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                        <FeedPostItem
+                          item={item}
+                          profile={profile}
+                          userHasStory={userHasStory}
+                          postLikes={postLikes}
+                          expandedCaptions={expandedCaptions}
+                          isPromotionFeed={feedType === 'promotions'}
+                          onAvatarClick={handleAvatarClick}
+                          onLocationClick={handleLocationClick}
+                          onCommentClick={handleCommentClick}
+                          onShareClick={handleShareClick}
+                          onToggleCaption={toggleCaption}
+                        />
                       </Suspense>
-                    )}
 
-                    {/* Insert suggestions carousel after 5th post */}
-                    {feedType === 'forYou' && index === 4 && (
-                      <Suspense fallback={null}>
-                        <FeedSuggestionsCarousel />
-                      </Suspense>
-                    )}
+                      {/* Insert lists carousel after 2nd post */}
+                      {feedType === 'forYou' && currentPostIndex === 1 && (
+                        <Suspense fallback={null}>
+                          <FeedListsCarousel />
+                        </Suspense>
+                      )}
 
-                    {/* Insert friend saving activity after 8th post */}
-                    {feedType === 'forYou' && index === 7 && (
-                      <Suspense fallback={null}>
-                        <FeedFriendSaving />
-                      </Suspense>
-                    )}
-                  </div>
-                );
-              })}
+                      {/* Insert suggestions carousel after 5th post */}
+                      {feedType === 'forYou' && currentPostIndex === 4 && (
+                        <Suspense fallback={null}>
+                          <FeedSuggestionsCarousel />
+                        </Suspense>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
