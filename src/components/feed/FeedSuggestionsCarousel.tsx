@@ -215,28 +215,49 @@ const FeedSuggestionsCarousel = memo(() => {
       }));
 
       // 4) Discover NEW (never-saved-on-app) places around the user via edge function
-      // Use small radius (1km) to get truly nearby places
+      // Dynamic radius: start small (500m), expand if not enough results
       const fallbackDiscover = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'cinema'];
       const categoryQueries = Array.from(new Set([...preferredDiscover, ...fallbackDiscover])).filter(Boolean).slice(0, 6);
 
-      const discoverResults = await Promise.all(
-        categoryQueries.map((cat) =>
-          supabase.functions.invoke('foursquare-search', {
-            body: {
-              lat: userLocation.lat,
-              lng: userLocation.lng,
-              radiusKm: 1, // Small radius for truly nearby places
-              limit: 15,
-              query: cat,
-            },
-          })
-        )
-      );
+      // Try with small radius first (500m for big cities)
+      let radiusKm = 0.5;
+      let allRawPlaces: any[] = [];
+      
+      // Fetch with initial small radius
+      const fetchPlaces = async (radius: number) => {
+        const results = await Promise.all(
+          categoryQueries.map((cat) =>
+            supabase.functions.invoke('foursquare-search', {
+              body: {
+                lat: userLocation.lat,
+                lng: userLocation.lng,
+                radiusKm: radius,
+                limit: 15,
+                query: cat,
+              },
+            })
+          )
+        );
+        const places: any[] = [];
+        results.forEach((res) => {
+          if (!res.error && res.data?.places) places.push(...res.data.places);
+        });
+        return places;
+      };
 
-      const allRawPlaces: any[] = [];
-      discoverResults.forEach((res) => {
-        if (!res.error && res.data?.places) allRawPlaces.push(...res.data.places);
-      });
+      // Start with 500m, expand if needed
+      allRawPlaces = await fetchPlaces(0.5);
+      
+      // If not enough results, expand radius progressively
+      if (allRawPlaces.length < 15) {
+        const expandedPlaces = await fetchPlaces(2); // 2km
+        allRawPlaces = [...allRawPlaces, ...expandedPlaces];
+      }
+      if (allRawPlaces.length < 10) {
+        const expandedPlaces = await fetchPlaces(5); // 5km for small cities
+        allRawPlaces = [...allRawPlaces, ...expandedPlaces];
+      }
+
 
       // Deduplicate by fsq_id only (NOT by name - chains can have same name)
       const seenFsq = new Set<string>();
@@ -282,8 +303,8 @@ const FeedSuggestionsCarousel = memo(() => {
         return true;
       });
 
-      // 6) For big cities, limit to 3km max; otherwise 10km
-      const MAX_DISTANCE_KM = 3;
+      // 6) Dynamic max distance based on results - allow up to 5km if expanded
+      const MAX_DISTANCE_KM = 5;
 
       const ranked = uniqueCandidates
         .map((c) => ({
