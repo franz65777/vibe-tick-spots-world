@@ -120,18 +120,11 @@ const FeedSuggestionsCarousel = memo(() => {
 
   // Use React Query for caching - data persists when returning from location card
   const { data: suggestions = [], isLoading } = useQuery({
-    queryKey: ['feed-suggestions', user?.id],
+    queryKey: ['feed-suggestions', user?.id, userLocation?.lat, userLocation?.lng],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Get user's current city
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('current_city')
-        .eq('id', user.id)
-        .single();
-
-      // Get popular locations in user's city that user hasn't saved
+      // Get popular locations that user hasn't saved
       const { data: userSaved } = await supabase
         .from('user_saved_locations')
         .select('location_id')
@@ -139,24 +132,34 @@ const FeedSuggestionsCarousel = memo(() => {
 
       const savedIds = new Set(userSaved?.map(s => s.location_id) || []);
 
-      let query = supabase
+      // Fetch more locations to filter by distance
+      const { data: locations, error } = await supabase
         .from('locations')
         .select('id, name, category, city, image_url, latitude, longitude')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (profile?.current_city) {
-        query = query.ilike('city', `%${profile.current_city}%`);
-      }
-
-      const { data: locations, error } = await query;
+        .limit(100);
 
       if (error) throw error;
 
-      // Filter out already saved and get save counts
-      const unsaved = (locations || []).filter(loc => !savedIds.has(loc.id));
+      // Filter out already saved
+      let unsaved = (locations || []).filter(loc => !savedIds.has(loc.id));
+
+      // Filter by distance (max 50km) if user location is available
+      if (userLocation) {
+        unsaved = unsaved.filter(loc => {
+          const distance = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
+          return distance <= 50; // Max 50km
+        });
+
+        // Sort by distance (closest first)
+        unsaved.sort((a, b) => {
+          const distA = calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+          const distB = calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+          return distA - distB;
+        });
+      }
 
       // Get save counts for each location
       const withCounts = await Promise.all(
@@ -190,11 +193,9 @@ const FeedSuggestionsCarousel = memo(() => {
         })
       );
 
-      // Sort by save count
-      withCounts.sort((a, b) => b.save_count - a.save_count);
       return withCounts as SuggestedLocation[];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!userLocation,
     staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
     gcTime: 30 * 60 * 1000, // Cache for 30 minutes
   });
