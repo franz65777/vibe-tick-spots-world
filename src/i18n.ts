@@ -642,7 +642,11 @@ const resources = {
       feedSubtitle: 'See what your friends are discovering',
       emptyFeed: 'Your feed is empty',
       emptyFeedDescription: 'Start following people to see their latest discoveries and activities',
-      discoverPeople: 'Discover People'
+      discoverPeople: 'Discover People',
+      pickedForYou: 'picked for you',
+      nearby: 'nearby',
+      savedTimes: 'saved {{count}} times',
+      savedOnce: 'saved 1 time'
     },
       badges: {
         newBadgeUnlocked: 'New Badge Unlocked',
@@ -1558,7 +1562,11 @@ const resources = {
       feedSubtitle: 'Ve lo que tus amigos están descubriendo',
       emptyFeed: 'Tu feed está vacío',
       emptyFeedDescription: 'Comienza a seguir personas para ver sus últimos descubrimientos y actividades',
-      discoverPeople: 'Descubrir Personas'
+      discoverPeople: 'Descubrir Personas',
+      pickedForYou: 'seleccionado para ti',
+      nearby: 'cerca',
+      savedTimes: 'guardado {{count}} veces',
+      savedOnce: 'guardado 1 vez'
     },
     badges: {
       cityWanderer: 'Explorador de Ciudades',
@@ -2517,7 +2525,11 @@ const resources = {
       feedSubtitle: 'Vedi cosa stanno scoprendo i tuoi amici',
       emptyFeed: 'Il tuo feed è vuoto',
       emptyFeedDescription: 'Inizia a seguire persone per vedere le loro ultime scoperte e attività',
-      discoverPeople: 'Scopri Persone'
+      discoverPeople: 'Scopri Persone',
+      pickedForYou: 'scelto per te',
+      nearby: 'vicino',
+      savedTimes: 'salvato {{count}} volte',
+      savedOnce: 'salvato 1 volta'
     },
     badges: {
       cityWanderer: 'Vagabondo delle Città',
@@ -3407,7 +3419,11 @@ const resources = {
       feedSubtitle: 'Découvrez ce que vos amis découvrent',
       emptyFeed: 'Votre fil est vide',
       emptyFeedDescription: 'Commencez à suivre des personnes pour voir leurs dernières découvertes et activités',
-      discoverPeople: 'Découvrir des personnes'
+      discoverPeople: 'Découvrir des personnes',
+      pickedForYou: 'sélectionné pour vous',
+      nearby: 'à proximité',
+      savedTimes: 'enregistré {{count}} fois',
+      savedOnce: 'enregistré 1 fois'
     },
     badges: {
       cityWanderer: 'Explorateur de villes',
@@ -4205,7 +4221,11 @@ const resources = {
       feedSubtitle: 'Sieh, was deine Freunde entdecken',
       emptyFeed: 'Dein Feed ist leer',
       emptyFeedDescription: 'Beginne Personen zu folgen, um ihre neuesten Entdeckungen und Aktivitäten zu sehen',
-      discoverPeople: 'Personen entdecken'
+      discoverPeople: 'Personen entdecken',
+      pickedForYou: 'für dich ausgewählt',
+      nearby: 'in der Nähe',
+      savedTimes: '{{count}} mal gespeichert',
+      savedOnce: '1 mal gespeichert'
     },
     badges: {
       cityWanderer: 'Städtewanderer',
@@ -4941,7 +4961,11 @@ const resources = {
       feedSubtitle: 'Veja o que seus amigos estão descobrindo',
       emptyFeed: 'Seu feed está vazio',
       emptyFeedDescription: 'Comece a seguir pessoas para ver suas últimas descobertas e atividades',
-      discoverPeople: 'Descobrir pessoas'
+      discoverPeople: 'Descobrir pessoas',
+      pickedForYou: 'escolhido para você',
+      nearby: 'próximo',
+      savedTimes: 'salvo {{count}} vezes',
+      savedOnce: 'salvo 1 vez'
     },
       badges: {
         newBadgeUnlocked: 'Novo Badge Desbloqueado',
@@ -5626,7 +5650,11 @@ const resources = {
       feedSubtitle: '看看你的朋友们在发现什么',
       emptyFeed: '你的动态为空',
       emptyFeedDescription: '开始关注好友，查看他们的最新发现和活动',
-      discoverPeople: '发现好友'
+      discoverPeople: '发现好友',
+      pickedForYou: '为你精选',
+      nearby: '附近',
+      savedTimes: '已保存{{count}}次',
+      savedOnce: '已保存1次'
     },
     badges: {
       cityWanderer: '城市漫游者',
@@ -6255,7 +6283,11 @@ const resources = {
       feedSubtitle: '友達が発見しているものを見る',
       emptyFeed: 'フィードが空です',
       emptyFeedDescription: '友達をフォローして最新の発見や活動を見ましょう',
-      discoverPeople: '人を探す'
+      discoverPeople: '人を探す',
+      pickedForYou: 'あなたへのおすすめ',
+      nearby: '近く',
+      savedTimes: '{{count}}回保存',
+      savedOnce: '1回保存'
     },
     badges: {
       newBadgeUnlocked: '新しいバッジをアンロック',
@@ -6924,7 +6956,11 @@ const resources = {
       feedSubtitle: '친구들이 발견한 것을 확인하세요',
       emptyFeed: '피드가 비어 있습니다',
       emptyFeedDescription: '친구를 팔로우하여 최신 발견 및 활동을 확인하세요',
-      discoverPeople: '사람 찾기'
+      discoverPeople: '사람 찾기',
+      pickedForYou: '당신을 위한 추천',
+      nearby: '근처',
+      savedTimes: '{{count}}번 저장됨',
+      savedOnce: '1번 저장됨'
     },
     badges: {
       cityWanderer: '도시 방랑자',
@@ -7576,7 +7612,11 @@ const resources = {
       feedSubtitle: 'شاهد ما يكتشفه أصدقاؤك',
       emptyFeed: 'تغذيتك فارغة',
       emptyFeedDescription: 'ابدأ بمتابعة الأشخاص لرؤية أحدث اكتشافاتهم وأنشطتهم',
-      discoverPeople: 'اكتشف الأشخاص'
+      discoverPeople: 'اكتشف الأشخاص',
+      pickedForYou: 'مختار لك',
+      nearby: 'قريب',
+      savedTimes: 'تم الحفظ {{count}} مرات',
+      savedOnce: 'تم الحفظ مرة واحدة'
     },
     badges: {
       cityWanderer: 'متجول المدينة',
@@ -8881,7 +8921,11 @@ const resources = {
       feedSubtitle: 'Смотрите, что открывают ваши друзья',
       emptyFeed: 'Ваша лента пуста',
       emptyFeedDescription: 'Начните подписываться на людей, чтобы видеть их последние открытия и активности',
-      discoverPeople: 'Найти людей'
+      discoverPeople: 'Найти людей',
+      pickedForYou: 'выбрано для вас',
+      nearby: 'рядом',
+      savedTimes: 'сохранено {{count}} раз',
+      savedOnce: 'сохранено 1 раз'
     },
     badges: {
       cityWanderer: 'Городской странник',
