@@ -1,11 +1,14 @@
-import { memo, useEffect, useState, useRef } from 'react';
+import { memo, useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { toast } from 'sonner';
+import locationPinIcon from '@/assets/location-pin-icon.png';
 
 interface SuggestedLocation {
   id: string;
@@ -17,14 +20,14 @@ interface SuggestedLocation {
   longitude: number;
   save_count: number;
   saved_by: Array<{ avatar_url: string | null; username: string }>;
+  google_place_id?: string | null;
 }
 
-// Marquee component for overflowing text - animates only on hover
-const MarqueeText = memo(({ text, className }: { text: string; className?: string }) => {
+// Marquee component for overflowing text - animates when visible on mobile
+const MarqueeText = memo(({ text, className, isVisible }: { text: string; className?: string; isVisible: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const checkOverflow = () => {
@@ -40,14 +43,14 @@ const MarqueeText = memo(({ text, className }: { text: string; className?: strin
     };
   }, [text]);
 
+  const shouldAnimate = isOverflowing && isVisible;
+
   return (
     <div 
       ref={containerRef} 
       className={`overflow-hidden whitespace-nowrap ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {isOverflowing && isHovered ? (
+      {shouldAnimate ? (
         <span
           className="inline-block"
           style={{
@@ -227,10 +230,76 @@ const FeedSuggestionsCarousel = memo(() => {
            lowerCategory.includes('dining');
   };
 
+  // Track visible cards for marquee animation
+  const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
+  const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  
+  // IntersectionObserver for mobile marquee
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute('data-location-id');
+          if (id) {
+            setVisibleCards(prev => {
+              const next = new Set(prev);
+              if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
+                next.add(id);
+              } else {
+                next.delete(id);
+              }
+              return next;
+            });
+          }
+        });
+      },
+      { threshold: [0.7], rootMargin: '0px' }
+    );
+
+    cardRefs.current.forEach((el) => {
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [suggestions]);
+
+  // Save location handler
+  const handleSaveLocation = useCallback(async (loc: SuggestedLocation, tag: SaveTag) => {
+    if (!user?.id) {
+      toast.error(t('loginRequired', { ns: 'common' }));
+      return;
+    }
+
+    try {
+      // First check if there's an existing location in our database
+      let locationId = loc.id;
+      
+      // Insert into user_saved_locations
+      const { error } = await supabase
+        .from('user_saved_locations')
+        .upsert({
+          user_id: user.id,
+          location_id: locationId,
+          save_tag: tag,
+        }, { onConflict: 'user_id,location_id' });
+
+      if (error) throw error;
+
+      toast.success(t('locationSaved', { ns: 'common' }));
+      
+      // Remove from suggestions after saving
+      setSuggestions(prev => prev.filter(s => s.id !== loc.id));
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error(t('errorSavingLocation', { ns: 'common' }));
+    }
+  }, [user?.id, t]);
+
   return (
     <div className="py-4">
       {/* Header */}
-      <div className="px-4 mb-3">
+      <div className="px-4 mb-3 flex items-center gap-2">
+        <img src={locationPinIcon} alt="" className="w-5 h-5 object-contain" />
         <h3 className="font-bold text-foreground">{t('nearYou', { ns: 'feed' })}</h3>
       </div>
 
@@ -247,9 +316,16 @@ const FeedSuggestionsCarousel = memo(() => {
             ? calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude)
             : null;
 
+          const isCardVisible = visibleCards.has(loc.id);
+          
           return (
             <button
               key={loc.id}
+              ref={(el) => {
+                if (el) cardRefs.current.set(loc.id, el);
+                else cardRefs.current.delete(loc.id);
+              }}
+              data-location-id={loc.id}
               onClick={() => handleLocationClick(loc)}
               className="shrink-0 w-72 bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left"
             >
@@ -279,6 +355,7 @@ const FeedSuggestionsCarousel = memo(() => {
                     <MarqueeText 
                       text={loc.name} 
                       className="font-bold text-foreground"
+                      isVisible={isCardVisible}
                     />
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {distance !== null ? (
@@ -313,9 +390,15 @@ const FeedSuggestionsCarousel = memo(() => {
                         </span>
                       )}
                     </div>
-                    <button className="p-1.5 rounded-full hover:bg-muted">
-                      <Bookmark className="w-4 h-4 text-muted-foreground" />
-                    </button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <SaveLocationDropdown
+                        isSaved={false}
+                        onSave={(tag) => handleSaveLocation(loc, tag)}
+                        onUnsave={() => {}}
+                        variant="ghost"
+                        size="icon"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
