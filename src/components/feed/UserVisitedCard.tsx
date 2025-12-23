@@ -13,7 +13,17 @@ import { formatPostDate } from '@/utils/dateFormatter';
 import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import { type SaveTag } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
+import { normalizeCity } from '@/utils/cityNormalization';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
 
+// Map save tags to their icons
+const SAVE_TAG_ICONS: Record<SaveTag, string> = {
+  been: saveTagBeen,
+  to_try: saveTagToTry,
+  favourite: saveTagFavourite,
+};
 export interface VisitedSaveActivity {
   id: string;
   user_id: string;
@@ -218,6 +228,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
   const categoryIcon = getCategoryImage(activity.location_category);
   const formattedDate = formatPostDate(activity.created_at, t, i18n.language);
+  const normalizedCity = normalizeCity(activity.location_city);
 
   return (
     <div className="mx-4">
@@ -240,7 +251,8 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
+              {/* Top row: username, visited, date, follow button */}
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={handleUserClick}
                   className="font-semibold text-sm hover:opacity-70 truncate text-foreground"
@@ -254,6 +266,18 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 <span className="text-xs text-muted-foreground">
                   {formattedDate}
                 </span>
+                {/* Follow button next to date */}
+                {!activity.is_following && user?.id !== activity.user_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-5 text-[10px] bg-background/50 rounded-full px-2 py-0 ml-1"
+                    onClick={handleFollow}
+                  >
+                    <UserPlus className="w-2.5 h-2.5 mr-0.5" />
+                    {t('follow', { defaultValue: 'Follow' })}
+                  </Button>
+                )}
               </div>
 
               <h4 className="font-bold text-foreground text-sm truncate">
@@ -262,35 +286,22 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <img src={categoryIcon} alt="" className="w-3.5 h-3.5" />
-                {activity.location_city && (
-                  <span>{activity.location_city}</span>
+                {normalizedCity && normalizedCity !== 'Unknown' && (
+                  <span>{normalizedCity}</span>
                 )}
               </p>
-
-              {/* Follow button inline for non-following */}
-              {!activity.is_following && user?.id !== activity.user_id && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs mt-1.5 bg-background/50 rounded-full px-3"
-                  onClick={handleFollow}
-                >
-                  <UserPlus className="w-3 h-3 mr-1" />
-                  {t('follow', { defaultValue: 'Follow' })}
-                </Button>
-              )}
             </div>
 
-            {/* Right side: Save & Like buttons stacked */}
-            <div className="flex flex-col items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            {/* Right side: Save & Like buttons stacked, aligned to top */}
+            <div className="flex flex-col items-center gap-0 shrink-0 -mt-0.5" onClick={(e) => e.stopPropagation()}>
               {/* Save button */}
               {isSaved && savedTag ? (
                 <button 
                   onClick={() => handleUnsaveLocation()}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
                 >
                   <img 
-                    src={getCategoryImage(savedTag)} 
+                    src={SAVE_TAG_ICONS[savedTag]} 
                     alt="" 
                     className="w-5 h-5"
                   />
@@ -305,11 +316,11 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 />
               )}
 
-              {/* Like button */}
+              {/* Like button - closer to save */}
               <button
                 onClick={handleLike}
                 disabled={isLiking}
-                className="w-8 h-8 flex flex-col items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+                className="w-7 h-7 flex flex-col items-center justify-center rounded-full hover:bg-muted/50 transition-colors -mt-1"
               >
                 <Heart 
                   className={`w-4 h-4 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} 
