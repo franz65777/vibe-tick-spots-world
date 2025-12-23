@@ -26,67 +26,12 @@ interface SuggestedLocation {
   source: 'db' | 'discover';
 }
 
-// Marquee component for overflowing text - animates once when visible on mobile
-const MarqueeText = memo(
-  ({ text, className, isVisible }: { text: string; className?: string; isVisible: boolean }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const measureRef = useRef<HTMLSpanElement>(null);
-    const [isOverflowing, setIsOverflowing] = useState(false);
-    const [hasPlayed, setHasPlayed] = useState(false);
+// Simple truncated text component - no animation for better scroll performance
+const TruncatedText = memo(({ text, className }: { text: string; className?: string }) => (
+  <div className={`truncate ${className}`}>{text}</div>
+));
 
-    useEffect(() => {
-      setHasPlayed(false);
-    }, [text]);
-
-    useEffect(() => {
-      const checkOverflow = () => {
-        if (containerRef.current && measureRef.current) {
-          setIsOverflowing(measureRef.current.scrollWidth > containerRef.current.clientWidth);
-        }
-      };
-      const timer = setTimeout(checkOverflow, 100);
-      window.addEventListener('resize', checkOverflow);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('resize', checkOverflow);
-      };
-    }, [text]);
-
-    const shouldAnimate = isOverflowing && isVisible && !hasPlayed;
-
-    return (
-      <div ref={containerRef} className={`relative overflow-hidden whitespace-nowrap ${className}`}>
-        {/* hidden measurement element to avoid layout shift */}
-        <span
-          ref={measureRef}
-          className="pointer-events-none absolute -z-10 opacity-0 whitespace-nowrap"
-        >
-          {text}
-        </span>
-
-        {shouldAnimate ? (
-          <span
-            className="inline-block"
-            onAnimationEnd={() => setHasPlayed(true)}
-            style={{
-              animation: `marquee ${Math.max(text.length * 0.15, 3)}s linear 1`,
-              animationFillMode: 'none',
-            }}
-          >
-            {text}
-            <span className="mx-4">•</span>
-            {text}
-          </span>
-        ) : (
-          <span className="truncate block">{text}</span>
-        )}
-      </div>
-    );
-  }
-);
-
-
-MarqueeText.displayName = 'MarqueeText';
+TruncatedText.displayName = 'TruncatedText';
 
 // Calculate distance between two coordinates in km
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -113,10 +58,6 @@ const FeedSuggestionsCarousel = memo(() => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  
-  // Track visible cards for marquee animation - must be before any return
-  const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
-  const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Get user's current location - only fetch once
   useEffect(() => {
@@ -397,35 +338,6 @@ const FeedSuggestionsCarousel = memo(() => {
     gcTime: 30 * 60 * 1000, // Cache for 30 minutes
   });
 
-  // IntersectionObserver for mobile marquee - must be before any return
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const id = entry.target.getAttribute('data-location-id');
-          if (id) {
-            setVisibleCards(prev => {
-              const next = new Set(prev);
-              if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
-                next.add(id);
-              } else {
-                next.delete(id);
-              }
-              return next;
-            });
-          }
-        });
-      },
-      { threshold: [0.7], rootMargin: '0px' }
-    );
-
-    cardRefs.current.forEach((el) => {
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, [suggestions]);
-
   // Save location handler - must be before any return
   const handleSaveLocation = useCallback(async (loc: SuggestedLocation, tag: SaveTag) => {
     if (!user?.id) {
@@ -601,15 +513,9 @@ const FeedSuggestionsCarousel = memo(() => {
             ? calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude)
             : null;
 
-          const isCardVisible = visibleCards.has(loc.id);
-          
           return (
             <div
               key={loc.id}
-              ref={(el) => {
-                if (el) cardRefs.current.set(loc.id, el);
-                else cardRefs.current.delete(loc.id);
-              }}
               data-location-id={loc.id}
               onClick={() => handleLocationClick(loc, idx)}
               role="button"
@@ -640,10 +546,9 @@ const FeedSuggestionsCarousel = memo(() => {
                 {/* Info */}
                 <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                   <div>
-                    <MarqueeText 
+                    <TruncatedText 
                       text={loc.name} 
                       className="font-semibold text-sm text-foreground"
-                      isVisible={isCardVisible}
                     />
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {distance !== null ? (

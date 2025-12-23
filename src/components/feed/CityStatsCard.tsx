@@ -119,8 +119,8 @@ const CityStatsCard = memo(() => {
 
   if (loading) {
     return (
-      <div className="mx-4 mb-4 rounded-2xl bg-card p-4 animate-pulse">
-        <div className="h-24 bg-muted rounded-xl" />
+      <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 p-4 animate-pulse shadow-lg shadow-black/5 dark:shadow-black/20">
+        <div className="h-24 bg-muted/30 rounded-xl" />
       </div>
     );
   }
@@ -128,7 +128,7 @@ const CityStatsCard = memo(() => {
   // Minimized view - very compact
   if (isMinimized) {
     return (
-      <div className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 px-4 py-3 shadow-sm border border-border/50">
+      <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 px-4 py-3 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={globeAnimation} alt="" className="w-8 h-8 object-contain" />
@@ -151,7 +151,7 @@ const CityStatsCard = memo(() => {
   }
 
   return (
-    <div className="mx-4 mb-4 rounded-2xl bg-gradient-to-br from-card via-card to-accent/10 p-5 shadow-sm border border-border/50">
+    <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 p-5 shadow-lg shadow-black/5 dark:shadow-black/20">
       {/* Header with title and minimize button + GIF */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
