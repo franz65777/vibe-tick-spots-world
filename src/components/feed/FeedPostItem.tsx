@@ -98,17 +98,15 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
   const renderReviewCaption = () => {
     if (!caption) return null;
 
-    const firstLine = caption.split('\n')[0];
-    const MAX_FIRST_LINE_LENGTH = 80;
-    const hasMultipleLines = caption.trim().length > firstLine.trim().length;
-    const firstLineIsTooLong = firstLine.length > MAX_FIRST_LINE_LENGTH;
-    const hasMoreContent = hasMultipleLines || firstLineIsTooLong;
-    const displayFirstLine = firstLineIsTooLong && !isExpanded
-      ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
-      : firstLine;
+    // Check if caption exceeds 2 lines (approximately 100 chars)
+    const MAX_CHARS_TWO_LINES = 100;
+    const hasMoreContent = caption.length > MAX_CHARS_TWO_LINES;
+    const displayText = hasMoreContent && !isExpanded
+      ? caption.substring(0, MAX_CHARS_TWO_LINES)
+      : caption;
 
     return (
-      <div className="text-sm text-left">
+      <div className="text-sm text-left mt-1">
         <span className="text-foreground">
           {isExpanded ? (
             <>
@@ -128,7 +126,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             </>
           ) : (
             <>
-              <span>{displayFirstLine}</span>
+              <span>{displayText}</span>
               {hasMoreContent && '... '}
               {hasMoreContent && (
                 <button
@@ -362,9 +360,9 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       )}
 
       {/* Post Actions */}
-      <div className="post-compact-actions space-y-1">
+      <div className={cn("post-compact-actions", isReviewOnly && !caption ? "space-y-0" : "space-y-1")}>
         {/* Review-only caption (rating present, no media): show under header, above buttons, without username repetition */}
-        {isReviewOnly && renderReviewCaption()}
+        {isReviewOnly && caption && renderReviewCaption()}
 
         <PostActions
           postId={postId}
