@@ -331,12 +331,9 @@ const FeedSuggestionsCarousel = memo(() => {
         });
 
       // 5) Rank + pick exactly 10 cards:
-      //    1) distance
-      //    2) category preference
-      //    3) likes/save_count (only meaningful for DB locations)
+      //    Priority order: 1) proximity (most important), 2) save_count, 3) category preference
       const allCandidates = [...discoverCandidates, ...internalCandidates];
 
-      const DIST_EPS = 0.2; // km - treat very close places as ties
       const ranked = allCandidates
         .map((c) => ({
           c,
@@ -344,9 +341,17 @@ const FeedSuggestionsCarousel = memo(() => {
           pref: isPreferred(c.category) ? 1 : 0,
         }))
         .sort((a, b) => {
-          if (Math.abs(a.d - b.d) > DIST_EPS) return a.d - b.d;
-          if (a.pref !== b.pref) return b.pref - a.pref;
-          return (b.c.save_count || 0) - (a.c.save_count || 0);
+          // 1) Proximity is most important - strict distance sorting
+          // Only treat as equal if within 100m
+          const distDiff = a.d - b.d;
+          if (Math.abs(distDiff) > 0.1) return distDiff; // 100m threshold
+          
+          // 2) For very close places, prefer ones with more saves
+          const saveDiff = (b.c.save_count || 0) - (a.c.save_count || 0);
+          if (saveDiff !== 0) return saveDiff;
+          
+          // 3) Finally, prefer user's category preferences
+          return b.pref - a.pref;
         })
         .slice(0, 10)
         .map((x) => x.c);
@@ -512,7 +517,7 @@ const FeedSuggestionsCarousel = memo(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
-            const cardWidth = 256 + 12; // w-64 (256px) + gap-3 (12px)
+            const cardWidth = 224 + 12; // w-56 (224px) + gap-3 (12px)
             scrollContainerRef.current.scrollLeft = idx * cardWidth;
           }
           sessionStorage.removeItem('suggestions_clicked_index');
@@ -610,11 +615,11 @@ const FeedSuggestionsCarousel = memo(() => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
-              className="shrink-0 w-64 bg-card/70 dark:bg-card/50 backdrop-blur-xl border border-border/30 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
+              className="shrink-0 w-56 bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-2xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 hover:shadow-xl transition-shadow text-left cursor-pointer"
             >
-              <div className="flex gap-2.5 p-2.5">
+              <div className="flex gap-2 p-2">
                 {/* Image */}
-                <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0">
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -622,25 +627,25 @@ const FeedSuggestionsCarousel = memo(() => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-muted/50 flex items-center justify-center">
+                    <div className="w-full h-full bg-muted/30 flex items-center justify-center">
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-14 h-14' : 'w-12 h-12'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-10 h-10' : 'w-9 h-9'}`}
                       />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                   <div>
                     <MarqueeText 
                       text={loc.name} 
-                      className="font-bold text-foreground"
+                      className="font-semibold text-sm text-foreground"
                       isVisible={isCardVisible}
                     />
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
                       {distance !== null ? (
                         <span>{formatDistance(distance)} {t('away', { ns: 'feed' })}</span>
                       ) : (
@@ -650,26 +655,26 @@ const FeedSuggestionsCarousel = memo(() => {
                   </div>
 
                   {/* Saved by OR "Be the first" */}
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       {loc.source === 'discover' ? (
-                        <span className="text-xs font-medium text-primary">
+                        <span className="text-[11px] font-medium text-primary">
                           {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
                         </span>
                       ) : loc.saved_by.length > 0 ? (
                         <>
                           <div className="flex -space-x-1.5">
                             {loc.saved_by.slice(0, 3).map((saver, idx) => (
-                              <Avatar key={idx} className="h-5 w-5 border border-background">
+                              <Avatar key={idx} className="h-4 w-4 border border-background">
                                 <AvatarImage src={saver.avatar_url || undefined} />
-                                <AvatarFallback className="text-[8px] bg-primary/10">
+                                <AvatarFallback className="text-[6px] bg-primary/10">
                                   {saver.username?.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                             ))}
                           </div>
                           {loc.save_count > 0 && (
-                            <span className="text-xs text-muted-foreground ml-1">
+                            <span className="text-[10px] text-muted-foreground ml-1">
                               {loc.save_count === 1 
                                 ? t('savedByUser', { ns: 'feed', count: 1, defaultValue: 'saved by 1 user' })
                                 : t('savedByUsers', { ns: 'feed', count: loc.save_count, defaultValue: `saved by ${loc.save_count} users` })
@@ -678,7 +683,7 @@ const FeedSuggestionsCarousel = memo(() => {
                           )}
                         </>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[11px] text-muted-foreground">
                           {t('noSavesYet', { ns: 'feed', defaultValue: 'No saves yet' })}
                         </span>
                       )}
