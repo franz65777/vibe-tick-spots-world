@@ -60,10 +60,12 @@ const FeedPage = memo(() => {
   // Handle location click from folder
   const handleFolderLocationClick = useCallback((locationData: any) => {
     setOpenFolderId(null);
-    
-    // Save scroll position before navigating
-    const scrollY = scrollContainerRef.current?.scrollTop || 0;
-    sessionStorage.setItem('feed_scroll_position', String(scrollY));
+
+    // Save scroll position before navigating (fallback restore)
+    const container = scrollContainerRef.current;
+    if (container) {
+      sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ scrollTop: container.scrollTop }));
+    }
     
     navigate('/', { 
       state: { 
@@ -166,22 +168,33 @@ const FeedPage = memo(() => {
   
   // Restore scroll position when returning to feed from location card
   const hasRestoredScroll = useRef(false);
-  
+
   useEffect(() => {
-    const savedScroll = sessionStorage.getItem('feed_scroll_position');
-    if (savedScroll && scrollContainerRef.current && feedItems.length > 0 && !hasRestoredScroll.current) {
-      hasRestoredScroll.current = true;
-      const scrollValue = parseInt(savedScroll, 10);
-      
-      // Wait for images and content to render before scrolling
+    if (hasRestoredScroll.current) return;
+
+    const raw = sessionStorage.getItem('feed_scroll_anchor');
+    if (!raw || !scrollContainerRef.current || feedItems.length === 0) return;
+
+    hasRestoredScroll.current = true;
+
+    try {
+      const data = JSON.parse(raw) as { postId?: string; offset?: number; scrollTop?: number };
+      const container = scrollContainerRef.current;
+      const fallbackScrollTop = typeof data.scrollTop === 'number' ? data.scrollTop : 0;
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = scrollValue;
-            sessionStorage.removeItem('feed_scroll_position');
+          const el = data.postId ? document.getElementById(`feed-post-${data.postId}`) : null;
+          if (el && typeof data.offset === 'number') {
+            container.scrollTop = el.offsetTop - data.offset;
+          } else {
+            container.scrollTop = fallbackScrollTop;
           }
+          sessionStorage.removeItem('feed_scroll_anchor');
         });
       });
+    } catch {
+      sessionStorage.removeItem('feed_scroll_anchor');
     }
   }, [feedItems.length]);
 
@@ -311,15 +324,25 @@ const FeedPage = memo(() => {
 
   const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    // Save scroll position before navigating
-    const scrollY = scrollContainerRef.current?.scrollTop || 0;
-    sessionStorage.setItem('feed_scroll_position', String(scrollY));
-    
+
+    // Save an anchor (post + its current visual offset) so we can restore *exactly* the same point
+    const container = scrollContainerRef.current;
+    const postEl = document.getElementById(`feed-post-${postId}`);
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      const postRect = postEl?.getBoundingClientRect();
+      const offset = postRect ? postRect.top - containerRect.top : 0;
+
+      sessionStorage.setItem(
+        'feed_scroll_anchor',
+        JSON.stringify({ postId, offset, scrollTop: container.scrollTop })
+      );
+    }
+
     // Get full location data from the post
     const post = feedItems.find(i => i.id === postId) as any;
     const location = post?.locations;
-    
+
     navigate('/', {
       state: {
         centerMap: {
@@ -555,7 +578,7 @@ const FeedPage = memo(() => {
                 const userHasStory = stories.some(s => s.user_id === userId);
 
                 return (
-                  <React.Fragment key={item.id}>
+                  <div key={item.id} className="contents">
                     <Suspense fallback={<Skeleton className="h-96 w-full" />}>
                       <FeedPostItem
                         item={item}
@@ -592,7 +615,7 @@ const FeedPage = memo(() => {
                         <FeedFriendSaving />
                       </Suspense>
                     )}
-                  </React.Fragment>
+                  </div>
                 );
               })}
             </div>
