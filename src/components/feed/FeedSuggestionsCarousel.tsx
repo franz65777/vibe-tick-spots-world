@@ -310,7 +310,7 @@ const FeedSuggestionsCarousel = memo(() => {
           lat: loc.latitude,
           lng: loc.longitude,
           category: loc.category,
-          sourceSection: 'nearYou',
+          sourceSection: 'recommendations',
         },
         returnTo: '/feed',
       },
@@ -325,7 +325,7 @@ const FeedSuggestionsCarousel = memo(() => {
       {/* Header */}
       <div className="px-4 mb-3 flex items-center gap-2">
         <img src={locationPinIcon} alt="" className="w-5 h-5 object-contain" />
-        <h3 className="font-bold text-foreground">{t('nearYou', { ns: 'feed' })}</h3>
+        <h3 className="font-bold text-foreground">{t('recommendedForYou', { ns: 'feed' })}</h3>
       </div>
 
       {/* Horizontal scroll */}
