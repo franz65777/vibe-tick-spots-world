@@ -99,8 +99,14 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
     checkSaveAndLikeStatus();
   }, [user?.id, activity.location_id]);
 
+  // Store scroll position before navigation
+  const storeScrollPosition = () => {
+    sessionStorage.setItem('feed_scroll_position', window.scrollY.toString());
+  };
+
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    storeScrollPosition();
     navigate(`/profile/${activity.user_id}`);
   };
 
@@ -127,6 +133,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
   const handleCardClick = () => {
     if (activity.latitude && activity.longitude && activity.location_id) {
+      storeScrollPosition();
       navigate('/', {
         state: {
           centerMap: {
@@ -232,6 +239,13 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
   return (
     <div className="mx-4">
+      {/* Date outside the card */}
+      <div className="flex items-center gap-1.5 mb-1.5 px-1">
+        <span className="text-xs text-muted-foreground">
+          {formattedDate}
+        </span>
+      </div>
+
       {/* Card */}
       <div
         onClick={handleCardClick}
@@ -251,7 +265,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              {/* Top row: username, visited, date, follow button */}
+              {/* Top row: username, visited, follow button */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={handleUserClick}
@@ -262,19 +276,15 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 <span className="text-xs text-muted-foreground">
                   {t('visited', { ns: 'common', defaultValue: 'visited' })}
                 </span>
-                <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground">
-                  {formattedDate}
-                </span>
-                {/* Follow button next to date */}
+                {/* Follow button next to visited text */}
                 {!activity.is_following && user?.id !== activity.user_id && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-5 text-[10px] bg-background/50 rounded-full px-2 py-0 ml-1"
+                    className="h-6 text-xs bg-background/50 rounded-full px-3 py-0 ml-1"
                     onClick={handleFollow}
                   >
-                    <UserPlus className="w-2.5 h-2.5 mr-0.5" />
+                    <UserPlus className="w-3 h-3 mr-1" />
                     {t('follow', { defaultValue: 'Follow' })}
                   </Button>
                 )}
@@ -293,7 +303,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
             </div>
 
             {/* Right side: Save & Like buttons stacked, aligned to top */}
-            <div className="flex flex-col items-center gap-0 shrink-0 -mt-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
               {/* Save button */}
               {isSaved && savedTag ? (
                 <button 
@@ -316,17 +326,17 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 />
               )}
 
-              {/* Like button - closer to save */}
+              {/* Like button with count beside it */}
               <button
                 onClick={handleLike}
                 disabled={isLiking}
-                className="w-7 h-7 flex flex-col items-center justify-center rounded-full hover:bg-muted/50 transition-colors -mt-1"
+                className="w-7 h-7 flex items-center justify-center gap-0.5 rounded-full hover:bg-muted/50 transition-colors"
               >
                 <Heart 
                   className={`w-4 h-4 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} 
                 />
                 {likeCount > 0 && (
-                  <span className="text-[10px] text-muted-foreground -mt-0.5">{likeCount}</span>
+                  <span className="text-[10px] text-muted-foreground">{likeCount}</span>
                 )}
               </button>
             </div>
