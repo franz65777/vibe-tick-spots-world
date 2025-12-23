@@ -499,8 +499,26 @@ const FeedSuggestionsCarousel = memo(() => {
            lowerCategory.includes('dining');
   };
 
+  // Store scroll index when clicking a card
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const clickedIndexRef = useRef<number>(0);
+
+  // Restore scroll position when returning from location detail
+  useEffect(() => {
+    const savedIndex = sessionStorage.getItem('suggestions_clicked_index');
+    if (savedIndex !== null && scrollContainerRef.current && suggestions.length > 0) {
+      const idx = parseInt(savedIndex, 10);
+      const cardWidth = 288 + 12; // w-64 (256px) + gap-3 (12px)
+      scrollContainerRef.current.scrollLeft = idx * cardWidth;
+      sessionStorage.removeItem('suggestions_clicked_index');
+    }
+  }, [suggestions]);
+
   // Handle location click - same behavior as post location clicks
-  const handleLocationClick = useCallback((loc: SuggestedLocation) => {
+  const handleLocationClick = useCallback((loc: SuggestedLocation, idx: number) => {
+    // Save clicked index for scroll restoration
+    sessionStorage.setItem('suggestions_clicked_index', String(idx));
+
     // Save an anchor (top visible feed post + its visual offset) so we restore the *exact* same point
     const container = document.querySelector('[data-feed-scroll-container]') as HTMLDivElement | null;
     if (container) {
@@ -541,6 +559,7 @@ const FeedSuggestionsCarousel = memo(() => {
           lat: loc.latitude,
           lng: loc.longitude,
           category: loc.category,
+          google_place_id: loc.google_place_id || null,
           sourceSection: 'recommendations',
         },
         returnTo: '/feed',
@@ -560,8 +579,8 @@ const FeedSuggestionsCarousel = memo(() => {
       </div>
 
       {/* Horizontal scroll */}
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
-        {suggestions.map((loc) => {
+      <div ref={scrollContainerRef} className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+        {suggestions.map((loc, idx) => {
           const categoryImage = getCategoryImage(loc.category);
           const isBiggerIcon = shouldHaveBiggerIcon(loc.category);
 
@@ -580,15 +599,15 @@ const FeedSuggestionsCarousel = memo(() => {
                 else cardRefs.current.delete(loc.id);
               }}
               data-location-id={loc.id}
-              onClick={() => handleLocationClick(loc)}
+              onClick={() => handleLocationClick(loc, idx)}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc)}
-              className="shrink-0 w-72 bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
+              onKeyDown={(e) => e.key === 'Enter' && handleLocationClick(loc, idx)}
+              className="shrink-0 w-64 bg-background/60 backdrop-blur-xl rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
             >
-              <div className="flex gap-3 p-3">
+              <div className="flex gap-2.5 p-2.5">
                 {/* Image */}
-                <div className="relative w-28 h-28 rounded-lg overflow-hidden shrink-0">
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0">
                   {loc.image_url ? (
                     <img 
                       src={loc.image_url} 
@@ -600,7 +619,7 @@ const FeedSuggestionsCarousel = memo(() => {
                       <img 
                         src={categoryImage} 
                         alt={loc.category}
-                        className={`object-contain ${isBiggerIcon ? 'w-20 h-20' : 'w-16 h-16'}`}
+                        className={`object-contain ${isBiggerIcon ? 'w-14 h-14' : 'w-12 h-12'}`}
                       />
                     </div>
                   )}
