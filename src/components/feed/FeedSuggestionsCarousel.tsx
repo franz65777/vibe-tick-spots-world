@@ -28,21 +28,38 @@ const MarqueeText = memo(({ text, className }: { text: string; className?: strin
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current && textRef.current) {
-        setShouldAnimate(textRef.current.scrollWidth > containerRef.current.clientWidth);
+        const isOverflowing = textRef.current.scrollWidth > containerRef.current.clientWidth;
+        setShouldAnimate(isOverflowing);
       }
     };
-    checkOverflow();
+    // Check after a small delay to ensure proper rendering
+    const timer = setTimeout(checkOverflow, 100);
     window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkOverflow);
+    };
   }, [text]);
+
+  if (!shouldAnimate) {
+    return (
+      <div ref={containerRef} className={`overflow-hidden whitespace-nowrap ${className}`}>
+        <span ref={textRef}>{text}</span>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className={`overflow-hidden whitespace-nowrap ${className}`}>
       <span
         ref={textRef}
-        className={shouldAnimate ? 'inline-block animate-marquee' : ''}
-        style={shouldAnimate ? { animationDuration: `${Math.max(text.length * 0.15, 3)}s` } : {}}
+        className="inline-block"
+        style={{
+          animation: `marquee ${Math.max(text.length * 0.2, 4)}s linear infinite`,
+        }}
       >
+        {text}
+        <span className="mx-4">•</span>
         {text}
       </span>
     </div>
@@ -268,10 +285,9 @@ const FeedSuggestionsCarousel = memo(() => {
                       text={loc.name} 
                       className="font-bold text-foreground"
                     />
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <CategoryIcon className={`shrink-0 ${isBiggerIcon ? 'w-4 h-4' : 'w-3.5 h-3.5'} ${categoryColor}`} />
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {distance !== null ? (
-                        <span>{formatDistance(distance)} {t('away', { ns: 'common', defaultValue: 'away' })}</span>
+                        <span>{formatDistance(distance)} {t('away', { ns: 'feed' })}</span>
                       ) : (
                         <span>{loc.city || loc.category}</span>
                       )}

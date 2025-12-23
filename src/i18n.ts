@@ -645,6 +645,7 @@ const resources = {
       discoverPeople: 'Discover People',
       pickedForYou: 'picked for you',
       nearby: 'nearby',
+      away: 'away',
       savedByUsers: 'saved by {{count}} users',
       savedByUser: 'saved by 1 user'
     },
@@ -1565,6 +1566,7 @@ const resources = {
       discoverPeople: 'Descubrir Personas',
       pickedForYou: 'seleccionado para ti',
       nearby: 'cerca',
+      away: 'de distancia',
       savedByUsers: 'guardado por {{count}} usuarios',
       savedByUser: 'guardado por 1 usuario'
     },
@@ -2528,6 +2530,7 @@ const resources = {
       discoverPeople: 'Scopri Persone',
       pickedForYou: 'scelto per te',
       nearby: 'vicino',
+      away: 'di distanza',
       savedByUsers: 'salvato da {{count}} utenti',
       savedByUser: 'salvato da 1 utente'
     },
@@ -3422,6 +3425,7 @@ const resources = {
       discoverPeople: 'Découvrir des personnes',
       pickedForYou: 'sélectionné pour vous',
       nearby: 'à proximité',
+      away: 'de distance',
       savedByUsers: 'enregistré par {{count}} utilisateurs',
       savedByUser: 'enregistré par 1 utilisateur'
     },
@@ -4224,6 +4228,7 @@ const resources = {
       discoverPeople: 'Personen entdecken',
       pickedForYou: 'für dich ausgewählt',
       nearby: 'in der Nähe',
+      away: 'entfernt',
       savedByUsers: 'von {{count}} Nutzern gespeichert',
       savedByUser: 'von 1 Nutzer gespeichert'
     },
@@ -4964,6 +4969,7 @@ const resources = {
       discoverPeople: 'Descobrir pessoas',
       pickedForYou: 'escolhido para você',
       nearby: 'próximo',
+      away: 'de distância',
       savedByUsers: 'salvo por {{count}} usuários',
       savedByUser: 'salvo por 1 usuário'
     },
@@ -5653,6 +5659,7 @@ const resources = {
       discoverPeople: '发现好友',
       pickedForYou: '为你精选',
       nearby: '附近',
+      away: '距离',
       savedByUsers: '{{count}}位用户已保存',
       savedByUser: '1位用户已保存'
     },
@@ -6286,6 +6293,7 @@ const resources = {
       discoverPeople: '人を探す',
       pickedForYou: 'あなたへのおすすめ',
       nearby: '近く',
+      away: '先',
       savedByUsers: '{{count}}人のユーザーが保存',
       savedByUser: '1人のユーザーが保存'
     },
@@ -6959,6 +6967,7 @@ const resources = {
       discoverPeople: '사람 찾기',
       pickedForYou: '당신을 위한 추천',
       nearby: '근처',
+      away: '거리',
       savedByUsers: '{{count}}명의 사용자가 저장',
       savedByUser: '1명의 사용자가 저장'
     },
@@ -7615,6 +7624,7 @@ const resources = {
       discoverPeople: 'اكتشف الأشخاص',
       pickedForYou: 'مختار لك',
       nearby: 'قريب',
+      away: 'بعيداً',
       savedByUsers: 'محفوظ من قبل {{count}} مستخدمين',
       savedByUser: 'محفوظ من قبل مستخدم واحد'
     },
@@ -8924,6 +8934,7 @@ const resources = {
       discoverPeople: 'Найти людей',
       pickedForYou: 'выбрано для вас',
       nearby: 'рядом',
+      away: 'расстояние',
       savedByUsers: 'сохранено {{count}} пользователями',
       savedByUser: 'сохранено 1 пользователем'
     },
