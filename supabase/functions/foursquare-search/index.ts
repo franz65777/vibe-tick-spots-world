@@ -131,18 +131,19 @@ serve(async (req) => {
           if (typ.includes('museum') || name.includes('museo') || name.includes('museum')) return 'museum';
           if (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house') || name.includes('hotel') || name.includes('hostel')) return 'hotel';
           if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
-          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake') || name.includes('panett') || name.includes('pasticc') || name.includes('forno')) return 'bakery';
           if (typ.includes('cafe') || name.includes('cafe') || name.includes('caffè') || name.includes('coffee')) return 'cafe';
           if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine') || name.includes('birr')) return 'bar';
+          // Bakery -> restaurant (bakery is a type of food/restaurant)
+          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake') || name.includes('panett') || name.includes('pasticc') || name.includes('forno')) return 'restaurant';
           if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('ristorante') || name.includes('pizzeria') || name.includes('trattoria') || name.includes('osteria') || name.includes('food')) return 'restaurant';
           // Fallback: use the search term category if nothing matched
           const q = (searchTerm || '').toLowerCase();
           if (q.includes('museum')) return 'museum';
           if (q.includes('hotel')) return 'hotel';
           if (q.includes('cinema') || q.includes('entertainment')) return 'entertainment';
-          if (q.includes('bakery')) return 'bakery';
           if (q.includes('cafe')) return 'cafe';
           if (q.includes('bar')) return 'bar';
+          // bakery search term -> restaurant
           return 'restaurant';
         };
 
@@ -276,18 +277,19 @@ serve(async (req) => {
           if (typ.includes('museum') || name.includes('museo') || name.includes('museum')) return 'museum';
           if (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house') || name.includes('hotel') || name.includes('hostel')) return 'hotel';
           if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
-          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake') || name.includes('panett') || name.includes('pasticc') || name.includes('forno')) return 'bakery';
           if (typ.includes('cafe') || name.includes('cafe') || name.includes('caffè') || name.includes('coffee')) return 'cafe';
           if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine') || name.includes('birr')) return 'bar';
+          // Bakery -> restaurant (bakery is a type of food/restaurant)
+          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake') || name.includes('panett') || name.includes('pasticc') || name.includes('forno')) return 'restaurant';
           if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('ristorante') || name.includes('pizzeria') || name.includes('trattoria') || name.includes('osteria') || name.includes('food')) return 'restaurant';
           // Fallback: use the search term category if nothing matched
           const q = (searchTerm || '').toLowerCase();
           if (q.includes('museum')) return 'museum';
           if (q.includes('hotel')) return 'hotel';
           if (q.includes('cinema') || q.includes('entertainment')) return 'entertainment';
-          if (q.includes('bakery')) return 'bakery';
           if (q.includes('cafe')) return 'cafe';
           if (q.includes('bar')) return 'bar';
+          // bakery search term -> restaurant  
           return 'restaurant';
         };
         
