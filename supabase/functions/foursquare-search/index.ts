@@ -58,6 +58,68 @@ const allowedFoursquareCategoryIds = [
   '10001', // Entertainment
 ];
 
+// Fetch photo from Wikimedia Commons using Geosearch API (FREE, no API key needed)
+async function fetchWikimediaPhoto(lat: number, lng: number, placeName: string): Promise<string | null> {
+  try {
+    // First try to find images near the coordinates
+    const geoSearchUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=geosearch&prop=imageinfo&iiprop=url&iiurlwidth=300&ggscoord=${lat}|${lng}&ggsradius=100&ggslimit=5&format=json&origin=*`;
+    
+    const response = await fetch(geoSearchUrl, {
+      headers: {
+        'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const pages = data.query?.pages;
+      
+      if (pages) {
+        // Find the first image that looks like a photo (not a map or icon)
+        for (const pageId of Object.keys(pages)) {
+          const page = pages[pageId];
+          const imageInfo = page.imageinfo?.[0];
+          if (imageInfo?.thumburl) {
+            const url = imageInfo.thumburl.toLowerCase();
+            // Skip maps, icons, logos, and other non-photo images
+            if (!url.includes('map') && !url.includes('logo') && !url.includes('icon') && 
+                !url.includes('flag') && !url.includes('coat_of_arms') && !url.includes('diagram')) {
+              return imageInfo.thumburl;
+            }
+          }
+        }
+      }
+    }
+    
+    // Fallback: search by place name on Wikipedia
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(placeName)}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=300&format=json&origin=*`;
+    
+    const searchResponse = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+      }
+    });
+    
+    if (searchResponse.ok) {
+      const searchData = await searchResponse.json();
+      const searchPages = searchData.query?.pages;
+      
+      if (searchPages) {
+        for (const pageId of Object.keys(searchPages)) {
+          const page = searchPages[pageId];
+          if (page.thumbnail?.source) {
+            return page.thumbnail.source;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`Wikimedia photo fetch failed for ${placeName}:`, e);
+  }
+  
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -209,9 +271,21 @@ serve(async (req) => {
 
         places.sort((a: any, b: any) => { if (query && b._nameScore !== a._nameScore) return b._nameScore - a._nameScore; return a.distance - b.distance; });
 
-        places = places.slice(0, limit).map((p: any) => ({ fsq_id: p.fsq_id, name: p.name, category: p.category, address: p.address, city: p.city, lat: p.lat, lng: p.lng, distance: p.distance }));
+        places = places.slice(0, limit);
+        
+        // Fetch photos from Wikimedia Commons in parallel (limit to first 6 for speed)
+        const placesWithPhotos = await Promise.all(
+          places.map(async (p: any, idx: number) => {
+            let photo_url = null;
+            if (idx < 6) { // Only fetch photos for first 6 places to keep it fast
+              photo_url = await fetchWikimediaPhoto(p.lat, p.lng, p.name);
+            }
+            return { fsq_id: p.fsq_id, name: p.name, category: p.category, address: p.address, city: p.city, lat: p.lat, lng: p.lng, distance: p.distance, photo_url };
+          })
+        );
 
-        return new Response(JSON.stringify({ places }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.log(`Fast OSM returning ${placesWithPhotos.length} places with photos`);
+        return new Response(JSON.stringify({ places: placesWithPhotos }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       } catch (e) {
         console.error('Fast OSM path failed:', e);
       }
@@ -423,21 +497,33 @@ serve(async (req) => {
           return a.distance - b.distance;
         });
         
-        // Trim to requested limit and remove private fields
-        places = places.slice(0, limit).map((p: any) => ({
-          fsq_id: p.fsq_id,
-          name: p.name,
-          category: p.category,
-          address: p.address,
-          city: p.city,
-          lat: p.lat,
-          lng: p.lng,
-          distance: p.distance,
-        }));
+        // Trim to requested limit
+        places = places.slice(0, limit);
         
-        console.log(`OSM fallback returning ${places.length} places`);
+        // Fetch photos from Wikimedia Commons in parallel (limit to first 6 for speed)
+        const placesWithPhotos = await Promise.all(
+          places.map(async (p: any, idx: number) => {
+            let photo_url = null;
+            if (idx < 6) { // Only fetch photos for first 6 places to keep it fast
+              photo_url = await fetchWikimediaPhoto(p.lat, p.lng, p.name);
+            }
+            return {
+              fsq_id: p.fsq_id,
+              name: p.name,
+              category: p.category,
+              address: p.address,
+              city: p.city,
+              lat: p.lat,
+              lng: p.lng,
+              distance: p.distance,
+              photo_url,
+            };
+          })
+        );
+        
+        console.log(`OSM fallback returning ${placesWithPhotos.length} places with photos`);
         return new Response(
-          JSON.stringify({ places }),
+          JSON.stringify({ places: placesWithPhotos }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (e) {
