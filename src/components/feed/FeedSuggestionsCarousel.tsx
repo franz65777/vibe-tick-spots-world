@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
+import { getCategoryImage } from '@/utils/categoryIcons';
 import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
-import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { type SaveTag } from '@/utils/saveTags';
 import { toast } from 'sonner';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import locationPinIcon from '@/assets/location-pin-icon.png';
 
 interface SuggestedLocation {
@@ -93,8 +94,7 @@ const FeedSuggestionsCarousel = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [suggestions, setSuggestions] = useState<SuggestedLocation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Track visible cards for marquee animation - must be before any return
@@ -118,89 +118,86 @@ const FeedSuggestionsCarousel = memo(() => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!user?.id) return;
+  // Use React Query for caching - data persists when returning from location card
+  const { data: suggestions = [], isLoading } = useQuery({
+    queryKey: ['feed-suggestions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Get user's current city
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('current_city')
+        .eq('id', user.id)
+        .single();
 
-    const fetchSuggestions = async () => {
-      try {
-        // Get user's current city
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('current_city')
-          .eq('id', user.id)
-          .single();
+      // Get popular locations in user's city that user hasn't saved
+      const { data: userSaved } = await supabase
+        .from('user_saved_locations')
+        .select('location_id')
+        .eq('user_id', user.id);
 
-        // Get popular locations in user's city that user hasn't saved
-        const { data: userSaved } = await supabase
-          .from('user_saved_locations')
-          .select('location_id')
-          .eq('user_id', user.id);
+      const savedIds = new Set(userSaved?.map(s => s.location_id) || []);
 
-        const savedIds = new Set(userSaved?.map(s => s.location_id) || []);
+      let query = supabase
+        .from('locations')
+        .select('id, name, category, city, image_url, latitude, longitude')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-        let query = supabase
-          .from('locations')
-          .select('id, name, category, city, image_url, latitude, longitude')
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (profile?.current_city) {
-          query = query.ilike('city', `%${profile.current_city}%`);
-        }
-
-        const { data: locations, error } = await query;
-
-        if (error) throw error;
-
-        // Filter out already saved and get save counts
-        const unsaved = (locations || []).filter(loc => !savedIds.has(loc.id));
-
-        // Get save counts for each location
-        const withCounts = await Promise.all(
-          unsaved.slice(0, 10).map(async (loc) => {
-            const { count } = await supabase
-              .from('user_saved_locations')
-              .select('*', { count: 'exact', head: true })
-              .eq('location_id', loc.id);
-
-            // Get a few users who saved this
-            const { data: savers } = await supabase
-              .from('user_saved_locations')
-              .select('user_id')
-              .eq('location_id', loc.id)
-              .limit(3);
-
-            let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
-            if (savers && savers.length > 0) {
-              const { data: profiles } = await supabase
-                .from('profiles')
-                .select('avatar_url, username')
-                .in('id', savers.map(s => s.user_id));
-              savedBy = profiles || [];
-            }
-
-            return {
-              ...loc,
-              save_count: count || 0,
-              saved_by: savedBy
-            };
-          })
-        );
-
-        // Sort by save count
-        withCounts.sort((a, b) => b.save_count - a.save_count);
-        setSuggestions(withCounts);
-      } catch (err) {
-        console.error('Error fetching suggestions:', err);
-      } finally {
-        setLoading(false);
+      if (profile?.current_city) {
+        query = query.ilike('city', `%${profile.current_city}%`);
       }
-    };
 
-    fetchSuggestions();
-  }, [user?.id]);
+      const { data: locations, error } = await query;
+
+      if (error) throw error;
+
+      // Filter out already saved and get save counts
+      const unsaved = (locations || []).filter(loc => !savedIds.has(loc.id));
+
+      // Get save counts for each location
+      const withCounts = await Promise.all(
+        unsaved.slice(0, 10).map(async (loc) => {
+          const { count } = await supabase
+            .from('user_saved_locations')
+            .select('*', { count: 'exact', head: true })
+            .eq('location_id', loc.id);
+
+          // Get a few users who saved this
+          const { data: savers } = await supabase
+            .from('user_saved_locations')
+            .select('user_id')
+            .eq('location_id', loc.id)
+            .limit(3);
+
+          let savedBy: Array<{ avatar_url: string | null; username: string }> = [];
+          if (savers && savers.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('avatar_url, username')
+              .in('id', savers.map(s => s.user_id));
+            savedBy = profiles || [];
+          }
+
+          return {
+            ...loc,
+            save_count: count || 0,
+            saved_by: savedBy
+          };
+        })
+      );
+
+      // Sort by save count
+      withCounts.sort((a, b) => b.save_count - a.save_count);
+      return withCounts as SuggestedLocation[];
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Cache for 30 minutes
+  });
 
   // IntersectionObserver for mobile marquee - must be before any return
   useEffect(() => {
@@ -239,13 +236,11 @@ const FeedSuggestionsCarousel = memo(() => {
     }
 
     try {
-      let locationId = loc.id;
-      
       const { error } = await supabase
         .from('user_saved_locations')
         .upsert({
           user_id: user.id,
-          location_id: locationId,
+          location_id: loc.id,
           save_tag: tag,
         }, { onConflict: 'user_id,location_id' });
 
@@ -253,12 +248,15 @@ const FeedSuggestionsCarousel = memo(() => {
 
       toast.success(t('locationSaved', { ns: 'common' }));
       
-      setSuggestions(prev => prev.filter(s => s.id !== loc.id));
+      // Remove from cached suggestions
+      queryClient.setQueryData<SuggestedLocation[]>(['feed-suggestions', user.id], (prev) => 
+        prev?.filter(s => s.id !== loc.id) || []
+      );
     } catch (error) {
       console.error('Error saving location:', error);
       toast.error(t('errorSavingLocation', { ns: 'common' }));
     }
-  }, [user?.id, t]);
+  }, [user?.id, t, queryClient]);
 
   // Check if category should have bigger icon
   const shouldHaveBiggerIcon = (category: string): boolean => {
@@ -270,7 +268,17 @@ const FeedSuggestionsCarousel = memo(() => {
            lowerCategory.includes('dining');
   };
 
-  const handleLocationClick = (loc: SuggestedLocation) => {
+  // Handle location click - same behavior as post location clicks
+  const handleLocationClick = useCallback((loc: SuggestedLocation) => {
+    // Save scroll position like post location clicks do
+    const feedContainer = document.querySelector('[data-feed-scroll-container]');
+    if (feedContainer) {
+      sessionStorage.setItem(
+        'feed_scroll_anchor',
+        JSON.stringify({ scrollTop: feedContainer.scrollTop })
+      );
+    }
+
     navigate('/', {
       state: {
         centerMap: {
@@ -284,14 +292,16 @@ const FeedSuggestionsCarousel = memo(() => {
           name: loc.name,
           lat: loc.latitude,
           lng: loc.longitude,
-          category: loc.category
-        }
+          category: loc.category,
+          sourceSection: 'nearYou'
+        },
+        returnTo: '/feed'
       }
     });
-  };
+  }, [navigate]);
 
   // Early return AFTER all hooks
-  if (loading || suggestions.length === 0) return null;
+  if (isLoading || suggestions.length === 0) return null;
 
   return (
     <div className="py-4">
@@ -304,9 +314,7 @@ const FeedSuggestionsCarousel = memo(() => {
       {/* Horizontal scroll */}
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
         {suggestions.map((loc) => {
-          const CategoryIcon = getCategoryIcon(loc.category);
           const categoryImage = getCategoryImage(loc.category);
-          const categoryColor = getCategoryColor(loc.category);
           const isBiggerIcon = shouldHaveBiggerIcon(loc.category);
 
           // Calculate distance if user location is available
