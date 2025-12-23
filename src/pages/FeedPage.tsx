@@ -21,6 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import FolderDetailModal from '@/components/profile/FolderDetailModal';
 import { useVisitedSaves } from '@/hooks/useVisitedSaves';
 import UserVisitedCard from '@/components/feed/UserVisitedCard';
+import { storeFeedScrollAnchor } from '@/utils/feedScroll';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
@@ -62,11 +63,8 @@ const FeedPage = memo(() => {
   const handleFolderLocationClick = useCallback((locationData: any) => {
     setOpenFolderId(null);
 
-    // Save scroll position before navigating (fallback restore)
-    const container = scrollContainerRef.current;
-    if (container) {
-      sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ scrollTop: container.scrollTop }));
-    }
+    // Save scroll position before navigating (anchor restore)
+    storeFeedScrollAnchor();
     
     navigate('/', { 
       state: { 
@@ -348,10 +346,7 @@ const FeedPage = memo(() => {
       setStoriesViewerOpen(true);
     } else {
       // Save scroll position before navigating to profile
-      const container = scrollContainerRef.current;
-      if (container) {
-        sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ scrollTop: container.scrollTop }));
-      }
+      storeFeedScrollAnchor();
       navigate(`/profile/${userId}`);
     }
   };

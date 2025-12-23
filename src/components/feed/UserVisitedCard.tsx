@@ -14,6 +14,7 @@ import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import { type SaveTag } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { normalizeCity } from '@/utils/cityNormalization';
+import { storeFeedScrollAnchor } from '@/utils/feedScroll';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
@@ -99,11 +100,9 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
     checkSaveAndLikeStatus();
   }, [user?.id, activity.location_id]);
 
-  // Store scroll position before navigation using same format as FeedPage
+  // Store scroll position before navigation using the same anchor logic as the rest of the feed
   const storeScrollPosition = () => {
-    sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ 
-      scrollTop: window.scrollY 
-    }));
+    storeFeedScrollAnchor();
   };
 
   const handleUserClick = (e: React.MouseEvent) => {

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { storeFeedScrollAnchor } from '@/utils/feedScroll';
 
 interface FriendSaveActivity {
   id: string;
@@ -124,8 +125,7 @@ const FeedFriendSaving = memo(() => {
 
   const handleUserClick = (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Save scroll position before navigating
-    sessionStorage.setItem('feed_scroll_anchor', JSON.stringify({ scrollTop: window.scrollY }));
+    storeFeedScrollAnchor();
     navigate(`/profile/${userId}`);
   };
 
