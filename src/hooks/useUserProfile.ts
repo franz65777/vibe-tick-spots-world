@@ -295,7 +295,28 @@ export const useUserProfile = (userId?: string) => {
 
           setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
         } else {
-          // Request already pending; just keep UI consistent
+          // Request already pending; ensure the requested user still gets a visible notification
+          const { data: followerProfile } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', currentUser.id)
+            .single();
+
+          await sendLocalizedNotification(
+            userId,
+            'follow_request',
+            {
+              user_id: currentUser.id,
+              user_name: followerProfile?.username,
+              avatar_url: followerProfile?.avatar_url,
+              request_id: requestId,
+              status: 'pending',
+            },
+            {
+              username: followerProfile?.username || 'Someone',
+            }
+          );
+
           setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
         }
       } else {

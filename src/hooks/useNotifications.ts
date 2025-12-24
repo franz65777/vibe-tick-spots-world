@@ -47,9 +47,71 @@ export const useNotifications = () => {
   const fetchNotifications = async () => {
     if (!user) return;
 
+    const parseData = (raw: any): Record<string, any> => {
+      if (!raw) return {};
+      if (typeof raw === 'string') {
+        try {
+          return JSON.parse(raw);
+        } catch (e) {
+          console.error('Error parsing notification data:', e);
+          return {};
+        }
+      }
+      if (typeof raw === 'object') return raw as Record<string, any>;
+      return {};
+    };
+
+    const pruneOrphaned = async (list: Notification[]) => {
+      // Remove notifications that reference content that no longer exists (e.g. deleted post/comment)
+      const postIds = Array.from(
+        new Set(list.map((n) => n.data?.post_id).filter(Boolean) as string[])
+      );
+      const commentIds = Array.from(
+        new Set(list.map((n) => n.data?.comment_id).filter(Boolean) as string[])
+      );
+
+      if (postIds.length === 0 && commentIds.length === 0) return list;
+
+      const [postsRes, commentsRes] = await Promise.all([
+        postIds.length
+          ? supabase.from('posts').select('id').in('id', postIds)
+          : Promise.resolve({ data: [] as any[], error: null as any }),
+        commentIds.length
+          ? supabase.from('comments').select('id').in('id', commentIds)
+          : Promise.resolve({ data: [] as any[], error: null as any }),
+      ]);
+
+      const existingPostIds = new Set((postsRes.data || []).map((p: any) => p.id));
+      const existingCommentIds = new Set((commentsRes.data || []).map((c: any) => c.id));
+
+      const invalidIds = list
+        .filter((n) => {
+          const pid = n.data?.post_id as string | undefined;
+          const cid = n.data?.comment_id as string | undefined;
+          if (pid && !existingPostIds.has(pid)) return true;
+          if (cid && !existingCommentIds.has(cid)) return true;
+          return false;
+        })
+        .map((n) => n.id);
+
+      if (invalidIds.length > 0) {
+        // Best-effort cleanup; don't block rendering
+        supabase
+          .from('notifications')
+          .delete()
+          .in('id', invalidIds)
+          .eq('user_id', user.id)
+          .then(({ error }) => {
+            if (error) console.warn('Failed to delete orphaned notifications:', error);
+          });
+      }
+
+      return list.filter((n) => !invalidIds.includes(n.id));
+    };
+
     try {
       console.log('Fetching notifications for user:', user.id);
-      
+
       // Fetch notifications and muted users in parallel for better performance
       const [notificationsResult, mutedResult] = await Promise.all([
         supabase
@@ -64,45 +126,32 @@ export const useNotifications = () => {
           .from('user_mutes')
           .select('muted_user_id')
           .eq('muter_id', user.id)
-          .eq('is_muted', true)
+          .eq('is_muted', true),
       ]);
-      
+
       const { data, error } = notificationsResult;
-      const mutedUserIds = mutedResult.data?.map(s => s.muted_user_id).filter(Boolean) || [];
-      
+      const mutedUserIds = mutedResult.data?.map((s) => s.muted_user_id).filter(Boolean) || [];
+
       if (error) {
         console.error('Error fetching notifications:', error);
         setNotifications([]);
       } else {
         console.log('Notifications fetched successfully:', data?.length || 0);
-        // Transform and filter in a single pass for better performance
+
         const transformedData = (data || [])
-          .map(item => {
-            // Parse data if it's a string, otherwise use as-is
-            let parsedData: Record<string, any> = {};
-            if (typeof item.data === 'string') {
-              try {
-                parsedData = JSON.parse(item.data);
-              } catch (e) {
-                console.error('Error parsing notification data:', e);
-              }
-            } else if (item.data && typeof item.data === 'object') {
-              parsedData = item.data as Record<string, any>;
-            }
-            
-            return {
-              ...item,
-              data: parsedData
-            } as Notification;
-          })
-          .filter(notification => {
-            // Filter out notifications from muted users
-            const notifUserId = notification.data?.user_id;
+          .map((item) => ({
+            ...item,
+            data: parseData(item.data),
+          }))
+          .filter((notification) => {
+            const notifUserId = (notification as any).data?.user_id;
             return !notifUserId || !mutedUserIds.includes(notifUserId);
-          });
-        setNotifications(transformedData);
+          }) as Notification[];
+
+        const cleaned = await pruneOrphaned(transformedData);
+        setNotifications(cleaned);
       }
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -126,19 +175,23 @@ export const useNotifications = () => {
           },
           async (payload) => {
             console.log('New notification received:', payload);
-            
-            // Parse data properly
-            let parsedData: Record<string, any> = {};
-            if (typeof payload.new.data === 'string') {
-              try {
-                parsedData = JSON.parse(payload.new.data);
-              } catch (e) {
-                console.error('Error parsing realtime notification data:', e);
+
+            const parseData = (raw: any): Record<string, any> => {
+              if (!raw) return {};
+              if (typeof raw === 'string') {
+                try {
+                  return JSON.parse(raw);
+                } catch (e) {
+                  console.error('Error parsing realtime notification data:', e);
+                  return {};
+                }
               }
-            } else if (payload.new.data && typeof payload.new.data === 'object') {
-              parsedData = payload.new.data as Record<string, any>;
-            }
-            
+              if (typeof raw === 'object') return raw as Record<string, any>;
+              return {};
+            };
+
+            const parsedData = parseData(payload.new.data);
+
             // Check if the notification is from a muted user
             const notifUserId = parsedData?.user_id;
             if (notifUserId) {
@@ -148,18 +201,43 @@ export const useNotifications = () => {
                 .eq('muter_id', user.id)
                 .eq('muted_user_id', notifUserId)
                 .maybeSingle();
-              
+
               if (mutedSetting?.is_muted) {
                 console.log('Notification from muted user, ignoring');
                 return;
               }
             }
-            
+
+            // Drop + delete notifications that reference deleted content
+            try {
+              const pid = parsedData?.post_id as string | undefined;
+              const cid = parsedData?.comment_id as string | undefined;
+
+              if (pid) {
+                const { data: p } = await supabase.from('posts').select('id').eq('id', pid).maybeSingle();
+                if (!p) {
+                  await supabase.from('notifications').delete().eq('id', payload.new.id).eq('user_id', user.id);
+                  return;
+                }
+              }
+
+              if (cid) {
+                const { data: c } = await supabase.from('comments').select('id').eq('id', cid).maybeSingle();
+                if (!c) {
+                  await supabase.from('notifications').delete().eq('id', payload.new.id).eq('user_id', user.id);
+                  return;
+                }
+              }
+            } catch (e) {
+              // If validation fails, we still show the notification (best-effort)
+              console.warn('Failed to validate notification references:', e);
+            }
+
             const newNotification = {
               ...payload.new,
-              data: parsedData
+              data: parsedData,
             } as Notification;
-            setNotifications(prev => [newNotification, ...prev]);
+            setNotifications((prev) => [newNotification, ...prev]);
           }
         )
         .on(
