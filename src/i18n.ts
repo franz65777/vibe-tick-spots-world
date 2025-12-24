@@ -2443,6 +2443,8 @@ const resources = {
       reviewsTab: 'Recensioni',
       suggested: 'Suggeriti',
       mutualFriends: 'amici in comune',
+      mutualFriend: 'amico in comune',
+      place: 'Luogo',
     },
     add: {
       newPost: 'Nuovo Post',
