@@ -4,7 +4,6 @@ import { queryClient } from '@/lib/queryClient';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { retentionAnalyticsService } from '@/services/retentionAnalyticsService';
 import { useEffect, lazy, Suspense } from 'react';
@@ -159,6 +158,18 @@ function AppContent() {
   );
 }
 
+// Polyfill to prevent removeChild errors from browser extensions or portal conflicts
+if (typeof Node === 'function' && Node.prototype) {
+  const originalRemoveChild = Node.prototype.removeChild;
+  Node.prototype.removeChild = function<T extends Node>(child: T): T {
+    if (child.parentNode !== this) {
+      console.warn('Cannot remove a child from a different parent', child, this);
+      return child;
+    }
+    return originalRemoveChild.call(this, child) as T;
+  };
+}
+
 function App() {
   console.log('🎯 App component rendering...');
   
@@ -169,7 +180,6 @@ function App() {
           <Router>
             <AppContent />
           </Router>
-          <Toaster />
           <Sonner />
         </AuthProvider>
       </QueryClientProvider>
