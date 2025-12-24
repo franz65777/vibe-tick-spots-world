@@ -32,7 +32,7 @@ const UserProfilePage = () => {
   const location = useLocation();
   const { user: currentUser } = useAuth();
 
-  const { profile, loading, error, followUser, unfollowUser, cancelFollowRequest } = useUserProfile(userId);
+  const { profile, loading, error, followUser, unfollowUser, cancelFollowRequest, followLoading } = useUserProfile(userId);
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   const { isMuted, toggleMute } = useNotificationMuting(userId);
   const { isBlocked, blockUser, unblockUser } = useUserBlocking(userId);
@@ -132,7 +132,7 @@ const UserProfilePage = () => {
       return t('userProfile.alreadyFollowing', { ns: 'common' });
     }
     if (profile?.follow_request_status === 'pending') {
-      return t('userProfile.requestSent', { ns: 'common', defaultValue: 'Requested' });
+      return t('userProfile.requestSent', { ns: 'common' });
     }
     return t('userProfile.follow', { ns: 'common' });
   };
@@ -179,9 +179,6 @@ const UserProfilePage = () => {
           <h3 className="text-lg font-semibold mb-2">
             {t('privateAccount', { ns: 'settings' })}
           </h3>
-          <p className="text-sm text-muted-foreground max-w-[280px]">
-            {t('privateAccountInfo', { ns: 'settings' })}
-          </p>
         </div>
       );
     }
@@ -210,7 +207,12 @@ const UserProfilePage = () => {
         </div>
         {!isOwnProfile && <div className="flex items-center gap-2">
             {/* Follow Button */}
-            <Button onClick={handleFollowToggle} variant={getFollowButtonVariant()} className={`rounded-full font-medium h-8 px-4 text-sm ${(profile.is_following || profile.follow_request_status === 'pending') ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}>
+            <Button
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+              variant={getFollowButtonVariant()}
+              className={`rounded-full font-medium h-8 px-4 text-sm ${(profile.is_following || profile.follow_request_status === 'pending') ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}
+            >
               {getFollowButtonText()}
             </Button>
             {/* Message Button */}
