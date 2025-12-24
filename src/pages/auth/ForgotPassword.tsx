@@ -18,9 +18,25 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  
-  // Check if we're in reset mode (user clicked link from email)
-  const isResetMode = searchParams.get('type') === 'recovery';
+
+  const [isResetMode, setIsResetMode] = useState(false);
+
+  useEffect(() => {
+    const qpType = searchParams.get('type');
+    const hash = window.location.hash?.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hash || '');
+    const type = qpType || hashParams.get('type');
+
+    setIsResetMode(type === 'recovery');
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResetMode(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [searchParams]);
 
   useEffect(() => {
     document.title = `${t('auth:resetPassword')} - Spott`;
