@@ -311,25 +311,27 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
             <div className="flex-1 min-w-0">
               {/* Top row: username, visited, date, follow button */}
               <div className="flex items-center gap-1.5">
-                <button
-                  onClick={handleUserClick}
-                  className="font-semibold text-sm hover:opacity-70 truncate text-foreground shrink-0 max-w-[100px]"
-                >
-                  {activity.username}
-                </button>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {t('hasVisited', { ns: 'common', defaultValue: 'has visited' })}
-                </span>
-                <span className="text-xs text-muted-foreground shrink-0">·</span>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {formattedDate}
-                </span>
-                {/* Follow button next to date */}
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
+                  <button
+                    onClick={handleUserClick}
+                    className="font-semibold text-sm hover:opacity-70 text-foreground shrink-0 max-w-[100px] truncate"
+                  >
+                    {activity.username}
+                  </button>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {t('hasVisited', { ns: 'common', defaultValue: 'has visited' })}
+                  </span>
+                  <span className="text-xs text-muted-foreground shrink-0">·</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {formattedDate}
+                  </span>
+                </div>
+                {/* Follow button - always visible */}
                 {!activity.is_following && user?.id !== activity.user_id && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 text-xs bg-background/50 rounded-full px-3 py-0 ml-auto shrink-0"
+                    className="h-6 text-xs bg-background/50 rounded-full px-3 py-0 shrink-0"
                     onClick={handleFollow}
                   >
                     {t('follow', { defaultValue: 'Follow' })}
