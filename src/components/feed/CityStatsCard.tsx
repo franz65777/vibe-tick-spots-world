@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import globeAnimation from '@/assets/globe-animation.gif';
+import { cn } from '@/lib/utils';
 
 interface CityRanking {
   city: string;
@@ -287,15 +288,18 @@ const CityStatsCard = memo(() => {
         </div>
 
         {/* Top cities */}
-        {topCities.map((city) => (
-          <div key={city.city} className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-4 text-center font-bold text-muted-foreground">#{city.rank}</span>
-              <span className="font-medium text-foreground uppercase tracking-wide text-xs">{city.city}</span>
+        {topCities.map((city) => {
+          const isCurrentCity = userCity && city.city.toLowerCase() === userCity.city.toLowerCase();
+          return (
+            <div key={city.city} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span className={cn("w-4 text-center font-bold", isCurrentCity ? "text-primary" : "text-muted-foreground")}>#{city.rank}</span>
+                <span className={cn("font-medium uppercase tracking-wide text-xs", isCurrentCity ? "text-primary underline decoration-2 underline-offset-2" : "text-foreground")}>{city.city}</span>
+              </div>
+              <span className={cn("font-bold", isCurrentCity ? "text-primary" : "text-foreground")}>{city.count.toLocaleString()}</span>
             </div>
-            <span className="font-bold text-foreground">{city.count.toLocaleString()}</span>
-          </div>
-        ))}
+          );
+        })}
 
         {/* User's city - always show if available, highlighted */}
         {userCity && !topCities.some(c => c.city.toLowerCase() === userCity.city.toLowerCase()) && (

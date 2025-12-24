@@ -520,6 +520,7 @@ const resources = {
       place_other: 'places',
       mutualFriend_one: 'mutual friend',
       mutualFriend_other: 'mutual friends',
+      visitedOn: 'visited',
     },
     add: {
       newPost: 'New Post',
@@ -1492,6 +1493,7 @@ const resources = {
       place_other: 'lugares',
       mutualFriend_one: 'amigo en común',
       mutualFriend_other: 'amigos en común',
+      visitedOn: 'visitó',
     },
     add: {
       newPost: 'Nueva publicación',
@@ -2457,6 +2459,7 @@ const resources = {
       place_other: 'Luoghi',
       mutualFriend_one: 'amico in comune',
       mutualFriend_other: 'amici in comune',
+      visitedOn: 'ha visitato',
     },
     add: {
       newPost: 'Nuovo Post',
@@ -3403,6 +3406,7 @@ const resources = {
       place_other: 'lieux',
       mutualFriend_one: 'ami en commun',
       mutualFriend_other: 'amis en commun',
+      visitedOn: 'a visité',
     },
     add: {
       newPost: 'Nouveau post',
@@ -4231,6 +4235,7 @@ const resources = {
       place_other: 'Orte',
       mutualFriend_one: 'gemeinsamer Freund',
       mutualFriend_other: 'gemeinsame Freunde',
+      visitedOn: 'hat besucht',
     },
     add: {
       newPost: 'Neuer Beitrag',
@@ -4997,6 +5002,7 @@ const resources = {
       place_other: 'locais',
       mutualFriend_one: 'amigo em comum',
       mutualFriend_other: 'amigos em comum',
+      visitedOn: 'visitou',
     },
     add: {
       newPost: 'Nova publicação',
@@ -5714,6 +5720,7 @@ const resources = {
       place_other: '地点',
       mutualFriend_one: '共同好友',
       mutualFriend_other: '共同好友',
+      visitedOn: '访问了',
     },
     add: {
       newPost: '新帖子',
@@ -6357,6 +6364,7 @@ const resources = {
       place_other: '場所',
       mutualFriend_one: '共通の友達',
       mutualFriend_other: '共通の友達',
+      visitedOn: '訪問済み',
     },
     add: {
       newPost: '新しい投稿',
@@ -7040,6 +7048,7 @@ const resources = {
       place_other: '장소',
       mutualFriend_one: '공통 친구',
       mutualFriend_other: '공통 친구',
+      visitedOn: '방문함',
     },
     add: {
       newPost: '새 게시물',
@@ -7706,6 +7715,7 @@ const resources = {
       place_other: 'أماكن',
       mutualFriend_one: 'صديق مشترك',
       mutualFriend_other: 'أصدقاء مشتركين',
+      visitedOn: 'زار',
     },
     add: {
       newPost: 'منشور جديد',
@@ -8357,6 +8367,7 @@ const resources = {
       place_other: 'स्थान',
       mutualFriend_one: 'आम दोस्त',
       mutualFriend_other: 'आम दोस्त',
+      visitedOn: 'दौरा किया',
     },
     add: {
       newPost: 'नई पोस्ट',
@@ -9030,6 +9041,7 @@ const resources = {
       place_other: 'мест',
       mutualFriend_one: 'общий друг',
       mutualFriend_other: 'общих друзей',
+      visitedOn: 'посетил',
     },
     add: {
       newPost: 'Новый пост',
