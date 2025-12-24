@@ -12,7 +12,7 @@ import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import type { Comment } from '@/services/socialEngagementService';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { supabase } from '@/integrations/supabase/client';
-import noCommentsIcon from '@/assets/no-comments-icon.png';
+import noCommentsIcon from '@/assets/speech-bubble-icon.png';
 
 interface CommentDrawerProps {
   isOpen: boolean;

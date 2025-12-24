@@ -168,13 +168,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         .eq('following_id', targetId);
 
       if (!error) {
-        if (activeTab === 'following') {
-          setUsers(prev => prev.filter(u => u.id !== targetId));
-        } else {
-          setUsers(prev => prev.map(u => 
-            u.id === targetId ? { ...u, isFollowing: false } : u
-          ));
-        }
+        // Keep user in list but mark as not following (show "Segui" button)
+        setUsers(prev => prev.map(u => 
+          u.id === targetId ? { ...u, isFollowing: false } : u
+        ));
       }
     } catch (error) {
       console.error('Error unfollowing user:', error);
@@ -380,14 +377,24 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                     
                     {currentUser?.id !== user.id && (
                       isOwnProfile && activeTab === 'following' ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => unfollowUser(user.id)}
-                          className="rounded-full shrink-0"
-                        >
-                          {t('following', { ns: 'common' })}
-                        </Button>
+                        user.isFollowing ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => unfollowUser(user.id)}
+                            className="rounded-full shrink-0"
+                          >
+                            {t('following', { ns: 'common' })}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => followUser(user.id)}
+                            className="rounded-full shrink-0"
+                          >
+                            {t('follow', { ns: 'common' })}
+                          </Button>
+                        )
                       ) : isOwnProfile && activeTab === 'followers' ? (
                         <Button
                           size="sm"
