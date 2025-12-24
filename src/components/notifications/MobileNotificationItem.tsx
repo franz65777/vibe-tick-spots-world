@@ -775,9 +775,10 @@ const MobileNotificationItem = ({
     );
   };
 
-  // Check if this is a review notification (content_type === 'review')
+  // Check if this is a review notification
+  // NOTE: older "like" notifications might miss content_type; infer review-like when no post_image.
   const isReview = notification.data?.content_type === 'review';
-  const isReviewLike = notification.type === 'like' && isReview;
+  const isReviewLike = notification.type === 'like' && (isReview || (!!notification.data?.post_id && !notification.data?.post_image));
   const isReviewComment = notification.type === 'comment' && isReview;
 
   return (
@@ -944,6 +945,17 @@ const MobileNotificationItem = ({
                       src={reviewIcon}
                       alt="Review"
                       className="w-8 h-8 object-contain"
+                    />
+                  </div>
+                ) : notification.type === 'comment' && notification.data?.post_image ? (
+                  <div 
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
+                    onClick={handlePostClick}
+                  >
+                    <img
+                      src={notification.data.post_image}
+                      alt="Post"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 ) : notification.type === 'comment' && notification.data?.post_id ? (

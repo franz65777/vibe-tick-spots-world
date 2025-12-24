@@ -369,83 +369,94 @@ const UserProfilePage = () => {
 
       </div>
 
-      {/* Category Cards Section - Hide or disable for private accounts */}
-      {(isOwnProfile || profile.can_view_content) && (
-        <div className="px-4 py-2">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {/* In Common Card - Only show for other profiles */}
-            {!isOwnProfile && <button onClick={() => navigate(`/user-places/${userId}`, { state: { filterCategory: 'common' } })} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0">
-                <div className="flex -space-x-2">
-                  <Avatar className="w-7 h-7 border-2 border-background">
-                    <AvatarImage src={commonLocations.theirAvatar || undefined} />
-                    <AvatarFallback className="text-[10px]">{profile.username?.substring(0, 1).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <Avatar className="w-7 h-7 border-2 border-background">
-                    <AvatarImage src={commonLocations.myAvatar || undefined} />
-                    <AvatarFallback className="text-[10px]">{currentUser?.email?.substring(0, 1).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                </div>
+      {/* Category Cards Section - always visible; disabled until follow accepted on private profiles */}
+      {(() => {
+        const canOpenCards = isOwnProfile || profile.can_view_content;
+        const disabledClass = !canOpenCards ? 'opacity-50 cursor-not-allowed' : '';
+
+        return (
+          <div className="px-4 py-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {/* In Common Card - Only show for other profiles */}
+              {!isOwnProfile && (
+                <button
+                  onClick={() => canOpenCards && navigate(`/user-places/${userId}`, { state: { filterCategory: 'common' } })}
+                  disabled={!canOpenCards}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${disabledClass}`}
+                >
+                  <div className="flex -space-x-2">
+                    <Avatar className="w-7 h-7 border-2 border-background">
+                      <AvatarImage src={commonLocations.theirAvatar || undefined} />
+                      <AvatarFallback className="text-[10px]">{profile.username?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="w-7 h-7 border-2 border-background">
+                      <AvatarImage src={commonLocations.myAvatar || undefined} />
+                      <AvatarFallback className="text-[10px]">{currentUser?.email?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="font-bold text-sm">{commonLocations.count}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('userProfile.inCommon', { ns: 'common' })}</span>
+                  </div>
+                </button>
+              )}
+
+              {/* All Locations Card */}
+              <button
+                onClick={() => canOpenCards && categoryCounts.all > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'all' } })}
+                disabled={!canOpenCards || categoryCounts.all === 0}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${(!canOpenCards || categoryCounts.all === 0) ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <img src={saveTagAll} alt="" className="w-8 h-8 object-contain -my-1" />
                 <div className="flex flex-col items-start">
-                  <span className="font-bold text-sm">{commonLocations.count}</span>
-                  <span className="text-[10px] text-muted-foreground">{t('userProfile.inCommon', { ns: 'common' })}</span>
+                  <span className="font-bold text-sm">{categoryCounts.all}</span>
+                  <span className="text-[10px] text-muted-foreground">{t('userProfile.allLocations', { ns: 'common' })}</span>
                 </div>
-              </button>}
+              </button>
 
-            {/* All Locations Card */}
-            <button 
-              onClick={() => categoryCounts.all > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'all' } })} 
-              disabled={categoryCounts.all === 0}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <img src={saveTagAll} alt="" className="w-8 h-8 object-contain -my-1" />
-              <div className="flex flex-col items-start">
-                <span className="font-bold text-sm">{categoryCounts.all}</span>
-                <span className="text-[10px] text-muted-foreground">{t('userProfile.allLocations', { ns: 'common' })}</span>
-              </div>
-            </button>
+              {/* Visited Locations Card */}
+              <button
+                onClick={() => canOpenCards && categoryCounts.been > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'been' } })}
+                disabled={!canOpenCards || categoryCounts.been === 0}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${(!canOpenCards || categoryCounts.been === 0) ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <img src={saveTagBeen} alt="" className="w-8 h-8 object-contain -my-1" />
+                <div className="flex flex-col items-start">
+                  <span className="font-bold text-sm">{categoryCounts.been}</span>
+                  <span className="text-[10px] text-muted-foreground">{t('userProfile.visitedLocations', { ns: 'common' })}</span>
+                </div>
+              </button>
 
-            {/* Visited Locations Card */}
-            <button 
-              onClick={() => categoryCounts.been > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'been' } })} 
-              disabled={categoryCounts.been === 0}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.been === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <img src={saveTagBeen} alt="" className="w-8 h-8 object-contain -my-1" />
-              <div className="flex flex-col items-start">
-                <span className="font-bold text-sm">{categoryCounts.been}</span>
-                <span className="text-[10px] text-muted-foreground">{t('userProfile.visitedLocations', { ns: 'common' })}</span>
-              </div>
-            </button>
+              {/* To Try Locations Card */}
+              <button
+                onClick={() => canOpenCards && categoryCounts.toTry > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'to-try' } })}
+                disabled={!canOpenCards || categoryCounts.toTry === 0}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${(!canOpenCards || categoryCounts.toTry === 0) ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <img src={saveTagToTry} alt="" className="w-8 h-8 object-contain -my-1" />
+                <div className="flex flex-col items-start">
+                  <span className="font-bold text-sm">{categoryCounts.toTry}</span>
+                  <span className="text-[10px] text-muted-foreground">{t('userProfile.toTryLocations', { ns: 'common' })}</span>
+                </div>
+              </button>
 
-            {/* To Try Locations Card */}
-            <button 
-              onClick={() => categoryCounts.toTry > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'to-try' } })} 
-              disabled={categoryCounts.toTry === 0}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.toTry === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <img src={saveTagToTry} alt="" className="w-8 h-8 object-contain -my-1" />
-              <div className="flex flex-col items-start">
-                <span className="font-bold text-sm">{categoryCounts.toTry}</span>
-                <span className="text-[10px] text-muted-foreground">{t('userProfile.toTryLocations', { ns: 'common' })}</span>
-              </div>
-            </button>
-
-            {/* Favourite Locations Card */}
-            <button 
-              onClick={() => categoryCounts.favourite > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'favourite' } })} 
-              disabled={categoryCounts.favourite === 0}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.favourite === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <img src={saveTagFavourite} alt="" className="w-8 h-8 object-contain -my-1" />
-              <div className="flex flex-col items-start">
-                <span className="font-bold text-sm">{categoryCounts.favourite}</span>
-                <span className="text-[10px] text-muted-foreground">{t('userProfile.favouriteLocations', { ns: 'common' })}</span>
-              </div>
-            </button>
+              {/* Favourite Locations Card */}
+              <button
+                onClick={() => canOpenCards && categoryCounts.favourite > 0 && navigate(`/user-places/${userId}`, { state: { filterCategory: 'favourite' } })}
+                disabled={!canOpenCards || categoryCounts.favourite === 0}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${(!canOpenCards || categoryCounts.favourite === 0) ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <img src={saveTagFavourite} alt="" className="w-8 h-8 object-contain -my-1" />
+                <div className="flex flex-col items-start">
+                  <span className="font-bold text-sm">{categoryCounts.favourite}</span>
+                  <span className="text-[10px] text-muted-foreground">{t('userProfile.favouriteLocations', { ns: 'common' })}</span>
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-      
+        );
+      })()}
+
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       
       {/* Tab Content */}
