@@ -67,13 +67,28 @@ const CityStatsCard = memo(() => {
             .not('locations.city', 'is', null),
         ]);
 
+        // Normalize city names (handle aliases like Torino/Turin)
+        const normalizeCity = (city: string): string => {
+          const cityAliases: Record<string, string> = {
+            'turin': 'Torino',
+            'rome': 'Roma',
+            'milan': 'Milano',
+            'florence': 'Firenze',
+            'venice': 'Venezia',
+            'naples': 'Napoli',
+            'genoa': 'Genova',
+          };
+          const lowerCity = city.toLowerCase().trim();
+          return cityAliases[lowerCity] || city;
+        };
+
         // Count DISTINCT places per city (not total saves)
         const cityPlaceMap: Record<string, Set<string>> = {};
         
         // From saved_places - use place_id as unique identifier
         (citiesFromSavedPlacesRes.data || []).forEach((r: any) => {
           if (r.city && r.place_id) {
-            const city = r.city;
+            const city = normalizeCity(r.city);
             if (!cityPlaceMap[city]) cityPlaceMap[city] = new Set();
             cityPlaceMap[city].add(r.place_id);
           }
@@ -81,7 +96,7 @@ const CityStatsCard = memo(() => {
         
         // From user_saved_locations - use google_place_id or location_id as unique identifier
         (citiesFromInternalRes.data || []).forEach((r: any) => {
-          const city = r.locations?.city;
+          const city = r.locations?.city ? normalizeCity(r.locations.city) : null;
           const uniqueId = r.locations?.google_place_id || r.location_id;
           if (city && uniqueId) {
             if (!cityPlaceMap[city]) cityPlaceMap[city] = new Set();
