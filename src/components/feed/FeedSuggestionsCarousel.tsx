@@ -649,7 +649,7 @@ const FeedSuggestionsCarousel = memo(() => {
                   <div className="flex items-center justify-between gap-1 mt-0.5">
                     {loc.source === 'discover' ? (
                       <span className="text-[11px] font-medium text-primary leading-tight">
-                        {t('beFirstToSave', { ns: 'feed', defaultValue: 'Be the first to save!' })}
+                        {t('firstToSave', { ns: 'feed', defaultValue: 'First to save!' })}
                       </span>
                     ) : loc.saved_by.length > 0 ? (
                       <div className="flex items-center gap-1.5">
