@@ -486,8 +486,8 @@ const ExplorePage = memo(() => {
                               </p>
                               <p className="text-xs text-muted-foreground truncate">
                                 {suggestedUser.mutual_count > 0 
-                                  ? `${suggestedUser.mutual_count} ${t('mutualFriends', { ns: 'explore' })}`
-                                  : `${suggestedUser.places_visited} ${t('places', { ns: 'explore' })}`
+                                  ? `${suggestedUser.mutual_count} ${suggestedUser.mutual_count === 1 ? t('mutualFriend', { ns: 'explore' }) : t('mutualFriends', { ns: 'explore' })}`
+                                  : `${suggestedUser.places_visited} ${suggestedUser.places_visited === 1 ? t('place', { ns: 'explore' }) : t('places', { ns: 'explore' })}`
                                 }
                               </p>
                             </div>

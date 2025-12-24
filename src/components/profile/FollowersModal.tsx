@@ -370,7 +370,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                       >
                         <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {user.savedPlacesCount || 0} {t('savedPlaces', { ns: 'common', defaultValue: 'saved places' })}
+                          {user.savedPlacesCount || 0} {(user.savedPlacesCount || 0) === 1 ? t('place', { ns: 'explore', defaultValue: 'Luogo' }) : t('places', { ns: 'explore', defaultValue: 'Luoghi' })}
                         </p>
                       </button>
                     </div>
