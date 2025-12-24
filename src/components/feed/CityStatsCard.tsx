@@ -55,26 +55,36 @@ const CityStatsCard = memo(() => {
     const fetchStats = async () => {
       fetchingRef.current = true;
       try {
-        // Get global stats - all saved places count
-        const { count: totalCount } = await supabase
-          .from('saved_places')
-          .select('*', { count: 'exact', head: true });
-        
-        const total = totalCount || 0;
+        // Get global stats - total saved rows across app (both sources)
+        const [totalSavedPlacesRes, totalSavedInternalRes] = await Promise.all([
+          supabase.from('saved_places').select('*', { count: 'exact', head: true }),
+          supabase.from('user_saved_locations').select('*', { count: 'exact', head: true }),
+        ]);
+
+        const total = (totalSavedPlacesRes.count || 0) + (totalSavedInternalRes.count || 0);
         setTotalPlaces(total);
 
-        // Get city rankings from saved_places
-        const { data: citiesData } = await supabase
-          .from('saved_places')
-          .select('city')
-          .not('city', 'is', null);
-        
+        // Get city rankings from BOTH sources:
+        // - saved_places.city (legacy/google saves)
+        // - user_saved_locations -> locations.city (internal saves)
+        const [citiesFromSavedPlacesRes, citiesFromInternalRes] = await Promise.all([
+          supabase
+            .from('saved_places')
+            .select('city')
+            .not('city', 'is', null),
+          supabase
+            .from('user_saved_locations')
+            .select('locations(city)')
+            .not('locations.city', 'is', null),
+        ]);
+
+        const citiesData = (citiesFromSavedPlacesRes.data || []).map((r: any) => r.city).filter(Boolean) as string[];
+        const citiesInternal = (citiesFromInternalRes.data || []).map((r: any) => r.locations?.city).filter(Boolean) as string[];
+
         // Count per city
         const cityCountMap: Record<string, number> = {};
-        citiesData?.forEach(item => {
-          if (item.city) {
-            cityCountMap[item.city] = (cityCountMap[item.city] || 0) + 1;
-          }
+        [...citiesData, ...citiesInternal].forEach((city) => {
+          cityCountMap[city] = (cityCountMap[city] || 0) + 1;
         });
 
         // Sort and rank all cities
@@ -146,7 +156,23 @@ const CityStatsCard = memo(() => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'saved_places' },
         () => {
-          // Invalidate cache and refetch
+          statsCache.data = null;
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_saved_locations' },
+        () => {
+          statsCache.data = null;
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'locations' },
+        () => {
+          // Covers cases where a new location is created/updated with a city
           statsCache.data = null;
           fetchStats();
         }
