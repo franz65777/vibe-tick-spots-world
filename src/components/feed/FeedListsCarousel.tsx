@@ -50,14 +50,37 @@ const FeedListsCarousel = memo(() => {
 
       if (error) throw error;
 
-      // Get user's visited locations (saved as 'been')
-      const { data: userVisitedLocations } = await supabase
-        .from('saved_places')
-        .select('place_id')
-        .eq('user_id', user.id)
-        .eq('save_tag', 'been');
-      
-      const userVisitedPlaceIds = new Set(userVisitedLocations?.map(s => s.place_id) || []);
+      // Get user's visited locations (saved as 'been') from BOTH sources
+      const [userVisitedPlacesRes, userVisitedInternalRes] = await Promise.all([
+        supabase
+          .from('saved_places')
+          .select('place_id')
+          .eq('user_id', user.id)
+          .eq('save_tag', 'been'),
+        supabase
+          .from('user_saved_locations')
+          .select('location_id, locations(google_place_id)')
+          .eq('user_id', user.id)
+          .eq('save_tag', 'been'),
+      ]);
+
+      const userVisitedPlaceIds = new Set<string>(); // Google place ids (and legacy ids)
+      const userVisitedLocationIds = new Set<string>(); // Internal UUIDs
+
+      (userVisitedPlacesRes.data || []).forEach((s: any) => {
+        const pid = String(s.place_id || '');
+        if (!pid) return;
+        userVisitedPlaceIds.add(pid);
+        // If pid looks like an internal uuid, track it too
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pid)) {
+          userVisitedLocationIds.add(pid);
+        }
+      });
+
+      (userVisitedInternalRes.data || []).forEach((s: any) => {
+        if (s.location_id) userVisitedLocationIds.add(String(s.location_id));
+        if (s.locations?.google_place_id) userVisitedPlaceIds.add(String(s.locations.google_place_id));
+      });
 
       // Filter folders that have locations near user's city
       const foldersWithProximity = await Promise.all(
@@ -103,14 +126,8 @@ const FeedListsCarousel = memo(() => {
 
           // Calculate visited count - match by google_place_id OR location id
           const visitedCount = (locationsData || []).filter(loc => {
-            // Check if user visited by google_place_id
-            if (loc.google_place_id && userVisitedPlaceIds.has(loc.google_place_id)) {
-              return true;
-            }
-            // Also check by location id (in case saved_places uses location id)
-            if (userVisitedPlaceIds.has(loc.id)) {
-              return true;
-            }
+            if (userVisitedLocationIds.has(String(loc.id))) return true;
+            if (loc.google_place_id && userVisitedPlaceIds.has(String(loc.google_place_id))) return true;
             return false;
           }).length;
 
