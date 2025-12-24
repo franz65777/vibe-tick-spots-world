@@ -241,57 +241,69 @@ export const useUserProfile = (userId?: string) => {
       const isPrivate = profile?.is_private ?? false;
 
       if (isPrivate) {
+        const previousStatus = profile?.follow_request_status ?? null;
+
         // Optimistic: immediately reflect "requested" to avoid double-tap glitches
-        setProfile(prev => prev ? { ...prev, follow_request_status: 'pending' } : prev);
+        setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : prev));
 
-        // For private accounts, create a follow request instead
-        const { data: requestRow, error } = await supabase
+        // If a pending request already exists, reuse it (prevents duplicates + "stuck" state)
+        const { data: existingRequest } = await supabase
           .from('friend_requests')
-          .insert({
-            requester_id: currentUser.id,
-            requested_id: userId,
-            status: 'pending'
-          })
           .select('id')
-          .single();
+          .eq('requester_id', currentUser.id)
+          .eq('requested_id', userId)
+          .eq('status', 'pending')
+          .maybeSingle();
 
-        if (error) throw error;
+        const requestId = existingRequest?.id;
 
-        // Get current user's profile for notification
-        const { data: followerProfile } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', currentUser.id)
-          .single();
+        if (!requestId) {
+          const { data: requestRow, error } = await supabase
+            .from('friend_requests')
+            .insert({
+              requester_id: currentUser.id,
+              requested_id: userId,
+              status: 'pending',
+            })
+            .select('id')
+            .single();
 
-        // Create notification for follow request
-        await sendLocalizedNotification(
-          userId,
-          'follow_request',
-          {
-            user_id: currentUser.id,
-            user_name: followerProfile?.username,
-            avatar_url: followerProfile?.avatar_url,
-            request_id: requestRow?.id,
-            status: 'pending'
-          },
-          {
-            username: followerProfile?.username || 'Someone'
-          }
-        );
+          if (error) throw error;
 
-        setProfile(prev => prev ? {
-          ...prev,
-          follow_request_status: 'pending'
-        } : null);
+          // Get current user's profile for notification
+          const { data: followerProfile } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', currentUser.id)
+            .single();
+
+          // Create notification for follow request
+          await sendLocalizedNotification(
+            userId,
+            'follow_request',
+            {
+              user_id: currentUser.id,
+              user_name: followerProfile?.username,
+              avatar_url: followerProfile?.avatar_url,
+              request_id: requestRow?.id,
+              status: 'pending',
+            },
+            {
+              username: followerProfile?.username || 'Someone',
+            }
+          );
+
+          setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
+        } else {
+          // Request already pending; just keep UI consistent
+          setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
+        }
       } else {
         // For public accounts, follow directly
-        const { error } = await supabase
-          .from('follows')
-          .insert({
-            follower_id: currentUser.id,
-            following_id: userId
-          });
+        const { error } = await supabase.from('follows').insert({
+          follower_id: currentUser.id,
+          following_id: userId,
+        });
 
         if (error) throw error;
 
@@ -312,21 +324,32 @@ export const useUserProfile = (userId?: string) => {
             avatar_url: followerProfile?.avatar_url,
           },
           {
-            username: followerProfile?.username || 'Someone'
+            username: followerProfile?.username || 'Someone',
           }
         );
 
-        setProfile(prev => prev ? {
-          ...prev,
-          is_following: true,
-          followers_count: prev.followers_count + 1,
-          can_view_content: true
-        } : null);
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                is_following: true,
+                followers_count: prev.followers_count + 1,
+                can_view_content: true,
+              }
+            : null
+        );
       }
     } catch (error) {
       console.error('Error following user:', error);
       // Revert optimistic requested state on failure
-      setProfile(prev => prev ? { ...prev, follow_request_status: prev.is_following ? null : prev.follow_request_status } : prev);
+      setProfile((prev) => {
+        if (!prev) return prev;
+        // If we were sending a request, reset to null
+        if (prev.is_private && !prev.is_following) {
+          return { ...prev, follow_request_status: null };
+        }
+        return prev;
+      });
     } finally {
       setFollowLoading(false);
     }
@@ -363,6 +386,9 @@ export const useUserProfile = (userId?: string) => {
     if (!currentUser || !userId) return;
     if (followLoading) return;
 
+    // Optimistic: immediately clear the state so UI is always tappable
+    setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
+
     setFollowLoading(true);
     try {
       const { error } = await supabase
@@ -373,13 +399,10 @@ export const useUserProfile = (userId?: string) => {
         .eq('status', 'pending');
 
       if (error) throw error;
-
-      setProfile(prev => prev ? {
-        ...prev,
-        follow_request_status: null
-      } : null);
     } catch (error) {
       console.error('Error canceling follow request:', error);
+      // Revert optimistic clear if cancellation failed
+      setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : prev));
     } finally {
       setFollowLoading(false);
     }
