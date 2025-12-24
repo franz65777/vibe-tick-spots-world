@@ -1,14 +1,16 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, MapPin } from 'lucide-react';
+import { LogIn, UserPlus } from 'lucide-react';
+import spottLogo from '@/assets/spott-logo.png';
 
 const WelcomePage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSignUp = () => {
-    navigate('/auth?mode=signup');
+    navigate('/signup/start');
   };
 
   const handleLogin = () => {
@@ -22,30 +24,22 @@ const WelcomePage = () => {
           {/* Logo with animation */}
           <div className="space-y-4">
             <div className="flex items-center justify-center">
-              <div className="relative">
-                <h1 className="text-5xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent relative flex items-baseline">
-                  SPOTT
-                  <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
-                </h1>
-              </div>
+              <img 
+                src={spottLogo} 
+                alt="Spott" 
+                className="h-20 w-auto object-contain"
+              />
             </div>
             
             <h2 className="text-lg font-medium bg-gradient-to-r from-blue-400 via-purple-500 to-red-400 bg-clip-text text-transparent">
-              Spott it. Share it. Experience it.
+              {t('auth:tagline')}
             </h2>
           </div>
 
           {/* Welcome text */}
           <div className="space-y-4">
             <p className="text-lg text-foreground leading-relaxed">
-              Discover amazing{' '}
-              <span className="font-bold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent">
-                places
-              </span>{' '}
-              through your friends' favourite{' '}
-              <span className="font-bold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent">
-                spots
-              </span>
+              {t('auth:discoverText')}
             </p>
           </div>
 
@@ -56,7 +50,7 @@ const WelcomePage = () => {
               className="w-full h-12 bg-gradient-to-r from-blue-800 via-blue-600 to-blue-400 hover:from-blue-900 hover:via-blue-700 hover:to-blue-500 text-white font-medium"
             >
               <LogIn className="w-5 h-5 mr-2" />
-              LOG IN
+              {t('auth:logIn')}
             </Button>
 
             <Button
@@ -65,7 +59,7 @@ const WelcomePage = () => {
               className="w-full h-12 border-2 border-blue-200 text-blue-700 hover:bg-blue-50 font-medium"
             >
               <UserPlus className="w-5 h-5 mr-2" />
-              SIGN UP
+              {t('auth:signUpButton')}
             </Button>
           </div>
 
@@ -73,7 +67,7 @@ const WelcomePage = () => {
           <div className="flex items-center py-4">
             <div className="flex-1 border-t border-border"></div>
             <span className="px-4 text-xs text-muted-foreground font-medium tracking-wide">
-              OR CONTINUE WITH
+              {t('auth:orContinueWith')}
             </span>
             <div className="flex-1 border-t border-border"></div>
           </div>
@@ -97,19 +91,19 @@ const WelcomePage = () => {
 
           {/* Terms */}
           <div className="pt-8 text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{' '}
+            {t('auth:byContinuing')}{' '}
             <button 
               onClick={() => navigate('/terms')}
               className="text-primary hover:underline font-medium"
             >
-              Terms of Service
+              {t('auth:termsOfService')}
             </button>{' '}
-            &{' '}
+            {t('auth:and')}{' '}
             <button 
               onClick={() => navigate('/privacy')}
               className="text-primary hover:underline font-medium"
             >
-              Privacy Policy
+              {t('auth:privacyPolicy')}
             </button>
           </div>
         </div>
