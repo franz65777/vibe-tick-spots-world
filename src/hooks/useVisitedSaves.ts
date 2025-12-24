@@ -59,17 +59,19 @@ export const useVisitedSaves = () => {
       
       if (userIds.length === 0) return [];
 
-      // Fetch profiles
+      // Fetch profiles - only get users with valid usernames (deleted users have null username)
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
-        .in('id', userIds);
+        .in('id', userIds)
+        .not('username', 'is', null);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const validUserIds = new Set(profiles?.map(p => p.id) || []);
 
       // Map to activity format
       const activities: VisitedSaveActivity[] = (recentVisited || [])
-        .filter(save => save.locations) // Only include saves with valid locations
+        .filter(save => save.locations && validUserIds.has(save.user_id)) // Only include saves with valid locations AND existing users
         .map(save => {
           const profile = profileMap.get(save.user_id);
           const loc = save.locations as any;

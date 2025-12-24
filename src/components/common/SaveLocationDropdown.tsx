@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cva } from 'class-variance-authority';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,23 @@ const TAG_ICONS: Record<string, string> = {
   favourite: saveTagFavourite,
 };
 
-interface SaveLocationDropdownProps {
+const buttonVariants = cva(
+  "inline-flex items-center justify-center",
+  {
+    variants: {
+      size: {
+        default: "h-10 w-10",
+        sm: "h-7 w-7",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  }
+);
+
+export interface SaveLocationDropdownProps {
   isSaved: boolean;
   onSave: (tag: SaveTag) => void;
   onUnsave: () => void;
@@ -31,6 +48,7 @@ interface SaveLocationDropdownProps {
   showLabel?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  className?: string;
 }
 
 // Helper to render tag icon (image or emoji fallback)
@@ -53,6 +71,7 @@ export const SaveLocationDropdown = ({
   showLabel = false,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  className,
 }: SaveLocationDropdownProps) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -124,7 +143,7 @@ export const SaveLocationDropdown = ({
           variant={variant as any}
           size={size}
           disabled={disabled}
-          className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : ""}
+          className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : className}
         >
           <Bookmark className="h-5 w-5" />
           {showLabel && <span className="text-xs">{t('save', { ns: 'common', defaultValue: 'Save' })}</span>}

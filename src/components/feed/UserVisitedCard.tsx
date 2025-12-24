@@ -268,7 +268,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                   {activity.username}
                 </button>
                 <span className="text-xs text-muted-foreground shrink-0">
-                  {t('visited', { ns: 'common', defaultValue: 'visited' })}
+                  {t('hasVisited', { ns: 'common', defaultValue: 'has visited' })}
                 </span>
                 <span className="text-xs text-muted-foreground shrink-0">·</span>
                 <span className="text-xs text-muted-foreground shrink-0">
@@ -321,6 +321,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                   onUnsave={handleUnsaveLocation}
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7 p-0"
                 />
               )}
 
