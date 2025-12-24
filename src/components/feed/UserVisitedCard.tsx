@@ -67,22 +67,19 @@ const ScrollingLocationName = memo(({ name }: { name: string }) => {
 
 ScrollingLocationName.displayName = 'ScrollingLocationName';
 
-// Scrolling text for the “ha visitato · data” line (keeps the Follow button always visible)
+// Scrolling text for the “ha visitato · data” line (same marquee effect used elsewhere)
 const ScrollingVisitedMeta = memo(({ text }: { text: string }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasAnimated, setHasAnimated] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [needsScroll, setNeedsScroll] = useState(false);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    setNeedsScroll(el.scrollWidth > el.clientWidth);
-
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated && needsScroll) {
+        if (entry.isIntersecting && !hasAnimated) {
           setIsVisible(true);
           setHasAnimated(true);
         }
@@ -92,12 +89,12 @@ const ScrollingVisitedMeta = memo(({ text }: { text: string }) => {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasAnimated, needsScroll, text]);
+  }, [hasAnimated, text]);
 
   return (
     <div ref={scrollRef} className="overflow-hidden">
       <span
-        className={`text-xs text-muted-foreground whitespace-nowrap ${isVisible && needsScroll ? 'animate-marquee-bounce' : ''}`}
+        className={`text-xs text-muted-foreground whitespace-nowrap ${isVisible ? 'animate-marquee-bounce' : ''}`}
       >
         {text}
       </span>

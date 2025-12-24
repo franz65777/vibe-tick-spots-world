@@ -21,6 +21,7 @@ import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
 import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
 import AdminBusinessRequestsModal from '@/components/settings/AdminBusinessRequestsModal';
 import EditProfileModal from '@/components/settings/EditProfileModal';
+import PrivacySettingsModal from '@/components/settings/PrivacySettingsModal';
 import { AdminAnalyticsModal } from '@/components/settings/AdminAnalyticsModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
@@ -54,6 +55,7 @@ const SettingsPage: React.FC = () => {
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
   const [businessManagementOpen, setBusinessManagementOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
   const [closeFriendsModalOpen, setCloseFriendsModalOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
@@ -163,7 +165,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Privacy Setting */}
             <button
-              onClick={() => navigate('/privacy-settings')}
+              onClick={() => setPrivacyModalOpen(true)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -337,6 +339,10 @@ const SettingsPage: React.FC = () => {
       <EditProfileModal
         open={editProfileModalOpen}
         onOpenChange={setEditProfileModalOpen}
+      />
+      <PrivacySettingsModal
+        open={privacyModalOpen}
+        onOpenChange={setPrivacyModalOpen}
       />
       <AdminAnalyticsModal
         open={adminAnalyticsModalOpen}
