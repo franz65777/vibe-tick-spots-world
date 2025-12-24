@@ -90,7 +90,8 @@ export const authTranslations = {
       updatePassword: 'Update Password',
       passwordUpdated: 'Password updated successfully!',
       passwordUpdateError: 'Failed to update password',
-      backToLogin: 'Back to Login'
+      backToLogin: 'Back to Login',
+      createNewAccount: 'Create new account'
     },
     terms: {
       title: 'Terms of Service',
@@ -234,7 +235,8 @@ export const authTranslations = {
       updatePassword: 'Aggiorna Password',
       passwordUpdated: 'Password aggiornata con successo!',
       passwordUpdateError: 'Aggiornamento password fallito',
-      backToLogin: 'Torna al Login'
+      backToLogin: 'Torna al Login',
+      createNewAccount: 'Crea nuovo account'
     },
     terms: {
       title: 'Termini di Servizio',
@@ -363,7 +365,8 @@ export const authTranslations = {
       updatePassword: 'Actualizar Contraseña',
       passwordUpdated: '¡Contraseña actualizada!',
       passwordUpdateError: 'Error al actualizar contraseña',
-      backToLogin: 'Volver al Login'
+      backToLogin: 'Volver al Login',
+      createNewAccount: 'Crear cuenta nueva'
     },
     terms: {
       title: 'Términos de Servicio',
@@ -492,7 +495,8 @@ export const authTranslations = {
       updatePassword: 'Mettre à Jour',
       passwordUpdated: 'Mot de passe mis à jour !',
       passwordUpdateError: 'Échec de la mise à jour',
-      backToLogin: 'Retour à la Connexion'
+      backToLogin: 'Retour à la Connexion',
+      createNewAccount: 'Créer un nouveau compte'
     },
     terms: {
       title: 'Conditions d\'Utilisation',
@@ -621,7 +625,8 @@ export const authTranslations = {
       updatePassword: 'Passwort Aktualisieren',
       passwordUpdated: 'Passwort aktualisiert!',
       passwordUpdateError: 'Fehler beim Aktualisieren',
-      backToLogin: 'Zurück zur Anmeldung'
+      backToLogin: 'Zurück zur Anmeldung',
+      createNewAccount: 'Neues Konto erstellen'
     },
     terms: {
       title: 'Nutzungsbedingungen',
@@ -750,7 +755,8 @@ export const authTranslations = {
       updatePassword: 'Atualizar Senha',
       passwordUpdated: 'Senha atualizada!',
       passwordUpdateError: 'Erro ao atualizar senha',
-      backToLogin: 'Voltar ao Login'
+      backToLogin: 'Voltar ao Login',
+      createNewAccount: 'Criar nova conta'
     },
     terms: {
       title: 'Termos de Serviço',
@@ -882,7 +888,20 @@ export const authTranslations = {
       discoverSpots: 'mekanlar',
       orContinueWith: 'VEYA ŞU ŞEKİLDE DEVAM ET',
       logIn: 'GİRİŞ YAP',
-      signUpButton: 'KAYDOL'
+      signUpButton: 'KAYDOL',
+      forgotPassword: 'Şifrenizi mi unuttunuz?',
+      resetPassword: 'Şifre Sıfırla',
+      resetPasswordDesc: 'E-postanızı girin, size sıfırlama bağlantısı göndereceğiz',
+      sendResetLink: 'Bağlantı Gönder',
+      resetLinkSent: 'Bağlantı gönderildi! E-postanızı kontrol edin.',
+      resetLinkError: 'Bağlantı gönderilirken hata oluştu',
+      newPassword: 'Yeni Şifre',
+      enterNewPassword: 'Yeni şifrenizi girin',
+      updatePassword: 'Şifreyi Güncelle',
+      passwordUpdated: 'Şifre güncellendi!',
+      passwordUpdateError: 'Şifre güncellenirken hata oluştu',
+      backToLogin: 'Girişe Dön',
+      createNewAccount: 'Yeni hesap oluştur'
     },
     terms: {
       title: 'Hizmet Şartları',
@@ -1026,7 +1045,8 @@ export const authTranslations = {
       updatePassword: '更新密码',
       passwordUpdated: '密码更新成功！',
       passwordUpdateError: '更新密码失败',
-      backToLogin: '返回登录'
+      backToLogin: '返回登录',
+      createNewAccount: '创建新账户'
     },
     terms: {
       title: '服务条款',
