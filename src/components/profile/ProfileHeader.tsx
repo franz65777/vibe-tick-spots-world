@@ -193,6 +193,10 @@ const ProfileHeader = ({
             variant="ghost" 
             size="sm" 
             className="h-10 w-10 p-0"
+            onMouseEnter={() => {
+              // Prefetch settings chunk to avoid perceived lag
+              import('@/pages/SettingsPage');
+            }}
             onClick={() => navigate('/settings')}
           >
             <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />

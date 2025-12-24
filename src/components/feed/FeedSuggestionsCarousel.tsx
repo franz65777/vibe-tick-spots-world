@@ -642,7 +642,7 @@ const FeedSuggestionsCarousel = memo(() => {
                       </div>
                     )}
                     <span className="text-xs text-muted-foreground block">
-                      {distance !== null ? `${formatDistance(distance)} ${t('away', { defaultValue: 'away' })}` : (loc.city || loc.category)}
+                      {distance !== null ? `${formatDistance(distance)} ${t('away', { ns: 'feed', defaultValue: 'away' })}` : (loc.city || loc.category)}
                     </span>
                   </div>
                   

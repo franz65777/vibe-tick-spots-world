@@ -27,6 +27,12 @@ const ProfilePage = memo(() => {
   
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('profile');
+
+  // Prefetch settings route chunk for faster opening
+  useEffect(() => {
+    import('@/pages/SettingsPage');
+  }, []);
+
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
