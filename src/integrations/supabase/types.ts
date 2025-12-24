@@ -3014,6 +3014,33 @@ export type Database = {
           },
         ]
       }
+      user_privacy_settings: {
+        Row: {
+          been_cards_visibility: string
+          created_at: string
+          id: string
+          is_private: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          been_cards_visibility?: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          been_cards_visibility?: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_recommendations: {
         Row: {
           category: string | null

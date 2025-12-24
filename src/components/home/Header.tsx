@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Send } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import CityAutocompleteBar from '../common/CityAutocompleteBar';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import ChatIcon from '@/components/icons/ChatIcon';
 
 interface HeaderProps {
   searchQuery: string;
@@ -71,7 +72,7 @@ const Header = ({
               aria-label="Open messages"
             >
               <div className="relative">
-                <Send className="w-6 h-6" />
+                <ChatIcon size={24} />
                 {unreadMessagesCount > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center">
                     <span className="text-white text-[10px] font-bold leading-none">

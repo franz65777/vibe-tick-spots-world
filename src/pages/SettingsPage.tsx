@@ -12,6 +12,7 @@ import languageIcon from '@/assets/settings-language.png';
 import businessIcon from '@/assets/settings-business.png';
 import notificationsIcon from '@/assets/icon-notification-bell.png';
 import closeFriendsIcon from '@/assets/settings-close-friends.png';
+import privacyIcon from '@/assets/icons/privacy-icon.png';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import BusinessAccountManagement from '@/components/settings/BusinessAccountManagement';
@@ -21,6 +22,7 @@ import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
 import AdminBusinessRequestsModal from '@/components/settings/AdminBusinessRequestsModal';
 import EditProfileModal from '@/components/settings/EditProfileModal';
 import { AdminAnalyticsModal } from '@/components/settings/AdminAnalyticsModal';
+import PrivacyModal from '@/components/settings/PrivacyModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 
@@ -58,6 +60,7 @@ const SettingsPage: React.FC = () => {
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
   const [adminAnalyticsModalOpen, setAdminAnalyticsModalOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   
   // Check if user is fratrinky (admin analytics access)
   const isFratrinky = user?.id === '101423bc-a06c-40cc-8bb9-42af76946e4d';
@@ -153,6 +156,23 @@ const SettingsPage: React.FC = () => {
                   <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
                     {t('editProfileDesc', { ns: 'settings' })}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            {/* Privacy Setting */}
+            <button
+              onClick={() => setPrivacyModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <img src={privacyIcon} alt="" className="w-12 h-12 object-contain" />
+                <div className="text-left">
+                  <div className="font-medium">{t('privacy', { ns: 'settings', defaultValue: 'Privacy' })}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t('privacyDesc', { ns: 'settings', defaultValue: 'Control who can see your content' })}
                   </div>
                 </div>
               </div>
@@ -322,6 +342,10 @@ const SettingsPage: React.FC = () => {
       <AdminAnalyticsModal
         open={adminAnalyticsModalOpen}
         onOpenChange={setAdminAnalyticsModalOpen}
+      />
+      <PrivacyModal
+        open={privacyModalOpen}
+        onOpenChange={setPrivacyModalOpen}
       />
     </div>
   );

@@ -17,6 +17,15 @@ interface PrivacyModalProps {
 
 type BeenCardsVisibility = 'everyone' | 'none' | 'close_friends';
 
+interface PrivacySettings {
+  id: string;
+  user_id: string;
+  is_private: boolean;
+  been_cards_visibility: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const PrivacyModal: React.FC<PrivacyModalProps> = ({ open, onOpenChange }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -37,7 +46,7 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ open, onOpenChange }) => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('user_privacy_settings')
+        .from('user_privacy_settings' as any)
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -48,8 +57,9 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ open, onOpenChange }) => {
       }
 
       if (data) {
-        setIsPrivate(data.is_private ?? false);
-        setBeenCardsVisibility((data.been_cards_visibility as BeenCardsVisibility) ?? 'everyone');
+        const settings = data as unknown as PrivacySettings;
+        setIsPrivate(settings.is_private ?? false);
+        setBeenCardsVisibility((settings.been_cards_visibility as BeenCardsVisibility) ?? 'everyone');
       }
     } catch (error) {
       console.error('Error loading privacy settings:', error);
@@ -63,12 +73,8 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ open, onOpenChange }) => {
 
     setSaving(true);
     try {
-      // Determine the actual been cards visibility
-      // If profile is private, been cards are only shown to approved followers
-      const effectiveBeenVisibility = newIsPrivate ? 'followers' : newBeenCardsVisibility;
-
       const { error } = await supabase
-        .from('user_privacy_settings')
+        .from('user_privacy_settings' as any)
         .upsert({
           user_id: user.id,
           is_private: newIsPrivate,
@@ -92,7 +98,6 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ open, onOpenChange }) => {
   const handlePrivateToggle = async (checked: boolean) => {
     setIsPrivate(checked);
     if (checked) {
-      // When profile becomes private, automatically set been cards to followers only
       setBeenCardsVisibility('close_friends');
     }
     await savePrivacySettings(checked, checked ? 'close_friends' : beenCardsVisibility);
