@@ -67,6 +67,8 @@ interface MobileNotificationItemProps {
       location_name?: string;
       location_address?: string;
       content_type?: string;
+      request_id?: string;
+      status?: string;
       grouped_users?: Array<{
         id: string;
         name: string;
@@ -887,7 +889,7 @@ const MobileNotificationItem = ({
                 </div>
               </div>
 
-              {/* Right Side - Follow Button, Post Thumbnail, Comment Actions, or On My Way Button */}
+              {/* Right Side - Follow Button, Follow Request Actions, Post Thumbnail, Comment Actions, or On My Way Button */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {notification.type === 'location_share' ? (
                   <Button
@@ -907,6 +909,89 @@ const MobileNotificationItem = ({
                   >
                     {t('onMyWay', { ns: 'notifications' })}
                   </Button>
+                ) : notification.type === 'follow_request' ? (
+                  <div className="flex items-center gap-1.5">
+                    {!followRequestHandled ? (
+                      <>
+                        <Button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (!user || !notification.data?.request_id || !notification.data?.user_id) return;
+                            setIsLoading(true);
+                            try {
+                              // Accept: mark request accepted + create follow
+                              await supabase
+                                .from('friend_requests')
+                                .update({ status: 'accepted' })
+                                .eq('id', notification.data.request_id)
+                                .eq('requested_id', user.id);
+
+                              await supabase.from('follows').insert({
+                                follower_id: notification.data.user_id,
+                                following_id: user.id,
+                              });
+
+                              // Remove notification from feed
+                              await supabase.from('notifications').update({ expires_at: new Date().toISOString() }).eq('id', notification.id);
+
+                              setFollowRequestHandled(true);
+                              toast.success(t('requestAccepted', { ns: 'notifications', defaultValue: 'Request accepted' }));
+                            } catch (err) {
+                              console.error('Error accepting follow request:', err);
+                              toast.error(t('error', { ns: 'common', defaultValue: 'Error' }));
+                            } finally {
+                              setIsLoading(false);
+                            }
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerUp={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          onTouchEnd={(e) => e.stopPropagation()}
+                          disabled={isLoading}
+                          size="sm"
+                          variant="default"
+                          className="px-3 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
+                        >
+                          {t('accept', { ns: 'common', defaultValue: 'Accept' })}
+                        </Button>
+                        <Button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (!user || !notification.data?.request_id) return;
+                            setIsLoading(true);
+                            try {
+                              await supabase
+                                .from('friend_requests')
+                                .update({ status: 'declined' })
+                                .eq('id', notification.data.request_id)
+                                .eq('requested_id', user.id);
+
+                              await supabase.from('notifications').update({ expires_at: new Date().toISOString() }).eq('id', notification.id);
+
+                              setFollowRequestHandled(true);
+                            } catch (err) {
+                              console.error('Error declining follow request:', err);
+                              toast.error(t('error', { ns: 'common', defaultValue: 'Error' }));
+                            } finally {
+                              setIsLoading(false);
+                            }
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerUp={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          onTouchEnd={(e) => e.stopPropagation()}
+                          disabled={isLoading}
+                          size="sm"
+                          variant="outline"
+                          className="px-3 h-7 text-[12px] font-semibold rounded-lg"
+                        >
+                          {t('decline', { ns: 'common', defaultValue: 'Decline' })}
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
                 ) : notification.type === 'follow' ? (
                   <Button
                     onClick={handleFollowClick}

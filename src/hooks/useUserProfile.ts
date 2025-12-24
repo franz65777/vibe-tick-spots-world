@@ -29,6 +29,7 @@ export const useUserProfile = (userId?: string) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,20 +233,27 @@ export const useUserProfile = (userId?: string) => {
 
   const followUser = async () => {
     if (!currentUser || !userId || currentUser.id === userId) return;
+    if (followLoading) return;
 
+    setFollowLoading(true);
     try {
       // Check if target user is private
       const isPrivate = profile?.is_private ?? false;
 
       if (isPrivate) {
+        // Optimistic: immediately reflect "requested" to avoid double-tap glitches
+        setProfile(prev => prev ? { ...prev, follow_request_status: 'pending' } : prev);
+
         // For private accounts, create a follow request instead
-        const { error } = await supabase
+        const { data: requestRow, error } = await supabase
           .from('friend_requests')
           .insert({
             requester_id: currentUser.id,
             requested_id: userId,
             status: 'pending'
-          });
+          })
+          .select('id')
+          .single();
 
         if (error) throw error;
 
@@ -264,6 +272,8 @@ export const useUserProfile = (userId?: string) => {
             user_id: currentUser.id,
             user_name: followerProfile?.username,
             avatar_url: followerProfile?.avatar_url,
+            request_id: requestRow?.id,
+            status: 'pending'
           },
           {
             username: followerProfile?.username || 'Someone'
@@ -315,12 +325,18 @@ export const useUserProfile = (userId?: string) => {
       }
     } catch (error) {
       console.error('Error following user:', error);
+      // Revert optimistic requested state on failure
+      setProfile(prev => prev ? { ...prev, follow_request_status: prev.is_following ? null : prev.follow_request_status } : prev);
+    } finally {
+      setFollowLoading(false);
     }
   };
 
   const unfollowUser = async () => {
     if (!currentUser || !userId) return;
+    if (followLoading) return;
 
+    setFollowLoading(true);
     try {
       const { error } = await supabase
         .from('follows')
@@ -338,12 +354,16 @@ export const useUserProfile = (userId?: string) => {
       } : null);
     } catch (error) {
       console.error('Error unfollowing user:', error);
+    } finally {
+      setFollowLoading(false);
     }
   };
 
   const cancelFollowRequest = async () => {
     if (!currentUser || !userId) return;
+    if (followLoading) return;
 
+    setFollowLoading(true);
     try {
       const { error } = await supabase
         .from('friend_requests')
@@ -360,6 +380,8 @@ export const useUserProfile = (userId?: string) => {
       } : null);
     } catch (error) {
       console.error('Error canceling follow request:', error);
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -369,6 +391,7 @@ export const useUserProfile = (userId?: string) => {
     error,
     followUser,
     unfollowUser,
-    cancelFollowRequest
+    cancelFollowRequest,
+    followLoading,
   };
 };

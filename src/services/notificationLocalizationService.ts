@@ -159,12 +159,16 @@ export async function sendLocalizedNotification(
   params: Record<string, string> = {}
 ): Promise<void> {
   const { title, message } = await getLocalizedNotificationText(userId, notificationType, params);
-  
+
+  // IMPORTANT: our notifications feed filters by expires_at > now(), so we must set it.
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
   await supabase.from('notifications').insert({
     user_id: userId,
     type: notificationType,
     title,
     message,
     data,
+    expires_at: expiresAt,
   });
 }
