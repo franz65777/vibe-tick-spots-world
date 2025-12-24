@@ -225,9 +225,43 @@ export const useUserProfile = (userId?: string) => {
           .subscribe()
       : null;
 
+    // Live updates: watch friend_requests so requester sees decline immediately
+    const friendReqChannel = (currentUser && userId && currentUser.id !== userId)
+      ? supabase
+          .channel(`friend-request-status-${currentUser.id}-${userId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'friend_requests',
+              filter: `requester_id=eq.${currentUser.id}`,
+            },
+            (payload: any) => {
+              // If the updated request targets this profile user
+              if (payload.new?.requested_id === userId) {
+                const newStatus = payload.new.status;
+                if (newStatus === 'declined') {
+                  // Reset follow_request_status so button shows "Follow" again
+                  setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
+                } else if (newStatus === 'accepted') {
+                  // They accepted, mark as following
+                  setProfile((prev) =>
+                    prev
+                      ? { ...prev, is_following: true, follow_request_status: null, can_view_content: true }
+                      : prev
+                  );
+                }
+              }
+            }
+          )
+          .subscribe()
+      : null;
+
     return () => {
       cancelled = true;
       if (channel) supabase.removeChannel(channel);
+      if (friendReqChannel) supabase.removeChannel(friendReqChannel);
     };
   }, [userId, currentUser]);
 
