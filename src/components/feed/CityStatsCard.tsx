@@ -55,36 +55,52 @@ const CityStatsCard = memo(() => {
     const fetchStats = async () => {
       fetchingRef.current = true;
       try {
-        // Get global stats - total saved rows across app (both sources)
-        const [totalSavedPlacesRes, totalSavedInternalRes] = await Promise.all([
-          supabase.from('saved_places').select('*', { count: 'exact', head: true }),
-          supabase.from('user_saved_locations').select('*', { count: 'exact', head: true }),
-        ]);
-
-        const total = (totalSavedPlacesRes.count || 0) + (totalSavedInternalRes.count || 0);
-        setTotalPlaces(total);
-
-        // Get city rankings from BOTH sources:
-        // - saved_places.city (legacy/google saves)
-        // - user_saved_locations -> locations.city (internal saves)
+        // Get city rankings from BOTH sources, counting DISTINCT places
         const [citiesFromSavedPlacesRes, citiesFromInternalRes] = await Promise.all([
           supabase
             .from('saved_places')
-            .select('city')
+            .select('city, place_id')
             .not('city', 'is', null),
           supabase
             .from('user_saved_locations')
-            .select('locations(city)')
+            .select('location_id, locations(city, google_place_id)')
             .not('locations.city', 'is', null),
         ]);
 
-        const citiesData = (citiesFromSavedPlacesRes.data || []).map((r: any) => r.city).filter(Boolean) as string[];
-        const citiesInternal = (citiesFromInternalRes.data || []).map((r: any) => r.locations?.city).filter(Boolean) as string[];
+        // Count DISTINCT places per city (not total saves)
+        const cityPlaceMap: Record<string, Set<string>> = {};
+        
+        // From saved_places - use place_id as unique identifier
+        (citiesFromSavedPlacesRes.data || []).forEach((r: any) => {
+          if (r.city && r.place_id) {
+            const city = r.city;
+            if (!cityPlaceMap[city]) cityPlaceMap[city] = new Set();
+            cityPlaceMap[city].add(r.place_id);
+          }
+        });
+        
+        // From user_saved_locations - use google_place_id or location_id as unique identifier
+        (citiesFromInternalRes.data || []).forEach((r: any) => {
+          const city = r.locations?.city;
+          const uniqueId = r.locations?.google_place_id || r.location_id;
+          if (city && uniqueId) {
+            if (!cityPlaceMap[city]) cityPlaceMap[city] = new Set();
+            cityPlaceMap[city].add(uniqueId);
+          }
+        });
 
-        // Count per city
+        // Calculate total distinct places
+        const allPlaces = new Set<string>();
+        Object.values(cityPlaceMap).forEach(places => {
+          places.forEach(p => allPlaces.add(p));
+        });
+        const total = allPlaces.size;
+        setTotalPlaces(total);
+
+        // Convert to count per city (distinct places)
         const cityCountMap: Record<string, number> = {};
-        [...citiesData, ...citiesInternal].forEach((city) => {
-          cityCountMap[city] = (cityCountMap[city] || 0) + 1;
+        Object.entries(cityPlaceMap).forEach(([city, places]) => {
+          cityCountMap[city] = places.size;
         });
 
         // Sort and rank all cities
