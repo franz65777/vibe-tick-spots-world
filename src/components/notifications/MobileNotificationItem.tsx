@@ -110,6 +110,9 @@ const MobileNotificationItem = ({
   const [isLocationShareActive, setIsLocationShareActive] = useState(true);
   const [followRequestHandled, setFollowRequestHandled] = useState(false);
 
+  // Infer content type (e.g. review) when old notifications miss content_type
+  const [inferredContentType, setInferredContentType] = useState<string | null>(null);
+
   // Swipe-to-delete state
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [translateX, setTranslateX] = useState(0);
@@ -338,6 +341,48 @@ const MobileNotificationItem = ({
 
     resolveAndCheck();
   }, [user?.id, notification.id]);
+
+  // Infer post content type for legacy notifications (e.g. review comments without content_type)
+  useEffect(() => {
+    const postId = notification.data?.post_id;
+    if (!postId) {
+      setInferredContentType(null);
+      return;
+    }
+
+    // If we already have content_type, no need to fetch
+    if (notification.data?.content_type) {
+      setInferredContentType(null);
+      return;
+    }
+
+    // Only needed for post-related notifications
+    if (notification.type !== 'comment' && notification.type !== 'like') {
+      setInferredContentType(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPostType = async () => {
+      const { data } = await supabase
+        .from('posts')
+        .select('rating, content_type')
+        .eq('id', postId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      const isReviewPost = data?.content_type === 'review' || data?.rating != null;
+      setInferredContentType(isReviewPost ? 'review' : null);
+    };
+
+    fetchPostType();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [notification.id]);
 
   // Fetch latest profiles for grouped users (for grouped likes)
   useEffect(() => {
@@ -576,8 +621,8 @@ const MobileNotificationItem = ({
           </span>
         );
       case 'like':
-        // Check if this is a review like - reviews have no post_image
-        const isReview = !notification.data?.post_image;
+        // Check if this is a review like
+        const isReview = (notification.data?.content_type || inferredContentType) === 'review' || !notification.data?.post_image;
         const likeTranslationKey = isReview ? 'likedYourReview' : 'likedYourPost';
         
         // Check if this is a grouped notification
@@ -681,7 +726,7 @@ const MobileNotificationItem = ({
         );
       case 'comment':
         // Check if commenting on a review
-        const isReviewComment = notification.data?.content_type === 'review';
+        const isReviewComment = (notification.data?.content_type || inferredContentType) === 'review';
         const commentTranslationKey = isReviewComment ? 'commentedOnYourReview' : 'commentedOnYourPost';
         return (
           <>
@@ -778,8 +823,9 @@ const MobileNotificationItem = ({
   };
 
   // Check if this is a review notification
-  // NOTE: older "like" notifications might miss content_type; infer review-like when no post_image.
-  const isReview = notification.data?.content_type === 'review';
+  // NOTE: older notifications might miss content_type; infer from post when possible.
+  const computedContentType = (notification.data?.content_type || inferredContentType) ?? null;
+  const isReview = computedContentType === 'review';
   const isReviewLike = notification.type === 'like' && (isReview || (!!notification.data?.post_id && !notification.data?.post_image));
   const isReviewComment = notification.type === 'comment' && isReview;
 
