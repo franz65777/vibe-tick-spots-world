@@ -3438,6 +3438,10 @@ export type Database = {
       }
       normalize_coordinate: { Args: { coord: number }; Returns: number }
       refresh_trending_locations: { Args: never; Returns: undefined }
+      remove_follower: {
+        Args: { follower_user_id: string }
+        Returns: undefined
+      }
       search_users_safely: {
         Args: { requesting_user_id: string; search_query: string }
         Returns: {

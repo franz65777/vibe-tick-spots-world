@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,59 +24,98 @@ export const useFollowStats = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      console.log('useFollowStats: Starting to fetch stats for user:', user?.id);
+  const fetchStats = useCallback(async () => {
+    console.log('useFollowStats: Starting to fetch stats for user:', user?.id);
+    
+    if (!user) {
+      console.log('useFollowStats: No user found, using demo stats');
+      setStats({ followersCount: 42, followingCount: 18, postsCount: 5 });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('useFollowStats: Fetching stats with timeout...');
       
-      if (!user) {
-        console.log('useFollowStats: No user found, using demo stats');
-        setStats({ followersCount: 42, followingCount: 18, postsCount: 5 });
-        setLoading(false);
-        return;
-      }
+      // SECURITY FIX: Use count queries without selecting all fields
+      const statsPromise = Promise.all([
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user.id),
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id),
+        supabase.from('profiles').select('posts_count').eq('id', user.id).single()
+      ]);
 
-      try {
-        console.log('useFollowStats: Fetching stats with timeout...');
-        
-        // SECURITY FIX: Use count queries without selecting all fields
-        const statsPromise = Promise.all([
-          supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user.id),
-          supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id),
-          supabase.from('profiles').select('posts_count').eq('id', user.id).single()
-        ]);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Stats fetch timeout')), 2000)
+      );
 
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Stats fetch timeout')), 2000)
-        );
+      const [followersResult, followingResult, profileResult] = await Promise.race([
+        statsPromise, 
+        timeoutPromise
+      ]) as any;
 
-        const [followersResult, followingResult, profileResult] = await Promise.race([
-          statsPromise, 
-          timeoutPromise
-        ]) as any;
+      const newStats = {
+        followersCount: followersResult.count || 0,
+        followingCount: followingResult.count || 0,
+        postsCount: profileResult.data?.posts_count || 0
+      };
 
-        const newStats = {
-          followersCount: followersResult.count || 0,
-          followingCount: followingResult.count || 0,
-          postsCount: profileResult.data?.posts_count || 0
-        };
-
-        console.log('useFollowStats: Stats fetched:', newStats);
-        setStats(newStats);
-      } catch (error) {
-        console.error('useFollowStats: Error fetching follow stats or timeout:', error);
-        // Set demo stats on error/timeout
-        console.log('useFollowStats: Using demo stats due to error/timeout');
-        setStats({ followersCount: 42, followingCount: 18, postsCount: 5 });
-      } finally {
-        console.log('useFollowStats: Setting loading to false');
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
+      console.log('useFollowStats: Stats fetched:', newStats);
+      setStats(newStats);
+    } catch (error) {
+      console.error('useFollowStats: Error fetching follow stats or timeout:', error);
+      // Set demo stats on error/timeout
+      console.log('useFollowStats: Using demo stats due to error/timeout');
+      setStats({ followersCount: 42, followingCount: 18, postsCount: 5 });
+    } finally {
+      console.log('useFollowStats: Setting loading to false');
+      setLoading(false);
+    }
   }, [user]);
 
-  return { stats, loading };
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Subscribe to realtime changes on follows table for live updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('follow-stats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows',
+          filter: `following_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch stats when follows change
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows',
+          filter: `follower_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch stats when follows change
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchStats]);
+
+  return { stats, loading, refetch: fetchStats };
 };
 
 export const useFollowData = (type: 'followers' | 'following') => {
