@@ -95,7 +95,7 @@ const SigninStart = () => {
             <img 
               src={spottLogo} 
               alt="Spott" 
-              className="h-16 w-auto object-contain"
+              className="h-24 w-auto object-contain"
             />
           </div>
           <h2 className="text-2xl font-semibold text-foreground mb-2">
@@ -146,6 +146,16 @@ const SigninStart = () => {
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => navigate('/forgot-password')}
+              className="text-sm text-primary hover:opacity-80"
+            >
+              {t('auth:forgotPassword')}
+            </button>
           </div>
 
           <Button

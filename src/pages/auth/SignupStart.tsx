@@ -179,7 +179,7 @@ const SignupStart: React.FC = () => {
               <img 
                 src={spottLogo} 
                 alt="Spott" 
-                className="h-16 w-auto object-contain"
+                className="h-24 w-auto object-contain"
               />
             </div>
             <h2 className="mt-3 text-2xl font-semibold">{t('auth:joinSpott')}</h2>
