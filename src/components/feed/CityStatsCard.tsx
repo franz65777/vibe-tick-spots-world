@@ -152,12 +152,15 @@ const CityStatsCard = memo(() => {
 
         let userCityData: CityRanking | null = null;
         if (currentCityName) {
-          const userCityCount = cityCountMap[currentCityName] || 0;
-          const userCityRank = sortedCities.findIndex(c => c.city.toLowerCase() === currentCityName!.toLowerCase()) + 1;
+          const normalizedCityName = normalizeCity(currentCityName);
+          const userCityCount = cityCountMap[normalizedCityName] || 0;
+          const userCityRank =
+            sortedCities.findIndex((c) => c.city.toLowerCase() === normalizedCityName.toLowerCase()) + 1;
+
           userCityData = {
-            city: currentCityName,
+            city: normalizedCityName,
             count: userCityCount,
-            rank: userCityRank > 0 ? userCityRank : null
+            rank: userCityRank > 0 ? userCityRank : null,
           };
           setUserCity(userCityData);
         }
