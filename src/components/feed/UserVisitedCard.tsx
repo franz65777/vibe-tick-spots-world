@@ -56,7 +56,7 @@ const ScrollingLocationName = memo(({ name }: { name: string }) => {
 
   return (
     <div ref={scrollRef} className="overflow-hidden">
-      <h4 
+      <h4
         className={`font-bold text-foreground text-sm whitespace-nowrap ${isVisible && needsScroll ? 'animate-marquee-bounce' : ''}`}
       >
         {name}
@@ -66,6 +66,46 @@ const ScrollingLocationName = memo(({ name }: { name: string }) => {
 });
 
 ScrollingLocationName.displayName = 'ScrollingLocationName';
+
+// Scrolling text for the “ha visitato · data” line (keeps the Follow button always visible)
+const ScrollingVisitedMeta = memo(({ text }: { text: string }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [needsScroll, setNeedsScroll] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    setNeedsScroll(el.scrollWidth > el.clientWidth);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated && needsScroll) {
+          setIsVisible(true);
+          setHasAnimated(true);
+        }
+      },
+      { threshold: 0.6 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasAnimated, needsScroll, text]);
+
+  return (
+    <div ref={scrollRef} className="overflow-hidden">
+      <span
+        className={`text-xs text-muted-foreground whitespace-nowrap ${isVisible && needsScroll ? 'animate-marquee-bounce' : ''}`}
+      >
+        {text}
+      </span>
+    </div>
+  );
+});
+
+ScrollingVisitedMeta.displayName = 'ScrollingVisitedMeta';
 
 // Check if category should have bigger icon (restaurant/hotel only)
 const shouldHaveBiggerIcon = (category: string): boolean => {
@@ -311,21 +351,19 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
             <div className="flex-1 min-w-0">
               {/* Top row: username, visited, date, follow button */}
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
-                  <button
-                    onClick={handleUserClick}
-                    className="font-semibold text-sm hover:opacity-70 text-foreground shrink-0 max-w-[100px] truncate"
-                  >
-                    {activity.username}
-                  </button>
-                  <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
-                    {t('hasVisited', { ns: 'common', defaultValue: 'has visited' })}
-                  </span>
-                  <span className="text-xs text-muted-foreground shrink-0">·</span>
-                  <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
-                    {formattedDate}
-                  </span>
+                <button
+                  onClick={handleUserClick}
+                  className="font-semibold text-sm hover:opacity-70 text-foreground shrink-0 max-w-[110px] truncate"
+                >
+                  {activity.username}
+                </button>
+
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <ScrollingVisitedMeta
+                    text={`${t('hasVisited', { ns: 'common', defaultValue: 'has visited' })} · ${formattedDate}`}
+                  />
                 </div>
+
                 {/* Follow button - always visible */}
                 {!activity.is_following && user?.id !== activity.user_id && (
                   <Button

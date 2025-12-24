@@ -10,6 +10,7 @@ const AuthenticatedLayoutContent: React.FC = () => {
   const isBusinessRoute = location.pathname.startsWith('/business');
   const isDiscoverRoute = location.pathname === '/discover';
   const isSettingsRoute = location.pathname === '/settings';
+  const isPrivacySettingsRoute = location.pathname === '/privacy-settings';
   const isEditProfileRoute = location.pathname === '/edit-profile';
   const isCreateTripRoute = location.pathname === '/create-trip';
   const isCreateListRoute = location.pathname === '/create-list';
@@ -105,7 +106,7 @@ const AuthenticatedLayoutContent: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  const shouldHideNav = isDiscoverRoute || isSettingsRoute || isEditProfileRoute || 
+  const shouldHideNav = isDiscoverRoute || isSettingsRoute || isPrivacySettingsRoute || isEditProfileRoute || 
     isCreateTripRoute || isCreateListRoute || isSaveLocationRoute || isShareLocationRoute ||
     isUserPlacesRoute || isRewardsRoute || isMapExpanded || isPhotoSelection || isFolderModalOpen || isOnboardingOpen || isShareProfileOpen;
 
