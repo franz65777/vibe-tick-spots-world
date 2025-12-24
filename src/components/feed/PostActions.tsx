@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Share2, Pin } from 'lucide-react';
+import { Heart, Share2, Pin } from 'lucide-react';
+import { ChatIcon } from '@/components/icons/ChatIcon';
 import { useSocialEngagement } from '@/hooks/useSocialEngagement';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -310,7 +311,7 @@ export const PostActions = ({
         }}
         className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
-        <MessageCircle className="w-6 h-6" />
+        <ChatIcon size={22} />
         <span className="text-sm font-semibold">{displayCommentsCount}</span>
       </button>
 
