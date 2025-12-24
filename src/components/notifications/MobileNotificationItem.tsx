@@ -73,6 +73,7 @@ const MobileNotificationItem = ({
   const [userStories, setUserStories] = useState<any[]>([]);
   const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>({});
   const [isLocationShareActive, setIsLocationShareActive] = useState(true);
+  const [followRequestHandled, setFollowRequestHandled] = useState(false);
 
   // Swipe-to-delete state
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -629,6 +630,18 @@ const MobileNotificationItem = ({
               {displayUsername}
             </span>
             {' '}{t('startedFollowing', { ns: 'notifications' })}
+          </span>
+        );
+      case 'follow_request':
+        return (
+          <span className="text-foreground text-[13px] leading-tight">
+            <span 
+              className="font-semibold cursor-pointer hover:underline" 
+              onClick={handleUsernameClick}
+            >
+              {displayUsername}
+            </span>
+            {' '}{t('wantsToFollowYou', { ns: 'notifications', defaultValue: 'wants to follow you' })}
           </span>
         );
       case 'comment':

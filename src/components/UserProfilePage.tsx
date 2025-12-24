@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, Ban } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, Ban, Lock } from 'lucide-react';
 import saveTagAll from '@/assets/save-tag-all.png';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
@@ -32,7 +32,7 @@ const UserProfilePage = () => {
   const location = useLocation();
   const { user: currentUser } = useAuth();
 
-  const { profile, loading, error, followUser, unfollowUser } = useUserProfile(userId);
+  const { profile, loading, error, followUser, unfollowUser, cancelFollowRequest } = useUserProfile(userId);
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   const { isMuted, toggleMute } = useNotificationMuting(userId);
   const { isBlocked, blockUser, unblockUser } = useUserBlocking(userId);
@@ -119,9 +119,29 @@ const UserProfilePage = () => {
   const handleFollowToggle = () => {
     if (profile?.is_following) {
       unfollowUser();
+    } else if (profile?.follow_request_status === 'pending') {
+      cancelFollowRequest();
     } else {
       followUser();
     }
+  };
+
+  // Determine follow button text
+  const getFollowButtonText = () => {
+    if (profile?.is_following) {
+      return t('userProfile.alreadyFollowing', { ns: 'common' });
+    }
+    if (profile?.follow_request_status === 'pending') {
+      return t('userProfile.requestSent', { ns: 'common', defaultValue: 'Requested' });
+    }
+    return t('userProfile.follow', { ns: 'common' });
+  };
+
+  const getFollowButtonVariant = () => {
+    if (profile?.is_following || profile?.follow_request_status === 'pending') {
+      return 'secondary';
+    }
+    return 'default';
   };
   const handleBlockToggle = async () => {
     if (isBlocked) {
@@ -149,6 +169,23 @@ const UserProfilePage = () => {
   }
   const displayUsername = profile.username || 'Unknown User';
   const renderTabContent = () => {
+    // If private account and viewer can't view content, show private message
+    if (!isOwnProfile && profile?.is_private && !profile?.can_view_content) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <div className="w-16 h-16 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            {t('userProfile.privateAccount', { ns: 'common', defaultValue: 'This account is private' })}
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-[280px]">
+            {t('userProfile.followToSee', { ns: 'common', defaultValue: 'Follow this account to see their photos, trips, and saved places.' })}
+          </p>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'posts':
         return <PostsGrid userId={userId} />;
@@ -173,12 +210,8 @@ const UserProfilePage = () => {
         </div>
         {!isOwnProfile && <div className="flex items-center gap-2">
             {/* Follow Button */}
-            <Button onClick={handleFollowToggle} variant={profile.is_following ? "secondary" : "default"} className={`rounded-full font-medium h-8 px-4 text-sm ${profile.is_following ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}>
-              {profile.is_following ? t('userProfile.alreadyFollowing', {
-            ns: 'common'
-          }) : t('userProfile.follow', {
-            ns: 'common'
-          })}
+            <Button onClick={handleFollowToggle} variant={getFollowButtonVariant()} className={`rounded-full font-medium h-8 px-4 text-sm ${(profile.is_following || profile.follow_request_status === 'pending') ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}>
+              {getFollowButtonText()}
             </Button>
             {/* Message Button */}
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => navigate('/messages', {
