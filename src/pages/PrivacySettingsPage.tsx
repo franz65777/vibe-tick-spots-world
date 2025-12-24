@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Lock, Eye, Users, Globe, ArrowLeft } from 'lucide-react';
+import { Lock, Eye, ArrowLeft } from 'lucide-react';
 import privacyIcon from '@/assets/icons/privacy-icon.png';
 
 type BeenCardsVisibility = 'everyone' | 'none' | 'close_friends';
@@ -163,7 +163,7 @@ const PrivacySettingsPage: React.FC = () => {
             </div>
 
             {/* Visited Places Visibility */}
-            <div className="space-y-3 pt-4 border-t">
+            <div className="space-y-3 pt-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
                   <Eye className="w-5 h-5" />
@@ -178,63 +178,50 @@ const PrivacySettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {isPrivate ? (
-                <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                  {t('beenCardsPrivateNote', { ns: 'settings', defaultValue: 'Since your profile is private, your visited places are only visible to your approved followers.' })}
-                </div>
-              ) : (
-                <RadioGroup 
-                  value={beenCardsVisibility} 
-                  onValueChange={handleBeenCardsVisibilityChange}
-                  disabled={saving}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+              <RadioGroup 
+                value={beenCardsVisibility} 
+                onValueChange={handleBeenCardsVisibilityChange}
+                disabled={saving}
+                className="space-y-1"
+              >
+                {!isPrivate && (
+                  <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
                     <RadioGroupItem value="everyone" id="everyone" />
-                    <Label htmlFor="everyone" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <Globe className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">
-                          {t('everyone', { ns: 'settings', defaultValue: 'Everyone' })}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {t('everyoneDesc', { ns: 'settings', defaultValue: 'Anyone can see your visited places' })}
-                        </div>
+                    <Label htmlFor="everyone" className="cursor-pointer flex-1">
+                      <div className="font-medium">
+                        {t('everyone', { ns: 'settings', defaultValue: 'Everyone' })}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {t('everyoneDesc', { ns: 'settings', defaultValue: 'Anyone can see your visited places' })}
                       </div>
                     </Label>
                   </div>
+                )}
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
-                    <RadioGroupItem value="close_friends" id="close_friends" />
-                    <Label htmlFor="close_friends" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">
-                          {t('closeFriendsOnly', { ns: 'settings', defaultValue: 'Close Friends Only' })}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {t('closeFriendsOnlyDesc', { ns: 'settings', defaultValue: 'Only your close friends can see your visited places' })}
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
+                <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="close_friends" id="close_friends" />
+                  <Label htmlFor="close_friends" className="cursor-pointer flex-1">
+                    <div className="font-medium">
+                      {t('closeFriendsOnly', { ns: 'settings', defaultValue: 'Close Friends Only' })}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {t('closeFriendsOnlyDesc', { ns: 'settings', defaultValue: 'Only your close friends can see your visited places' })}
+                    </div>
+                  </Label>
+                </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
-                    <RadioGroupItem value="none" id="none" />
-                    <Label htmlFor="none" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <Lock className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">
-                          {t('noOne', { ns: 'settings', defaultValue: 'No One' })}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {t('noOneDesc', { ns: 'settings', defaultValue: 'Your visited places are hidden from everyone' })}
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              )}
+                <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="none" id="none" />
+                  <Label htmlFor="none" className="cursor-pointer flex-1">
+                    <div className="font-medium">
+                      {t('noOne', { ns: 'settings', defaultValue: 'No One' })}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {t('noOneDesc', { ns: 'settings', defaultValue: 'Your visited places are hidden from everyone' })}
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         )}
