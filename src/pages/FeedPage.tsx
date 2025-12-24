@@ -600,61 +600,114 @@ const FeedPage = memo(() => {
                 </Suspense>
               )}
 
-              {/* Feed items merged chronologically with visited saves */}
+              {/* Feed items with structured layout:
+                  1. City Stats (above)
+                  2. 1 post OR 2 visited cards
+                  3. Lists carousel
+                  4. 1 post OR 2 visited cards  
+                  5. Suggestions carousel
+                  6. Rest of content
+              */}
               {(() => {
-                let postIndex = 0; // Track actual post index for carousel insertion
+                // Separate posts and visited entries
+                const posts = mergedFeed.filter(e => e.type === 'post');
+                const visitedCards = mergedFeed.filter(e => e.type === 'visited');
                 
-                return mergedFeed.map((entry, index) => {
-                  if (entry.type === 'visited') {
-                    return (
-                      <div key={`visited-${entry.data.id}`} className="py-1">
-                        <UserVisitedCard activity={entry.data} />
-                      </div>
-                    );
-                  }
-                  
-                  // It's a post
+                const elements: React.ReactNode[] = [];
+                let postIdx = 0;
+                let visitedIdx = 0;
+                
+                // Helper to render a post
+                const renderPost = (entry: typeof mergedFeed[0], key: string) => {
                   const item = entry.data;
                   const profile = item.profiles as any;
                   const userId = item.user_id;
                   const userHasStory = stories.some(s => s.user_id === userId);
-                  const currentPostIndex = postIndex;
-                  postIndex++;
-
+                  
                   return (
-                    <div key={item.id} className="contents">
-                      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                        <FeedPostItem
-                          item={item}
-                          profile={profile}
-                          userHasStory={userHasStory}
-                          postLikes={postLikes}
-                          expandedCaptions={expandedCaptions}
-                          isPromotionFeed={feedType === 'promotions'}
-                          onAvatarClick={handleAvatarClick}
-                          onLocationClick={handleLocationClick}
-                          onCommentClick={handleCommentClick}
-                          onShareClick={handleShareClick}
-                          onToggleCaption={toggleCaption}
-                        />
-                      </Suspense>
-
-                      {/* Insert lists carousel after 2nd post */}
-                      {feedType === 'forYou' && currentPostIndex === 1 && (
-                        <Suspense fallback={null}>
-                          <FeedListsCarousel />
-                        </Suspense>
-                      )}
-
-                      {/* Insert suggestions carousel after 3rd post (one post after lists) */}
-                      {feedType === 'forYou' && currentPostIndex === 2 && (
-                        <Suspense fallback={null}>
-                          <FeedSuggestionsCarousel />
-                        </Suspense>
-                      )}
-                    </div>
+                    <Suspense key={key} fallback={<Skeleton className="h-96 w-full" />}>
+                      <FeedPostItem
+                        item={item}
+                        profile={profile}
+                        userHasStory={userHasStory}
+                        postLikes={postLikes}
+                        expandedCaptions={expandedCaptions}
+                        isPromotionFeed={feedType === 'promotions'}
+                        onAvatarClick={handleAvatarClick}
+                        onLocationClick={handleLocationClick}
+                        onCommentClick={handleCommentClick}
+                        onShareClick={handleShareClick}
+                        onToggleCaption={toggleCaption}
+                      />
+                    </Suspense>
                   );
+                };
+                
+                // Helper to render visited card
+                const renderVisited = (entry: typeof mergedFeed[0], key: string) => (
+                  <div key={key} className="py-1">
+                    <UserVisitedCard activity={entry.data} />
+                  </div>
+                );
+                
+                // Section 1: 1 post OR 2 visited cards
+                if (posts.length > 0) {
+                  elements.push(renderPost(posts[postIdx], `section1-post-${posts[postIdx].data.id}`));
+                  postIdx++;
+                } else {
+                  // Show up to 2 visited cards
+                  for (let i = 0; i < 2 && visitedIdx < visitedCards.length; i++) {
+                    elements.push(renderVisited(visitedCards[visitedIdx], `section1-visited-${visitedCards[visitedIdx].data.id}`));
+                    visitedIdx++;
+                  }
+                }
+                
+                // Lists carousel
+                if (feedType === 'forYou') {
+                  elements.push(
+                    <Suspense key="lists-carousel" fallback={null}>
+                      <FeedListsCarousel />
+                    </Suspense>
+                  );
+                }
+                
+                // Section 2: 1 post OR 2 visited cards
+                if (postIdx < posts.length) {
+                  elements.push(renderPost(posts[postIdx], `section2-post-${posts[postIdx].data.id}`));
+                  postIdx++;
+                } else {
+                  // Show up to 2 visited cards
+                  for (let i = 0; i < 2 && visitedIdx < visitedCards.length; i++) {
+                    elements.push(renderVisited(visitedCards[visitedIdx], `section2-visited-${visitedCards[visitedIdx].data.id}`));
+                    visitedIdx++;
+                  }
+                }
+                
+                // Suggestions carousel
+                if (feedType === 'forYou') {
+                  elements.push(
+                    <Suspense key="suggestions-carousel" fallback={null}>
+                      <FeedSuggestionsCarousel />
+                    </Suspense>
+                  );
+                }
+                
+                // Rest of content: remaining posts and visited cards merged chronologically
+                const remainingPosts = posts.slice(postIdx);
+                const remainingVisited = visitedCards.slice(visitedIdx);
+                const remaining = [...remainingPosts, ...remainingVisited].sort(
+                  (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                );
+                
+                remaining.forEach((entry, idx) => {
+                  if (entry.type === 'post') {
+                    elements.push(renderPost(entry, `rest-post-${entry.data.id}-${idx}`));
+                  } else {
+                    elements.push(renderVisited(entry, `rest-visited-${entry.data.id}-${idx}`));
+                  }
                 });
+                
+                return elements;
               })()}
             </div>
           )}

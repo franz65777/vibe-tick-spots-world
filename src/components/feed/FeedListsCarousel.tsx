@@ -74,36 +74,45 @@ const FeedListsCarousel = memo(() => {
 
           const locationIds = folderLocations.map(fl => fl.location_id);
 
+          // Get full location data including google_place_id for matching
+          const { data: locationsData } = await supabase
+            .from('locations')
+            .select('id, city, latitude, longitude, google_place_id')
+            .in('id', locationIds);
+
           // Check if any location is in user's city or nearby
           let hasNearbyLocation = false;
           
-          if (userCity && geoLocation?.latitude && geoLocation?.longitude) {
-            const { data: nearbyLocations } = await supabase
-              .from('locations')
-              .select('id, city, latitude, longitude')
-              .in('id', locationIds);
-
-            if (nearbyLocations) {
-              hasNearbyLocation = nearbyLocations.some(loc => {
-                // Check if same city
-                if (loc.city?.toLowerCase() === userCity.toLowerCase()) {
-                  return true;
-                }
-                // Check if within ~50km radius
-                if (loc.latitude && loc.longitude && geoLocation.latitude && geoLocation.longitude) {
-                  const distance = Math.sqrt(
-                    Math.pow(loc.latitude - geoLocation.latitude, 2) +
-                    Math.pow(loc.longitude - geoLocation.longitude, 2)
-                  );
-                  return distance < 0.5; // Approximately 50km
-                }
-                return false;
-              });
-            }
+          if (userCity && geoLocation?.latitude && geoLocation?.longitude && locationsData) {
+            hasNearbyLocation = locationsData.some(loc => {
+              // Check if same city
+              if (loc.city?.toLowerCase() === userCity.toLowerCase()) {
+                return true;
+              }
+              // Check if within ~50km radius
+              if (loc.latitude && loc.longitude && geoLocation.latitude && geoLocation.longitude) {
+                const distance = Math.sqrt(
+                  Math.pow(loc.latitude - geoLocation.latitude, 2) +
+                  Math.pow(loc.longitude - geoLocation.longitude, 2)
+                );
+                return distance < 0.5; // Approximately 50km
+              }
+              return false;
+            });
           }
 
-          // Calculate visited count - how many locations user has saved as 'been'
-          const visitedCount = locationIds.filter(locId => userVisitedPlaceIds.has(locId)).length;
+          // Calculate visited count - match by google_place_id OR location id
+          const visitedCount = (locationsData || []).filter(loc => {
+            // Check if user visited by google_place_id
+            if (loc.google_place_id && userVisitedPlaceIds.has(loc.google_place_id)) {
+              return true;
+            }
+            // Also check by location id (in case saved_places uses location id)
+            if (userVisitedPlaceIds.has(loc.id)) {
+              return true;
+            }
+            return false;
+          }).length;
 
           // If no geolocation, show all public folders
           if (!userCity || hasNearbyLocation) {
