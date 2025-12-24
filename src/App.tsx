@@ -57,6 +57,7 @@ import SignupVerify from '@/pages/auth/SignupVerify';
 import SignupProfile from '@/pages/auth/SignupProfile';
 import SignupDetails from '@/pages/auth/SignupDetails';
 import SignupPassword from '@/pages/auth/SignupPassword';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
 
 // Initialize analytics cleanup service for data privacy compliance
 import '@/services/analyticsCleanupService';
@@ -105,6 +106,7 @@ function AppContent() {
           <Route path="/signup/profile" element={<SignupProfile />} />
           <Route path="/signup/details" element={<SignupDetails />} />
           <Route path="/signup/password" element={<SignupPassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
 
