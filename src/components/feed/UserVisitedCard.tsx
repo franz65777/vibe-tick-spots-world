@@ -311,18 +311,18 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
             <div className="flex-1 min-w-0">
               {/* Top row: username, visited, date, follow button */}
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
                   <button
                     onClick={handleUserClick}
                     className="font-semibold text-sm hover:opacity-70 text-foreground shrink-0 max-w-[100px] truncate"
                   >
                     {activity.username}
                   </button>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                     {t('hasVisited', { ns: 'common', defaultValue: 'has visited' })}
                   </span>
                   <span className="text-xs text-muted-foreground shrink-0">·</span>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                     {formattedDate}
                   </span>
                 </div>
