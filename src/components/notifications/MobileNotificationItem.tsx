@@ -978,14 +978,19 @@ const MobileNotificationItem = ({
                                 following_id: user.id,
                               });
 
-                              // Remove notification from feed
-                              await supabase.from('notifications').update({ expires_at: new Date().toISOString() }).eq('id', notification.id);
+                              // Delete the notification so it disappears
+                              if (onDelete) {
+                                await onDelete(notification.id);
+                              } else {
+                                await supabase.from('notifications').delete().eq('id', notification.id);
+                              }
 
                               setFollowRequestHandled(true);
-                              toast.success(t('requestAccepted', { ns: 'notifications', defaultValue: 'Request accepted' }));
+                              setHidden(true);
+                              toast.success(t('requestAccepted', { ns: 'notifications' }));
                             } catch (err) {
                               console.error('Error accepting follow request:', err);
-                              toast.error(t('error', { ns: 'common', defaultValue: 'Error' }));
+                              toast.error(t('error', { ns: 'common' }));
                             } finally {
                               setIsLoading(false);
                             }
@@ -999,7 +1004,7 @@ const MobileNotificationItem = ({
                           variant="default"
                           className="px-3 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
                         >
-                          {t('accept', { ns: 'common', defaultValue: 'Accept' })}
+                          {t('accept', { ns: 'notifications' })}
                         </Button>
                         <Button
                           onClick={async (e) => {
@@ -1014,12 +1019,19 @@ const MobileNotificationItem = ({
                                 .eq('id', notification.data.request_id)
                                 .eq('requested_id', user.id);
 
-                              await supabase.from('notifications').update({ expires_at: new Date().toISOString() }).eq('id', notification.id);
+                              // Delete the notification so it disappears immediately
+                              if (onDelete) {
+                                await onDelete(notification.id);
+                              } else {
+                                await supabase.from('notifications').delete().eq('id', notification.id);
+                              }
 
                               setFollowRequestHandled(true);
+                              setHidden(true);
+                              toast.success(t('requestDeclined', { ns: 'notifications' }));
                             } catch (err) {
                               console.error('Error declining follow request:', err);
-                              toast.error(t('error', { ns: 'common', defaultValue: 'Error' }));
+                              toast.error(t('error', { ns: 'common' }));
                             } finally {
                               setIsLoading(false);
                             }
@@ -1033,7 +1045,7 @@ const MobileNotificationItem = ({
                           variant="outline"
                           className="px-3 h-7 text-[12px] font-semibold rounded-lg"
                         >
-                          {t('decline', { ns: 'common', defaultValue: 'Decline' })}
+                          {t('decline', { ns: 'notifications' })}
                         </Button>
                       </>
                     ) : null}
