@@ -124,7 +124,14 @@ const SettingsPage: React.FC = () => {
       {/* Header with back button */}
       <div className="flex items-center gap-3 p-4 pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background">
         <button
-          onClick={() => navigate('/profile')}
+          onClick={() => {
+            // Prefer history back to restore the previous ProfilePage state instantly
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/profile');
+            }
+          }}
           className="p-2 hover:bg-muted rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
