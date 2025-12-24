@@ -50,6 +50,15 @@ const FeedListsCarousel = memo(() => {
 
       if (error) throw error;
 
+      // Get user's visited locations (saved as 'been')
+      const { data: userVisitedLocations } = await supabase
+        .from('saved_places')
+        .select('place_id')
+        .eq('user_id', user.id)
+        .eq('save_tag', 'been');
+      
+      const userVisitedPlaceIds = new Set(userVisitedLocations?.map(s => s.place_id) || []);
+
       // Filter folders that have locations near user's city
       const foldersWithProximity = await Promise.all(
         (folders || []).map(async (folder: any) => {
@@ -93,6 +102,9 @@ const FeedListsCarousel = memo(() => {
             }
           }
 
+          // Calculate visited count - how many locations user has saved as 'been'
+          const visitedCount = locationIds.filter(locId => userVisitedPlaceIds.has(locId)).length;
+
           // If no geolocation, show all public folders
           if (!userCity || hasNearbyLocation) {
             return {
@@ -102,7 +114,7 @@ const FeedListsCarousel = memo(() => {
               color: folder.color,
               is_private: folder.is_private,
               location_count: locationIds.length,
-              visited_count: 0,
+              visited_count: visitedCount,
               owner_username: folder.profiles?.username || 'user'
             };
           }
@@ -165,7 +177,7 @@ const FeedListsCarousel = memo(() => {
                   {t('by', { defaultValue: 'by' })} @{list.owner_username}
                 </p>
                 <p className="text-white/70 text-xs">
-                  {t('visited', { defaultValue: 'visited' })} 0/{list.location_count}
+                  {t('visited', { defaultValue: 'visited' })} {list.visited_count}/{list.location_count}
                 </p>
               </div>
             </div>
