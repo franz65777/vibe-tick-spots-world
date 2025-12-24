@@ -43,11 +43,18 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  
+  // Cache for both tabs to reduce refetching
+  const followersCache = useRef<UserWithFollowStatus[]>([]);
+  const followingCache = useRef<UserWithFollowStatus[]>([]);
+  const cacheLoaded = useRef<{ followers: boolean; following: boolean }>({ followers: false, following: false });
 
   // Sync activeTab when initialTab changes (e.g., when modal opens with different tab)
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
+      // Reset cache when modal opens
+      cacheLoaded.current = { followers: false, following: false };
     }
   }, [initialTab, isOpen]);
 
@@ -58,6 +65,20 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         setLoading(false);
         return;
       }
+
+      // Check cache first
+      if (activeTab === 'followers' && cacheLoaded.current.followers) {
+        setUsers(followersCache.current);
+        setLoading(false);
+        return;
+      }
+      if (activeTab === 'following' && cacheLoaded.current.following) {
+        setUsers(followingCache.current);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
 
       try {
         let query = supabase
@@ -99,6 +120,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
           });
           
           // Check follow status for each user
+          let usersWithStatus: UserWithFollowStatus[];
           if (currentUser) {
             const { data: followsData } = await supabase
               .from('follows')
@@ -108,20 +130,28 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
             
             const followingIds = new Set(followsData?.map(f => f.following_id) || []);
             
-            const usersWithStatus = followUsers.map((u: any) => ({
+            usersWithStatus = followUsers.map((u: any) => ({
               ...u,
               isFollowing: followingIds.has(u.id),
               savedPlacesCount: savedPlacesCounts.get(u.id) || 0
             }));
-            
-            setUsers(usersWithStatus);
           } else {
-            const usersWithCount = followUsers.map((u: any) => ({
+            usersWithStatus = followUsers.map((u: any) => ({
               ...u,
               savedPlacesCount: savedPlacesCounts.get(u.id) || 0
             }));
-            setUsers(usersWithCount);
           }
+          
+          // Update cache
+          if (activeTab === 'followers') {
+            followersCache.current = usersWithStatus;
+            cacheLoaded.current.followers = true;
+          } else {
+            followingCache.current = usersWithStatus;
+            cacheLoaded.current.following = true;
+          }
+          
+          setUsers(usersWithStatus);
         }
       } catch (error) {
         console.error('Error fetching follow data:', error);
@@ -182,14 +212,15 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
     if (!currentUser) return;
 
     try {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', followerId)
-        .eq('following_id', currentUser.id);
+      // Use the RPC function to remove follower (bypasses RLS)
+      const { error } = await supabase.rpc('remove_follower', {
+        follower_user_id: followerId
+      });
 
       if (!error) {
         setUsers(prev => prev.filter(u => u.id !== followerId));
+      } else {
+        console.error('Error removing follower:', error);
       }
     } catch (error) {
       console.error('Error removing follower:', error);
