@@ -376,37 +376,37 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                 );
 
                 return (
-                  <div key={user.id} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <button
-                        onClick={() => handleAvatarClick(user)}
-                        className="shrink-0"
-                      >
-                        <div className={cn(
-                          "rounded-full p-[2px]",
-                          userHasStories ? "bg-gradient-to-tr from-primary to-primary/50" : ""
-                        )}>
-                          <Avatar className="w-12 h-12 border-2 border-background">
-                            <AvatarImage src={user.avatar_url || undefined} />
-                            <AvatarFallback>
-                              {getInitials(user.username || 'User')}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          onClose();
-                          navigate(`/profile/${user.id}`);
-                        }}
-                        className="text-left min-w-0 flex-1"
-                      >
-                        <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {user.savedPlacesCount || 0} {t('place', { ns: 'explore', count: user.savedPlacesCount || 0, defaultValue: 'Luoghi' })}
-                        </p>
-                      </button>
-                    </div>
+                  <div key={user.id} className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleAvatarClick(user)}
+                      className="shrink-0"
+                    >
+                      <div className={cn(
+                        "rounded-full p-[2px]",
+                        userHasStories ? "bg-gradient-to-tr from-primary to-primary/50" : ""
+                      )}>
+                        <Avatar className="w-12 h-12 border-2 border-background">
+                          <AvatarImage src={user.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {getInitials(user.username || 'User')}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        navigate(`/profile/${user.id}`);
+                      }}
+                      className="text-left min-w-0 flex-1"
+                    >
+                      <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground overflow-x-auto scrollbar-hide">
+                        <span className="whitespace-nowrap">{t('visitedOn', { ns: 'explore', defaultValue: 'ha visitato' })}</span>
+                        <span className="whitespace-nowrap">·</span>
+                        <span className="whitespace-nowrap">{user.savedPlacesCount || 0} {t('place', { ns: 'explore', count: user.savedPlacesCount || 0, defaultValue: 'Luoghi' })}</span>
+                      </div>
+                    </button>
                     
                     {currentUser?.id !== user.id && (
                       isOwnProfile && activeTab === 'following' ? (

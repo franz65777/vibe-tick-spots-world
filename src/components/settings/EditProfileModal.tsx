@@ -168,13 +168,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   };
 
   const handleUsernameChange = async (newUsername: string) => {
-    setUsername(newUsername);
+    // Enforce lowercase and no spaces
+    const sanitized = newUsername.toLowerCase().replace(/\s/g, '');
+    setUsername(sanitized);
     setUsernameError(null);
     
-    if (newUsername.trim() === '') return;
-    if (newUsername.trim() === profile?.username) return;
+    if (sanitized.trim() === '') return;
+    if (sanitized.trim() === profile?.username) return;
     
-    const isAvailable = await checkUsernameAvailability(newUsername.trim());
+    const isAvailable = await checkUsernameAvailability(sanitized.trim());
     if (!isAvailable) {
       setUsernameError(t('usernameAlreadyTaken', { ns: 'settings' }));
     }
