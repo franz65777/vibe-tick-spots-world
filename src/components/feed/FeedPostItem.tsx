@@ -300,19 +300,20 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                         {isVideo ? (
                           <video
                             src={url}
-                            className="w-full h-full object-cover block touch-pinch-zoom"
+                            className="w-full h-full object-cover block"
                             controls
                             playsInline
                             loop
+                            style={{ touchAction: 'pan-y pinch-zoom' }}
                           />
                         ) : (
                           <img
                             src={url}
                             alt={`Post ${idx + 1}`}
-                            className="w-full h-full object-cover block touch-pinch-zoom"
+                            className="w-full h-full object-cover block"
                             loading="lazy"
                             decoding="async"
-                            style={{ touchAction: 'pinch-zoom' }}
+                            style={{ touchAction: 'pan-y pinch-zoom' }}
                           />
                         )}
                       </div>
@@ -328,19 +329,20 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                 {isVideo ? (
                   <video
                     src={mediaUrls[0]}
-                    className="w-full h-full object-cover block touch-pinch-zoom"
+                    className="w-full h-full object-cover block"
                     controls
                     playsInline
                     loop
+                    style={{ touchAction: 'pan-y pinch-zoom' }}
                   />
                 ) : (
                   <img
                     src={mediaUrls[0]}
                     alt="Post"
-                    className="w-full h-full object-cover block touch-pinch-zoom"
+                    className="w-full h-full object-cover block"
                     loading="lazy"
                     decoding="async"
-                    style={{ touchAction: 'pinch-zoom' }}
+                    style={{ touchAction: 'pan-y pinch-zoom' }}
                   />
                 )}
               </div>
