@@ -169,20 +169,35 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('ratePlace', { ns: 'add' })}</label>
               <div className="flex gap-2">
-                {[...Array(10)].map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => onRatingChange(rating === i + 1 ? undefined : i + 1)}
-                    className={`w-10 h-10 rounded-lg font-semibold transition-all ${
-                      rating && rating >= i + 1
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+                {[...Array(10)].map((_, i) => {
+                  const ratingNum = i + 1;
+                  const isSelected = rating && rating >= ratingNum;
+                  
+                  // Get gradient color based on rating value
+                  const getButtonGradient = () => {
+                    if (!isSelected) return 'bg-muted text-muted-foreground hover:bg-muted/80';
+                    if (ratingNum <= 2) return 'bg-red-500 text-white';
+                    if (ratingNum <= 3) return 'bg-red-400 text-white';
+                    if (ratingNum <= 4) return 'bg-orange-500 text-white';
+                    if (ratingNum <= 5) return 'bg-orange-400 text-white';
+                    if (ratingNum <= 6) return 'bg-amber-500 text-white';
+                    if (ratingNum <= 7) return 'bg-yellow-500 text-black';
+                    if (ratingNum <= 8) return 'bg-lime-500 text-black';
+                    if (ratingNum <= 9) return 'bg-green-500 text-white';
+                    return 'bg-green-600 text-white';
+                  };
+                  
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => onRatingChange(rating === ratingNum ? undefined : ratingNum)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${getButtonGradient()}`}
+                    >
+                      {ratingNum}
+                    </button>
+                  );
+                })}
               </div>
               {rating && (
                 <p className="text-xs text-muted-foreground">

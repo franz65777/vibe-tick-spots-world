@@ -80,8 +80,9 @@ const OpenStreetMapAutocomplete = ({
         .limit(20); // Get more to deduplicate
 
       if (dbLocations) {
-        // DEDUPLICATE by coordinates (within ~11 meters)
+        // DEDUPLICATE by name+city AND by coordinates (within ~11 meters)
         const uniqueLocations = new Map<string, typeof dbLocations[0]>();
+        const seenNameCity = new Set<string>();
         const threshold = 0.0001;
         
         for (const loc of dbLocations) {
@@ -90,9 +91,13 @@ const OpenStreetMapAutocomplete = ({
           const lngKey = Math.round(loc.longitude / threshold);
           const coordKey = `${latKey},${lngKey}`;
           
-          // Only add if not already present at these coordinates
-          if (!uniqueLocations.has(coordKey)) {
+          // Create name+city key for additional dedup
+          const nameCityKey = `${loc.name.toLowerCase().trim()}|${(loc.city || '').toLowerCase().trim()}`;
+          
+          // Only add if not already present at these coordinates AND not same name+city
+          if (!uniqueLocations.has(coordKey) && !seenNameCity.has(nameCityKey)) {
             uniqueLocations.set(coordKey, loc);
+            seenNameCity.add(nameCityKey);
           }
         }
         

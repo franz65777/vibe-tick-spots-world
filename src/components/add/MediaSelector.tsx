@@ -70,16 +70,14 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
 
           <div className="space-y-3 w-full">
              <div className="flex flex-col gap-3 w-full">
-               <Button
+              <Button
                  onClick={handleClick}
                  size="lg"
                  className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
                >
                  <img src={postIcon} alt="Post" className="w-6 h-6 mr-2" />
                  <span className="whitespace-nowrap">
-                   {i18n.language.startsWith('it')
-                     ? 'Crea un post'
-                     : t('chooseFromLibrary', { ns: 'add' })}
+                   {t('createPost', { ns: 'add' })}
                  </span>
                </Button>
  
@@ -90,7 +88,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
                >
                  <img src={listIcon} alt="List" className="w-6 h-6 mr-2" />
                  <span className="whitespace-nowrap">
-                   {t('createList', { ns: 'add' })}
+                   {t('createAList', { ns: 'add' })}
                  </span>
                </Button>
              </div>
