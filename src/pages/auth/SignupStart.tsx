@@ -255,7 +255,7 @@ const SignupStart: React.FC = () => {
             </div>
           )}
 
-          <Button disabled={!canContinue || loading} onClick={sendCode} className="w-full h-12">
+          <Button disabled={!canContinue || loading} onClick={sendCode} className="w-full h-12 rounded-full">
             {loading ? t('auth:sending') : exists ? (method === 'email' ? t('auth:emailAlreadyUsed') : t('auth:phoneAlreadyUsed')) : t('auth:sendCode')}
           </Button>
 

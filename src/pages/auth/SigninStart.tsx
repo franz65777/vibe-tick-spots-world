@@ -148,34 +148,34 @@ const SigninStart = () => {
             </div>
           </div>
 
-          <div className="text-right">
+          <Button
+            type="submit"
+            disabled={loading || !identifier || !password}
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full"
+          >
+            {loading ? t('auth:pleaseWait') : t('auth:signInButton')}
+          </Button>
+
+          <div className="text-center">
             <button
               type="button"
               onClick={() => navigate('/forgot-password')}
-              className="text-sm text-primary hover:opacity-80"
+              className="text-sm text-muted-foreground hover:opacity-80"
             >
               {t('auth:forgotPassword')}
             </button>
           </div>
-
-          <Button
-            type="submit"
-            disabled={loading || !identifier || !password}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
-          >
-            {loading ? t('auth:pleaseWait') : t('auth:signInButton')}
-          </Button>
         </form>
 
-        {/* Sign up link */}
-        <div className="text-center text-sm text-muted-foreground mt-6">
-          {t('auth:dontHaveAccount')}{' '}
-          <button
+        {/* Create new account button */}
+        <div className="mt-auto pt-8 pb-4">
+          <Button
+            variant="outline"
             onClick={() => navigate('/signup/start')}
-            className="text-primary font-medium hover:opacity-80"
+            className="w-full h-12 rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium"
           >
-            {t('auth:signUp')}
-          </button>
+            {t('auth:createNewAccount')}
+          </Button>
         </div>
       </div>
     </div>
