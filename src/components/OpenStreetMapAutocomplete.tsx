@@ -66,52 +66,52 @@ const OpenStreetMapAutocomplete = ({
     };
   }, [query]);
 
+  // Normalize name for deduplication
+  const normalizeName = (name: string): string => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s]/g, '') // Remove special chars
+      .replace(/\s+/g, ' '); // Normalize whitespace
+  };
+
   const performSearch = async (searchQuery: string) => {
     setLoading(true);
     
     try {
       const combinedResults: SearchResult[] = [];
+      const seenNormalizedNames = new Set<string>();
 
       // 1. Search our database first (instant, no API cost)
       const { data: dbLocations } = await supabase
         .from('locations')
         .select('id, name, address, city, latitude, longitude')
         .or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`)
-        .limit(20); // Get more to deduplicate
+        .limit(20);
 
       if (dbLocations) {
-        // DEDUPLICATE by name+city AND by coordinates (within ~11 meters)
-        const uniqueLocations = new Map<string, typeof dbLocations[0]>();
-        const seenNameCity = new Set<string>();
-        const threshold = 0.0001;
-        
         for (const loc of dbLocations) {
-          // Create coordinate key rounded to threshold
-          const latKey = Math.round(loc.latitude / threshold);
-          const lngKey = Math.round(loc.longitude / threshold);
-          const coordKey = `${latKey},${lngKey}`;
+          const normalizedName = normalizeName(loc.name);
           
-          // Create name+city key for additional dedup
-          const nameCityKey = `${loc.name.toLowerCase().trim()}|${(loc.city || '').toLowerCase().trim()}`;
+          // Skip if we've already seen this normalized name
+          if (seenNormalizedNames.has(normalizedName)) {
+            continue;
+          }
           
-          // Only add if not already present at these coordinates AND not same name+city
-          if (!uniqueLocations.has(coordKey) && !seenNameCity.has(nameCityKey)) {
-            uniqueLocations.set(coordKey, loc);
-            seenNameCity.add(nameCityKey);
+          seenNormalizedNames.add(normalizedName);
+          
+          if (combinedResults.length < 5) {
+            combinedResults.push({
+              id: loc.id,
+              name: loc.name,
+              address: loc.address || '',
+              lat: loc.latitude,
+              lng: loc.longitude,
+              city: loc.city || '',
+              source: 'database' as const,
+            });
           }
         }
-        
-        combinedResults.push(
-          ...Array.from(uniqueLocations.values()).slice(0, 5).map((loc) => ({
-            id: loc.id,
-            name: loc.name,
-            address: loc.address || '',
-            lat: loc.latitude,
-            lng: loc.longitude,
-            city: loc.city || '',
-            source: 'database' as const,
-          }))
-        );
       }
 
       // 2. If few results, search OpenStreetMap Nominatim (FREE)
@@ -119,17 +119,27 @@ const OpenStreetMapAutocomplete = ({
         try {
           const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery);
           
-          combinedResults.push(
-            ...nominatimResults.map((result, idx) => ({
-              id: `nominatim-${idx}`,
-              name: result.displayName.split(',')[0],
+          for (const result of nominatimResults) {
+            const placeName = result.displayName.split(',')[0];
+            const normalizedName = normalizeName(placeName);
+            
+            // Skip if we've already seen this normalized name
+            if (seenNormalizedNames.has(normalizedName)) {
+              continue;
+            }
+            
+            seenNormalizedNames.add(normalizedName);
+            
+            combinedResults.push({
+              id: `nominatim-${combinedResults.length}`,
+              name: placeName,
               address: result.displayName,
               lat: result.lat,
               lng: result.lng,
               city: result.city,
               source: 'nominatim' as const,
-            }))
-          );
+            });
+          }
         } catch (nominatimError) {
           console.warn('Nominatim search failed:', nominatimError);
         }

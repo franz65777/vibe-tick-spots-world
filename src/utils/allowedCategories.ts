@@ -152,3 +152,53 @@ export const isAllowedNominatimType = (type?: string, osmClass?: string): boolea
   
   return false;
 };
+
+// Map Nominatim types to our categories
+export const mapNominatimTypeToCategory = (type?: string, osmClass?: string): AllowedCategory => {
+  const normalizedType = type?.toLowerCase() || '';
+  
+  // Specific mappings
+  const typeMap: Record<string, AllowedCategory> = {
+    // Cafe - coffee places
+    'cafe': 'cafe',
+    'coffee_shop': 'cafe',
+    
+    // Bakery
+    'bakery': 'bakery',
+    
+    // Bar
+    'bar': 'bar',
+    'pub': 'bar',
+    
+    // Hotel
+    'hotel': 'hotel',
+    'motel': 'hotel',
+    'guest_house': 'hotel',
+    'hostel': 'hotel',
+    
+    // Museum
+    'museum': 'museum',
+    'gallery': 'museum',
+    'arts_centre': 'museum',
+    
+    // Entertainment
+    'cinema': 'entertainment',
+    'theatre': 'entertainment',
+    'nightclub': 'entertainment',
+    'park': 'entertainment',
+    'zoo': 'entertainment',
+    'aquarium': 'entertainment',
+    
+    // Restaurant (default for food)
+    'restaurant': 'restaurant',
+    'fast_food': 'restaurant',
+    'food_court': 'restaurant',
+  };
+  
+  if (normalizedType && typeMap[normalizedType]) {
+    return typeMap[normalizedType];
+  }
+  
+  // Default
+  return 'restaurant';
+};

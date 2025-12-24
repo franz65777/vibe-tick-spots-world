@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,28 +13,55 @@ interface CityRanking {
   rank: number | null;
 }
 
+// Simple in-memory cache for city stats
+const statsCache = {
+  data: null as { totalPlaces: number; topCities: CityRanking[]; userCity: CityRanking | null; timestamp: number } | null,
+  userId: null as string | null,
+};
+const CACHE_DURATION = 60000; // 1 minute cache
+
 const CityStatsCard = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { location: geoLocation, getCityFromCoordinates } = useGeolocation();
-  const [totalPlaces, setTotalPlaces] = useState(0);
-  const [topCities, setTopCities] = useState<CityRanking[]>([]);
-  const [userCity, setUserCity] = useState<CityRanking | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [totalPlaces, setTotalPlaces] = useState(statsCache.data?.totalPlaces || 0);
+  const [topCities, setTopCities] = useState<CityRanking[]>(statsCache.data?.topCities || []);
+  const [userCity, setUserCity] = useState<CityRanking | null>(statsCache.data?.userCity || null);
+  const [loading, setLoading] = useState(!statsCache.data || statsCache.userId !== user?.id);
   const [isMinimized, setIsMinimized] = useState(false);
+  const fetchingRef = useRef(false);
 
   useEffect(() => {
     if (!user?.id) return;
     
+    // Check if we have valid cached data
+    const now = Date.now();
+    if (
+      statsCache.data && 
+      statsCache.userId === user.id && 
+      now - statsCache.data.timestamp < CACHE_DURATION
+    ) {
+      setTotalPlaces(statsCache.data.totalPlaces);
+      setTopCities(statsCache.data.topCities);
+      setUserCity(statsCache.data.userCity);
+      setLoading(false);
+      return;
+    }
+    
+    // Prevent duplicate fetches
+    if (fetchingRef.current) return;
+    
     const fetchStats = async () => {
+      fetchingRef.current = true;
       try {
         // Get global stats - all saved places count
         const { count: totalCount } = await supabase
           .from('saved_places')
           .select('*', { count: 'exact', head: true });
         
-        setTotalPlaces(totalCount || 0);
+        const total = totalCount || 0;
+        setTotalPlaces(total);
 
         // Get city rankings from saved_places
         const { data: citiesData } = await supabase
@@ -59,7 +86,8 @@ const CityStatsCard = memo(() => {
             rank: idx + 1
           }));
 
-        setTopCities(sortedCities.slice(0, 3));
+        const top = sortedCities.slice(0, 3);
+        setTopCities(top);
 
         // Get user's current city from geolocation or profile
         let currentCityName: string | null = null;
@@ -68,7 +96,6 @@ const CityStatsCard = memo(() => {
         if (geoLocation?.city) {
           currentCityName = geoLocation.city;
         } else if (geoLocation?.latitude && geoLocation?.longitude) {
-          // Try to get city from coordinates
           currentCityName = await getCityFromCoordinates(geoLocation.latitude, geoLocation.longitude);
         }
         
@@ -82,19 +109,31 @@ const CityStatsCard = memo(() => {
           currentCityName = profile?.current_city || null;
         }
 
+        let userCityData: CityRanking | null = null;
         if (currentCityName) {
           const userCityCount = cityCountMap[currentCityName] || 0;
           const userCityRank = sortedCities.findIndex(c => c.city.toLowerCase() === currentCityName!.toLowerCase()) + 1;
-          setUserCity({
+          userCityData = {
             city: currentCityName,
             count: userCityCount,
             rank: userCityRank > 0 ? userCityRank : null
-          });
+          };
+          setUserCity(userCityData);
         }
+        
+        // Update cache
+        statsCache.data = {
+          totalPlaces: total,
+          topCities: top,
+          userCity: userCityData,
+          timestamp: Date.now()
+        };
+        statsCache.userId = user.id;
       } catch (err) {
         console.error('Error fetching city stats:', err);
       } finally {
         setLoading(false);
+        fetchingRef.current = false;
       }
     };
 
@@ -107,6 +146,8 @@ const CityStatsCard = memo(() => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'saved_places' },
         () => {
+          // Invalidate cache and refetch
+          statsCache.data = null;
           fetchStats();
         }
       )
@@ -117,7 +158,8 @@ const CityStatsCard = memo(() => {
     };
   }, [user?.id, geoLocation?.city, geoLocation?.latitude, geoLocation?.longitude]);
 
-  if (loading) {
+  // Show cached data immediately, never show skeleton if we have cache
+  if (loading && !statsCache.data) {
     return (
       <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 p-4 animate-pulse shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="h-24 bg-muted/30 rounded-xl" />
