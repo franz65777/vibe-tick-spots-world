@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import { mapNominatimTypeToCategory } from '@/utils/allowedCategories';
 
 interface OpenStreetMapAutocompleteProps {
   onPlaceSelect: (place: {
@@ -11,6 +12,9 @@ interface OpenStreetMapAutocompleteProps {
     address: string;
     coordinates: { lat: number; lng: number };
     city: string;
+    nominatimType?: string;
+    nominatimClass?: string;
+    category?: string; // Our mapped category
   }) => void;
   placeholder?: string;
   className?: string;
@@ -26,6 +30,9 @@ interface SearchResult {
   lng: number;
   city: string;
   source: 'database' | 'nominatim';
+  nominatimType?: string;
+  nominatimClass?: string;
+  category?: string; // Existing category from DB or mapped from nominatim
 }
 
 const OpenStreetMapAutocomplete = ({
@@ -85,7 +92,7 @@ const OpenStreetMapAutocomplete = ({
       // 1. Search our database first (instant, no API cost)
       const { data: dbLocations } = await supabase
         .from('locations')
-        .select('id, name, address, city, latitude, longitude')
+        .select('id, name, address, city, latitude, longitude, category')
         .or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`)
         .limit(20);
 
@@ -101,6 +108,7 @@ const OpenStreetMapAutocomplete = ({
           seenNormalizedNames.add(normalizedName);
           
           if (combinedResults.length < 5) {
+            const locWithCategory = loc as typeof loc & { category?: string };
             combinedResults.push({
               id: loc.id,
               name: loc.name,
@@ -109,6 +117,7 @@ const OpenStreetMapAutocomplete = ({
               lng: loc.longitude,
               city: loc.city || '',
               source: 'database' as const,
+              category: locWithCategory.category || undefined,
             });
           }
         }
@@ -130,6 +139,9 @@ const OpenStreetMapAutocomplete = ({
             
             seenNormalizedNames.add(normalizedName);
             
+            // Map Nominatim type to our category
+            const mappedCategory = mapNominatimTypeToCategory(result.type, result.class);
+            
             combinedResults.push({
               id: `nominatim-${combinedResults.length}`,
               name: placeName,
@@ -138,6 +150,9 @@ const OpenStreetMapAutocomplete = ({
               lng: result.lng,
               city: result.city,
               source: 'nominatim' as const,
+              nominatimType: result.type,
+              nominatimClass: result.class,
+              category: mappedCategory,
             });
           }
         } catch (nominatimError) {
@@ -161,6 +176,9 @@ const OpenStreetMapAutocomplete = ({
       address: result.address,
       coordinates: { lat: result.lat, lng: result.lng },
       city: result.city,
+      nominatimType: result.nominatimType,
+      nominatimClass: result.nominatimClass,
+      category: result.category,
     });
     
     setQuery(result.name);

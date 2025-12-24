@@ -33,6 +33,7 @@ export const useVisitedSaves = () => {
         .select(`
           id,
           user_id,
+          location_id,
           save_tag,
           created_at,
           locations (
@@ -54,8 +55,23 @@ export const useVisitedSaves = () => {
         return [];
       }
 
-      // Get unique user IDs
+      // Get posts from these users to filter out locations they already posted about
       const userIds = [...new Set((recentVisited || []).map(s => s.user_id))];
+      const locationIds = [...new Set((recentVisited || []).map(s => s.location_id).filter(Boolean))];
+      
+      if (userIds.length === 0) return [];
+
+      // Fetch posts to find which user+location combinations already have posts
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('user_id, location_id')
+        .in('user_id', userIds)
+        .in('location_id', locationIds);
+      
+      // Create a set of "user_id:location_id" combinations that already have posts
+      const userLocationPostsSet = new Set(
+        (postsData || []).map(p => `${p.user_id}:${p.location_id}`)
+      );
       
       if (userIds.length === 0) return [];
 
@@ -69,9 +85,22 @@ export const useVisitedSaves = () => {
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const validUserIds = new Set(profiles?.map(p => p.id) || []);
 
-      // Map to activity format
+      // Map to activity format, filtering out saves that have posts for same location
       const activities: VisitedSaveActivity[] = (recentVisited || [])
-        .filter(save => save.locations && validUserIds.has(save.user_id)) // Only include saves with valid locations AND existing users
+        .filter(save => {
+          const loc = save.locations as any;
+          // Only include if: has valid location, user exists, and NO post exists for this user+location
+          if (!loc || !validUserIds.has(save.user_id)) return false;
+          
+          // Filter out if this user already has a post for this location
+          const userLocationKey = `${save.user_id}:${save.location_id}`;
+          if (userLocationPostsSet.has(userLocationKey)) {
+            console.log('📰 Filtering out visited card - user has post for this location:', loc.name);
+            return false;
+          }
+          
+          return true;
+        })
         .map(save => {
           const profile = profileMap.get(save.user_id);
           const loc = save.locations as any;

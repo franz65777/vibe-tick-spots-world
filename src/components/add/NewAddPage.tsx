@@ -115,32 +115,35 @@ export const NewAddPage = () => {
     
     console.log('📍 Location selected:', location.name, 'coordinates:', { lat, lng });
 
-    // Auto-detect category from place types
-    const types = location.types || [];
-    let category = 'place';
+    // Use category from autocomplete if available (mapped from Nominatim/database)
+    let category = location.category || 'place';
     
-    const categoryMapping: { [key: string]: string } = {
-      'restaurant': 'restaurant',
-      'cafe': 'cafe',
-      'bar': 'bar',
-      'night_club': 'bar',
-      'lodging': 'hotel',
-      'museum': 'museum',
-      'tourist_attraction': 'entertainment',
-      'amusement_park': 'entertainment',
-      'bakery': 'bakery',
-      'meal_takeaway': 'restaurant',
-      'meal_delivery': 'restaurant'
-    };
+    // Fallback: Auto-detect category from place types if no category provided
+    if (category === 'place' && location.types && location.types.length > 0) {
+      const types = location.types;
+      const categoryMapping: { [key: string]: string } = {
+        'restaurant': 'restaurant',
+        'cafe': 'cafe',
+        'bar': 'bar',
+        'night_club': 'bar',
+        'lodging': 'hotel',
+        'museum': 'museum',
+        'tourist_attraction': 'entertainment',
+        'amusement_park': 'entertainment',
+        'bakery': 'bakery',
+        'meal_takeaway': 'restaurant',
+        'meal_delivery': 'restaurant'
+      };
 
-    for (const type of types) {
-      if (categoryMapping[type]) {
-        category = categoryMapping[type];
-        break;
+      for (const type of types) {
+        if (categoryMapping[type]) {
+          category = categoryMapping[type];
+          break;
+        }
       }
     }
 
-    console.log('🏷️ Auto-detected category:', category, 'from types:', types);
+    console.log('🏷️ Category:', category, 'from autocomplete or fallback. Nominatim type:', location.nominatimType);
     setSelectedCategory(category);
 
     setSelectedLocation({
@@ -148,6 +151,7 @@ export const NewAddPage = () => {
       name: location.name,
       formatted_address: location.address,
       city: location.city,
+      category: category, // Pass category to location object
       geometry: {
         location: {
           lat: () => lat,
@@ -290,6 +294,36 @@ export const NewAddPage = () => {
       }
       
       console.log('✅ Post created successfully!', post.id);
+      
+      // Auto-save location as "visited" (been) - silently, don't fail post if this fails
+      if (locationId) {
+        try {
+          // Check if user already has this location saved as "been"
+          const { data: existingSave } = await supabase
+            .from('user_saved_locations')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('location_id', locationId)
+            .eq('save_tag', 'been')
+            .maybeSingle();
+          
+          if (!existingSave) {
+            await supabase
+              .from('user_saved_locations')
+              .insert({
+                user_id: user.id,
+                location_id: locationId,
+                save_tag: 'been'
+              });
+            console.log('✅ Location auto-saved as visited');
+          } else {
+            console.log('ℹ️ Location already saved as visited');
+          }
+        } catch (saveError) {
+          console.warn('⚠️ Failed to auto-save location as visited:', saveError);
+          // Don't throw - post is already created
+        }
+      }
       
       toast.success(t('postShared', { ns: 'add' }));
       
