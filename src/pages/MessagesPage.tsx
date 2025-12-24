@@ -1016,7 +1016,16 @@ const MessagesPage = () => {
               </div> : <div className="space-y-3">
                  {messages.filter(m => !hiddenMessageIds.includes(m.id)).map(message => {
               const isOwn = message.sender_id === user?.id;
-              return <div key={message.id} className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`} onTouchStart={() => handleLongPressStart(message.id)} onTouchEnd={handleLongPressEnd} onMouseDown={() => handleLongPressStart(message.id)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd} onClick={() => handleDoubleTap(message.id)}>
+              // Touch/mouse handlers for long-press and double-tap on message bubbles
+              const messageInteractionProps = {
+                onTouchStart: () => handleLongPressStart(message.id),
+                onTouchEnd: handleLongPressEnd,
+                onMouseDown: () => handleLongPressStart(message.id),
+                onMouseUp: handleLongPressEnd,
+                onMouseLeave: handleLongPressEnd,
+                onClick: () => handleDoubleTap(message.id),
+              };
+              return <div key={message.id} className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}>
                           <div className={`flex items-end gap-2 w-full ${isOwn ? 'flex-row-reverse justify-start' : 'flex-row'}`}>
                             {/* Avatar - only for received messages */}
                             {!isOwn && <Avatar className="w-6 h-6 flex-shrink-0">
@@ -1026,7 +1035,7 @@ const MessagesPage = () => {
                                 </AvatarFallback>
                               </Avatar>}
 
-                            <div className="flex-shrink-0 max-w-[calc(100%-40px)]">
+                            <div className="flex-shrink-0 max-w-[calc(100%-40px)]" {...messageInteractionProps}>
                         
                         {message.message_type === 'audio' && message.shared_content?.audio_url ? <div className="w-full">
                             <div className={`rounded-2xl px-3 py-2.5 relative ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`}>
