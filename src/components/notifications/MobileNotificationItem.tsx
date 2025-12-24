@@ -1,15 +1,48 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2 } from 'lucide-react';
 import reviewIcon from '@/assets/review-icon.png';
-import reviewCommentIcon from '@/assets/review-comment-icon.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import StoriesViewer from '@/components/StoriesViewer';
-import { memo } from 'react';
+
+// Component to fetch and display post thumbnail for comments
+const PostThumbnail = ({ postId, onClick }: { postId: string; onClick: (e: React.MouseEvent) => void }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPostImage = async () => {
+      const { data } = await supabase
+        .from('posts')
+        .select('media_urls')
+        .eq('id', postId)
+        .single();
+      
+      if (data?.media_urls?.[0]) {
+        setImageUrl(data.media_urls[0]);
+      }
+    };
+    fetchPostImage();
+  }, [postId]);
+
+  if (!imageUrl) return null;
+
+  return (
+    <div 
+      className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
+      onClick={onClick}
+    >
+      <img
+        src={imageUrl}
+        alt="Post"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
 
 interface MobileNotificationItemProps {
   notification: {
@@ -893,26 +926,28 @@ const MobileNotificationItem = ({
                   </Button>
                 ) : isReviewLike ? (
                   <div 
-                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer flex items-center justify-center bg-muted/30"
                     onClick={handlePostClick}
                   >
                     <img
                       src={reviewIcon}
                       alt="Review"
-                      className="w-full h-full object-contain"
+                      className="w-8 h-8 object-contain"
                     />
                   </div>
                 ) : isReviewComment ? (
                   <div 
-                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer flex items-center justify-center bg-muted/30"
                     onClick={handlePostClick}
                   >
                     <img
-                      src={reviewCommentIcon}
-                      alt="Review comment"
-                      className="w-full h-full object-contain"
+                      src={reviewIcon}
+                      alt="Review"
+                      className="w-8 h-8 object-contain"
                     />
                   </div>
+                ) : notification.type === 'comment' && notification.data?.post_id ? (
+                  <PostThumbnail postId={notification.data.post_id} onClick={handlePostClick} />
                 ) : notification.data?.post_image ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
