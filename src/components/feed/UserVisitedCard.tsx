@@ -260,18 +260,18 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
             {/* Content */}
             <div className="flex-1 min-w-0">
               {/* Top row: username, visited, date, follow button */}
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={handleUserClick}
-                  className="font-semibold text-sm hover:opacity-70 truncate text-foreground"
+                  className="font-semibold text-sm hover:opacity-70 truncate text-foreground shrink-0 max-w-[100px]"
                 >
                   {activity.username}
                 </button>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground shrink-0">
                   {t('visited', { ns: 'common', defaultValue: 'visited' })}
                 </span>
-                <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground shrink-0">·</span>
+                <span className="text-xs text-muted-foreground shrink-0">
                   {formattedDate}
                 </span>
                 {/* Follow button next to date */}
@@ -279,7 +279,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 text-xs bg-background/50 rounded-full px-3 py-0 ml-1"
+                    className="h-6 text-xs bg-background/50 rounded-full px-3 py-0 ml-auto shrink-0"
                     onClick={handleFollow}
                   >
                     <UserPlus className="w-3 h-3 mr-1" />
