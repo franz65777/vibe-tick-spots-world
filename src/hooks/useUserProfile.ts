@@ -27,6 +27,28 @@ export const useUserProfile = (userId?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchCounts = async () => {
+      if (!userId) return { followers: 0, following: 0 };
+
+      const [followersRes, followingRes] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('following_id', userId),
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('follower_id', userId),
+      ]);
+
+      return {
+        followers: followersRes.count || 0,
+        following: followingRes.count || 0,
+      };
+    };
+
     const fetchProfile = async () => {
       if (!userId) {
         setProfile(null);
@@ -37,7 +59,7 @@ export const useUserProfile = (userId?: string) => {
       try {
         // SECURITY: Check if viewing own profile vs another user's profile
         const isOwnProfile = currentUser?.id === userId;
-        
+
         let profileData;
         let profileError;
 
@@ -45,7 +67,8 @@ export const useUserProfile = (userId?: string) => {
           // Can access full profile data for own profile
           const result = await supabase
             .from('profiles')
-            .select(`
+            .select(
+              `
               id,
               username,
               full_name,
@@ -53,8 +76,6 @@ export const useUserProfile = (userId?: string) => {
               avatar_url,
               email,
               posts_count,
-              follower_count,
-              following_count,
               cities_visited,
               places_visited,
               created_at,
@@ -62,10 +83,11 @@ export const useUserProfile = (userId?: string) => {
               business_verified,
               is_business_user,
               current_city
-            `)
+            `
+            )
             .eq('id', userId)
             .single();
-          
+
           profileData = result.data;
           profileError = result.error;
         } else {
@@ -73,7 +95,7 @@ export const useUserProfile = (userId?: string) => {
           const result = await supabase
             .rpc('get_safe_profile_data', { profile_id: userId })
             .single();
-          
+
           profileData = result.data;
           profileError = result.error;
         }
@@ -89,9 +111,14 @@ export const useUserProfile = (userId?: string) => {
             .eq('follower_id', currentUser.id)
             .eq('following_id', userId)
             .single();
-          
+
           isFollowing = !!followData;
         }
+
+        // Always compute follower/following counts live from follows table
+        const counts = await fetchCounts();
+
+        if (cancelled) return;
 
         // Map database field names to interface - only include sensitive data for own profile
         setProfile({
@@ -103,11 +130,11 @@ export const useUserProfile = (userId?: string) => {
           bio: profileData.bio,
           created_at: profileData.created_at,
           posts_count: profileData.posts_count || 0,
-          followers_count: profileData.follower_count || 0, // Map follower_count to followers_count
-          following_count: profileData.following_count || 0,
+          followers_count: counts.followers,
+          following_count: counts.following,
           cities_visited: profileData.cities_visited || 0,
           places_visited: profileData.places_visited || 0,
-          is_following: isFollowing
+          is_following: isFollowing,
         });
       } catch (err: any) {
         console.error('Error fetching user profile:', err);
@@ -118,6 +145,52 @@ export const useUserProfile = (userId?: string) => {
     };
 
     fetchProfile();
+
+    // Live updates: refresh counts when follows changes for this profile
+    const channel = userId
+      ? supabase
+          .channel(`user-profile-follows-${userId}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${userId}` },
+            async () => {
+              try {
+                const counts = await fetchCounts();
+                if (cancelled) return;
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, followers_count: counts.followers, following_count: counts.following }
+                    : prev
+                );
+              } catch (e) {
+                console.error('Error updating follower counts:', e);
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${userId}` },
+            async () => {
+              try {
+                const counts = await fetchCounts();
+                if (cancelled) return;
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, followers_count: counts.followers, following_count: counts.following }
+                    : prev
+                );
+              } catch (e) {
+                console.error('Error updating follower counts:', e);
+              }
+            }
+          )
+          .subscribe()
+      : null;
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [userId, currentUser]);
 
   const followUser = async () => {

@@ -107,18 +107,20 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
           const followUsers = data?.map((item: any) => item.profiles).filter(Boolean) || [];
           
           const userIds = followUsers.map((u: any) => u.id);
-          
-          // Fetch saved places count for each user
+
+          // Fetch saved places (distinct by place_id) for each user
           const { data: savedPlacesData } = await supabase
             .from('saved_places')
-            .select('user_id')
+            .select('user_id, place_id')
             .in('user_id', userIds);
-          
-          const savedPlacesCounts = new Map<string, number>();
-          savedPlacesData?.forEach(sp => {
-            savedPlacesCounts.set(sp.user_id, (savedPlacesCounts.get(sp.user_id) || 0) + 1);
+
+          const savedPlacesDistinct = new Map<string, Set<string>>();
+          savedPlacesData?.forEach((sp: any) => {
+            if (!sp.user_id || !sp.place_id) return;
+            if (!savedPlacesDistinct.has(sp.user_id)) savedPlacesDistinct.set(sp.user_id, new Set());
+            savedPlacesDistinct.get(sp.user_id)!.add(sp.place_id);
           });
-          
+
           // Check follow status for each user
           let usersWithStatus: UserWithFollowStatus[];
           if (currentUser) {
@@ -127,18 +129,18 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
               .select('following_id')
               .eq('follower_id', currentUser.id)
               .in('following_id', userIds);
-            
+
             const followingIds = new Set(followsData?.map(f => f.following_id) || []);
-            
+
             usersWithStatus = followUsers.map((u: any) => ({
               ...u,
               isFollowing: followingIds.has(u.id),
-              savedPlacesCount: savedPlacesCounts.get(u.id) || 0
+              savedPlacesCount: savedPlacesDistinct.get(u.id)?.size || 0,
             }));
           } else {
             usersWithStatus = followUsers.map((u: any) => ({
               ...u,
-              savedPlacesCount: savedPlacesCounts.get(u.id) || 0
+              savedPlacesCount: savedPlacesDistinct.get(u.id)?.size || 0,
             }));
           }
           
@@ -401,7 +403,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
                       >
                         <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {user.savedPlacesCount || 0} {(user.savedPlacesCount || 0) === 1 ? t('place', { ns: 'explore', defaultValue: 'Luogo' }) : t('places', { ns: 'explore', defaultValue: 'Luoghi' })}
+                          {user.savedPlacesCount || 0} {t('place', { ns: 'explore', count: user.savedPlacesCount || 0, defaultValue: 'Luoghi' })}
                         </p>
                       </button>
                     </div>
