@@ -9,6 +9,7 @@ import { normalizeCity } from '@/utils/cityNormalization';
  * Hook to fetch "visited" (been) saves from users
  * Returns saves chronologically ordered for interleaving in the feed
  * Filtered by user's current geolocation city
+ * Respects privacy settings (been_cards_visibility)
  */
 export const useVisitedSaves = () => {
   const { user } = useAuth();
@@ -61,11 +62,31 @@ export const useVisitedSaves = () => {
         return [];
       }
 
-      // Get posts from these users to filter out locations they already posted about
+      // Get user IDs to check their privacy settings
       const userIds = [...new Set((recentVisited || []).map(s => s.user_id))];
-      const locationIds = [...new Set((recentVisited || []).map(s => s.location_id).filter(Boolean))];
       
       if (userIds.length === 0) return [];
+
+      // Fetch privacy settings for all users using the database function
+      // Check which users allow the current user to see their been cards
+      const privacyChecks = await Promise.all(
+        userIds.map(async (targetUserId) => {
+          const { data: canView } = await supabase
+            .rpc('can_view_been_cards', {
+              viewer_id: user.id,
+              target_user_id: targetUserId
+            });
+          return { userId: targetUserId, canView: canView ?? false };
+        })
+      );
+
+      // Create a set of user IDs whose content we can view
+      const viewableUserIds = new Set(
+        privacyChecks.filter(p => p.canView).map(p => p.userId)
+      );
+
+      // Get posts from these users to filter out locations they already posted about
+      const locationIds = [...new Set((recentVisited || []).map(s => s.location_id).filter(Boolean))];
 
       // Fetch posts to find which user+location combinations already have posts
       const { data: postsData } = await supabase
@@ -78,8 +99,6 @@ export const useVisitedSaves = () => {
       const userLocationPostsSet = new Set(
         (postsData || []).map(p => `${p.user_id}:${p.location_id}`)
       );
-      
-      if (userIds.length === 0) return [];
 
       // Fetch profiles - only get users with valid usernames (deleted users have null username)
       const { data: profiles } = await supabase
@@ -91,12 +110,18 @@ export const useVisitedSaves = () => {
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const validUserIds = new Set(profiles?.map(p => p.id) || []);
 
-      // Map to activity format, filtering by user's current city and excluding posts
+      // Map to activity format, filtering by user's current city, privacy settings, and excluding posts
       const activities: VisitedSaveActivity[] = (recentVisited || [])
         .filter(save => {
           const loc = save.locations as any;
-          // Only include if: has valid location, user exists, and NO post exists for this user+location
+          // Only include if: has valid location, user exists
           if (!loc || !validUserIds.has(save.user_id)) return false;
+          
+          // Check privacy: can we view this user's been cards?
+          if (!viewableUserIds.has(save.user_id)) {
+            console.log('🔒 Filtering out visited card - privacy settings restrict access:', loc.name);
+            return false;
+          }
           
           // Filter out if this user already has a post for this location
           const userLocationKey = `${save.user_id}:${save.location_id}`;

@@ -18,6 +18,10 @@ interface UserProfile {
   cities_visited: number;
   places_visited: number;
   is_following?: boolean;
+  is_private?: boolean;
+  been_cards_visibility?: string;
+  can_view_content?: boolean;
+  follow_request_status?: string | null;
 }
 
 export const useUserProfile = (userId?: string) => {
@@ -90,6 +94,13 @@ export const useUserProfile = (userId?: string) => {
 
           profileData = result.data;
           profileError = result.error;
+          
+          // Add privacy fields for own profile
+          if (profileData) {
+            profileData.is_private = false;
+            profileData.been_cards_visibility = 'everyone';
+            profileData.can_view_content = true;
+          }
         } else {
           // Use security definer function for other users (safe data only)
           const result = await supabase
@@ -115,6 +126,28 @@ export const useUserProfile = (userId?: string) => {
           isFollowing = !!followData;
         }
 
+        // Check if user can view content (for private accounts)
+        let canViewContent = true;
+        if (currentUser && currentUser.id !== userId) {
+          const { data: canView } = await supabase
+            .rpc('can_view_user_content', { 
+              viewer_id: currentUser.id, 
+              target_user_id: userId 
+            });
+          canViewContent = canView ?? true;
+        }
+
+        // Check for pending follow request
+        let followRequestStatus = null;
+        if (currentUser && currentUser.id !== userId && !isFollowing && profileData?.is_private) {
+          const { data: requestStatus } = await supabase
+            .rpc('get_follow_request_status', {
+              requester_id: currentUser.id,
+              requested_id: userId
+            });
+          followRequestStatus = requestStatus;
+        }
+
         // Always compute follower/following counts live from follows table
         const counts = await fetchCounts();
 
@@ -135,6 +168,10 @@ export const useUserProfile = (userId?: string) => {
           cities_visited: profileData.cities_visited || 0,
           places_visited: profileData.places_visited || 0,
           is_following: isFollowing,
+          is_private: profileData.is_private ?? false,
+          been_cards_visibility: profileData.been_cards_visibility ?? 'everyone',
+          can_view_content: canViewContent,
+          follow_request_status: followRequestStatus,
         });
       } catch (err: any) {
         console.error('Error fetching user profile:', err);
@@ -197,41 +234,85 @@ export const useUserProfile = (userId?: string) => {
     if (!currentUser || !userId || currentUser.id === userId) return;
 
     try {
-      const { error } = await supabase
-        .from('follows')
-        .insert({
-          follower_id: currentUser.id,
-          following_id: userId
-        });
+      // Check if target user is private
+      const isPrivate = profile?.is_private ?? false;
 
-      if (error) throw error;
+      if (isPrivate) {
+        // For private accounts, create a follow request instead
+        const { error } = await supabase
+          .from('friend_requests')
+          .insert({
+            requester_id: currentUser.id,
+            requested_id: userId,
+            status: 'pending'
+          });
 
-      // Get current user's profile for notification
-      const { data: followerProfile } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', currentUser.id)
-        .single();
+        if (error) throw error;
 
-      // Create localized notification
-      await sendLocalizedNotification(
-        userId,
-        'new_follower',
-        {
-          user_id: currentUser.id,
-          user_name: followerProfile?.username,
-          avatar_url: followerProfile?.avatar_url,
-        },
-        {
-          username: followerProfile?.username || 'Someone'
-        }
-      );
+        // Get current user's profile for notification
+        const { data: followerProfile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', currentUser.id)
+          .single();
 
-      setProfile(prev => prev ? {
-        ...prev,
-        is_following: true,
-        followers_count: prev.followers_count + 1
-      } : null);
+        // Create notification for follow request
+        await sendLocalizedNotification(
+          userId,
+          'follow_request',
+          {
+            user_id: currentUser.id,
+            user_name: followerProfile?.username,
+            avatar_url: followerProfile?.avatar_url,
+          },
+          {
+            username: followerProfile?.username || 'Someone'
+          }
+        );
+
+        setProfile(prev => prev ? {
+          ...prev,
+          follow_request_status: 'pending'
+        } : null);
+      } else {
+        // For public accounts, follow directly
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: currentUser.id,
+            following_id: userId
+          });
+
+        if (error) throw error;
+
+        // Get current user's profile for notification
+        const { data: followerProfile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', currentUser.id)
+          .single();
+
+        // Create localized notification
+        await sendLocalizedNotification(
+          userId,
+          'new_follower',
+          {
+            user_id: currentUser.id,
+            user_name: followerProfile?.username,
+            avatar_url: followerProfile?.avatar_url,
+          },
+          {
+            username: followerProfile?.username || 'Someone'
+          }
+        );
+
+        setProfile(prev => prev ? {
+          ...prev,
+          is_following: true,
+          followers_count: prev.followers_count + 1,
+          can_view_content: true
+        } : null);
+      }
     } catch (error) {
       console.error('Error following user:', error);
     }
@@ -252,10 +333,33 @@ export const useUserProfile = (userId?: string) => {
       setProfile(prev => prev ? {
         ...prev,
         is_following: false,
-        followers_count: Math.max(0, prev.followers_count - 1)
+        followers_count: Math.max(0, prev.followers_count - 1),
+        can_view_content: !prev.is_private // If private, can't view after unfollowing
       } : null);
     } catch (error) {
       console.error('Error unfollowing user:', error);
+    }
+  };
+
+  const cancelFollowRequest = async () => {
+    if (!currentUser || !userId) return;
+
+    try {
+      const { error } = await supabase
+        .from('friend_requests')
+        .delete()
+        .eq('requester_id', currentUser.id)
+        .eq('requested_id', userId)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? {
+        ...prev,
+        follow_request_status: null
+      } : null);
+    } catch (error) {
+      console.error('Error canceling follow request:', error);
     }
   };
 
@@ -264,6 +368,7 @@ export const useUserProfile = (userId?: string) => {
     loading,
     error,
     followUser,
-    unfollowUser
+    unfollowUser,
+    cancelFollowRequest
   };
 };

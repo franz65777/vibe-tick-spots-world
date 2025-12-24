@@ -3218,6 +3218,14 @@ export type Database = {
           total_users: number
         }[]
       }
+      can_view_been_cards: {
+        Args: { target_user_id: string; viewer_id: string }
+        Returns: boolean
+      }
+      can_view_user_content: {
+        Args: { target_user_id: string; viewer_id: string }
+        Returns: boolean
+      }
       check_auth_rate_limit: { Args: { user_ip: unknown }; Returns: boolean }
       check_challenge_completion: {
         Args: {
@@ -3292,6 +3300,10 @@ export type Database = {
           usage_count: number
         }[]
       }
+      get_follow_request_status: {
+        Args: { requested_id: string; requester_id: string }
+        Returns: string
+      }
       get_following_saved_locations: {
         Args: never
         Returns: {
@@ -3365,6 +3377,7 @@ export type Database = {
         Args: { profile_id: string }
         Returns: {
           avatar_url: string
+          been_cards_visibility: string
           bio: string
           business_verified: boolean
           cities_visited: number
@@ -3374,6 +3387,7 @@ export type Database = {
           following_count: number
           id: string
           is_business_user: boolean
+          is_private: boolean
           places_visited: number
           posts_count: number
           user_type: Database["public"]["Enums"]["user_type"]
