@@ -69,7 +69,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Please fill in all business information',
       accountCreated: 'Account created! Please check your email to verify your account.',
       businessAccountCreated: 'Business account created! Redirecting to subscription setup...',
-      welcomeBackMessage: 'Welcome back!'
+      welcomeBackMessage: 'Welcome back!',
+      invalidCredentials: 'Invalid login credentials',
+      cannotSignIn: 'Error during sign in',
+      tagline: 'Spott it. Share it. Experience it.',
+      discoverText: 'Discover amazing places through your friends\' favourite spots',
+      discoverPlaces: 'places',
+      discoverSpots: 'spots',
+      orContinueWith: 'OR CONTINUE WITH',
+      logIn: 'LOG IN',
+      signUpButton: 'SIGN UP'
     },
     terms: {
       title: 'Terms of Service',
@@ -192,7 +201,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Si prega di compilare tutte le informazioni aziendali',
       accountCreated: 'Account creato! Controlla la tua email per verificare il tuo account.',
       businessAccountCreated: 'Account business creato! Reindirizzamento alla configurazione dell\'abbonamento...',
-      welcomeBackMessage: 'Bentornato!'
+      welcomeBackMessage: 'Bentornato!',
+      invalidCredentials: 'Credenziali non valide',
+      cannotSignIn: 'Errore durante l\'accesso',
+      tagline: 'Spottalo. Condividilo. Vivilo.',
+      discoverText: 'Scopri luoghi fantastici attraverso i posti preferiti dei tuoi amici',
+      discoverPlaces: 'luoghi',
+      discoverSpots: 'posti',
+      orContinueWith: 'OPPURE CONTINUA CON',
+      logIn: 'ACCEDI',
+      signUpButton: 'REGISTRATI'
     },
     terms: {
       title: 'Termini di Servizio',
@@ -300,7 +318,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Por favor completa toda la información del negocio',
       accountCreated: '¡Cuenta creada! Por favor revisa tu email para verificar tu cuenta.',
       businessAccountCreated: '¡Cuenta de negocio creada! Redirigiendo a la configuración de suscripción...',
-      welcomeBackMessage: '¡Bienvenido de nuevo!'
+      welcomeBackMessage: '¡Bienvenido de nuevo!',
+      invalidCredentials: 'Credenciales inválidas',
+      cannotSignIn: 'Error al iniciar sesión',
+      tagline: 'Encuéntralo. Compártelo. Vívelo.',
+      discoverText: 'Descubre lugares increíbles a través de los favoritos de tus amigos',
+      discoverPlaces: 'lugares',
+      discoverSpots: 'spots',
+      orContinueWith: 'O CONTINÚA CON',
+      logIn: 'INICIAR SESIÓN',
+      signUpButton: 'REGISTRARSE'
     },
     terms: {
       title: 'Términos de Servicio',
@@ -408,7 +435,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Veuillez remplir toutes les informations de l\'entreprise',
       accountCreated: 'Compte créé ! Veuillez vérifier votre email pour vérifier votre compte.',
       businessAccountCreated: 'Compte business créé ! Redirection vers la configuration de l\'abonnement...',
-      welcomeBackMessage: 'Bon retour !'
+      welcomeBackMessage: 'Bon retour !',
+      invalidCredentials: 'Identifiants invalides',
+      cannotSignIn: 'Erreur lors de la connexion',
+      tagline: 'Spotté. Partagé. Vécu.',
+      discoverText: 'Découvrez des endroits incroyables grâce aux favoris de vos amis',
+      discoverPlaces: 'lieux',
+      discoverSpots: 'spots',
+      orContinueWith: 'OU CONTINUER AVEC',
+      logIn: 'CONNEXION',
+      signUpButton: 'S\'INSCRIRE'
     },
     terms: {
       title: 'Conditions d\'Utilisation',
@@ -516,7 +552,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Bitte füllen Sie alle Unternehmensinformationen aus',
       accountCreated: 'Konto erstellt! Bitte überprüfen Sie Ihre E-Mail, um Ihr Konto zu verifizieren.',
       businessAccountCreated: 'Business-Konto erstellt! Weiterleitung zur Abonnement-Einrichtung...',
-      welcomeBackMessage: 'Willkommen zurück!'
+      welcomeBackMessage: 'Willkommen zurück!',
+      invalidCredentials: 'Ungültige Anmeldedaten',
+      cannotSignIn: 'Fehler bei der Anmeldung',
+      tagline: 'Entdecken. Teilen. Erleben.',
+      discoverText: 'Entdecke tolle Orte durch die Lieblingsplätze deiner Freunde',
+      discoverPlaces: 'Orte',
+      discoverSpots: 'Spots',
+      orContinueWith: 'ODER WEITER MIT',
+      logIn: 'ANMELDEN',
+      signUpButton: 'REGISTRIEREN'
     },
     terms: {
       title: 'Nutzungsbedingungen',
@@ -624,7 +669,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Por favor, preencha todas as informações do negócio',
       accountCreated: 'Conta criada! Por favor, verifique seu email para verificar sua conta.',
       businessAccountCreated: 'Conta de negócio criada! Redirecionando para configuração de assinatura...',
-      welcomeBackMessage: 'Bem-vindo de volta!'
+      welcomeBackMessage: 'Bem-vindo de volta!',
+      invalidCredentials: 'Credenciais inválidas',
+      cannotSignIn: 'Erro ao entrar',
+      tagline: 'Descubra. Compartilhe. Viva.',
+      discoverText: 'Descubra lugares incríveis através dos favoritos dos seus amigos',
+      discoverPlaces: 'lugares',
+      discoverSpots: 'spots',
+      orContinueWith: 'OU CONTINUE COM',
+      logIn: 'ENTRAR',
+      signUpButton: 'CADASTRAR'
     },
     terms: {
       title: 'Termos de Serviço',
@@ -747,7 +801,16 @@ export const authTranslations = {
       fillBusinessInfo: 'Lütfen tüm işletme bilgilerini doldurun',
       accountCreated: 'Hesap oluşturuldu! Lütfen hesabınızı doğrulamak için e-postanızı kontrol edin.',
       businessAccountCreated: 'İşletme hesabı oluşturuldu! Abonelik kurulumuna yönlendiriliyorsunuz...',
-      welcomeBackMessage: 'Tekrar hoş geldiniz!'
+      welcomeBackMessage: 'Tekrar hoş geldiniz!',
+      invalidCredentials: 'Geçersiz giriş bilgileri',
+      cannotSignIn: 'Giriş sırasında hata',
+      tagline: 'Keşfet. Paylaş. Yaşa.',
+      discoverText: 'Arkadaşlarının favori mekanları aracılığıyla harika yerler keşfet',
+      discoverPlaces: 'yerler',
+      discoverSpots: 'mekanlar',
+      orContinueWith: 'VEYA ŞU ŞEKİLDE DEVAM ET',
+      logIn: 'GİRİŞ YAP',
+      signUpButton: 'KAYDOL'
     },
     terms: {
       title: 'Hizmet Şartları',

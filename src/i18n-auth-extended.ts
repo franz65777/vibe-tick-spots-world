@@ -54,7 +54,16 @@ export const authTranslationsExtended = {
       fillBusinessInfo: 'すべてのビジネス情報を入力してください',
       accountCreated: 'アカウントが作成されました！アカウント確認のためメールをご確認ください。',
       businessAccountCreated: 'ビジネスアカウントが作成されました！サブスクリプション設定にリダイレクトします...',
-      welcomeBackMessage: 'おかえりなさい！'
+      welcomeBackMessage: 'おかえりなさい！',
+      invalidCredentials: '無効なログイン情報',
+      cannotSignIn: 'サインイン中にエラーが発生しました',
+      tagline: '見つけて。共有して。体験して。',
+      discoverText: '友達のお気に入りスポットを通じて素晴らしい場所を発見',
+      discoverPlaces: '場所',
+      discoverSpots: 'スポット',
+      orContinueWith: 'または続ける',
+      logIn: 'ログイン',
+      signUpButton: '登録'
     },
     terms: {
       title: '利用規約',
@@ -162,7 +171,16 @@ export const authTranslationsExtended = {
       fillBusinessInfo: '모든 비즈니스 정보를 입력하세요',
       accountCreated: '계정이 생성되었습니다! 계정 확인을 위해 이메일을 확인하세요.',
       businessAccountCreated: '비즈니스 계정이 생성되었습니다! 구독 설정으로 리디렉션됩니다...',
-      welcomeBackMessage: '다시 오신 것을 환영합니다!'
+      welcomeBackMessage: '다시 오신 것을 환영합니다!',
+      invalidCredentials: '잘못된 로그인 정보',
+      cannotSignIn: '로그인 중 오류가 발생했습니다',
+      tagline: '발견하세요. 공유하세요. 경험하세요.',
+      discoverText: '친구들의 인기 장소를 통해 멋진 곳을 발견하세요',
+      discoverPlaces: '장소',
+      discoverSpots: '스팟',
+      orContinueWith: '또는 계속하기',
+      logIn: '로그인',
+      signUpButton: '가입하기'
     },
     terms: {
       title: '서비스 약관',
@@ -270,7 +288,16 @@ export const authTranslationsExtended = {
       fillBusinessInfo: 'يرجى ملء جميع معلومات العمل',
       accountCreated: 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني للتحقق من حسابك.',
       businessAccountCreated: 'تم إنشاء حساب الأعمال! إعادة التوجيه إلى إعداد الاشتراك...',
-      welcomeBackMessage: 'مرحباً بعودتك!'
+      welcomeBackMessage: 'مرحباً بعودتك!',
+      invalidCredentials: 'بيانات الاعتماد غير صالحة',
+      cannotSignIn: 'خطأ أثناء تسجيل الدخول',
+      tagline: 'اكتشفه. شاركه. عِشه.',
+      discoverText: 'اكتشف أماكن رائعة من خلال الأماكن المفضلة لأصدقائك',
+      discoverPlaces: 'أماكن',
+      discoverSpots: 'مواقع',
+      orContinueWith: 'أو تابع مع',
+      logIn: 'تسجيل الدخول',
+      signUpButton: 'تسجيل'
     },
     terms: {
       title: 'شروط الخدمة',
@@ -378,7 +405,16 @@ export const authTranslationsExtended = {
       fillBusinessInfo: 'कृपया सभी व्यवसाय जानकारी भरें',
       accountCreated: 'खाता बन गया! कृपया अपने खाते को सत्यापित करने के लिए अपना ईमेल जांचें।',
       businessAccountCreated: 'व्यवसाय खाता बनाया गया! सदस्यता सेटअप पर पुनर्निर्देशित किया जा रहा है...',
-      welcomeBackMessage: 'वापसी पर स्वागत है!'
+      welcomeBackMessage: 'वापसी पर स्वागत है!',
+      invalidCredentials: 'अमान्य लॉगिन जानकारी',
+      cannotSignIn: 'साइन इन के दौरान त्रुटि',
+      tagline: 'खोजें। साझा करें। अनुभव करें।',
+      discoverText: 'अपने दोस्तों की पसंदीदा जगहों के माध्यम से अद्भुत स्थानों की खोज करें',
+      discoverPlaces: 'स्थान',
+      discoverSpots: 'स्पॉट',
+      orContinueWith: 'या इसके साथ जारी रखें',
+      logIn: 'लॉग इन करें',
+      signUpButton: 'साइन अप करें'
     },
     terms: {
       title: 'सेवा की शर्तें',
@@ -486,7 +522,16 @@ export const authTranslationsExtended = {
       fillBusinessInfo: 'Пожалуйста, заполните всю информацию о компании',
       accountCreated: 'Аккаунт создан! Пожалуйста, проверьте свою электронную почту для подтверждения аккаунта.',
       businessAccountCreated: 'Бизнес-аккаунт создан! Перенаправление на настройку подписки...',
-      welcomeBackMessage: 'С возвращением!'
+      welcomeBackMessage: 'С возвращением!',
+      invalidCredentials: 'Неверные учетные данные',
+      cannotSignIn: 'Ошибка при входе',
+      tagline: 'Найди. Поделись. Испытай.',
+      discoverText: 'Откройте для себя удивительные места через любимые места друзей',
+      discoverPlaces: 'места',
+      discoverSpots: 'споты',
+      orContinueWith: 'ИЛИ ПРОДОЛЖИТЬ С',
+      logIn: 'ВОЙТИ',
+      signUpButton: 'РЕГИСТРАЦИЯ'
     },
     terms: {
       title: 'Условия обслуживания',
@@ -594,7 +639,16 @@ export const authTranslationsExtended = {
       fillBusinessInfo: '请填写所有商业信息',
       accountCreated: '账户已创建！请检查您的电子邮件以验证您的账户。',
       businessAccountCreated: '商业账户已创建！正在重定向到订阅设置...',
-      welcomeBackMessage: '欢迎回来！'
+      welcomeBackMessage: '欢迎回来！',
+      invalidCredentials: '登录凭据无效',
+      cannotSignIn: '登录时出错',
+      tagline: '发现它。分享它。体验它。',
+      discoverText: '通过朋友的收藏发现精彩地点',
+      discoverPlaces: '地点',
+      discoverSpots: '景点',
+      orContinueWith: '或继续使用',
+      logIn: '登录',
+      signUpButton: '注册'
     },
     terms: {
       title: '服务条款',

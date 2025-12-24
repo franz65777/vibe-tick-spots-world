@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Loader2, X, MapPin } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
 import languageIcon from '@/assets/icon-language.png';
+import spottLogo from '@/assets/spott-logo.png';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
@@ -38,8 +39,8 @@ const SignupStart: React.FC = () => {
   const [existsMessage, setExistsMessage] = useState<string>('');
 
   useEffect(() => {
-    document.title = 'Unisciti a Spott - Signup';
-  }, []);
+    document.title = `${t('auth:signUp')} - Spott`;
+  }, [t]);
 
   // Reset exists state when switching methods
   useEffect(() => {
@@ -154,7 +155,7 @@ const SignupStart: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground flex flex-col pt-safe pb-safe">
       <header className="p-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-muted-foreground">
-          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
+          <ArrowLeft className="mr-2" /> {t('auth:back')}
         </Button>
         <div className="w-40">
             <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
@@ -175,12 +176,11 @@ const SignupStart: React.FC = () => {
         <div className="w-full max-w-md mx-auto space-y-8">
           <div className="text-center">
             <div className="flex items-center justify-center mb-8">
-              <div className="relative">
-                <h1 className="text-4xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent flex items-baseline">
-                  SPOTT
-                  <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
-                </h1>
-              </div>
+              <img 
+                src={spottLogo} 
+                alt="Spott" 
+                className="h-16 w-auto object-contain"
+              />
             </div>
             <h2 className="mt-3 text-2xl font-semibold">{t('auth:joinSpott')}</h2>
             <p className="mt-1 text-muted-foreground">{t('auth:joinSpottSubtitle')}</p>
