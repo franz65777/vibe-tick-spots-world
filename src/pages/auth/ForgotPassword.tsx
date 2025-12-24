@@ -8,6 +8,9 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 
+// Production URL for password reset - always redirect to spott.cloud
+const PRODUCTION_RESET_URL = 'https://spott.cloud/forgot-password?type=recovery';
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -15,6 +18,7 @@ const ForgotPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
@@ -48,7 +52,7 @@ const ForgotPassword = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/forgot-password?type=recovery`,
+        redirectTo: PRODUCTION_RESET_URL,
       });
       
       if (error) throw error;
@@ -85,7 +89,7 @@ const ForgotPassword = () => {
       if (error) throw error;
       
       toast.success(t('auth:passwordUpdated'));
-      navigate('/auth');
+      setPasswordResetSuccess(true);
     } catch (err: any) {
       toast.error(err.message || t('auth:passwordUpdateError'));
     } finally {
@@ -153,6 +157,19 @@ const ForgotPassword = () => {
               </Button>
             </form>
           )
+        ) : passwordResetSuccess ? (
+          // Success message after password reset
+          <div className="text-center mt-8 space-y-6">
+            <div className="p-6 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="text-4xl mb-4">✓</div>
+              <h3 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">
+                {t('auth:passwordUpdated')}
+              </h3>
+              <p className="text-muted-foreground">
+                {t('auth:returnToAppMessage', 'You can now close this page and return to the Spott app to log in with your new password.')}
+              </p>
+            </div>
+          </div>
         ) : (
           // Update password form
           <form onSubmit={handleUpdatePassword} className="space-y-6 mt-8">
