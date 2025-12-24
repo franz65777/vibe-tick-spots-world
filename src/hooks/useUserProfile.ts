@@ -258,65 +258,19 @@ export const useUserProfile = (userId?: string) => {
         const requestId = existingRequest?.id;
 
         if (!requestId) {
-          const { data: requestRow, error } = await supabase
+          // Insert new request – the database trigger will create the notification
+          const { error } = await supabase
             .from('friend_requests')
             .insert({
               requester_id: currentUser.id,
               requested_id: userId,
               status: 'pending',
-            })
-            .select('id')
-            .single();
+            });
 
           if (error) throw error;
-
-          // Get current user's profile for notification
-          const { data: followerProfile } = await supabase
-            .from('profiles')
-            .select('username, avatar_url')
-            .eq('id', currentUser.id)
-            .single();
-
-          // Create notification for follow request
-          await sendLocalizedNotification(
-            userId,
-            'follow_request',
-            {
-              user_id: currentUser.id,
-              user_name: followerProfile?.username,
-              avatar_url: followerProfile?.avatar_url,
-              request_id: requestRow?.id,
-              status: 'pending',
-            },
-            {
-              username: followerProfile?.username || 'Someone',
-            }
-          );
-
           setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
         } else {
-          // Request already pending; ensure the requested user still gets a visible notification
-          const { data: followerProfile } = await supabase
-            .from('profiles')
-            .select('username, avatar_url')
-            .eq('id', currentUser.id)
-            .single();
-
-          await sendLocalizedNotification(
-            userId,
-            'follow_request',
-            {
-              user_id: currentUser.id,
-              user_name: followerProfile?.username,
-              avatar_url: followerProfile?.avatar_url,
-              request_id: requestId,
-              status: 'pending',
-            },
-            {
-              username: followerProfile?.username || 'Someone',
-            }
-          );
-
+          // Request already pending; state already set optimistically above
           setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
         }
       } else {
