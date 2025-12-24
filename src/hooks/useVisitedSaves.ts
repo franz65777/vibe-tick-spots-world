@@ -2,16 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VisitedSaveActivity } from '@/components/feed/UserVisitedCard';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { normalizeCity } from '@/utils/cityNormalization';
 
 /**
  * Hook to fetch "visited" (been) saves from users
  * Returns saves chronologically ordered for interleaving in the feed
+ * Filtered by user's current geolocation city
  */
 export const useVisitedSaves = () => {
   const { user } = useAuth();
+  const { location } = useGeolocation();
+
+  const userCity = location?.city ? normalizeCity(location.city) : null;
 
   return useQuery({
-    queryKey: ['visited-saves', user?.id],
+    queryKey: ['visited-saves', user?.id, userCity],
     queryFn: async (): Promise<VisitedSaveActivity[]> => {
       if (!user?.id) return [];
 
@@ -85,7 +91,7 @@ export const useVisitedSaves = () => {
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
       const validUserIds = new Set(profiles?.map(p => p.id) || []);
 
-      // Map to activity format, filtering out saves that have posts for same location
+      // Map to activity format, filtering by user's current city and excluding posts
       const activities: VisitedSaveActivity[] = (recentVisited || [])
         .filter(save => {
           const loc = save.locations as any;
@@ -97,6 +103,14 @@ export const useVisitedSaves = () => {
           if (userLocationPostsSet.has(userLocationKey)) {
             console.log('📰 Filtering out visited card - user has post for this location:', loc.name);
             return false;
+          }
+          
+          // Filter by user's current city geolocation
+          if (userCity) {
+            const locationCity = normalizeCity(loc.city);
+            if (locationCity && locationCity !== userCity) {
+              return false;
+            }
           }
           
           return true;

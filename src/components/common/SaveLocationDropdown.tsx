@@ -116,16 +116,16 @@ export const SaveLocationDropdown = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
-          align="center"
+          align="end"
           side="top"
           sideOffset={8}
-          className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] pl-2.5"
+          className="w-48 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] p-1"
         >
           {SAVE_TAG_OPTIONS.map((option) => (
             <DropdownMenuItem
               key={option.value}
               onClick={() => handleSaveWithTag(option.value)}
-              className={"cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1"}
+              className="cursor-pointer flex items-center gap-2.5 py-2 px-3 hover:bg-accent rounded-xl"
             >
               <TagIcon option={option} />
               <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
@@ -150,16 +150,16 @@ export const SaveLocationDropdown = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
-        align="center"
+        align="end"
         side="top"
         sideOffset={8}
-        className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] pl-2.5"
+        className="w-48 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] p-1"
       >
         {SAVE_TAG_OPTIONS.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => handleSaveWithTag(option.value)}
-            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1"
+            className="cursor-pointer flex items-center gap-2.5 py-2 px-3 hover:bg-accent rounded-xl"
           >
             <TagIcon option={option} />
             <span className="text-sm font-medium">{getTagLabel(option.value)}</span>

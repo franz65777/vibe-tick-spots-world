@@ -289,7 +289,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
   const normalizedCity = normalizeCity(activity.location_city);
 
   return (
-    <div className="mx-4">
+    <div className="mx-5">
       {/* Card */}
       <div
         onClick={handleCardClick}
@@ -345,7 +345,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                 <img 
                   src={categoryIcon} 
                   alt="" 
-                  className={shouldHaveBiggerIcon(activity.location_category) ? 'w-[18px] h-[18px]' : 'w-3.5 h-3.5'} 
+                  className={shouldHaveBiggerIcon(activity.location_category) ? 'w-5 h-5' : 'w-3.5 h-3.5'} 
                 />
                 {normalizedCity && normalizedCity !== 'Unknown' && (
                   <span>{normalizedCity}</span>
