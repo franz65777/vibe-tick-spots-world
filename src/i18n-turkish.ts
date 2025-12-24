@@ -94,7 +94,7 @@ export const turkishTranslations = {
       }
     },
     feed: {
-      beFirstToSave: 'İlk kaydeden sen ol!',
+      firstToSave: 'İlk kaydeden!',
       noSavesYet: 'Henüz kaydetme yok',
       savedByUser: '1 kullanıcı kaydetti',
       savedByUsers: '{{count}} kullanıcı kaydetti'

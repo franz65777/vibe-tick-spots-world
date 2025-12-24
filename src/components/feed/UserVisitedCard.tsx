@@ -1,9 +1,9 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,6 +24,56 @@ const SAVE_TAG_ICONS: Record<SaveTag, string> = {
   been: saveTagBeen,
   to_try: saveTagToTry,
   favourite: saveTagFavourite,
+};
+
+// Scrolling text component for long location names
+const ScrollingLocationName = memo(({ name }: { name: string }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [needsScroll, setNeedsScroll] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    // Check if text overflows
+    setNeedsScroll(el.scrollWidth > el.clientWidth);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated && needsScroll) {
+          setIsVisible(true);
+          setHasAnimated(true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasAnimated, needsScroll, name]);
+
+  return (
+    <div ref={scrollRef} className="overflow-hidden">
+      <h4 
+        className={`font-bold text-foreground text-sm whitespace-nowrap ${isVisible && needsScroll ? 'animate-marquee-bounce' : ''}`}
+      >
+        {name}
+      </h4>
+    </div>
+  );
+});
+
+ScrollingLocationName.displayName = 'ScrollingLocationName';
+
+// Check if category should have bigger icon (restaurant/hotel only)
+const shouldHaveBiggerIcon = (category: string): boolean => {
+  const lowerCategory = category.toLowerCase();
+  return lowerCategory.includes('restaurant') || 
+         lowerCategory.includes('ristorante') ||
+         lowerCategory.includes('hotel') ||
+         lowerCategory.includes('albergo');
 };
 export interface VisitedSaveActivity {
   id: string;
@@ -282,18 +332,21 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
                     className="h-6 text-xs bg-background/50 rounded-full px-3 py-0 ml-auto shrink-0"
                     onClick={handleFollow}
                   >
-                    <UserPlus className="w-3 h-3 mr-1" />
                     {t('follow', { defaultValue: 'Follow' })}
                   </Button>
                 )}
               </div>
 
-              <h4 className="font-bold text-foreground text-sm truncate">
-                {activity.location_name}
-              </h4>
+              <div className="overflow-hidden">
+                <ScrollingLocationName name={activity.location_name} />
+              </div>
 
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <img src={categoryIcon} alt="" className="w-3.5 h-3.5" />
+                <img 
+                  src={categoryIcon} 
+                  alt="" 
+                  className={shouldHaveBiggerIcon(activity.location_category) ? 'w-[18px] h-[18px]' : 'w-3.5 h-3.5'} 
+                />
                 {normalizedCity && normalizedCity !== 'Unknown' && (
                   <span>{normalizedCity}</span>
                 )}

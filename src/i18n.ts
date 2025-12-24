@@ -649,7 +649,7 @@ const resources = {
       away: 'away',
       savedByUsers: 'saved by {{count}} users',
       savedByUser: 'saved by 1 user',
-      beFirstToSave: 'Be the first to save!',
+      firstToSave: 'First to save!',
       noSavesYet: 'No saves yet'
     },
       badges: {
@@ -1573,7 +1573,7 @@ const resources = {
       away: 'de distancia',
       savedByUsers: 'guardado por {{count}} usuarios',
       savedByUser: 'guardado por 1 usuario',
-      beFirstToSave: '¡Sé el primero en guardar!',
+      firstToSave: '¡Primero en guardar!',
       noSavesYet: 'Sin guardados aún'
     },
     badges: {
@@ -2540,7 +2540,7 @@ const resources = {
       away: 'di distanza',
       savedByUsers: 'salvato da {{count}} utenti',
       savedByUser: 'salvato da 1 utente',
-      beFirstToSave: 'Sii il primo a salvare!',
+      firstToSave: 'Primo a salvare!',
       noSavesYet: 'Nessun salvataggio ancora'
     },
     badges: {
@@ -3438,7 +3438,7 @@ const resources = {
       away: 'de distance',
       savedByUsers: 'enregistré par {{count}} utilisateurs',
       savedByUser: 'enregistré par 1 utilisateur',
-      beFirstToSave: 'Soyez le premier à enregistrer!',
+      firstToSave: 'Premier à enregistrer!',
       noSavesYet: 'Pas encore enregistré'
     },
     badges: {
@@ -4244,7 +4244,7 @@ const resources = {
       away: 'entfernt',
       savedByUsers: 'von {{count}} Nutzern gespeichert',
       savedByUser: 'von 1 Nutzer gespeichert',
-      beFirstToSave: 'Sei der Erste!',
+      firstToSave: 'Erster Speicherer!',
       noSavesYet: 'Noch nicht gespeichert'
     },
     badges: {
@@ -4988,7 +4988,7 @@ const resources = {
       away: 'de distância',
       savedByUsers: 'salvo por {{count}} usuários',
       savedByUser: 'salvo por 1 usuário',
-      beFirstToSave: 'Seja o primeiro a salvar!',
+      firstToSave: 'Primeiro a salvar!',
       noSavesYet: 'Nenhum salvo ainda'
     },
       badges: {
@@ -5681,7 +5681,7 @@ const resources = {
       away: '距离',
       savedByUsers: '{{count}}位用户已保存',
       savedByUser: '1位用户已保存',
-      beFirstToSave: '成为第一个保存者！',
+      firstToSave: '第一个保存！',
       noSavesYet: '暂无保存'
     },
     badges: {
@@ -6318,7 +6318,7 @@ const resources = {
       away: '先',
       savedByUsers: '{{count}}人のユーザーが保存',
       savedByUser: '1人のユーザーが保存',
-      beFirstToSave: '最初に保存しよう！',
+      firstToSave: '最初の保存者！',
       noSavesYet: 'まだ保存されていません'
     },
     badges: {
@@ -6995,7 +6995,7 @@ const resources = {
       away: '거리',
       savedByUsers: '{{count}}명의 사용자가 저장',
       savedByUser: '1명의 사용자가 저장',
-      beFirstToSave: '첫 번째로 저장하세요!',
+      firstToSave: '첫 저장자!',
       noSavesYet: '아직 저장 없음'
     },
     badges: {
@@ -7655,7 +7655,7 @@ const resources = {
       away: 'بعيداً',
       savedByUsers: 'محفوظ من قبل {{count}} مستخدمين',
       savedByUser: 'محفوظ من قبل مستخدم واحد',
-      beFirstToSave: 'كن أول من يحفظ!',
+      firstToSave: 'أول من حفظ!',
       noSavesYet: 'لا توجد حفظات بعد'
     },
     badges: {
@@ -8967,7 +8967,7 @@ const resources = {
       away: 'расстояние',
       savedByUsers: 'сохранено {{count}} пользователями',
       savedByUser: 'сохранено 1 пользователем',
-      beFirstToSave: 'Будь первым!',
+      firstToSave: 'Первый сохранил!',
       noSavesYet: 'Ещё не сохранено'
     },
     badges: {
