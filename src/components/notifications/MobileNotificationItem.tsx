@@ -1014,17 +1014,24 @@ const MobileNotificationItem = ({
                             setIsLoading(true);
                             try {
                               const requesterId = notification.data.user_id as string;
-                              
-                              // Delete directly instead of using RPC to avoid uuid type casting issues
-                              // First delete the friend_request if it exists
-                              const { error: deleteError } = await supabase
-                                .from('friend_requests')
-                                .delete()
-                                .eq('requested_id', user.id)
-                                .eq('requester_id', requesterId)
-                                .eq('status', 'pending');
+                              const requestId = notification.data?.request_id as string | undefined;
 
-                              if (deleteError) throw deleteError;
+                              // Decline by updating status to 'declined' (DELETE can fail under RLS)
+                              const { error: updateError } = requestId
+                                ? await supabase
+                                    .from('friend_requests')
+                                    .update({ status: 'declined' })
+                                    .eq('id', requestId)
+                                    .eq('requested_id', user.id)
+                                    .eq('status', 'pending')
+                                : await supabase
+                                    .from('friend_requests')
+                                    .update({ status: 'declined' })
+                                    .eq('requested_id', user.id)
+                                    .eq('requester_id', requesterId)
+                                    .eq('status', 'pending');
+
+                              if (updateError) throw updateError;
                               // Delete the notification so it disappears immediately
                               if (onDelete) {
                                 await onDelete(notification.id);
