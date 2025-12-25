@@ -787,6 +787,7 @@ const resources = {
       decline: 'Decline',
       requestAccepted: 'Request accepted',
       requestDeclined: 'Request declined',
+      acceptedYourRequest: 'accepted your request',
     },
     messages: {
       messages: 'Messages',
@@ -1740,6 +1741,7 @@ const resources = {
       decline: 'Rechazar',
       requestAccepted: 'Solicitud aceptada',
       requestDeclined: 'Solicitud rechazada',
+      acceptedYourRequest: 'aceptó tu solicitud',
     },
     messages: {
       messages: 'Mensajes',
@@ -2734,6 +2736,7 @@ const resources = {
       decline: 'Rifiuta',
       requestAccepted: 'Richiesta accettata',
       requestDeclined: 'Richiesta rifiutata',
+      acceptedYourRequest: 'ha accettato la tua richiesta',
     },
     messages: {
       messages: 'Messaggi',
@@ -3624,6 +3627,7 @@ const resources = {
       decline: 'Refuser',
       requestAccepted: 'Demande acceptée',
       requestDeclined: 'Demande refusée',
+      acceptedYourRequest: 'a accepté votre demande',
     },
     messages: {
       messages: 'Messages',
@@ -4454,6 +4458,7 @@ const resources = {
       decline: 'Ablehnen',
       requestAccepted: 'Anfrage akzeptiert',
       requestDeclined: 'Anfrage abgelehnt',
+      acceptedYourRequest: 'hat deine Anfrage akzeptiert',
     },
     messages: {
       messages: 'Nachrichten',
@@ -5249,6 +5254,7 @@ const resources = {
       decline: 'Recusar',
       requestAccepted: 'Solicitação aceita',
       requestDeclined: 'Solicitação recusada',
+      acceptedYourRequest: 'aceitou sua solicitação',
     },
     messages: {
       messages: 'Mensagens',
@@ -5933,6 +5939,11 @@ const resources = {
       messageSent: '消息已发送！',
       isAtLocation: '在',
       wasAtLocation: '曾在',
+      accept: '接受',
+      decline: '拒绝',
+      requestAccepted: '请求已接受',
+      requestDeclined: '请求已拒绝',
+      acceptedYourRequest: '接受了你的请求',
     },
     messages: {
       messages: '消息',
@@ -6594,6 +6605,11 @@ const resources = {
       messageSent: 'メッセージが送信されました！',
       isAtLocation: 'にいます',
       wasAtLocation: 'にいました',
+      accept: '承認',
+      decline: '拒否',
+      requestAccepted: 'リクエストが承認されました',
+      requestDeclined: 'リクエストが拒否されました',
+      acceptedYourRequest: 'があなたのリクエストを承認しました',
     },
     messages: {
       messages: 'メッセージ',
@@ -7262,6 +7278,11 @@ const resources = {
       messageSent: '메시지 전송됨!',
       isAtLocation: '에 있습니다',
       wasAtLocation: '에 있었습니다',
+      accept: '수락',
+      decline: '거절',
+      requestAccepted: '요청이 수락되었습니다',
+      requestDeclined: '요청이 거절되었습니다',
+      acceptedYourRequest: '님이 회원님의 요청을 수락했습니다',
     },
     messages: {
       messages: '메시지',
@@ -7930,6 +7951,11 @@ const resources = {
       messageSent: 'تم إرسال الرسالة!',
       isAtLocation: 'في',
       wasAtLocation: 'كان في',
+      accept: 'قبول',
+      decline: 'رفض',
+      requestAccepted: 'تم قبول الطلب',
+      requestDeclined: 'تم رفض الطلب',
+      acceptedYourRequest: 'قبل طلبك',
     },
     messages: {
       messages: 'الرسائل',
@@ -9254,6 +9280,11 @@ const resources = {
       messageSent: 'Сообщение отправлено!',
       isAtLocation: 'находится в',
       wasAtLocation: 'находился в',
+      accept: 'Принять',
+      decline: 'Отклонить',
+      requestAccepted: 'Запрос принят',
+      requestDeclined: 'Запрос отклонен',
+      acceptedYourRequest: 'принял ваш запрос',
     },
     messages: {
       messages: 'Сообщения',

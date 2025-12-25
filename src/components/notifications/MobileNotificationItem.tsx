@@ -758,6 +758,18 @@ const MobileNotificationItem = ({
             {' '}{t('repliedToYourStory', { ns: 'notifications' })}
           </span>
         );
+      case 'friend_accepted':
+        return (
+          <span className="text-foreground text-[13px] leading-tight">
+            <span 
+              className="font-semibold cursor-pointer hover:underline" 
+              onClick={handleUsernameClick}
+            >
+              {displayUsername}
+            </span>
+            {' '}{t('acceptedYourRequest', { ns: 'notifications', defaultValue: 'accepted your request' })}
+          </span>
+        );
       default:
         return <span className="text-foreground text-[13px] leading-tight">{notification.message}</span>;
     }
