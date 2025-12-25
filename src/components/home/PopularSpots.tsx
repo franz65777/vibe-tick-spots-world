@@ -56,6 +56,8 @@ interface PopularSpotsProps {
 // Cache for popular spots to avoid redundant queries
 const spotsCache = new Map<string, { spots: PopularSpot[]; cities: CitySpot[]; timestamp: number }>();
 const SPOTS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Bump this when fetch logic changes to avoid serving stale cached results
+const SPOTS_CACHE_VERSION = 2;
 
 const PopularSpots = ({
   currentCity,
@@ -96,7 +98,7 @@ const PopularSpots = ({
       return;
     }
     
-    const cacheKey = `${currentCity}-${filterType}`;
+    const cacheKey = `${SPOTS_CACHE_VERSION}-${currentCity}-${filterType}`;
     const cached = spotsCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < SPOTS_CACHE_DURATION)) {
       setPopularSpots(cached.spots);
