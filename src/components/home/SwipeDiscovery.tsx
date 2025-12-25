@@ -520,7 +520,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       {/* Header with back button - compact for more space */}
       <div className="bg-transparent px-4 py-2.5 flex items-center gap-3 relative z-10 safe-area-pt">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/explore')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
           aria-label="Go back"
         >
