@@ -277,7 +277,7 @@ const MapSection = ({
             "z-[1100] w-full transition-opacity duration-300",
             isExpanded
               ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
-              : "absolute top-4 left-0 right-0 px-1",
+              : "fixed top-[calc(env(safe-area-inset-top)+170px)] left-0 right-0 px-1",
             filtersVisible ? "opacity-100" : "opacity-0"
           )}>
             <div className="flex justify-center w-full">

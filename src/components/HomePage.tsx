@@ -640,24 +640,86 @@ const HomePage = memo(() => {
       />
       
       <div 
-        className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
+        className="h-screen w-full bg-transparent flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
         data-map-expanded={isMapExpanded}
         data-onboarding-open={showOnboarding}
       >
-        {/* Fixed Header - ~60px */}
+        {/* Map Section - FIXED behind everything, full screen */}
+        {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
+          <div className="fixed inset-0 z-0">
+            <Suspense fallback={<div className="w-full h-full bg-muted" />}>
+              <HomeMapContainer
+                mapCenter={mapCenter}
+                currentCity={currentCity}
+                isExpanded={isMapExpanded}
+                isSearchOverlayOpen={isSearchOverlayOpen}
+                onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
+                initialSelectedPlace={initialPinToShow}
+                onClearInitialPlace={() => {
+                  setInitialPinToShow(null);
+                  // Reset messages navigation state
+                  setFromMessages(false);
+                  setReturnToUserId(null);
+                  if (returnTo) {
+                    // If we have returnToState with a folderId, navigate to the folder page
+                    if (returnToState?.folderId) {
+                      navigate(`/folder/${returnToState.folderId}`, { 
+                        state: { 
+                          from: returnToState.from,
+                          scrollY: returnToState.scrollY
+                        },
+                        replace: true
+                      });
+                    } else {
+                      // Otherwise navigate to the returnTo path with scroll restoration
+                      navigate(returnTo, {
+                        state: { restoreScroll: returnToState?.scrollY },
+                        replace: true
+                      });
+                    }
+                    setReturnTo(null);
+                    setReturnToState(null);
+                  }
+                }}
+                recenterToken={recenterToken}
+                onCitySelect={handleCityChange}
+                fromMessages={fromMessages}
+                returnToUserId={returnToUserId}
+                onBackToMessages={() => {
+                  setInitialPinToShow(null);
+                  setFromMessages(false);
+                  const userId = returnToUserId;
+                  setReturnToUserId(null);
+                  navigate('/messages', { state: { initialUserId: userId } });
+                }}
+              />
+            </Suspense>
+          </div>
+        )}
+
+        {/* Fixed Header - ~60px - on top of map */}
         {!isCreateStoryModalOpen && !showOnboarding && (
-          <Header
-            searchQuery={searchQuery}
-            currentCity={currentCity}
-            onSearchChange={setSearchQuery}
-            onSearchKeyPress={() => {}}
-            onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
-            onCitySelect={handleCityChange}
-            onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
-          />
+          <div className="relative z-20">
+            {/* Top fade gradient overlay */}
+            <div 
+              className="pointer-events-none absolute inset-x-0 top-0 h-24 z-0"
+              style={{ 
+                background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.85) 50%, transparent 100%)' 
+              }}
+            />
+            <Header
+              searchQuery={searchQuery}
+              currentCity={currentCity}
+              onSearchChange={setSearchQuery}
+              onSearchKeyPress={() => {}}
+              onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
+              onCitySelect={handleCityChange}
+              onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
+            />
+          </div>
         )}
       
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      <main className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Stories Section - HIDDEN FOR NOW - Keep logic intact for later implementation */}
         {/* {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
@@ -708,59 +770,6 @@ const HomePage = memo(() => {
               }}
             />
           </Suspense>
-        )}
-        
-        {/* Map Section - extends full screen behind header and discover */}
-        {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
-          <div className="absolute inset-0 top-[-60px] bottom-[calc(-1*env(safe-area-inset-bottom))] z-0">
-            <Suspense fallback={<div className="w-full h-full" />}>
-              <HomeMapContainer
-                mapCenter={mapCenter}
-                currentCity={currentCity}
-                isExpanded={isMapExpanded}
-                isSearchOverlayOpen={isSearchOverlayOpen}
-                onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
-                initialSelectedPlace={initialPinToShow}
-                onClearInitialPlace={() => {
-                  setInitialPinToShow(null);
-                  // Reset messages navigation state
-                  setFromMessages(false);
-                  setReturnToUserId(null);
-                  if (returnTo) {
-                    // If we have returnToState with a folderId, navigate to the folder page
-                    if (returnToState?.folderId) {
-                      navigate(`/folder/${returnToState.folderId}`, { 
-                        state: { 
-                          from: returnToState.from,
-                          scrollY: returnToState.scrollY
-                        },
-                        replace: true
-                      });
-                    } else {
-                      // Otherwise navigate to the returnTo path with scroll restoration
-                      navigate(returnTo, {
-                        state: { restoreScroll: returnToState?.scrollY },
-                        replace: true
-                      });
-                    }
-                    setReturnTo(null);
-                    setReturnToState(null);
-                  }
-                }}
-                recenterToken={recenterToken}
-                onCitySelect={handleCityChange}
-                fromMessages={fromMessages}
-                returnToUserId={returnToUserId}
-                onBackToMessages={() => {
-                  setInitialPinToShow(null);
-                  setFromMessages(false);
-                  const userId = returnToUserId;
-                  setReturnToUserId(null);
-                  navigate('/messages', { state: { initialUserId: userId } });
-                }}
-              />
-            </Suspense>
-          </div>
         )}
       </main>
 
