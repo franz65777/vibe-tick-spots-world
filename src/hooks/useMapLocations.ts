@@ -296,34 +296,120 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               return true;
             });
           } else {
-            // Use RPC functions when no bounds (city search)
-            // Use only get_following_saved_locations RPC (no saved_places to avoid duplicates)
-            const { data: followingLocations, error: locError } = await supabase.rpc('get_following_saved_locations');
-
-            if (locError) {
-              console.error('Error fetching following internal locations:', locError);
+            // No bounds - fetch by city, with support for selectedFollowedUserIds filtering
+            const { data: followedUsers } = await supabase
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', user.id);
+            
+            let followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            
+            // Filter by specific selected users if provided
+            if (selectedFollowedUserIds.length > 0) {
+              followedUserIds = followedUserIds.filter(id => selectedFollowedUserIds.includes(id));
+            }
+            
+            if (followedUserIds.length === 0) {
+              finalLocations = [];
+              break;
             }
 
-            const fromLocations: MapLocation[] = (followingLocations as any[] | null)?.map((row: any) => ({
-              id: row.id,
-              name: row.name,
-              category: row.category,
-              address: row.address,
-              city: row.city,
-              google_place_id: row.google_place_id,
+            const normalizedCity = currentCity?.trim().toLowerCase() || '';
+
+            // Fetch internal locations created by followed users
+            let locationsQuery = supabase
+              .from('locations')
+              .select('*')
+              .in('created_by', followedUserIds)
+              .not('latitude', 'is', null)
+              .not('longitude', 'is', null);
+
+            if (normalizedCity) {
+              locationsQuery = locationsQuery.ilike('city', `%${normalizedCity}%`);
+            }
+
+            const { data: locations } = await locationsQuery.limit(500);
+
+            // Fetch saved places by followed users in this city
+            let savedPlacesQuery = supabase
+              .from('saved_places')
+              .select('place_id, created_at, user_id, place_name, place_category, city, coordinates')
+              .in('user_id', followedUserIds);
+
+            if (normalizedCity) {
+              savedPlacesQuery = savedPlacesQuery.ilike('city', `%${normalizedCity}%`);
+            }
+
+            const { data: savedPlaces } = await savedPlacesQuery.limit(500);
+
+            // Build set of google_place_ids from locations to detect duplicates
+            const googlePlaceIdsInLocations = new Set<string>();
+            (locations || []).forEach((loc: any) => {
+              if (loc.google_place_id) {
+                googlePlaceIdsInLocations.add(loc.google_place_id);
+              }
+            });
+
+            // Convert to MapLocation format
+            const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
+              id: loc.id,
+              name: loc.name,
+              category: loc.category,
+              address: loc.address,
+              city: loc.city,
+              google_place_id: loc.google_place_id,
               coordinates: {
-                lat: Number(row.latitude) || 0,
-                lng: Number(row.longitude) || 0,
+                lat: Number(loc.latitude) || 0,
+                lng: Number(loc.longitude) || 0,
               },
               isFollowing: true,
-              user_id: row.created_by,
-              created_at: row.created_at,
-            })) ?? [];
+              user_id: loc.created_by,
+              created_at: loc.created_at,
+            }));
 
-            // Filter by city and categories
-            finalLocations = fromLocations.filter(location => {
-              if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) return false;
-              if (currentCity && location.city && !location.city.toLowerCase().includes(currentCity.toLowerCase())) return false;
+            // Dedupe saved_places by place_id and coordinates
+            const seenPlaceIds = new Set<string>();
+            const seenCoords = new Set<string>();
+
+            const fromSavedPlaces: MapLocation[] = (savedPlaces || [])
+              .filter((sp: any) => {
+                // Skip duplicates already in locations table
+                if (googlePlaceIdsInLocations.has(sp.place_id)) return false;
+                
+                const coords = sp.coordinates as any || {};
+                const lat = Number(coords.lat);
+                const lng = Number(coords.lng);
+                
+                if (!lat || !lng) return false;
+
+                const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+                if (seenCoords.has(coordKey) || seenPlaceIds.has(sp.place_id)) return false;
+
+                seenPlaceIds.add(sp.place_id);
+                seenCoords.add(coordKey);
+                return true;
+              })
+              .map((sp: any) => {
+                const coords = sp.coordinates as any || {};
+                return {
+                  id: sp.place_id,
+                  name: sp.place_name || 'Unknown',
+                  category: sp.place_category || 'Unknown',
+                  address: undefined,
+                  city: sp.city || undefined,
+                  google_place_id: sp.place_id,
+                  coordinates: {
+                    lat: Number(coords.lat) || 0,
+                    lng: Number(coords.lng) || 0,
+                  },
+                  isFollowing: true,
+                  user_id: sp.user_id,
+                  created_at: sp.created_at,
+                };
+              });
+
+            finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
+              if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
               return true;
             });
           }

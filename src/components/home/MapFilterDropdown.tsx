@@ -29,7 +29,7 @@ interface UserSavedStats {
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
   const { user } = useAuth();
-  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth, setFilterDropdownRightEdge } = useMapFilter();
+  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth, setFilterDropdownRightEdge, currentCity } = useMapFilter();
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +57,7 @@ const MapFilterDropdown = () => {
     }
   }, [setFilterDropdownWidth, setFilterDropdownRightEdge, activeFilter, isFilterExpanded]);
 
-  // Fetch followed users and their saved location stats
+  // Fetch followed users and their saved location stats - FILTERED BY CITY
   useEffect(() => {
     const fetchFollowedUsersWithStats = async () => {
       if (!user?.id) return;
@@ -78,16 +78,25 @@ const MapFilterDropdown = () => {
           .filter(Boolean) as FollowedUser[];
         setFollowedUsers(users);
 
-        // Fetch saved location stats for each user
+        // Fetch saved location stats for each user - FILTERED BY CURRENT CITY
         const statsMap = new Map<string, UserSavedStats>();
+        const normalizedCity = currentCity?.trim().toLowerCase() || '';
         
         for (const followedUser of users) {
-          const { data: savedPlaces } = await supabase
+          // Build query - filter by city if one is selected
+          let query = supabase
             .from('saved_places')
-            .select('place_category')
+            .select('place_category, city')
             .eq('user_id', followedUser.id);
 
-          if (savedPlaces) {
+          // Only filter by city if we have one
+          if (normalizedCity) {
+            query = query.ilike('city', `%${normalizedCity}%`);
+          }
+
+          const { data: savedPlaces } = await query;
+
+          if (savedPlaces && savedPlaces.length > 0) {
             const stats: UserSavedStats = {
               userId: followedUser.id,
               restaurantCount: savedPlaces.filter(p => p.place_category === 'restaurant').length,
@@ -102,7 +111,7 @@ const MapFilterDropdown = () => {
     };
     
     fetchFollowedUsersWithStats();
-  }, [user?.id]);
+  }, [user?.id, currentCity]); // Re-fetch when city changes
 
   const mapFilters = [
     { id: 'following' as const, name: t('friends'), icon: filterFriendsIcon, iconSize: 'w-7 h-7' },
