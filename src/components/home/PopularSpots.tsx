@@ -202,7 +202,8 @@ const PopularSpots = ({
         setPopularSpots([]);
         spotsCache.set(cacheKey, { spots: [], cities, timestamp: Date.now() });
       } else {
-        // Original logic for trending filter
+        // Trending filter: include both locations table AND saved_places (Google)
+        // 1) Fetch from locations table
         const locationsQuery = supabase.from('locations').select('id, name, category, city, address, google_place_id, latitude, longitude').or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`).limit(200);
         const locationsResult = await locationsQuery;
         if (locationsResult.error) throw locationsResult.error;
@@ -212,22 +213,35 @@ const PopularSpots = ({
         // Get saves count for locations
         const {
           data: savesData
-        } = await supabase.from('user_saved_locations').select('location_id').in('location_id', locationIds);
+        } = locationIds.length > 0 
+          ? await supabase.from('user_saved_locations').select('location_id').in('location_id', locationIds)
+          : { data: [] };
         const savesMap = new Map<string, number>();
         savesData?.forEach(save => {
           savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
         });
 
-        // Get Google saves
+        // 2) Get ALL saved_places for this city (includes Google places not in locations table)
         const {
           data: googleSavesData
-        } = await supabase.from('saved_places').select('place_id').ilike('city', `%${normalizedCity}%`);
+        } = await supabase.from('saved_places').select('place_id, place_name, place_category, city, coordinates').ilike('city', `%${normalizedCity}%`);
+        
+        // Count saves per place_id and store unique places
         const googleSavesMap = new Map<string, number>();
+        const googlePlacesMap = new Map<string, any>();
         googleSavesData?.forEach(save => {
           googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
+          if (!googlePlacesMap.has(save.place_id)) {
+            googlePlacesMap.set(save.place_id, save);
+          }
         });
 
-        // Process and filter locations
+        // Build set of google_place_ids already in locations table
+        const googlePlaceIdsInLocations = new Set(
+          locationsData.filter(l => l.google_place_id).map(l => l.google_place_id)
+        );
+
+        // Process locations from locations table
         const locationMap = new Map<string, PopularSpot>();
         locationsData?.forEach(location => {
           const locationCity = location.city?.trim().toLowerCase();
@@ -254,6 +268,31 @@ const PopularSpots = ({
             }
           }
         });
+
+        // 3) Add saved_places that are NOT in locations table (pure Google places)
+        googlePlacesMap.forEach((sp, placeId) => {
+          if (googlePlaceIdsInLocations.has(placeId)) return; // Skip if already in locations
+          
+          const coords = sp.coordinates as any;
+          const lat = Number(coords?.lat);
+          const lng = Number(coords?.lng);
+          if (!lat || !lng) return;
+          
+          const savesCount = googleSavesMap.get(placeId) || 0;
+          if (savesCount > 0) {
+            locationMap.set(placeId, {
+              id: placeId,
+              name: sp.place_name || 'Unknown',
+              category: sp.place_category || 'place',
+              city: sp.city || 'Unknown',
+              address: undefined,
+              google_place_id: placeId,
+              savesCount,
+              coordinates: { lat, lng }
+            });
+          }
+        });
+
         const topSpots = Array.from(locationMap.values()).sort((a, b) => b.savesCount - a.savesCount).slice(0, 10);
         setPopularSpots(topSpots);
         setCitySpots([]);

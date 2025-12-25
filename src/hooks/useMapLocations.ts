@@ -354,10 +354,20 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
           const { data: savedPlaces } = await savedPlacesQuery.limit(1000);
 
-          // Build a map of google_place_id -> saved_places data
+          // Build a map of google_place_id -> saved_places data (deduplicate by place_id)
           const savedPlacesMap = new Map<string, any>();
           const savedPlaceScores = new Map<string, number>();
+          const seenPlaceIds = new Set<string>();
+          
           (savedPlaces || []).forEach((sp: any) => {
+            // Skip duplicates of same place_id
+            if (seenPlaceIds.has(sp.place_id)) {
+              // Just add to score but don't duplicate the entry
+              const weight = followedUserIds.includes(sp.user_id) ? 3 : 1;
+              savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + weight);
+              return;
+            }
+            
             const coords = sp.coordinates as any;
             const lat = Number(coords?.lat);
             const lng = Number(coords?.lng);
@@ -371,14 +381,14 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               }
             }
 
+            seenPlaceIds.add(sp.place_id);
+
             // Score (weight by followed)
             const weight = followedUserIds.includes(sp.user_id) ? 3 : 1;
             savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + weight);
 
             // Store first occurrence of each google_place_id
-            if (!savedPlacesMap.has(sp.place_id)) {
-              savedPlacesMap.set(sp.place_id, sp);
-            }
+            savedPlacesMap.set(sp.place_id, sp);
           });
 
           // ---------------------- 2) Fetch from locations table ----------------------
