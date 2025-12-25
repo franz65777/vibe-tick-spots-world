@@ -131,16 +131,26 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
 
     setIsLoading(true);
     try {
-      // Decline by deleting the pending request (keeps status logic simple on requester side)
-      const requesterId = notification.data.user_id as string;
-
-      const { error: deleteErr } = await supabase
-        .from('friend_requests')
-        .delete()
-        .eq('requested_id', user.id)
-        .eq('requester_id', requesterId)
-        .eq('status', 'pending');
-      if (deleteErr) throw deleteErr;
+      // Decline by updating the pending request to 'declined'
+      // (more reliable than DELETE with RLS + keeps requester able to see status change)
+      if (notification.data?.request_id) {
+        const { error: updateErr } = await supabase
+          .from('friend_requests')
+          .update({ status: 'declined' })
+          .eq('id', notification.data.request_id)
+          .eq('requested_id', user.id)
+          .eq('status', 'pending');
+        if (updateErr) throw updateErr;
+      } else {
+        const requesterId = notification.data.user_id as string;
+        const { error: updateErr } = await supabase
+          .from('friend_requests')
+          .update({ status: 'declined' })
+          .eq('requested_id', user.id)
+          .eq('requester_id', requesterId)
+          .eq('status', 'pending');
+        if (updateErr) throw updateErr;
+      }
 
       const { error: notifErr } = await supabase
         .from('notifications')
