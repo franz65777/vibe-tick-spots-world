@@ -1013,16 +1013,18 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              // Use RPC to safely decline the request (handles uuid casting)
                               const requesterId = notification.data.user_id as string;
-                              const requestId = notification.data?.request_id as string | undefined;
+                              
+                              // Delete directly instead of using RPC to avoid uuid type casting issues
+                              // First delete the friend_request if it exists
+                              const { error: deleteError } = await supabase
+                                .from('friend_requests')
+                                .delete()
+                                .eq('requested_id', user.id)
+                                .eq('requester_id', requesterId)
+                                .eq('status', 'pending');
 
-                              const { error: rpcError } = await supabase.rpc('decline_friend_request', {
-                                p_request_id: requestId || null,
-                                p_requester_id: requesterId,
-                              });
-
-                              if (rpcError) throw rpcError;
+                              if (deleteError) throw deleteError;
                               // Delete the notification so it disappears immediately
                               if (onDelete) {
                                 await onDelete(notification.id);
