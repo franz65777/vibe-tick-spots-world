@@ -132,7 +132,9 @@ const MapFilterDropdown = () => {
           .select('created_by, id, google_place_id, category, city, latitude, longitude')
           .in('created_by', userIds);
 
-        // Combine all places per user with city filtering and strong deduplication (by google_place_id OR coordinates)
+        // Combine all places per user with city filtering and strong deduplication
+        // - Prefer google_place_id/place_id when present
+        // - Fallback to coordinates key to dedupe internal IDs without google_place_id
         const userPlacesById = new Map<string, Map<string, string>>(); // userId -> (uniqueKey -> category)
         const userSeenCoords = new Map<string, Set<string>>(); // userId -> Set<coordKey>
 
@@ -151,14 +153,17 @@ const MapFilterDropdown = () => {
           return { byId, coords };
         };
 
-        const upsertPlace = (userId: string, uniqueId: string, category: string, cKey?: string) => {
-          if (!userId || !uniqueId) return;
+        const upsertPlace = (userId: string, preferredId: string, category: string, cKey?: string) => {
+          if (!userId) return;
           const { byId, coords } = getStores(userId);
-          if (cKey && coords.has(cKey)) {
-            // Already have something at these coordinates
-            return;
-          }
-          byId.set(uniqueId, category);
+
+          // If we already saw a place at these coords, don't count it again (even if IDs differ)
+          if (cKey && coords.has(cKey)) return;
+
+          const uniqueKey = preferredId || cKey || '';
+          if (!uniqueKey) return;
+
+          byId.set(uniqueKey, category);
           if (cKey) coords.add(cKey);
         };
 
@@ -174,17 +179,18 @@ const MapFilterDropdown = () => {
         (allUserSavedLocations || []).forEach((usl: any) => {
           const loc = usl.locations;
           if (!loc || !matchesCity(loc.city)) return;
-          const uniqueId = String(loc.google_place_id || loc.id || '');
+          const preferredId = String(loc.google_place_id || '');
           const cKey = coordKey(Number(loc.latitude), Number(loc.longitude));
-          upsertPlace(usl.user_id, uniqueId, normalizeCategory(loc.category), cKey);
+          // fallback to coords key when google_place_id is missing (prevents double-count)
+          upsertPlace(usl.user_id, preferredId, normalizeCategory(loc.category), cKey);
         });
 
         // 3) created locations
         (allCreatedLocations || []).forEach((loc: any) => {
           if (!loc?.created_by || !matchesCity(loc.city)) return;
-          const uniqueId = String(loc.google_place_id || loc.id || '');
+          const preferredId = String(loc.google_place_id || '');
           const cKey = coordKey(Number(loc.latitude), Number(loc.longitude));
-          upsertPlace(loc.created_by, uniqueId, normalizeCategory(loc.category), cKey);
+          upsertPlace(loc.created_by, preferredId, normalizeCategory(loc.category), cKey);
         });
 
         // Calculate stats per user with dynamic categories

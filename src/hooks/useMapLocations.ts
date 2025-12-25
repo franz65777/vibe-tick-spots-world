@@ -350,24 +350,36 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             // Use only the selected friend IDs - never include current user
             const followedUserIds = selectedFollowedUserIds;
 
-            const normalizedCity = currentCity?.trim().toLowerCase() || '';
+            const normalizedCityRaw = (currentCity || '').trim().toLowerCase();
 
-            // Fetch internal locations created by followed users
-            let locationsQuery = supabase
+            const normalizeCityKey = (s?: string | null) => {
+              const v = String(s ?? '').trim().toLowerCase();
+              if (!v) return '';
+              // drop trailing postal numbers like "dublin 2"
+              return v.replace(/\s+\d+$/g, '').trim();
+            };
+
+            const normalizedCity = normalizeCityKey(normalizedCityRaw);
+
+            // Symmetric match: "dublin" matches "dublin 2" and vice versa
+            const cityOk = (city?: string | null) => {
+              if (!normalizedCity) return true;
+              const c = normalizeCityKey(city);
+              if (!c) return false;
+              return c.includes(normalizedCity) || normalizedCity.includes(c);
+            };
+
+            // Fetch internal locations created by followed users (no city filter here; we filter in JS via cityOk)
+            const { data: locations } = await supabase
               .from('locations')
               .select('*')
               .in('created_by', followedUserIds)
               .not('latitude', 'is', null)
-              .not('longitude', 'is', null);
-
-            if (normalizedCity) {
-              locationsQuery = locationsQuery.ilike('city', `%${normalizedCity}%`);
-            }
-
-            const { data: locations } = await locationsQuery.limit(500);
+              .not('longitude', 'is', null)
+              .limit(500);
 
             // Fetch internal saved locations (user_saved_locations -> locations)
-            let savedInternalQuery = supabase
+            const { data: savedInternal } = await supabase
               .from('user_saved_locations')
               .select(`
                 user_id,
@@ -377,30 +389,19 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 )
               `)
               .in('user_id', followedUserIds)
-              .not('location', 'is', null);
+              .not('location', 'is', null)
+              .limit(800);
 
-            const { data: savedInternal } = await savedInternalQuery.limit(800);
-
-            // Fetch saved places by followed users in this city
-            let savedPlacesQuery = supabase
+            // Fetch saved places by followed users (no city filter here; we filter in JS via cityOk)
+            const { data: savedPlaces } = await supabase
               .from('saved_places')
               .select('place_id, created_at, user_id, place_name, place_category, city, coordinates')
-              .in('user_id', followedUserIds);
-
-            if (normalizedCity) {
-              savedPlacesQuery = savedPlacesQuery.ilike('city', `%${normalizedCity}%`);
-            }
-
-            const { data: savedPlaces } = await savedPlacesQuery.limit(800);
+              .in('user_id', followedUserIds)
+              .limit(800);
 
             const locationMap = new Map<string, MapLocation>();
             const usedCoords = new Set<string>();
             const googlePlaceIdsInLocations = new Set<string>();
-
-            const cityOk = (city?: string | null) => {
-              if (!normalizedCity) return true;
-              return Boolean(city && city.toLowerCase().includes(normalizedCity));
-            };
 
             const tryAdd = (loc: MapLocation) => {
               if (!cityOk(loc.city)) return;
