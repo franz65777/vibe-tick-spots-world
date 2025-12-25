@@ -1014,22 +1014,14 @@ const MobileNotificationItem = ({
                             setIsLoading(true);
                             try {
                               const requesterId = notification.data.user_id as string;
-                              const requestId = notification.data?.request_id as string | undefined;
 
-                              // Decline by updating status to 'declined' (DELETE can fail under RLS)
-                              const { error: updateError } = requestId
-                                ? await supabase
-                                    .from('friend_requests')
-                                    .update({ status: 'declined' })
-                                    .eq('id', requestId)
-                                    .eq('requested_id', user.id)
-                                    .eq('status', 'pending')
-                                : await supabase
-                                    .from('friend_requests')
-                                    .update({ status: 'declined' })
-                                    .eq('requested_id', user.id)
-                                    .eq('requester_id', requesterId)
-                                    .eq('status', 'pending');
+                              // Decline by updating status to 'declined' using requester_id (avoids uuid casting issues)
+                              const { error: updateError } = await supabase
+                                .from('friend_requests')
+                                .update({ status: 'declined' })
+                                .eq('requested_id', user.id)
+                                .eq('requester_id', requesterId)
+                                .eq('status', 'pending');
 
                               if (updateError) throw updateError;
                               // Delete the notification so it disappears immediately

@@ -131,26 +131,16 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
 
     setIsLoading(true);
     try {
-      // Decline by updating the pending request to 'declined'
-      // (more reliable than DELETE with RLS + keeps requester able to see status change)
-      if (notification.data?.request_id) {
-        const { error: updateErr } = await supabase
-          .from('friend_requests')
-          .update({ status: 'declined' })
-          .eq('id', notification.data.request_id)
-          .eq('requested_id', user.id)
-          .eq('status', 'pending');
-        if (updateErr) throw updateErr;
-      } else {
-        const requesterId = notification.data.user_id as string;
-        const { error: updateErr } = await supabase
-          .from('friend_requests')
-          .update({ status: 'declined' })
-          .eq('requested_id', user.id)
-          .eq('requester_id', requesterId)
-          .eq('status', 'pending');
-        if (updateErr) throw updateErr;
-      }
+      // Decline by updating status to 'declined' using requester_id (avoids uuid casting issues)
+      const requesterId = notification.data.user_id as string;
+
+      const { error: updateErr } = await supabase
+        .from('friend_requests')
+        .update({ status: 'declined' })
+        .eq('requested_id', user.id)
+        .eq('requester_id', requesterId)
+        .eq('status', 'pending');
+      if (updateErr) throw updateErr;
 
       const { error: notifErr } = await supabase
         .from('notifications')
