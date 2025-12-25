@@ -966,12 +966,11 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.request_id || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              // Accept: mark request accepted + create follow
-                              await supabase
-                                .from('friend_requests')
-                                .update({ status: 'accepted' })
-                                .eq('id', notification.data.request_id)
-                                .eq('requested_id', user.id);
+                              // Accept: mark request accepted via RPC (avoids type casting issues)
+                              const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
+                                p_request_id: notification.data.request_id,
+                              });
+                              if (rpcErr) throw rpcErr;
 
                               await supabase.from('follows').insert({
                                 follower_id: notification.data.user_id,
@@ -1010,25 +1009,15 @@ const MobileNotificationItem = ({
                           onClick={async (e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            if (!user || !notification.data?.user_id) return;
+                            if (!user || !notification.data?.request_id) return;
                             setIsLoading(true);
                             try {
-                              const requesterId = notification.data.user_id as string;
-                              const requestId = notification.data?.request_id as string | undefined;
+                              // Use RPC to decline (avoids text/uuid casting issues)
+                              const { error: rpcErr } = await supabase.rpc('decline_friend_request', {
+                                p_request_id: notification.data.request_id,
+                              });
+                              if (rpcErr) throw rpcErr;
 
-                              // Decline by updating status to 'declined'
-                              // Use request_id when available; otherwise match by requester_id only to avoid text/uuid casting issues.
-                              const updateQuery = requestId
-                                ? supabase.from('friend_requests').update({ status: 'declined' }).eq('id', requestId)
-                                : supabase
-                                    .from('friend_requests')
-                                    .update({ status: 'declined' })
-                                    .eq('requester_id', requesterId)
-                                    .eq('status', 'pending');
-
-                              const { error: updateError } = await updateQuery;
-
-                              if (updateError) throw updateError;
                               // Delete the notification so it disappears immediately
                               if (onDelete) {
                                 await onDelete(notification.id);
