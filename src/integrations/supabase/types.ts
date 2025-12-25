@@ -3336,21 +3336,13 @@ export type Database = {
           username: string
         }[]
       }
-      get_global_city_counts:
-        | {
-            Args: never
-            Returns: {
-              city: string
-              pin_count: number
-            }[]
-          }
-        | {
-            Args: { limit_count?: number }
-            Returns: {
-              city: string
-              total: number
-            }[]
-          }
+      get_global_city_counts: {
+        Args: never
+        Returns: {
+          city: string
+          pin_count: number
+        }[]
+      }
       get_global_distinct_places_count: { Args: never; Returns: number }
       get_mau: { Args: { target_month: string }; Returns: number }
       get_pin_engagement: {
