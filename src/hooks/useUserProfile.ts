@@ -31,6 +31,41 @@ export const useUserProfile = (userId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
 
+  // Function to refetch follow request status
+  const refetchFollowRequestStatus = async () => {
+    if (!currentUser || !userId || currentUser.id === userId) return;
+    
+    try {
+      // Check if still following
+      const { data: followData } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', userId)
+        .maybeSingle();
+
+      const isFollowing = !!followData;
+
+      // Check pending request status
+      const { data: requestStatus } = await supabase
+        .rpc('get_follow_request_status', {
+          requester_id: currentUser.id,
+          requested_id: userId
+        });
+      
+      const followRequestStatus = requestStatus === 'pending' ? 'pending' : null;
+
+      setProfile((prev) => prev ? {
+        ...prev,
+        is_following: isFollowing,
+        follow_request_status: followRequestStatus,
+        can_view_content: isFollowing || !prev.is_private
+      } : prev);
+    } catch (error) {
+      console.error('Error refetching follow status:', error);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -53,7 +88,6 @@ export const useUserProfile = (userId?: string) => {
         following: followingRes.count || 0,
       };
     };
-
     const fetchProfile = async () => {
       if (!userId) {
         setProfile(null);
@@ -289,10 +323,27 @@ export const useUserProfile = (userId?: string) => {
           .subscribe()
       : null;
 
+    // Polling fallback: check every 5 seconds if we have a pending request (realtime can miss DELETE events)
+    const pollInterval = (currentUser && userId && currentUser.id !== userId)
+      ? setInterval(() => {
+          refetchFollowRequestStatus();
+        }, 5000)
+      : null;
+
+    // Also refetch on window focus (user might have been on another tab when request was declined)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentUser && userId && currentUser.id !== userId) {
+        refetchFollowRequestStatus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       cancelled = true;
       if (channel) supabase.removeChannel(channel);
       if (friendReqChannel) supabase.removeChannel(friendReqChannel);
+      if (pollInterval) clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [userId, currentUser]);
 
