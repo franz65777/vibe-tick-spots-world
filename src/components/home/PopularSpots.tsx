@@ -448,15 +448,7 @@ const PopularSpots = ({
                   </p>
                 </div>}
             </div>
-            <div className="flex items-center gap-2">
-              {!dropdownOpen && hasResults && filterType !== 'most_saved'}
-              {onSwipeDiscoveryOpen && <button type="button" onClick={onSwipeDiscoveryOpen} className="flex items-center justify-center" aria-label={t('discoverMore', {
-            ns: 'home',
-            defaultValue: 'Discover more'
-          })}>
-                  <img src={tinderIcon} alt="Discover" className="w-6 h-6 object-contain" />
-                </button>}
-            </div>
+            {/* Tinder button removed - now in Explore page header */}
           </div>}
       </div>
 

@@ -3,6 +3,7 @@ import { Search, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface ExploreHeaderBarProps {
   searchQuery: string;
@@ -11,19 +12,18 @@ interface ExploreHeaderBarProps {
   onSearchChange: (query: string) => void;
   onInputFocus: (focused: boolean) => void;
   onClearSearch: () => void;
-  onAiClick?: () => void;
 }
 
 const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     searchQuery,
     inputFocused,
     searchInputRef,
     onSearchChange,
     onInputFocus,
-    onClearSearch,
-    onAiClick
+    onClearSearch
   } = props;
 
   return (
@@ -31,10 +31,10 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
       <div className="px-4 py-4">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
-          {/* AI Assistant Button - Hidden when search is active */}
+          {/* Swipe Discovery Button - Hidden when search is active */}
           {!inputFocused && !searchQuery && (
             <Button
-              onClick={onAiClick}
+              onClick={() => navigate('/discover')}
               variant="ghost"
               size="icon"
               className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted"
