@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
@@ -186,26 +187,6 @@ const MapFilterDropdown = () => {
     fetchFollowedUsersWithStats();
   }, [user?.id, currentCity]); // Re-fetch when city changes
 
-  // Category emoji mapping
-  const getCategoryEmoji = (category: string): string => {
-    const emojiMap: Record<string, string> = {
-      'restaurant': '🍽️',
-      'bar': '🍺',
-      'cafe': '☕',
-      'hotel': '🏨',
-      'lodging': '🏨',
-      'museum': '🏛️',
-      'entertainment': '🎭',
-      'shopping': '🛍️',
-      'park': '🌳',
-      'gym': '🏋️',
-      'spa': '💆',
-      'beach': '🏖️',
-      'attraction': '🎡',
-    };
-    return emojiMap[category] || '📍';
-  };
-
   const mapFilters = [
     { id: 'following' as const, name: t('friends'), icon: filterFriendsIcon, iconSize: 'w-7 h-7' },
     { id: 'popular' as const, name: t('everyone'), icon: filterEveryoneIcon, iconSize: 'w-6 h-6' },
@@ -338,9 +319,10 @@ const MapFilterDropdown = () => {
                         .map(([category, count]) => (
                           <span 
                             key={category}
-                            className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs whitespace-nowrap flex-shrink-0"
+                            className="flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/20 rounded-full text-xs whitespace-nowrap flex-shrink-0"
                           >
-                            {getCategoryEmoji(category)} {count}
+                            <CategoryIcon category={category} className="w-4 h-4" sizeMultiplier={0.9} />
+                            <span>{count}</span>
                           </span>
                         ))
                       }
