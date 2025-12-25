@@ -382,6 +382,29 @@ export const useUserProfile = (userId?: string) => {
               .eq('id', existingRequest.id);
 
             if (error) throw error;
+
+            // Get current user's profile for notification
+            const { data: requesterProfile } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', currentUser.id)
+              .single();
+
+            // Create notification for re-sent follow request
+            await sendLocalizedNotification(
+              userId,
+              'follow_request',
+              {
+                user_id: currentUser.id,
+                user_name: requesterProfile?.username,
+                avatar_url: requesterProfile?.avatar_url,
+                request_id: existingRequest.id,
+              },
+              {
+                username: requesterProfile?.username || 'Someone',
+              }
+            );
+
             setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
           }
         } else {
