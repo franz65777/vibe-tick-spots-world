@@ -331,18 +331,10 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         }
 
         case 'popular': {
-          // POPULAR / "Tutti" filter: show ALL saved locations (from locations + saved_places)
-          // Get followed user IDs for weighted scoring
-          const { data: followedUsers } = await supabase
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', user.id);
-          
-          const followedUserIds = followedUsers?.map(f => f.following_id) || [];
+          // POPULAR / "Tutti" filter: show ALL saved locations globally (from locations + saved_places)
+          // No restriction on followed users - show everything saved by anyone
 
-          // ---------------------- 1) Fetch saved_places ----------------------
-          // These may have coordinates stored in JSONB - fetch ALL saved_places (global)
-          // Apply bounds or city filter afterward in JS
+          // ---------------------- 1) Fetch saved_places (GLOBAL - all users) ----------------------
           let savedPlacesQuery = supabase
             .from('saved_places')
             .select('place_id, place_name, place_category, city, coordinates, user_id, created_at');
@@ -355,23 +347,35 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           const { data: savedPlaces } = await savedPlacesQuery.limit(1000);
 
           // Build a map of google_place_id -> saved_places data (deduplicate by place_id)
+          // Also deduplicate by coordinates to avoid pins at same location
           const savedPlacesMap = new Map<string, any>();
           const savedPlaceScores = new Map<string, number>();
           const seenPlaceIds = new Set<string>();
+          const seenCoords = new Set<string>(); // Deduplicate by coordinates
           
           (savedPlaces || []).forEach((sp: any) => {
-            // Skip duplicates of same place_id
-            if (seenPlaceIds.has(sp.place_id)) {
-              // Just add to score but don't duplicate the entry
-              const weight = followedUserIds.includes(sp.user_id) ? 3 : 1;
-              savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + weight);
-              return;
-            }
-            
             const coords = sp.coordinates as any;
             const lat = Number(coords?.lat);
             const lng = Number(coords?.lng);
             if (!lat || !lng) return;
+
+            // Create coordinate key (rounded to avoid floating point issues)
+            const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+
+            // Skip if we already have a pin at these exact coordinates
+            if (seenCoords.has(coordKey)) {
+              // Just add to score for existing place
+              if (seenPlaceIds.has(sp.place_id)) {
+                savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + 1);
+              }
+              return;
+            }
+
+            // Skip duplicates of same place_id
+            if (seenPlaceIds.has(sp.place_id)) {
+              savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + 1);
+              return;
+            }
 
             // Bounds check
             if (mapBounds) {
@@ -382,12 +386,12 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             }
 
             seenPlaceIds.add(sp.place_id);
+            seenCoords.add(coordKey);
 
-            // Score (weight by followed)
-            const weight = followedUserIds.includes(sp.user_id) ? 3 : 1;
-            savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + weight);
+            // Score = count of saves
+            savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + 1);
 
-            // Store first occurrence of each google_place_id
+            // Store first occurrence
             savedPlacesMap.set(sp.place_id, sp);
           });
 
@@ -419,6 +423,13 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           const googlePlaceIdsFromLocations = new Set(
             (locations || []).map(l => l.google_place_id).filter(Boolean)
           );
+          // Track coordinates already used by locations table
+          const coordsFromLocations = new Set<string>();
+          (locations || []).forEach((loc: any) => {
+            if (loc.latitude && loc.longitude) {
+              coordsFromLocations.add(`${Number(loc.latitude).toFixed(6)},${Number(loc.longitude).toFixed(6)}`);
+            }
+          });
 
           // Fetch saves from user_saved_locations for locations table entries
           const [locationSavesRes, locationPostsRes] = await Promise.all([
@@ -433,13 +444,12 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           const locationSaves = locationSavesRes.data || [];
           const locationPosts = locationPostsRes.data || [];
 
-          // Calculate scores for internal locations
+          // Calculate scores for internal locations (count all saves, not just followed)
           const locationScores = new Map<string, number>();
           
           locationSaves.forEach((save: any) => {
             const score = locationScores.get(save.location_id) || 0;
-            const weight = followedUserIds.includes(save.user_id) ? 3 : 1;
-            locationScores.set(save.location_id, score + weight);
+            locationScores.set(save.location_id, score + 1);
           });
 
           // Also add scores from saved_places if google_place_id matches a location
@@ -459,9 +469,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           });
 
           // ---------------------- 3) Build final array ----------------------
-          // From locations table
+          // From locations table - show ALL locations (not just those with saves)
           const fromLocations: MapLocation[] = (locations || [])
-            .filter((loc: any) => (locationScores.get(loc.id) || 0) > 0)
             .map((loc: any) => ({
               id: loc.id,
               name: loc.name,
@@ -476,10 +485,10 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               },
               user_id: loc.created_by,
               created_at: loc.created_at,
-              recommendationScore: locationScores.get(loc.id) || 0,
+              recommendationScore: locationScores.get(loc.id) || 1,
             }));
 
-          // From saved_places that are NOT already in locations table
+          // From saved_places that are NOT already in locations table AND not at same coordinates
           const fromSavedPlaces: MapLocation[] = [];
           savedPlacesMap.forEach((sp, googlePlaceId) => {
             // Skip if already represented in locations
@@ -490,8 +499,12 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             const lng = Number(coords?.lng);
             if (!lat || !lng) return;
 
+            // Skip if coordinates already used by a location
+            const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+            if (coordsFromLocations.has(coordKey)) return;
+
             fromSavedPlaces.push({
-              id: googlePlaceId, // use google_place_id as id
+              id: googlePlaceId,
               name: sp.place_name || 'Unknown',
               category: sp.place_category || 'restaurant',
               address: undefined,
@@ -515,7 +528,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               return true;
             });
           
-          console.log(`✅ Found ${finalLocations.length} popular locations (includes saved_places not in locations table)`);
+          console.log(`✅ Found ${finalLocations.length} popular locations (ALL global saves)`);
           break;
         }
 
