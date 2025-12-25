@@ -594,7 +594,8 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
                         {location.name}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        {location.address || location.city}
+                        {/* Show city first, then address */}
+                        {location.city ? `${location.city}${location.address && location.address !== location.city ? `, ${location.address}` : ''}` : location.address}
                       </div>
                     </div>
                   </button>
