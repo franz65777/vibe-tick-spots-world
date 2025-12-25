@@ -966,11 +966,13 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.request_id || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              // Accept: mark request accepted via RPC (avoids type casting issues)
-                              const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
-                                p_request_id: notification.data.request_id,
-                              });
-                              if (rpcErr) throw rpcErr;
+                              // Directly update friend_requests table
+                              const { error: updateErr } = await supabase
+                                .from('friend_requests')
+                                .update({ status: 'accepted' as const, updated_at: new Date().toISOString() })
+                                .eq('id', notification.data.request_id)
+                                .eq('requested_id', user.id);
+                              if (updateErr) throw updateErr;
 
                               await supabase.from('follows').insert({
                                 follower_id: notification.data.user_id,
@@ -1012,11 +1014,13 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.request_id) return;
                             setIsLoading(true);
                             try {
-                              // Use RPC to decline (avoids text/uuid casting issues)
-                              const { error: rpcErr } = await supabase.rpc('decline_friend_request', {
-                                p_request_id: notification.data.request_id,
-                              });
-                              if (rpcErr) throw rpcErr;
+                              // Directly update friend_requests table
+                              const { error: updateErr } = await supabase
+                                .from('friend_requests')
+                                .update({ status: 'declined' as const, updated_at: new Date().toISOString() })
+                                .eq('id', notification.data.request_id)
+                                .eq('requested_id', user.id);
+                              if (updateErr) throw updateErr;
 
                               // Delete the notification so it disappears immediately
                               if (onDelete) {
