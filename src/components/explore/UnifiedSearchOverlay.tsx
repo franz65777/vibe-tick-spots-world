@@ -315,26 +315,48 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
           return false;
         };
         
-        // Extract cities from Nominatim results - ONLY actual cities, not suburbs/neighborhoods
+        // Extract cities from Nominatim results - actual cities AND admin-capitals like Abu Dhabi
         const nominatimCities = new Map<string, CityResult>();
-        nominatimResults.forEach(result => {
-          if (result.class === 'place' && ['city', 'town'].includes(result.type || '')) {
-            const cityName = result.name || result.displayName.split(',')[0];
-            let cityEnglish = reverseTranslateCityName(cityName).toLowerCase();
-            
-            if (suburbToCity[cityEnglish]) return;
-            
-            if (!nominatimCities.has(cityEnglish) && !citiesFromLocations.has(cityEnglish)) {
-              nominatimCities.set(cityEnglish, {
-                name: cityEnglish,
-                lat: result.lat,
-                lng: result.lng,
-              });
-            }
+        const allowedPlaceTypes = new Set([
+          'city',
+          'town',
+          'village',
+          'administrative',
+          'state',
+          'province',
+          'region',
+          'capital',
+        ]);
+
+        nominatimResults.forEach((result) => {
+          // Nominatim varies a lot by country: Abu Dhabi often comes back as "administrative".
+          const isPlace = result.class === 'place' || result.class === 'boundary' || result.class === 'administrative';
+          const isCityLike = !!result.type && allowedPlaceTypes.has(result.type);
+          if (!isPlace || !isCityLike) return;
+
+          const cityName = result.name || result.displayName.split(',')[0];
+          const cityKey = reverseTranslateCityName(cityName).toLowerCase();
+
+          // Pretty label (Title Case) for display + downstream city matching
+          const cityCanonical = cityKey
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+
+          // Skip known suburbs/neighborhoods
+          if (suburbToCity[cityKey]) return;
+
+          if (!nominatimCities.has(cityKey) && !citiesFromLocations.has(cityKey)) {
+            nominatimCities.set(cityKey, {
+              name: cityCanonical,
+              lat: result.lat,
+              lng: result.lng,
+            });
           }
         });
-        
-        nominatimCities.forEach(city => allCities.push(city));
+
+        nominatimCities.forEach((city) => allCities.push(city));
         
         // Add Nominatim POI locations
         const allowedOsmTypes = ['restaurant', 'cafe', 'bar', 'pub', 'bakery', 'hotel', 'museum', 'nightclub', 'cinema', 'theatre', 'park'];
