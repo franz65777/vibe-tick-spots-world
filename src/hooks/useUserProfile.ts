@@ -146,7 +146,8 @@ export const useUserProfile = (userId?: string) => {
               requester_id: currentUser.id,
               requested_id: userId
             });
-          followRequestStatus = requestStatus;
+          // Only treat 'pending' as an active request - declined/blocked means no active request
+          followRequestStatus = requestStatus === 'pending' ? 'pending' : null;
         }
 
         // Always compute follower/following counts live from follows table
