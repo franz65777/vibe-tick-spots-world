@@ -973,21 +973,18 @@ const ShareLocationPage = () => {
                   </div>
                 )}
 
-                {/* User List */}
-                <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-hide">
+                {/* User List - exclude already selected users */}
+                <div className="space-y-2 pb-4">
                   {followers
                     .filter(follower => 
-                      follower.username.toLowerCase().includes(userSearchQuery.toLowerCase())
+                      follower.username.toLowerCase().includes(userSearchQuery.toLowerCase()) &&
+                      !selectedUsers.includes(follower.id)
                     )
                     .map((follower) => (
                       <button
                         key={follower.id}
                         onClick={() => toggleUserSelection(follower.id)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                          selectedUsers.includes(follower.id) 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:bg-accent'
-                        }`}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent transition-colors"
                       >
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={follower.avatar_url || undefined} />
@@ -1004,7 +1001,7 @@ const ShareLocationPage = () => {
 
         {/* Sticky Share Button at the bottom - always visible with iOS safe area */}
         {selectedLocation && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <Button
               onClick={handleShareLocation}
               disabled={loading || isEditingShareType || (shareType === 'specific_users' && selectedUsers.length === 0)}
