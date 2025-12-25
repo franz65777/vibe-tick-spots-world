@@ -362,18 +362,29 @@ export const useUserProfile = (userId?: string) => {
         // Optimistic: immediately reflect "requested" to avoid double-tap glitches
         setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : prev));
 
-        // If a pending request already exists, reuse it (prevents duplicates + "stuck" state)
+        // Check if any request already exists (pending or declined)
         const { data: existingRequest } = await supabase
           .from('friend_requests')
-          .select('id')
+          .select('id, status')
           .eq('requester_id', currentUser.id)
           .eq('requested_id', userId)
-          .eq('status', 'pending')
           .maybeSingle();
 
-        const requestId = existingRequest?.id;
+        if (existingRequest) {
+          if (existingRequest.status === 'pending') {
+            // Request already pending; state already set optimistically above
+            setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
+          } else {
+            // Request was declined/blocked - update it to pending to re-request
+            const { error } = await supabase
+              .from('friend_requests')
+              .update({ status: 'pending', updated_at: new Date().toISOString() })
+              .eq('id', existingRequest.id);
 
-        if (!requestId) {
+            if (error) throw error;
+            setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
+          }
+        } else {
           // Insert new request – the database trigger will create the notification
           const { error } = await supabase
             .from('friend_requests')
@@ -384,9 +395,6 @@ export const useUserProfile = (userId?: string) => {
             });
 
           if (error) throw error;
-          setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
-        } else {
-          // Request already pending; state already set optimistically above
           setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : null));
         }
       } else {
