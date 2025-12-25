@@ -1,9 +1,10 @@
 import { memo, RefObject } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import tinderIcon from '@/assets/tinder-icon.png';
 
 interface ExploreHeaderBarProps {
   searchQuery: string;
@@ -39,7 +40,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
               size="icon"
               className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted"
             >
-              <Sparkles className="w-5 h-5 text-primary" />
+              <img src={tinderIcon} alt="Discover" className="w-6 h-6 object-contain" />
             </Button>
           )}
           
