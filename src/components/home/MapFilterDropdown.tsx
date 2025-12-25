@@ -82,6 +82,27 @@ const MapFilterDropdown = () => {
         const statsMap = new Map<string, UserSavedStats>();
         const normalizedCity = currentCity?.trim().toLowerCase() || '';
 
+        // City name variations mapping (handle Turin/Torino, Milan/Milano, etc.)
+        const getCityVariations = (city: string): string[] => {
+          const cityMap: Record<string, string[]> = {
+            'torino': ['torino', 'turin'],
+            'turin': ['torino', 'turin'],
+            'milano': ['milano', 'milan'],
+            'milan': ['milano', 'milan'],
+            'roma': ['roma', 'rome'],
+            'rome': ['roma', 'rome'],
+            'firenze': ['firenze', 'florence'],
+            'florence': ['firenze', 'florence'],
+            'venezia': ['venezia', 'venice'],
+            'venice': ['venezia', 'venice'],
+            'napoli': ['napoli', 'naples'],
+            'naples': ['napoli', 'naples'],
+          };
+          return cityMap[city.toLowerCase()] || [city.toLowerCase()];
+        };
+
+        const cityVariations = normalizedCity ? getCityVariations(normalizedCity) : [];
+
         const normalizeCategory = (cat: any) => {
           const c = String(cat || '').trim().toLowerCase();
           if (!c) return '';
@@ -91,50 +112,65 @@ const MapFilterDropdown = () => {
           return c;
         };
 
-        // Batch fetch all saved places for all followed users
+        const matchesCity = (placeCity: string | null): boolean => {
+          if (!normalizedCity || !placeCity) return !normalizedCity;
+          const placeCityLower = placeCity.trim().toLowerCase();
+          return cityVariations.some(v => placeCityLower.includes(v) || v.includes(placeCityLower));
+        };
+
+        // Batch fetch all saved places for all followed users (no city filter - we filter in JS for variations)
         const userIds = users.map(u => u.id);
-        let query = supabase
+        const { data: allSavedPlaces } = await supabase
           .from('saved_places')
           .select('user_id, place_id, place_category, city')
           .in('user_id', userIds);
 
-        // Only filter by city if we have one
-        if (normalizedCity) {
-          query = query.ilike('city', `%${normalizedCity}%`);
-        }
+        // Also fetch from user_saved_locations with locations table
+        const { data: allUserSavedLocations } = await supabase
+          .from('user_saved_locations')
+          .select('user_id, location_id, locations(id, google_place_id, category, city)')
+          .in('user_id', userIds);
 
-        const { data: allSavedPlaces } = await query;
+        // Combine all places per user with city filtering
+        const userPlacesMap = new Map<string, { category: string; placeId: string }[]>();
 
-        // Optional override: if a place exists in our locations table, trust its category
-        const placeIds = Array.from(new Set((allSavedPlaces || []).map((p: any) => p.place_id).filter(Boolean)));
-        const { data: categoryOverrides } = placeIds.length
-          ? await supabase
-              .from('locations')
-              .select('google_place_id, category')
-              .in('google_place_id', placeIds)
-          : { data: [] as any[] };
-
-        const overrideMap = new Map<string, string>();
-        (categoryOverrides || []).forEach((l: any) => {
-          if (l.google_place_id && l.category) overrideMap.set(l.google_place_id, l.category);
+        // Process saved_places
+        (allSavedPlaces || []).forEach((p: any) => {
+          if (matchesCity(p.city)) {
+            const places = userPlacesMap.get(p.user_id) || [];
+            places.push({ category: normalizeCategory(p.place_category), placeId: p.place_id });
+            userPlacesMap.set(p.user_id, places);
+          }
         });
 
-        // Group by user and count categories
-        if (allSavedPlaces) {
-          for (const followedUser of users) {
-            const userPlaces = allSavedPlaces.filter(p => p.user_id === followedUser.id);
-            if (userPlaces.length > 0) {
-              const categories = userPlaces.map(p => normalizeCategory(overrideMap.get(p.place_id) || p.place_category));
-              const stats: UserSavedStats = {
-                userId: followedUser.id,
-                restaurantCount: categories.filter(c => c === 'restaurant').length,
-                barCount: categories.filter(c => c === 'bar').length,
-                cafeCount: categories.filter(c => c === 'cafe').length,
-              };
-              statsMap.set(followedUser.id, stats);
+        // Process user_saved_locations
+        (allUserSavedLocations || []).forEach((usl: any) => {
+          const loc = usl.locations;
+          if (loc && matchesCity(loc.city)) {
+            const places = userPlacesMap.get(usl.user_id) || [];
+            // Avoid duplicates by place_id/google_place_id
+            const placeId = loc.google_place_id || loc.id;
+            if (!places.some(p => p.placeId === placeId)) {
+              places.push({ category: normalizeCategory(loc.category), placeId });
+              userPlacesMap.set(usl.user_id, places);
             }
           }
+        });
+
+        // Calculate stats per user
+        for (const followedUser of users) {
+          const places = userPlacesMap.get(followedUser.id) || [];
+          if (places.length > 0) {
+            const stats: UserSavedStats = {
+              userId: followedUser.id,
+              restaurantCount: places.filter(p => p.category === 'restaurant').length,
+              barCount: places.filter(p => p.category === 'bar').length,
+              cafeCount: places.filter(p => p.category === 'cafe').length,
+            };
+            statsMap.set(followedUser.id, stats);
+          }
         }
+
         setUserStats(statsMap);
       }
     };
