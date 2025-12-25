@@ -1013,28 +1013,18 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              // Cast user_id to proper uuid format for database query
+                              // Use requester/requested pair - more reliable than request_id
                               const requesterId = notification.data.user_id as string;
-                              
-                              // Always use the requester/requested pair to find the request
-                              // This is more reliable than request_id which may be stale
 
-                              const updateAttempt = requestId
-                                ? await supabase
-                                    .from('friend_requests')
-                                    .update({ status: 'declined' })
-                                    .eq('id', requestId)
-                                    .eq('requested_id', user.id)
-                                    .select('id')
-                                    .maybeSingle()
-                                : await supabase
-                                    .from('friend_requests')
-                                    .update({ status: 'declined' })
-                                    .eq('requester_id', requesterId)
-                                    .eq('requested_id', user.id)
-                                    .eq('status', 'pending')
-                                    .select('id')
-                                    .maybeSingle();
+                              // Update the pending request to declined
+                              const updateAttempt = await supabase
+                                .from('friend_requests')
+                                .update({ status: 'declined' })
+                                .eq('requester_id', requesterId)
+                                .eq('requested_id', user.id)
+                                .eq('status', 'pending')
+                                .select('id')
+                                .maybeSingle();
 
                               if (updateAttempt.error) throw updateAttempt.error;
 
