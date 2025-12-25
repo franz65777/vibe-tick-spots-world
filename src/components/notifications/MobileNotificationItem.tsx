@@ -1013,9 +1013,11 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              // Prefer request_id when available; otherwise fallback to latest pending request
-                              const requestId = notification.data?.request_id as string | undefined;
+                              // Cast user_id to proper uuid format for database query
                               const requesterId = notification.data.user_id as string;
+                              
+                              // Always use the requester/requested pair to find the request
+                              // This is more reliable than request_id which may be stale
 
                               const updateAttempt = requestId
                                 ? await supabase
