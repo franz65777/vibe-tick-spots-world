@@ -74,28 +74,30 @@ const NotificationsPage = () => {
 
     for (const n of notifications) {
       if (n.type === 'like' && n.data?.post_id) {
-        const key = `like:${n.data.post_id}`;
+        const groupKey = `like:${n.data.post_id}`;
         const userInfo = {
           id: n.data?.user_id || '',
           name: n.data?.user_name || n.data?.username || 'User',
           avatar: n.data?.user_avatar || n.data?.avatar_url || ''
         };
-        const existing = likeGroups.get(key);
+        const existing = likeGroups.get(groupKey);
         if (existing) {
           if (userInfo.id && !existing.data.grouped_users.find((u: any) => u.id === userInfo.id)) {
             existing.data.grouped_users.push(userInfo);
           }
           existing.data.total_count += 1;
+          existing.data.grouped_notification_ids.push(n.id);
           if (new Date(n.created_at) > new Date(existing.created_at)) existing.created_at = n.created_at;
           existing.is_read = existing.is_read && n.is_read;
         } else {
-          likeGroups.set(key, {
+          likeGroups.set(groupKey, {
             ...n,
-            id: key,
+            __groupKey: groupKey,
             data: {
               ...n.data,
               grouped_users: [userInfo],
-              total_count: 1
+              total_count: 1,
+              grouped_notification_ids: [n.id],
             }
           });
         }
@@ -155,11 +157,18 @@ const NotificationsPage = () => {
           <div className="w-full">
             {groupedNotifications.map((notification) => (
               <MobileNotificationItem
-                key={notification.id}
+                key={(notification as any).__groupKey || notification.id}
                 notification={notification}
                 onMarkAsRead={handleMarkAsRead}
                 onAction={handleNotificationClick}
-                onDelete={deleteNotification}
+                onDelete={async (id) => {
+                  // For grouped likes we store the real row ids in data.grouped_notification_ids
+                  const ids: string[] = notification.data?.grouped_notification_ids || [id];
+                  // Delete all in parallel, return a single result
+                  const results = await Promise.all(ids.map((nid) => deleteNotification(nid)));
+                  const failed = results.find((r) => !r.success);
+                  return failed || { success: true };
+                }}
                 openSwipeId={openSwipeId}
                 onSwipeOpen={setOpenSwipeId}
               />

@@ -172,7 +172,7 @@ const MobileNotificationItem = ({
   useEffect(() => {
     const resolveAndCheck = async () => {
       try {
-        let uid = notification.data?.user_id ?? null;
+        let uid = (notification.data?.user_id ?? (notification.data as any)?.friend_id ?? null) as string | null;
         let uname = notification.data?.user_name || notification.data?.username || null;
         let avatar = notification.data?.user_avatar || notification.data?.avatar_url || null;
 
@@ -640,11 +640,16 @@ const MobileNotificationItem = ({
           const totalCount = notification.data.total_count || groupedUsers.length;
           
           if (groupedUsers.length === 1) {
+            const firstUserId = groupedUsers[0].id;
             return (
               <span className="text-foreground text-[13px] leading-tight">
                 <span 
                   className="font-semibold cursor-pointer hover:underline" 
-                  onClick={handleUsernameClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (firstUserId) navigate(`/profile/${firstUserId}`);
+                  }}
                   data-username-click="true"
                 >
                   {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
@@ -653,11 +658,16 @@ const MobileNotificationItem = ({
               </span>
             );
           } else if (groupedUsers.length === 2) {
+            const firstUserId = groupedUsers[0].id;
             return (
               <span className="text-foreground text-[13px] leading-tight">
                 <span 
                   className="font-semibold cursor-pointer hover:underline" 
-                  onClick={handleUsernameClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (firstUserId) navigate(`/profile/${firstUserId}`);
+                  }}
                   data-username-click="true"
                 >
                   {groupedUsers[0].name}
@@ -668,24 +678,29 @@ const MobileNotificationItem = ({
               </span>
             );
           } else {
-            const othersCount = totalCount - 1;
-            return (
-              <span className="text-foreground text-[13px] leading-tight">
-                <span 
-                  className="font-semibold cursor-pointer hover:underline" 
-                  onClick={handleUsernameClick}
-                  data-username-click="true"
-                >
-                  {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
+            const firstUserId = groupedUsers[0].id;
+              const othersCount = totalCount - 1;
+              return (
+                <span className="text-foreground text-[13px] leading-tight">
+                  <span 
+                    className="font-semibold cursor-pointer hover:underline" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (firstUserId) navigate(`/profile/${firstUserId}`);
+                    }}
+                    data-username-click="true"
+                  >
+                    {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
+                  </span>
+                  {' '}{t('and', { ns: 'common' })}{' '}
+                  <span className="font-semibold">
+                    {t('others', { ns: 'common', count: othersCount })}
+                  </span>
+                  {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(likeTranslationKey, { ns: 'notifications' })}</span>
                 </span>
-                {' '}{t('and', { ns: 'common' })}{' '}
-                <span className="font-semibold">
-                  {t('others', { ns: 'common', count: othersCount })}
-                </span>
-                {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t(likeTranslationKey, { ns: 'notifications' })}</span>
-              </span>
-            );
-          }
+              );
+            }
         }
         
         // Single like notification
@@ -812,7 +827,11 @@ const MobileNotificationItem = ({
                 key={user.id}
                 className="w-8 h-8 rounded-full border-2 border-background cursor-pointer relative overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0"
                 style={{ zIndex: groupedUsers.length - index }}
-                onClick={handleAvatarClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (user.id) navigate(`/profile/${user.id}`);
+                }}
                 data-avatar-click="true"
               >
                 {(groupedUserOverrides[user.id]?.avatar || user.avatar) ? (
