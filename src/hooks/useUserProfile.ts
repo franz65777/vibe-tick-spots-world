@@ -238,20 +238,32 @@ export const useUserProfile = (userId?: string) => {
               filter: `requester_id=eq.${currentUser.id}`,
             },
             (payload: any) => {
-              // If the updated request targets this profile user
               if (payload.new?.requested_id === userId) {
                 const newStatus = payload.new.status;
                 if (newStatus === 'declined') {
-                  // Reset follow_request_status so button shows "Follow" again
                   setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
                 } else if (newStatus === 'accepted') {
-                  // They accepted, mark as following
                   setProfile((prev) =>
                     prev
                       ? { ...prev, is_following: true, follow_request_status: null, can_view_content: true }
                       : prev
                   );
                 }
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'friend_requests',
+              filter: `requester_id=eq.${currentUser.id}`,
+            },
+            (payload: any) => {
+              // If my pending request was deleted (declined then removed), reset button
+              if (payload.old?.requested_id === userId) {
+                setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
               }
             }
           )

@@ -12,34 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    // Use ANON key to respect RLS policies - only publicly visible data
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Fetch saved places cities - respects RLS policies
-    const { data: saves, error } = await supabaseClient
-      .from('saved_places')
-      .select('city')
-      .not('city', 'is', null);
+    // Use the global RPC for distinct place counts per city
+    const { data: cities, error } = await supabaseClient.rpc('get_global_city_counts', { limit_count: 12 });
 
     if (error) throw error;
 
-    const counts = new Map<string, number>();
-    for (const row of saves || []) {
-      const city = (row as any).city as string | null;
-      if (!city) continue;
-      counts.set(city, (counts.get(city) || 0) + 1);
-    }
-
-    const cities = Array.from(counts.entries())
-      .map(([city, total]) => ({ city, total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 12);
-
     return new Response(
-      JSON.stringify({ cities }),
+      JSON.stringify({ cities: (cities as any[]).map((c: any) => ({ city: c.city, total: Number(c.total) })) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {

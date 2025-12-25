@@ -14,79 +14,64 @@ interface CityRanking {
   rank: number | null;
 }
 
-// Global cache for city stats - NOT per-user since we count ALL saved places globally
-const globalStatsCache = {
-  data: null as { totalPlaces: number; topCities: CityRanking[]; timestamp: number } | null,
-};
-// User-specific cache for userCity only
-const userCityCache = {
-  data: null as { userCity: CityRanking | null; timestamp: number } | null,
-  userId: null as string | null,
-};
-const CACHE_DURATION = 60000; // 1 minute cache
+// Global cache (same for all users)
+let globalStatsCache: { totalPlaces: number; topCities: CityRanking[]; timestamp: number } | null = null;
+// User-specific cache for current city
+let userCityCache: { userId: string; userCity: CityRanking | null; timestamp: number } | null = null;
+const CACHE_DURATION = 60000; // 1 minute
 
 const CityStatsCard = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { location: geoLocation, getCityFromCoordinates } = useGeolocation();
-  const [totalPlaces, setTotalPlaces] = useState(globalStatsCache.data?.totalPlaces || 0);
-  const [topCities, setTopCities] = useState<CityRanking[]>(globalStatsCache.data?.topCities || []);
+  const [totalPlaces, setTotalPlaces] = useState(globalStatsCache?.totalPlaces || 0);
+  const [topCities, setTopCities] = useState<CityRanking[]>(globalStatsCache?.topCities || []);
   const [userCity, setUserCity] = useState<CityRanking | null>(
-    userCityCache.userId === user?.id ? userCityCache.data?.userCity || null : null
+    userCityCache?.userId === user?.id ? userCityCache.userCity : null
   );
-  const [loading, setLoading] = useState(!globalStatsCache.data);
+  const [loading, setLoading] = useState(!globalStatsCache);
   const [isMinimized, setIsMinimized] = useState(false);
   const fetchingRef = useRef(false);
 
   useEffect(() => {
     if (!user?.id) return;
-    
-    // Check if we have valid global cached data
+
     const now = Date.now();
-    const hasValidGlobalCache = globalStatsCache.data && 
-      now - globalStatsCache.data.timestamp < CACHE_DURATION;
-    const hasValidUserCityCache = userCityCache.data && 
-      userCityCache.userId === user.id && 
-      now - userCityCache.data.timestamp < CACHE_DURATION;
-    
+    const hasValidGlobalCache = globalStatsCache && now - globalStatsCache.timestamp < CACHE_DURATION;
+    const hasValidUserCityCache = userCityCache && userCityCache.userId === user.id && now - userCityCache.timestamp < CACHE_DURATION;
+
     if (hasValidGlobalCache) {
-      setTotalPlaces(globalStatsCache.data!.totalPlaces);
-      setTopCities(globalStatsCache.data!.topCities);
+      setTotalPlaces(globalStatsCache.totalPlaces);
+      setTopCities(globalStatsCache.topCities);
       if (hasValidUserCityCache) {
-        setUserCity(userCityCache.data!.userCity);
+        setUserCity(userCityCache.userCity);
       }
       setLoading(false);
       return;
     }
-    
-    // Prevent duplicate fetches
-    if (fetchingRef.current) return;
-    
-    // Helper to fetch user's current city data
-    const fetchUserCityData = async (cityCountMap: Record<string, number>, sortedCities: { city: string; count: number; rank: number }[]) => {
-      const normalizeCity = (city: string): string => {
-        const cityAliases: Record<string, string> = {
-          'turin': 'Torino',
-          'rome': 'Roma',
-          'milan': 'Milano',
-          'florence': 'Firenze',
-          'venice': 'Venezia',
-          'naples': 'Napoli',
-          'genoa': 'Genova',
-        };
-        const lowerCity = city.toLowerCase().trim();
-        return cityAliases[lowerCity] || city;
-      };
 
-      let currentCityName: string | null = null;
-      
-      if (geoLocation?.city) {
-        currentCityName = geoLocation.city;
-      } else if (geoLocation?.latitude && geoLocation?.longitude) {
+    if (fetchingRef.current) return;
+
+    const normalizeCity = (city: string): string => {
+      const aliases: Record<string, string> = {
+        turin: 'Torino',
+        rome: 'Roma',
+        milan: 'Milano',
+        florence: 'Firenze',
+        venice: 'Venezia',
+        naples: 'Napoli',
+        genoa: 'Genova',
+      };
+      const key = city.toLowerCase().trim();
+      return aliases[key] || city;
+    };
+
+    const fetchUserCityData = async (sortedCities: CityRanking[]) => {
+      let currentCityName: string | null = geoLocation?.city || null;
+      if (!currentCityName && geoLocation?.latitude && geoLocation?.longitude) {
         currentCityName = await getCityFromCoordinates(geoLocation.latitude, geoLocation.longitude);
       }
-      
       if (!currentCityName) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -95,116 +80,39 @@ const CityStatsCard = memo(() => {
           .single();
         currentCityName = profile?.current_city || null;
       }
+      if (!currentCityName) return null;
 
-      let userCityData: CityRanking | null = null;
-      if (currentCityName) {
-        const normalizedCityName = normalizeCity(currentCityName);
-        const userCityCount = cityCountMap[normalizedCityName] || 0;
-        const userCityRank =
-          sortedCities.findIndex((c) => c.city.toLowerCase() === normalizedCityName.toLowerCase()) + 1;
-
-        userCityData = {
-          city: normalizedCityName,
-          count: userCityCount,
-          rank: userCityRank > 0 ? userCityRank : null,
-        };
-        setUserCity(userCityData);
-        
-        // Update user city cache
-        userCityCache.data = { userCity: userCityData, timestamp: Date.now() };
-        userCityCache.userId = user.id;
-      }
-      
+      const normalized = normalizeCity(currentCityName);
+      const match = sortedCities.find((c) => c.city.toLowerCase() === normalized.toLowerCase());
+      const userCityData: CityRanking = match
+        ? { city: match.city, count: match.count, rank: match.rank }
+        : { city: normalized, count: 0, rank: null };
+      setUserCity(userCityData);
+      userCityCache = { userId: user.id, userCity: userCityData, timestamp: Date.now() };
       return userCityData;
     };
-    
+
     const fetchStats = async () => {
       fetchingRef.current = true;
       try {
-        // Get city rankings from BOTH sources, counting DISTINCT places
-        const [citiesFromSavedPlacesRes, citiesFromInternalRes] = await Promise.all([
-          supabase
-            .from('saved_places')
-            .select('city, place_id')
-            .not('city', 'is', null),
-          supabase
-            .from('user_saved_locations')
-            .select('location_id, locations(city, google_place_id)')
-            .not('locations.city', 'is', null),
-        ]);
-
-        // Normalize city names (handle aliases like Torino/Turin)
-        const normalizeCity = (city: string): string => {
-          const cityAliases: Record<string, string> = {
-            'turin': 'Torino',
-            'rome': 'Roma',
-            'milan': 'Milano',
-            'florence': 'Firenze',
-            'venice': 'Venezia',
-            'naples': 'Napoli',
-            'genoa': 'Genova',
-          };
-          const lowerCity = city.toLowerCase().trim();
-          return cityAliases[lowerCity] || city;
-        };
-
-        // Count DISTINCT places per city (not total saves)
-        const cityPlaceMap: Record<string, Set<string>> = {};
-        
-        // From saved_places - use place_id as unique identifier
-        (citiesFromSavedPlacesRes.data || []).forEach((r: any) => {
-          if (r.city && r.place_id) {
-            const city = normalizeCity(r.city);
-            if (!cityPlaceMap[city]) cityPlaceMap[city] = new Set();
-            cityPlaceMap[city].add(r.place_id);
-          }
-        });
-        
-        // From user_saved_locations - use google_place_id or location_id as unique identifier
-        (citiesFromInternalRes.data || []).forEach((r: any) => {
-          const city = r.locations?.city ? normalizeCity(r.locations.city) : null;
-          const uniqueId = r.locations?.google_place_id || r.location_id;
-          if (city && uniqueId) {
-            if (!cityPlaceMap[city]) cityPlaceMap[city] = new Set();
-            cityPlaceMap[city].add(uniqueId);
-          }
-        });
-
-        // Calculate total distinct places
-        const allPlaces = new Set<string>();
-        Object.values(cityPlaceMap).forEach(places => {
-          places.forEach(p => allPlaces.add(p));
-        });
-        const total = allPlaces.size;
+        // Global distinct places count
+        const { data: totalData } = await supabase.rpc('get_global_distinct_places_count');
+        const total = Number(totalData) || 0;
         setTotalPlaces(total);
 
-        // Convert to count per city (distinct places)
-        const cityCountMap: Record<string, number> = {};
-        Object.entries(cityPlaceMap).forEach(([city, places]) => {
-          cityCountMap[city] = places.size;
-        });
-
-        // Sort and rank all cities
-        const sortedCities = Object.entries(cityCountMap)
-          .sort(([, a], [, b]) => b - a)
-          .map(([city, count], idx) => ({
-            city,
-            count,
-            rank: idx + 1
-          }));
-
+        // Global city counts
+        const { data: citiesData } = await supabase.rpc('get_global_city_counts', { limit_count: 100 });
+        const sortedCities: CityRanking[] = ((citiesData as any[]) || []).map((c, idx) => ({
+          city: normalizeCity(c.city),
+          count: Number(c.total),
+          rank: idx + 1,
+        }));
         const top = sortedCities.slice(0, 3);
         setTopCities(top);
-        
-        // Update global cache (same for all users)
-        globalStatsCache.data = {
-          totalPlaces: total,
-          topCities: top,
-          timestamp: Date.now()
-        };
 
-        // Fetch user-specific city data
-        await fetchUserCityData(cityCountMap, sortedCities);
+        globalStatsCache = { totalPlaces: total, topCities: top, timestamp: Date.now() };
+
+        await fetchUserCityData(sortedCities);
       } catch (err) {
         console.error('Error fetching city stats:', err);
       } finally {
@@ -215,34 +123,20 @@ const CityStatsCard = memo(() => {
 
     fetchStats();
 
-    // Subscribe to realtime changes for live updates
     const channel = supabase
       .channel('city-stats-feed')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'saved_places' },
-        () => {
-          globalStatsCache.data = null;
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_saved_locations' },
-        () => {
-          globalStatsCache.data = null;
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'locations' },
-        () => {
-          // Covers cases where a new location is created/updated with a city
-          globalStatsCache.data = null;
-          fetchStats();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
+        globalStatsCache = null;
+        fetchStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
+        globalStatsCache = null;
+        fetchStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, () => {
+        globalStatsCache = null;
+        fetchStats();
+      })
       .subscribe();
 
     return () => {
@@ -251,7 +145,7 @@ const CityStatsCard = memo(() => {
   }, [user?.id, geoLocation?.city, geoLocation?.latitude, geoLocation?.longitude]);
 
   // Show cached data immediately, never show skeleton if we have cache
-  if (loading && !globalStatsCache.data) {
+  if (loading && !globalStatsCache) {
     return (
       <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 p-4 animate-pulse shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="h-24 bg-muted/30 rounded-xl" />
