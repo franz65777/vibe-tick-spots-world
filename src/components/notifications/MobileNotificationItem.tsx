@@ -1014,14 +1014,19 @@ const MobileNotificationItem = ({
                             setIsLoading(true);
                             try {
                               const requesterId = notification.data.user_id as string;
+                              const requestId = notification.data?.request_id as string | undefined;
 
-                              // Decline by updating status to 'declined' using requester_id (avoids uuid casting issues)
-                              const { error: updateError } = await supabase
-                                .from('friend_requests')
-                                .update({ status: 'declined' })
-                                .eq('requested_id', user.id)
-                                .eq('requester_id', requesterId)
-                                .eq('status', 'pending');
+                              // Decline by updating status to 'declined'
+                              // Use request_id when available; otherwise match by requester_id only to avoid text/uuid casting issues.
+                              const updateQuery = requestId
+                                ? supabase.from('friend_requests').update({ status: 'declined' }).eq('id', requestId)
+                                : supabase
+                                    .from('friend_requests')
+                                    .update({ status: 'declined' })
+                                    .eq('requester_id', requesterId)
+                                    .eq('status', 'pending');
+
+                              const { error: updateError } = await updateQuery;
 
                               if (updateError) throw updateError;
                               // Delete the notification so it disappears immediately

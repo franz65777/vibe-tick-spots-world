@@ -131,15 +131,20 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
 
     setIsLoading(true);
     try {
-      // Decline by updating status to 'declined' using requester_id (avoids uuid casting issues)
       const requesterId = notification.data.user_id as string;
+      const requestId = notification.data?.request_id as string | undefined;
 
-      const { error: updateErr } = await supabase
-        .from('friend_requests')
-        .update({ status: 'declined' })
-        .eq('requested_id', user.id)
-        .eq('requester_id', requesterId)
-        .eq('status', 'pending');
+      // Decline by updating status to 'declined'
+      // Use request_id when available; otherwise match by requester_id only to avoid text/uuid casting issues.
+      const updateQuery = requestId
+        ? supabase.from('friend_requests').update({ status: 'declined' }).eq('id', requestId)
+        : supabase
+            .from('friend_requests')
+            .update({ status: 'declined' })
+            .eq('requester_id', requesterId)
+            .eq('status', 'pending');
+
+      const { error: updateErr } = await updateQuery;
       if (updateErr) throw updateErr;
 
       const { error: notifErr } = await supabase
