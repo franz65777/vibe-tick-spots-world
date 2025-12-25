@@ -1010,14 +1010,51 @@ const MobileNotificationItem = ({
                           onClick={async (e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            if (!user || !notification.data?.request_id) return;
+                            if (!user || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              await supabase
-                                .from('friend_requests')
-                                .update({ status: 'declined' })
-                                .eq('id', notification.data.request_id)
-                                .eq('requested_id', user.id);
+                              // Prefer request_id when available; otherwise fallback to latest pending request
+                              const requestId = notification.data?.request_id as string | undefined;
+                              const requesterId = notification.data.user_id as string;
+
+                              const updateAttempt = requestId
+                                ? await supabase
+                                    .from('friend_requests')
+                                    .update({ status: 'declined' })
+                                    .eq('id', requestId)
+                                    .eq('requested_id', user.id)
+                                    .select('id')
+                                    .maybeSingle()
+                                : await supabase
+                                    .from('friend_requests')
+                                    .update({ status: 'declined' })
+                                    .eq('requester_id', requesterId)
+                                    .eq('requested_id', user.id)
+                                    .eq('status', 'pending')
+                                    .select('id')
+                                    .maybeSingle();
+
+                              if (updateAttempt.error) throw updateAttempt.error;
+
+                              // If nothing was updated (stale notification), still attempt to clean up any pending request
+                              if (!updateAttempt.data) {
+                                const { error: cleanupErr } = await supabase
+                                  .from('friend_requests')
+                                  .delete()
+                                  .eq('requester_id', requesterId)
+                                  .eq('requested_id', user.id)
+                                  .eq('status', 'pending');
+                                if (cleanupErr) throw cleanupErr;
+                              } else {
+                                // Remove declined requests to avoid lingering old rows
+                                const { error: deleteErr } = await supabase
+                                  .from('friend_requests')
+                                  .delete()
+                                  .eq('requester_id', requesterId)
+                                  .eq('requested_id', user.id)
+                                  .eq('status', 'declined');
+                                if (deleteErr) throw deleteErr;
+                              }
 
                               // Delete the notification so it disappears immediately
                               if (onDelete) {
