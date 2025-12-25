@@ -77,27 +77,15 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
   const handleAcceptFollowRequest = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!user || !notification.data?.user_id) return;
+    if (!user || !notification.data?.request_id || !notification.data?.user_id) return;
 
     setIsLoading(true);
     try {
-      // 1) Mark request accepted
-      if (notification.data?.request_id) {
-        const { error: updateErr } = await supabase
-          .from('friend_requests')
-          .update({ status: 'accepted' })
-          .eq('id', notification.data.request_id)
-          .eq('requested_id', user.id);
-        if (updateErr) throw updateErr;
-      } else {
-        const { error: updateErr } = await supabase
-          .from('friend_requests')
-          .update({ status: 'accepted' })
-          .eq('requested_id', user.id)
-          .eq('requester_id', notification.data.user_id)
-          .eq('status', 'pending');
-        if (updateErr) throw updateErr;
-      }
+      // 1) Mark request accepted via RPC (avoids type casting issues)
+      const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
+        p_request_id: notification.data.request_id,
+      });
+      if (rpcErr) throw rpcErr;
 
       // 2) Create follow relationship (requester follows me)
       const { error: followErr } = await supabase.from('follows').insert({
@@ -127,25 +115,15 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
   const handleDeclineFollowRequest = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!user || !notification.data?.user_id) return;
+    if (!user || !notification.data?.request_id) return;
 
     setIsLoading(true);
     try {
-      const requesterId = notification.data.user_id as string;
-      const requestId = notification.data?.request_id as string | undefined;
-
-      // Decline by updating status to 'declined'
-      // Use request_id when available; otherwise match by requester_id only to avoid text/uuid casting issues.
-      const updateQuery = requestId
-        ? supabase.from('friend_requests').update({ status: 'declined' }).eq('id', requestId)
-        : supabase
-            .from('friend_requests')
-            .update({ status: 'declined' })
-            .eq('requester_id', requesterId)
-            .eq('status', 'pending');
-
-      const { error: updateErr } = await updateQuery;
-      if (updateErr) throw updateErr;
+      // Use RPC to avoid text/uuid casting issues
+      const { error: rpcErr } = await supabase.rpc('decline_friend_request', {
+        p_request_id: notification.data.request_id,
+      });
+      if (rpcErr) throw rpcErr;
 
       const { error: notifErr } = await supabase
         .from('notifications')
