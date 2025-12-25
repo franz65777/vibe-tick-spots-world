@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
@@ -103,12 +104,7 @@ const MapFilterDropdown = () => {
         const cityVariations = normalizedCity ? getCityVariations(normalizedCity) : [];
 
         const normalizeCategory = (cat: any) => {
-          const c = String(cat || '').trim().toLowerCase();
-          if (!c) return '';
-          if (c === 'bars' || c === 'pub') return 'bar';
-          if (c === 'restaurants') return 'restaurant';
-          if (c === 'coffee' || c === 'coffee_shop' || c === 'cafè') return 'cafe';
-          return c;
+          return normalizeCategoryToBase(cat) || '';
         };
 
         const matchesCity = (placeCity: string | null): boolean => {

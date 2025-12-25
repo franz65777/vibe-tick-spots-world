@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MapFilter } from '@/contexts/MapFilterContext';
+import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 
 interface MapLocation {
   id: string;
@@ -174,7 +175,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           finalLocations = dedupedShares.map(share => ({
             id: share.location_id || `share-${share.id}`,
             name: share.location?.name || 'Shared Location',
-            category: share.location?.category || 'Unknown',
+            category: normalizeCategoryToBase(share.location?.category) || (share.location?.category || 'Unknown'),
             address: share.location?.address,
             city: share.location?.city,
             google_place_id: (share.location as any)?.google_place_id || undefined,
@@ -187,7 +188,10 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             isFollowing: true,
             sharedByUser: profileMap.get(share.user_id)
           })).filter(loc => {
-            if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+            if (selectedCategories.length > 0) {
+              const c = normalizeCategoryToBase(loc.category) || loc.category;
+              if (!selectedCategories.includes(c)) return false;
+            }
             return true;
           });
           break;
@@ -243,7 +247,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
               id: loc.id,
               name: loc.name,
-              category: loc.category,
+              category: normalizeCategoryToBase(loc.category) || loc.category,
               address: loc.address,
               city: loc.city,
               google_place_id: loc.google_place_id,
@@ -277,7 +281,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 return {
                   id: sp.place_id,
                   name: sp.place_name || 'Unknown',
-                  category: sp.place_category || 'Unknown',
+                  category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
                   address: undefined,
                   city: sp.city || undefined,
                   google_place_id: sp.place_id,
@@ -292,7 +296,10 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
             
             finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
-              if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+              if (selectedCategories.length > 0) {
+                const c = normalizeCategoryToBase(loc.category) || loc.category;
+                if (!selectedCategories.includes(c)) return false;
+              }
               return true;
             });
           } else {
@@ -346,7 +353,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
               id: loc.id,
               name: loc.name,
-              category: loc.category,
+              category: normalizeCategoryToBase(loc.category) || loc.category,
               address: loc.address,
               city: loc.city,
               google_place_id: loc.google_place_id,
@@ -386,7 +393,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 return {
                   id: sp.place_id,
                   name: sp.place_name || 'Unknown',
-                  category: sp.place_category || 'Unknown',
+                  category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
                   address: undefined,
                   city: sp.city || undefined,
                   google_place_id: sp.place_id,
@@ -401,7 +408,10 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
 
             finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
-              if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+              if (selectedCategories.length > 0) {
+                const c = normalizeCategoryToBase(loc.category) || loc.category;
+                if (!selectedCategories.includes(c)) return false;
+              }
               return true;
             });
           }
@@ -634,8 +644,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
             .slice(0, 300)
             .filter(location => {
-              if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
-                return false;
+              if (selectedCategories.length > 0) {
+                const c = normalizeCategoryToBase(location.category) || location.category;
+                if (!selectedCategories.includes(c)) return false;
               }
               return true;
             });
@@ -693,7 +704,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               locationMap.set(key, {
                 id: key,
                 name: loc.name,
-                category: loc.category || 'Unknown',
+                category: normalizeCategoryToBase(loc.category) || (loc.category || 'Unknown'),
                 address: loc.address,
                 city: loc.city,
                 google_place_id: loc.google_place_id,
@@ -756,7 +767,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               locationMap.set(key, {
                 id: sp.place_id,
                 name: sp.place_name || 'Unknown',
-                category: sp.place_category || 'Unknown',
+                category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
                 address: undefined,
                 city: sp.city || 'Unknown',
                 google_place_id: sp.place_id,
@@ -770,8 +781,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
           finalLocations = Array.from(locationMap.values())
             .filter(location => {
-              if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
-                return false;
+              if (selectedCategories.length > 0) {
+                const c = normalizeCategoryToBase(location.category) || location.category;
+                if (!selectedCategories.includes(c)) return false;
               }
               return true;
             });
