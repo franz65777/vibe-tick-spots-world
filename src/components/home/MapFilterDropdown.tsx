@@ -126,6 +126,12 @@ const MapFilterDropdown = () => {
           .select('user_id, location_id, locations(id, google_place_id, category, city)')
           .in('user_id', userIds);
 
+        // Also include locations CREATED by the user (these show up as pins and should count in the badges)
+        const { data: allCreatedLocations } = await supabase
+          .from('locations')
+          .select('created_by, id, google_place_id, category, city')
+          .in('created_by', userIds);
+
         // Combine all places per user with city filtering and deduplication
         const userPlacesMap = new Map<string, Map<string, string>>(); // userId -> (placeId -> category)
 
@@ -152,6 +158,17 @@ const MapFilterDropdown = () => {
               userPlaces.set(placeId, normalizeCategory(loc.category));
               userPlacesMap.set(usl.user_id, userPlaces);
             }
+          }
+        });
+
+        // Process created locations - also reliable category
+        (allCreatedLocations || []).forEach((loc: any) => {
+          if (loc?.created_by && matchesCity(loc.city)) {
+            const placeId = loc.google_place_id || loc.id;
+            if (!placeId) return;
+            const userPlaces = userPlacesMap.get(loc.created_by) || new Map();
+            userPlaces.set(placeId, normalizeCategory(loc.category));
+            userPlacesMap.set(loc.created_by, userPlaces);
           }
         });
 

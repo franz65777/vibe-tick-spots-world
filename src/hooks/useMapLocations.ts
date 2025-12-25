@@ -97,11 +97,21 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
   const fetchLocations = async () => {
     if (!user) return;
-    
+
+    const normalizedSelectedCategories = selectedCategories
+      .map((c) => normalizeCategoryToBase(c) || String(c ?? '').trim().toLowerCase())
+      .filter(Boolean);
+
+    const isCategoryAllowed = (category: unknown) => {
+      if (normalizedSelectedCategories.length === 0) return true;
+      const normalized = normalizeCategoryToBase(category) || String(category ?? '').trim().toLowerCase();
+      return normalizedSelectedCategories.includes(normalized);
+    };
+
     // Generate cache key
     const boundsKey = mapBounds ? `${mapBounds.north.toFixed(4)},${mapBounds.south.toFixed(4)},${mapBounds.east.toFixed(4)},${mapBounds.west.toFixed(4)}` : '';
     const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}-${boundsKey}`;
-    
+
     // Check cache first - if valid, return immediately without loading state
     const cached = locationCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
@@ -109,7 +119,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       setLocations(cached.data);
       return;
     }
-    
+
     // Only show loading for non-cached requests
     setLoading(true);
     setError(null);
@@ -188,10 +198,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             isFollowing: true,
             sharedByUser: profileMap.get(share.user_id)
           })).filter(loc => {
-            if (selectedCategories.length > 0) {
-              const c = normalizeCategoryToBase(loc.category) || loc.category;
-              if (!selectedCategories.includes(c)) return false;
-            }
+            if (!isCategoryAllowed(loc.category)) return false;
             return true;
           });
           break;
@@ -296,10 +303,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
             
             finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
-              if (selectedCategories.length > 0) {
-                const c = normalizeCategoryToBase(loc.category) || loc.category;
-                if (!selectedCategories.includes(c)) return false;
-              }
+              if (!isCategoryAllowed(loc.category)) return false;
               return true;
             });
           } else {
@@ -408,10 +412,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
 
             finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
-              if (selectedCategories.length > 0) {
-                const c = normalizeCategoryToBase(loc.category) || loc.category;
-                if (!selectedCategories.includes(c)) return false;
-              }
+              if (!isCategoryAllowed(loc.category)) return false;
               return true;
             });
           }
@@ -644,10 +645,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
             .slice(0, 300)
             .filter(location => {
-              if (selectedCategories.length > 0) {
-                const c = normalizeCategoryToBase(location.category) || location.category;
-                if (!selectedCategories.includes(c)) return false;
-              }
+              if (!isCategoryAllowed(location.category)) return false;
               return true;
             });
           
@@ -781,10 +779,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
           finalLocations = Array.from(locationMap.values())
             .filter(location => {
-              if (selectedCategories.length > 0) {
-                const c = normalizeCategoryToBase(location.category) || location.category;
-                if (!selectedCategories.includes(c)) return false;
-              }
+              if (!isCategoryAllowed(location.category)) return false;
               return true;
             });
           
