@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LocationDetailDrawer from './LocationDetailDrawer';
-import { ArrowLeft, MapPin, Search, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, UserPlus } from 'lucide-react';
+import discoverMascot from '@/assets/discover-mascot.png';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -246,12 +247,17 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         .select('following_id')
         .eq('follower_id', user.id);
 
-      if (!followsData || followsData.length === 0) {
+      const followingIds = (followsData || []).map(f => f.following_id);
+      
+      // If no follows, show empty state but don't return early
+      if (followingIds.length === 0) {
         setFollowedUsers([]);
+        setLocations([]);
+        setCurrentIndex(0);
+        setLoading(false);
         return;
       }
 
-      const followingIds = followsData.map(f => f.following_id);
 
       // Get internal locations from user_saved_locations for followed users
       const { data: internalSaves } = await supabase
@@ -545,10 +551,10 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`relative z-[90] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
+            <div className={`relative z-[90] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted overflow-hidden ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
-              <Users className="w-6 h-6 text-foreground" />
+              <img src={discoverMascot} alt="All" className="w-10 h-10 object-contain" />
             </div>
             <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
@@ -637,9 +643,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
             <div className="flex-1 flex items-center justify-center p-8 text-center pb-24">
               <div className="space-y-6 max-w-sm mx-auto">
                 <div className="flex items-center justify-center">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg">
-                    <Users className="w-12 h-12 text-white" />
-                  </div>
+                  <img src={discoverMascot} alt="No places" className="w-32 h-32 object-contain" />
                 </div>
                 
                 <div className="space-y-3">
