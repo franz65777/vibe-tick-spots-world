@@ -296,23 +296,15 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               return true;
             });
           } else {
-            // No bounds - fetch by city, with support for selectedFollowedUserIds filtering
-            const { data: followedUsers } = await supabase
-              .from('follows')
-              .select('following_id')
-              .eq('follower_id', user.id);
-            
-            let followedUserIds = followedUsers?.map(f => f.following_id) || [];
-            
-            // Filter by specific selected users if provided
-            if (selectedFollowedUserIds.length > 0) {
-              followedUserIds = followedUserIds.filter(id => selectedFollowedUserIds.includes(id));
-            }
-            
-            if (followedUserIds.length === 0) {
+            // No bounds - fetch by city, ONLY for selectedFollowedUserIds (not current user)
+            // If no friends are selected, show nothing
+            if (selectedFollowedUserIds.length === 0) {
               finalLocations = [];
               break;
             }
+            
+            // Use only the selected friend IDs - never include current user
+            const followedUserIds = selectedFollowedUserIds;
 
             const normalizedCity = currentCity?.trim().toLowerCase() || '';
 
