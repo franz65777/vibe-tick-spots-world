@@ -425,11 +425,28 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           const { data: savedPlaces } = await savedPlacesQuery.limit(1000);
 
           // Build a map of google_place_id -> saved_places data (deduplicate by place_id)
-          // Also deduplicate by coordinates to avoid pins at same location
+          // Also deduplicate by coordinates to avoid pins at same location, preferring best category
           const savedPlacesMap = new Map<string, any>();
           const savedPlaceScores = new Map<string, number>();
           const seenPlaceIds = new Set<string>();
-          const seenCoords = new Set<string>(); // Deduplicate by coordinates
+          const coordToPlaceId = new Map<string, string>();
+
+          const normalizeCategory = (cat: any) => {
+            const c = String(cat || '').trim().toLowerCase();
+            if (!c) return '';
+            if (c === 'bars' || c === 'pub') return 'bar';
+            if (c === 'restaurants') return 'restaurant';
+            if (c === 'coffee' || c === 'coffee_shop' || c === 'cafè') return 'cafe';
+            return c;
+          };
+
+          const categoryPriority = (cat: any) => {
+            const c = normalizeCategory(cat);
+            if (c === 'bar') return 3;
+            if (c === 'restaurant') return 2;
+            if (c === 'cafe') return 1;
+            return 0;
+          };
           
           (savedPlaces || []).forEach((sp: any) => {
             const coords = sp.coordinates as any;
@@ -440,31 +457,48 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             // Create coordinate key (rounded to avoid floating point issues)
             const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
 
-            // Skip if we already have a pin at these exact coordinates
-            if (seenCoords.has(coordKey)) {
-              // Just add to score for existing place
-              if (seenPlaceIds.has(sp.place_id)) {
-                savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + 1);
+            // Bounds check
+            if (mapBounds) {
+              if (
+                lat < mapBounds.south ||
+                lat > mapBounds.north ||
+                lng < mapBounds.west ||
+                lng > mapBounds.east
+              ) {
+                return;
+              }
+            }
+
+            // If we already picked a place for these coords, decide whether to replace it
+            const existingPlaceId = coordToPlaceId.get(coordKey);
+            if (existingPlaceId) {
+              const existingSp = savedPlacesMap.get(existingPlaceId);
+              const shouldReplace = categoryPriority(sp.place_category) > categoryPriority(existingSp?.place_category);
+
+              // Always aggregate score into the chosen representative
+              if (shouldReplace) {
+                // Move existing score over
+                const existingScore = savedPlaceScores.get(existingPlaceId) || 0;
+                savedPlaceScores.delete(existingPlaceId);
+                savedPlacesMap.delete(existingPlaceId);
+
+                coordToPlaceId.set(coordKey, sp.place_id);
+                savedPlacesMap.set(sp.place_id, sp);
+                savedPlaceScores.set(sp.place_id, existingScore + 1);
+              } else {
+                savedPlaceScores.set(existingPlaceId, (savedPlaceScores.get(existingPlaceId) || 0) + 1);
               }
               return;
             }
 
-            // Skip duplicates of same place_id
+            // Skip duplicates of same place_id (but still count them)
             if (seenPlaceIds.has(sp.place_id)) {
               savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + 1);
               return;
             }
 
-            // Bounds check
-            if (mapBounds) {
-              if (lat < mapBounds.south || lat > mapBounds.north ||
-                  lng < mapBounds.west || lng > mapBounds.east) {
-                return;
-              }
-            }
-
             seenPlaceIds.add(sp.place_id);
-            seenCoords.add(coordKey);
+            coordToPlaceId.set(coordKey, sp.place_id);
 
             // Score = count of saves
             savedPlaceScores.set(sp.place_id, (savedPlaceScores.get(sp.place_id) || 0) + 1);
