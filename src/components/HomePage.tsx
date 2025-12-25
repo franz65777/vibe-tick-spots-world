@@ -699,7 +699,7 @@ const HomePage = memo(() => {
 
         {/* Fixed Header - ~60px - on top of map */}
         {!isCreateStoryModalOpen && !showOnboarding && (
-          <div className="relative z-20">
+          <div className="relative z-20 pointer-events-none [&>*]:pointer-events-auto">
             {/* Top fade gradient overlay */}
             <div 
               className="pointer-events-none absolute inset-x-0 top-0 h-24 z-0"
@@ -719,7 +719,7 @@ const HomePage = memo(() => {
           </div>
         )}
       
-      <main className="flex-1 flex flex-col overflow-hidden relative z-10">
+      <main className="flex-1 flex flex-col overflow-hidden relative z-10 pointer-events-none [&>*]:pointer-events-auto">
         {/* Stories Section - HIDDEN FOR NOW - Keep logic intact for later implementation */}
         {/* {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
