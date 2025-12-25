@@ -977,7 +977,7 @@ const ShareLocationPage = () => {
                 <div className={`max-h-[44vh] overflow-y-auto space-y-2 scrollbar-hide ${
                   selectedUsers.length > 0 
                     ? 'pb-[calc(10rem+env(safe-area-inset-bottom))]' 
-                    : 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
+                    : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'
                 }`}>
                   {followers
                     .filter(follower => 
