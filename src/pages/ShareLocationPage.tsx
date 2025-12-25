@@ -974,7 +974,7 @@ const ShareLocationPage = () => {
                 )}
 
                 {/* User List - exclude already selected users */}
-                <div className="max-h-[44vh] overflow-y-auto space-y-2 scrollbar-hide pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
+                <div className="max-h-[44vh] overflow-y-auto space-y-2 scrollbar-hide pb-[calc(10rem+env(safe-area-inset-bottom))] scroll-pb-[calc(10rem+env(safe-area-inset-bottom))]">
                   {followers
                     .filter(follower => 
                       follower.username.toLowerCase().includes(userSearchQuery.toLowerCase()) &&
