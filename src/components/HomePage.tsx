@@ -710,9 +710,9 @@ const HomePage = memo(() => {
           </Suspense>
         )}
         
-        {/* Map Section - extends behind bottom nav to fill screen */}
+        {/* Map Section - extends full screen behind header and discover */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
-          <div className="absolute inset-x-0 top-[100px] bottom-[calc(-1*env(safe-area-inset-bottom))]">
+          <div className="absolute inset-0 bottom-[calc(-1*env(safe-area-inset-bottom))]">
             <Suspense fallback={<div className="w-full h-full" />}>
               <HomeMapContainer
                 mapCenter={mapCenter}
@@ -760,6 +760,13 @@ const HomePage = memo(() => {
                 }}
               />
             </Suspense>
+            {/* Top fade gradient overlay */}
+            <div 
+              className="pointer-events-none absolute inset-x-0 top-0 h-44 z-10"
+              style={{ 
+                background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 30%, hsl(var(--background) / 0.5) 60%, transparent 100%)' 
+              }}
+            />
           </div>
         )}
       </main>

@@ -14,7 +14,7 @@ interface HomeDiscoverSectionProps {
 
 const HomeDiscoverSection = memo((props: HomeDiscoverSectionProps) => {
   return (
-    <div className="h-[110px] flex-shrink-0">
+    <div className="h-[110px] flex-shrink-0 relative z-20">
       <CommunityHighlights {...props} />
     </div>
   );
