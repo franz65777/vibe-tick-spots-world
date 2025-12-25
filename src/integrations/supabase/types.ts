@@ -3458,6 +3458,7 @@ export type Database = {
         Args: { business_user_id: string }
         Returns: boolean
       }
+      normalize_city_name: { Args: { city_name: string }; Returns: string }
       normalize_coordinate: { Args: { coord: number }; Returns: number }
       refresh_trending_locations: { Args: never; Returns: undefined }
       remove_follower: {
