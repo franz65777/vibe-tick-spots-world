@@ -947,17 +947,60 @@ const MobileNotificationItem = ({
               handleClick(e);
             }}
             onPointerDown={(e) => {
-              (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+              // Don't start swipe tracking when interacting with interactive elements
+              const target = e.target as HTMLElement;
+              if (
+                target.closest('[data-avatar-click]') ||
+                target.closest('[data-username-click]') ||
+                target.closest('button') ||
+                target.closest('a') ||
+                target.closest('input, textarea, select')
+              ) {
+                return;
+              }
+
               setTouchStartX(e.clientX);
+              // Store start Y on the element to distinguish vertical scroll vs horizontal swipe
+              (e.currentTarget as HTMLElement).dataset.swipeStartY = String(e.clientY);
+              (e.currentTarget as HTMLElement).dataset.swipeHasMoved = 'false';
             }}
             onPointerMove={(e) => {
               if (touchStartX === null) return;
-              e.preventDefault();
+
+              const currentTarget = e.currentTarget as HTMLElement;
+              const startY = Number(currentTarget.dataset.swipeStartY || e.clientY);
               const dx = e.clientX - touchStartX;
+              const dy = e.clientY - startY;
+
+              // If the user is scrolling vertically, cancel swipe tracking so taps/clicks work reliably
+              if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
+                setTouchStartX(null);
+                currentTarget.dataset.swipeHasMoved = 'false';
+                if (!swipedOpen) setTranslateX(0);
+                return;
+              }
+
+              // Small movement: treat as tap, don't block click
+              if (Math.abs(dx) < 6) return;
+
+              // We're swiping horizontally
+              currentTarget.dataset.swipeHasMoved = 'true';
+              e.preventDefault();
+
               const next = Math.max(Math.min(dx, 0), -96);
               setTranslateX(swipedOpen ? -96 + dx : next);
             }}
-            onPointerUp={() => {
+            onPointerUp={(e) => {
+              const currentTarget = e.currentTarget as HTMLElement;
+              const hasMoved = currentTarget.dataset.swipeHasMoved === 'true';
+
+              // If it was a tap (no meaningful horizontal movement), don't change swipe state
+              if (!hasMoved) {
+                setTouchStartX(null);
+                currentTarget.dataset.swipeHasMoved = 'false';
+                return;
+              }
+
               const threshold = -48;
               if (translateX <= threshold) {
                 setTranslateX(-96);
@@ -971,9 +1014,12 @@ const MobileNotificationItem = ({
                 }
               }
               setTouchStartX(null);
+              currentTarget.dataset.swipeHasMoved = 'false';
             }}
-            onPointerCancel={() => {
+            onPointerCancel={(e) => {
+              const currentTarget = e.currentTarget as HTMLElement;
               setTouchStartX(null);
+              currentTarget.dataset.swipeHasMoved = 'false';
               if (!swipedOpen) setTranslateX(0);
             }}
             className={`relative z-10 w-full ${swipedOpen ? '' : 'cursor-pointer active:bg-accent/50'} transition-colors ${
