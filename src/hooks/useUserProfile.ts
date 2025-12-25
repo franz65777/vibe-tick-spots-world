@@ -227,9 +227,11 @@ export const useUserProfile = (userId?: string) => {
       : null;
 
     // Live updates: watch friend_requests so requester sees decline immediately
+    // Watch both directions: when current user is requester OR when viewing someone who sent us a request
     const friendReqChannel = (currentUser && userId && currentUser.id !== userId)
       ? supabase
           .channel(`friend-request-status-${currentUser.id}-${userId}`)
+          // When current user sent a request to userId (current user is requester)
           .on(
             'postgres_changes',
             {
@@ -264,6 +266,22 @@ export const useUserProfile = (userId?: string) => {
             (payload: any) => {
               // If my pending request was deleted (declined then removed), reset button
               if (payload.old?.requested_id === userId) {
+                setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
+              }
+            }
+          )
+          // When userId sent a request to current user (userId is requester) - for when current user declines
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'friend_requests',
+              filter: `requester_id=eq.${userId}`,
+            },
+            (payload: any) => {
+              // If the request from userId to me was deleted (I declined), update their profile view
+              if (payload.old?.requested_id === currentUser.id) {
                 setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
               }
             }
