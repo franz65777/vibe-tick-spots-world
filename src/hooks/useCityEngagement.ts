@@ -32,20 +32,21 @@ export const useCityEngagement = (cityName: string | null, coords?: { lat: numbe
         let data: any;
         let error: any;
         
-        if (coords?.lat && coords?.lng) {
-          // Use geo-based query
-          const result = await supabase.rpc('get_city_engagement_geo' as any, { 
-            p_lat: coords.lat, 
-            p_lng: coords.lng, 
-            p_radius_km: 25, 
+        // ALWAYS use city name query when we have a city name - this ensures consistent counts
+        // across the app regardless of which coordinates are passed
+        if (cityName) {
+          const result = await supabase.rpc('get_city_engagement', { 
+            p_city: cityName, 
             p_user: user.id 
           });
           data = result.data;
           error = result.error;
-        } else {
-          // Use city name query
-          const result = await supabase.rpc('get_city_engagement', { 
-            p_city: cityName, 
+        } else if (coords?.lat && coords?.lng) {
+          // Only use geo-based query when we have no city name (fallback)
+          const result = await supabase.rpc('get_city_engagement_geo' as any, { 
+            p_lat: coords.lat, 
+            p_lng: coords.lng, 
+            p_radius_km: 25, 
             p_user: user.id 
           });
           data = result.data;
