@@ -14,7 +14,7 @@ import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
-import { AiAssistantModal } from './ai/AiAssistantModal';
+// AI Modal disabled - now using Swipe Discovery button instead
 import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 // Lazy load heavy components
 const ExploreHeaderBar = lazy(() => import('./explore/ExploreHeaderBar'));
@@ -81,7 +81,7 @@ const ExplorePage = memo(() => {
       return new Set();
     }
   });
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  // AI Modal disabled - swipe discovery now accessible via header button
 
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('explore');
@@ -431,7 +431,6 @@ const ExplorePage = memo(() => {
           onSearchChange={handleSearch}
           onInputFocus={setInputFocused}
           onClearSearch={clearSearch}
-          onAiClick={() => setIsAiModalOpen(true)}
         />
       </Suspense>
 
@@ -667,12 +666,6 @@ const ExplorePage = memo(() => {
           </div>
         </div>
       )}
-
-      {/* AI Assistant Modal */}
-      <AiAssistantModal 
-        isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
-      />
 
       {/* Guided Tour - for onboarding step 3 */}
       <GuidedTour
