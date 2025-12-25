@@ -224,7 +224,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               break;
             }
             
-            // Fetch internal locations within bounds
+            // Fetch internal locations within bounds (created by followed users)
             const { data: locations } = await supabase
               .from('locations')
               .select('*')
@@ -235,77 +235,110 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .lte('longitude', mapBounds.east)
               .not('latitude', 'is', null)
               .not('longitude', 'is', null);
-            
-            // Fetch saved places within bounds  
+
+            // Fetch internal saved locations (user_saved_locations -> locations)
+            const { data: savedInternal } = await supabase
+              .from('user_saved_locations')
+              .select(`
+                user_id,
+                created_at,
+                location:locations (
+                  id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data
+                )
+              `)
+              .in('user_id', followedUserIds)
+              .not('location', 'is', null);
+
+            // Fetch saved places (Google places)
             const { data: savedPlaces } = await supabase
               .from('saved_places')
               .select('place_id, created_at, user_id, place_name, place_category, city, coordinates')
               .in('user_id', followedUserIds);
-            
-            // Build set of google_place_ids from locations to detect duplicates
+
+            const locationMap = new Map<string, MapLocation>();
+            const usedCoords = new Set<string>();
             const googlePlaceIdsInLocations = new Set<string>();
+
+            const tryAdd = (loc: MapLocation) => {
+              if (!loc?.coordinates) return;
+              const lat = Number(loc.coordinates.lat);
+              const lng = Number(loc.coordinates.lng);
+              if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) return;
+
+              // Bounds check (safety)
+              if (lat < mapBounds.south || lat > mapBounds.north || lng < mapBounds.west || lng > mapBounds.east) return;
+
+              const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+              if (usedCoords.has(coordKey)) return;
+
+              const key = loc.google_place_id || loc.id;
+              if (!key) return;
+              if (locationMap.has(key)) return;
+
+              usedCoords.add(coordKey);
+              locationMap.set(key, { ...loc, id: key });
+            };
+
+            // 1) created locations
             (locations || []).forEach((loc: any) => {
-              if (loc.google_place_id) {
-                googlePlaceIdsInLocations.add(loc.google_place_id);
-              }
-            });
-            
-            // Convert to MapLocation format
-            const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
-              id: loc.id,
-              name: loc.name,
-              category: normalizeCategoryToBase(loc.category) || loc.category,
-              address: loc.address,
-              city: loc.city,
-              google_place_id: loc.google_place_id,
-              coordinates: {
-                lat: Number(loc.latitude) || 0,
-                lng: Number(loc.longitude) || 0,
-              },
-              isFollowing: true,
-              user_id: loc.created_by,
-              created_at: loc.created_at,
-            }));
-            
-            // Convert saved places to MapLocation format, filtering duplicates and bounds
-            const fromSavedPlaces: MapLocation[] = (savedPlaces || [])
-              .filter((sp: any) => {
-                // Skip duplicates
-                if (googlePlaceIdsInLocations.has(sp.place_id)) return false;
-                
-                const coords = sp.coordinates as any || {};
-                const lat = Number(coords.lat);
-                const lng = Number(coords.lng);
-                
-                if (!lat || !lng) return false;
-                
-                // Check bounds
-                return lat >= mapBounds.south && lat <= mapBounds.north &&
-                       lng >= mapBounds.west && lng <= mapBounds.east;
-              })
-              .map((sp: any) => {
-                const coords = sp.coordinates as any || {};
-                return {
-                  id: sp.place_id,
-                  name: sp.place_name || 'Unknown',
-                  category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
-                  address: undefined,
-                  city: sp.city || undefined,
-                  google_place_id: sp.place_id,
-                  coordinates: {
-                    lat: Number(coords.lat) || 0,
-                    lng: Number(coords.lng) || 0,
-                  },
-                  isFollowing: true,
-                  user_id: sp.user_id,
-                  created_at: sp.created_at,
-                };
+              if (loc.google_place_id) googlePlaceIdsInLocations.add(loc.google_place_id);
+              tryAdd({
+                id: loc.id,
+                name: loc.name,
+                category: normalizeCategoryToBase(loc.category) || loc.category,
+                address: loc.address,
+                city: loc.city,
+                google_place_id: loc.google_place_id,
+                coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
+                isFollowing: true,
+                user_id: loc.created_by,
+                created_at: loc.created_at,
               });
-            
-            finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
-              if (!isCategoryAllowed(loc.category)) return false;
-              return true;
             });
+
+            // 2) internal saved locations
+            (savedInternal || []).forEach((row: any) => {
+              const loc = row.location;
+              if (!loc) return;
+              const gp = loc.google_place_id;
+              if (gp) {
+                if (googlePlaceIdsInLocations.has(gp)) return;
+                googlePlaceIdsInLocations.add(gp);
+              }
+              tryAdd({
+                id: loc.id,
+                name: loc.name,
+                category: normalizeCategoryToBase(loc.category) || loc.category,
+                address: loc.address,
+                city: loc.city,
+                google_place_id: loc.google_place_id,
+                opening_hours_data: loc.opening_hours_data,
+                coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
+                isFollowing: true,
+                user_id: row.user_id,
+                created_at: row.created_at,
+              });
+            });
+
+            // 3) saved_places
+            (savedPlaces || []).forEach((sp: any) => {
+              if (googlePlaceIdsInLocations.has(sp.place_id)) return;
+              const coords = sp.coordinates as any || {};
+              tryAdd({
+                id: sp.place_id,
+                name: sp.place_name || 'Unknown',
+                category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
+                address: undefined,
+                city: sp.city || undefined,
+                google_place_id: sp.place_id,
+                coordinates: { lat: Number(coords.lat) || 0, lng: Number(coords.lng) || 0 },
+                isFollowing: true,
+                user_id: sp.user_id,
+                created_at: sp.created_at,
+              });
+            });
+
+            finalLocations = Array.from(locationMap.values()).filter((loc) => isCategoryAllowed(loc.category));
           } else {
             // No bounds - fetch by city, ONLY for selectedFollowedUserIds (not current user)
             // If no friends are selected, show nothing
@@ -333,6 +366,21 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
             const { data: locations } = await locationsQuery.limit(500);
 
+            // Fetch internal saved locations (user_saved_locations -> locations)
+            let savedInternalQuery = supabase
+              .from('user_saved_locations')
+              .select(`
+                user_id,
+                created_at,
+                location:locations (
+                  id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data
+                )
+              `)
+              .in('user_id', followedUserIds)
+              .not('location', 'is', null);
+
+            const { data: savedInternal } = await savedInternalQuery.limit(800);
+
             // Fetch saved places by followed users in this city
             let savedPlacesQuery = supabase
               .from('saved_places')
@@ -343,78 +391,94 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               savedPlacesQuery = savedPlacesQuery.ilike('city', `%${normalizedCity}%`);
             }
 
-            const { data: savedPlaces } = await savedPlacesQuery.limit(500);
+            const { data: savedPlaces } = await savedPlacesQuery.limit(800);
 
-            // Build set of google_place_ids from locations to detect duplicates
+            const locationMap = new Map<string, MapLocation>();
+            const usedCoords = new Set<string>();
             const googlePlaceIdsInLocations = new Set<string>();
+
+            const cityOk = (city?: string | null) => {
+              if (!normalizedCity) return true;
+              return Boolean(city && city.toLowerCase().includes(normalizedCity));
+            };
+
+            const tryAdd = (loc: MapLocation) => {
+              if (!cityOk(loc.city)) return;
+              const lat = Number(loc.coordinates?.lat);
+              const lng = Number(loc.coordinates?.lng);
+              if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) return;
+
+              const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+              if (usedCoords.has(coordKey)) return;
+
+              const key = loc.google_place_id || loc.id;
+              if (!key) return;
+              if (locationMap.has(key)) return;
+
+              usedCoords.add(coordKey);
+              locationMap.set(key, { ...loc, id: key });
+            };
+
+            // 1) created locations
             (locations || []).forEach((loc: any) => {
-              if (loc.google_place_id) {
-                googlePlaceIdsInLocations.add(loc.google_place_id);
-              }
-            });
-
-            // Convert to MapLocation format
-            const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
-              id: loc.id,
-              name: loc.name,
-              category: normalizeCategoryToBase(loc.category) || loc.category,
-              address: loc.address,
-              city: loc.city,
-              google_place_id: loc.google_place_id,
-              coordinates: {
-                lat: Number(loc.latitude) || 0,
-                lng: Number(loc.longitude) || 0,
-              },
-              isFollowing: true,
-              user_id: loc.created_by,
-              created_at: loc.created_at,
-            }));
-
-            // Dedupe saved_places by place_id and coordinates
-            const seenPlaceIds = new Set<string>();
-            const seenCoords = new Set<string>();
-
-            const fromSavedPlaces: MapLocation[] = (savedPlaces || [])
-              .filter((sp: any) => {
-                // Skip duplicates already in locations table
-                if (googlePlaceIdsInLocations.has(sp.place_id)) return false;
-                
-                const coords = sp.coordinates as any || {};
-                const lat = Number(coords.lat);
-                const lng = Number(coords.lng);
-                
-                if (!lat || !lng) return false;
-
-                const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-                if (seenCoords.has(coordKey) || seenPlaceIds.has(sp.place_id)) return false;
-
-                seenPlaceIds.add(sp.place_id);
-                seenCoords.add(coordKey);
-                return true;
-              })
-              .map((sp: any) => {
-                const coords = sp.coordinates as any || {};
-                return {
-                  id: sp.place_id,
-                  name: sp.place_name || 'Unknown',
-                  category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
-                  address: undefined,
-                  city: sp.city || undefined,
-                  google_place_id: sp.place_id,
-                  coordinates: {
-                    lat: Number(coords.lat) || 0,
-                    lng: Number(coords.lng) || 0,
-                  },
-                  isFollowing: true,
-                  user_id: sp.user_id,
-                  created_at: sp.created_at,
-                };
+              if (loc.google_place_id) googlePlaceIdsInLocations.add(loc.google_place_id);
+              tryAdd({
+                id: loc.id,
+                name: loc.name,
+                category: normalizeCategoryToBase(loc.category) || loc.category,
+                address: loc.address,
+                city: loc.city,
+                google_place_id: loc.google_place_id,
+                coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
+                isFollowing: true,
+                user_id: loc.created_by,
+                created_at: loc.created_at,
               });
-
-            finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
-              if (!isCategoryAllowed(loc.category)) return false;
-              return true;
             });
+
+            // 2) internal saved locations
+            (savedInternal || []).forEach((row: any) => {
+              const loc = row.location;
+              if (!loc || !cityOk(loc.city)) return;
+              const gp = loc.google_place_id;
+              if (gp) {
+                if (googlePlaceIdsInLocations.has(gp)) return;
+                googlePlaceIdsInLocations.add(gp);
+              }
+              tryAdd({
+                id: loc.id,
+                name: loc.name,
+                category: normalizeCategoryToBase(loc.category) || loc.category,
+                address: loc.address,
+                city: loc.city,
+                google_place_id: loc.google_place_id,
+                opening_hours_data: loc.opening_hours_data,
+                coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
+                isFollowing: true,
+                user_id: row.user_id,
+                created_at: row.created_at,
+              });
+            });
+
+            // 3) saved_places
+            (savedPlaces || []).forEach((sp: any) => {
+              if (googlePlaceIdsInLocations.has(sp.place_id)) return;
+              const coords = sp.coordinates as any || {};
+              tryAdd({
+                id: sp.place_id,
+                name: sp.place_name || 'Unknown',
+                category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
+                address: undefined,
+                city: sp.city || undefined,
+                google_place_id: sp.place_id,
+                coordinates: { lat: Number(coords.lat) || 0, lng: Number(coords.lng) || 0 },
+                isFollowing: true,
+                user_id: sp.user_id,
+                created_at: sp.created_at,
+              });
+            });
+
+            finalLocations = Array.from(locationMap.values()).filter((loc) => isCategoryAllowed(loc.category));
           }
           break;
         }

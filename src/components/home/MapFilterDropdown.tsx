@@ -117,64 +117,79 @@ const MapFilterDropdown = () => {
         const userIds = users.map(u => u.id);
         const { data: allSavedPlaces } = await supabase
           .from('saved_places')
-          .select('user_id, place_id, place_category, city')
+          .select('user_id, place_id, place_category, city, coordinates')
           .in('user_id', userIds);
 
         // Also fetch from user_saved_locations with locations table
         const { data: allUserSavedLocations } = await supabase
           .from('user_saved_locations')
-          .select('user_id, location_id, locations(id, google_place_id, category, city)')
+          .select('user_id, location_id, locations(id, google_place_id, category, city, latitude, longitude)')
           .in('user_id', userIds);
 
         // Also include locations CREATED by the user (these show up as pins and should count in the badges)
         const { data: allCreatedLocations } = await supabase
           .from('locations')
-          .select('created_by, id, google_place_id, category, city')
+          .select('created_by, id, google_place_id, category, city, latitude, longitude')
           .in('created_by', userIds);
 
-        // Combine all places per user with city filtering and deduplication
-        const userPlacesMap = new Map<string, Map<string, string>>(); // userId -> (placeId -> category)
+        // Combine all places per user with city filtering and strong deduplication (by google_place_id OR coordinates)
+        const userPlacesById = new Map<string, Map<string, string>>(); // userId -> (uniqueKey -> category)
+        const userSeenCoords = new Map<string, Set<string>>(); // userId -> Set<coordKey>
 
-        // Process saved_places first
-        (allSavedPlaces || []).forEach((p: any) => {
-          if (matchesCity(p.city) && p.place_id) {
-            const userPlaces = userPlacesMap.get(p.user_id) || new Map();
-            // Only add if not already present (deduplication)
-            if (!userPlaces.has(p.place_id)) {
-              userPlaces.set(p.place_id, normalizeCategory(p.place_category));
-              userPlacesMap.set(p.user_id, userPlaces);
-            }
+        const coordKey = (lat?: number | null, lng?: number | null) => {
+          if (typeof lat !== 'number' || typeof lng !== 'number') return '';
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+          if (lat === 0 || lng === 0) return '';
+          return `${lat.toFixed(6)},${lng.toFixed(6)}`;
+        };
+
+        const getStores = (userId: string) => {
+          const byId = userPlacesById.get(userId) || new Map<string, string>();
+          const coords = userSeenCoords.get(userId) || new Set<string>();
+          userPlacesById.set(userId, byId);
+          userSeenCoords.set(userId, coords);
+          return { byId, coords };
+        };
+
+        const upsertPlace = (userId: string, uniqueId: string, category: string, cKey?: string) => {
+          if (!userId || !uniqueId) return;
+          const { byId, coords } = getStores(userId);
+          if (cKey && coords.has(cKey)) {
+            // Already have something at these coordinates
+            return;
           }
+          byId.set(uniqueId, category);
+          if (cKey) coords.add(cKey);
+        };
+
+        // 1) saved_places (google place id)
+        (allSavedPlaces || []).forEach((p: any) => {
+          if (!matchesCity(p.city) || !p.place_id) return;
+          const coords = p.coordinates as any;
+          const cKey = coordKey(Number(coords?.lat), Number(coords?.lng));
+          upsertPlace(p.user_id, String(p.place_id), normalizeCategory(p.place_category), cKey);
         });
 
-        // Process user_saved_locations - may override with better category from locations table
+        // 2) user_saved_locations (internal saved -> locations)
         (allUserSavedLocations || []).forEach((usl: any) => {
           const loc = usl.locations;
-          if (loc && matchesCity(loc.city)) {
-            const placeId = loc.google_place_id || loc.id;
-            if (placeId) {
-              const userPlaces = userPlacesMap.get(usl.user_id) || new Map();
-              // Override or add - locations table has more reliable category
-              userPlaces.set(placeId, normalizeCategory(loc.category));
-              userPlacesMap.set(usl.user_id, userPlaces);
-            }
-          }
+          if (!loc || !matchesCity(loc.city)) return;
+          const uniqueId = String(loc.google_place_id || loc.id || '');
+          const cKey = coordKey(Number(loc.latitude), Number(loc.longitude));
+          upsertPlace(usl.user_id, uniqueId, normalizeCategory(loc.category), cKey);
         });
 
-        // Process created locations - also reliable category
+        // 3) created locations
         (allCreatedLocations || []).forEach((loc: any) => {
-          if (loc?.created_by && matchesCity(loc.city)) {
-            const placeId = loc.google_place_id || loc.id;
-            if (!placeId) return;
-            const userPlaces = userPlacesMap.get(loc.created_by) || new Map();
-            userPlaces.set(placeId, normalizeCategory(loc.category));
-            userPlacesMap.set(loc.created_by, userPlaces);
-          }
+          if (!loc?.created_by || !matchesCity(loc.city)) return;
+          const uniqueId = String(loc.google_place_id || loc.id || '');
+          const cKey = coordKey(Number(loc.latitude), Number(loc.longitude));
+          upsertPlace(loc.created_by, uniqueId, normalizeCategory(loc.category), cKey);
         });
 
         // Calculate stats per user with dynamic categories
         for (const followedUser of users) {
-          const placesMap = userPlacesMap.get(followedUser.id);
+          const placesMap = userPlacesById.get(followedUser.id);
           if (placesMap && placesMap.size > 0) {
             const categoryCounts: Record<string, number> = {};
             placesMap.forEach((category) => {

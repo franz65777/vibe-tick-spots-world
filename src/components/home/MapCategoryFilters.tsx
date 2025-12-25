@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import SaveTagsFilter from './SaveTagsFilter';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
@@ -119,45 +120,62 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       }
 
       const normalizedCity = currentCity.trim().toLowerCase();
-      
+
       const { data: savedPlacesData } = await supabase
         .from('saved_places')
-        .select('user_id, city, place:places_cache(category)')
+        .select('user_id, place_id, city, place_category')
         .in('user_id', followingIds)
         .ilike('city', `%${normalizedCity}%`);
-      
+
       const { data: savedLocData } = await supabase
         .from('user_saved_locations')
         .select(`
           user_id,
-          locations!inner(city, category)
+          locations:locations (id, google_place_id, city, category)
         `)
         .in('user_id', followingIds);
-      
-      const userDataMap = new Map<string, CategoryCounts>();
-      
-      savedPlacesData?.forEach((sp: any) => {
+
+      const normalizeCategory = (cat: unknown) => {
+        return normalizeCategoryToBase(cat) || String(cat ?? '').trim().toLowerCase() || 'unknown';
+      };
+
+      const userUnique = new Map<string, Map<string, string>>(); // user_id -> (uniqueKey -> category)
+
+      const upsert = (userId: string, key: string, category: string) => {
+        const m = userUnique.get(userId) || new Map<string, string>();
+        userUnique.set(userId, m);
+        m.set(key, category);
+      };
+
+      // saved_places
+      (savedPlacesData || []).forEach((sp: any) => {
         const spCity = sp.city?.trim().toLowerCase();
         if (spCity && (spCity.includes(normalizedCity) || normalizedCity.includes(spCity))) {
-          const category = sp.place?.category?.toLowerCase() || 'unknown';
-          if (!userDataMap.has(sp.user_id)) {
-            userDataMap.set(sp.user_id, {});
-          }
-          const counts = userDataMap.get(sp.user_id)!;
-          counts[category] = (counts[category] || 0) + 1;
+          const key = String(sp.place_id || '');
+          if (!key) return;
+          const category = normalizeCategory(sp.place_category);
+          upsert(sp.user_id, key, category);
         }
       });
-      
-      savedLocData?.forEach((sl: any) => {
+
+      // user_saved_locations
+      (savedLocData || []).forEach((sl: any) => {
         const locCity = sl.locations?.city?.trim().toLowerCase();
         if (locCity && (locCity.includes(normalizedCity) || normalizedCity.includes(locCity))) {
-          const category = sl.locations?.category?.toLowerCase() || 'unknown';
-          if (!userDataMap.has(sl.user_id)) {
-            userDataMap.set(sl.user_id, {});
-          }
-          const counts = userDataMap.get(sl.user_id)!;
-          counts[category] = (counts[category] || 0) + 1;
+          const key = String(sl.locations?.google_place_id || sl.locations?.id || '');
+          if (!key) return;
+          const category = normalizeCategory(sl.locations?.category);
+          upsert(sl.user_id, key, category);
         }
+      });
+
+      const userDataMap = new Map<string, CategoryCounts>();
+      userUnique.forEach((uniqueMap, userId) => {
+        const counts: CategoryCounts = {};
+        uniqueMap.forEach((cat) => {
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
+        userDataMap.set(userId, counts);
       });
       
       if (userDataMap.size === 0) {
