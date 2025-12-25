@@ -417,7 +417,13 @@ const MobileNotificationItem = ({
   // Note: Disabled realtime profile updates to prevent "subscribe multiple times" error
   // Profile data is already fetched on mount and cached, which is sufficient for notifications
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent navigation if clicking on username or avatar (handled separately)
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-avatar-click]') || target.closest('[data-username-click]')) {
+      return;
+    }
+    
     // Handle grouped likes or comments - navigate to post
     if ((notification.type === 'like' || notification.type === 'comment') && notification.data?.post_id) {
       navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
@@ -441,6 +447,7 @@ const MobileNotificationItem = ({
 
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     if (!targetUserId) return;
 
     // If user has active story, open story viewer
@@ -454,6 +461,7 @@ const MobileNotificationItem = ({
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     if (targetUserId) {
       navigate(`/profile/${targetUserId}`);
     }
@@ -613,6 +621,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayName}
             </span>
@@ -636,6 +645,7 @@ const MobileNotificationItem = ({
                 <span 
                   className="font-semibold cursor-pointer hover:underline" 
                   onClick={handleUsernameClick}
+                  data-username-click="true"
                 >
                   {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
                 </span>
@@ -648,6 +658,7 @@ const MobileNotificationItem = ({
                 <span 
                   className="font-semibold cursor-pointer hover:underline" 
                   onClick={handleUsernameClick}
+                  data-username-click="true"
                 >
                   {groupedUsers[0].name}
                 </span>
@@ -663,6 +674,7 @@ const MobileNotificationItem = ({
                 <span 
                   className="font-semibold cursor-pointer hover:underline" 
                   onClick={handleUsernameClick}
+                  data-username-click="true"
                 >
                   {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
                 </span>
@@ -682,6 +694,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayUsername}
             </span>
@@ -694,6 +707,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayUsername}
             </span>
@@ -706,6 +720,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayUsername}
             </span>
@@ -718,6 +733,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayUsername}
             </span>
@@ -734,6 +750,7 @@ const MobileNotificationItem = ({
               <span 
                 className="font-semibold cursor-pointer hover:underline" 
                 onClick={handleUsernameClick}
+                data-username-click="true"
               >
                 {displayUsername}
               </span>
@@ -752,6 +769,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayUsername}
             </span>
@@ -764,6 +782,7 @@ const MobileNotificationItem = ({
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
+              data-username-click="true"
             >
               {displayUsername}
             </span>
@@ -794,6 +813,7 @@ const MobileNotificationItem = ({
                 className="w-8 h-8 rounded-full border-2 border-background cursor-pointer relative overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0"
                 style={{ zIndex: groupedUsers.length - index }}
                 onClick={handleAvatarClick}
+                data-avatar-click="true"
               >
                 {(groupedUserOverrides[user.id]?.avatar || user.avatar) ? (
                   <img 
@@ -818,6 +838,7 @@ const MobileNotificationItem = ({
       <div 
         className={`w-11 h-11 rounded-full border-2 ${hasActiveStory ? 'border-primary' : 'border-background'} cursor-pointer flex-shrink-0 overflow-hidden bg-primary/10 flex items-center justify-center`}
         onClick={handleAvatarClick}
+        data-avatar-click="true"
       >
         {computedAvatar ? (
           <img 
@@ -857,10 +878,19 @@ const MobileNotificationItem = ({
               onClick={async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                setIsLoading(true);
+                // Immediately hide the notification for instant feedback
+                setHidden(true);
+                setSwipedOpen(false);
+                setTranslateX(0);
+                
                 try {
                   if (onDelete) {
-                    await onDelete(notification.id);
+                    const result = await onDelete(notification.id);
+                    if (result && !result.success) {
+                      // Restore visibility if delete failed
+                      setHidden(false);
+                      toast.error(t('error', { ns: 'common' }));
+                    }
                   } else {
                     // Fallback to direct delete if no handler provided
                     const { error: delErr } = await supabase
@@ -869,16 +899,15 @@ const MobileNotificationItem = ({
                       .eq('id', notification.id);
 
                     if (delErr) {
-                      // Fallback: expire the notification so backend queries can ignore it
-                      await supabase
-                        .from('notifications')
-                        .update({ expires_at: new Date().toISOString() })
-                        .eq('id', notification.id);
+                      // Restore visibility if delete failed
+                      setHidden(false);
+                      toast.error(t('error', { ns: 'common' }));
                     }
-                    setHidden(true);
                   }
-                } finally {
-                  setIsLoading(false);
+                } catch (err) {
+                  console.error('Error deleting notification:', err);
+                  setHidden(false);
+                  toast.error(t('error', { ns: 'common' }));
                 }
               }}
               onPointerDown={(e) => e.stopPropagation()}
@@ -896,7 +925,7 @@ const MobileNotificationItem = ({
                 e.stopPropagation();
                 return;
               }
-              handleClick();
+              handleClick(e);
             }}
             onPointerDown={(e) => {
               (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
