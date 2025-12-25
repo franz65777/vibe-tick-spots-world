@@ -21,9 +21,7 @@ interface FollowedUser {
 
 interface UserSavedStats {
   userId: string;
-  restaurantCount: number;
-  barCount: number;
-  cafeCount: number;
+  categoryCounts: Record<string, number>; // Dynamic categories with counts
 }
 
 const MapFilterDropdown = () => {
@@ -131,43 +129,53 @@ const MapFilterDropdown = () => {
           .select('user_id, location_id, locations(id, google_place_id, category, city)')
           .in('user_id', userIds);
 
-        // Combine all places per user with city filtering
-        const userPlacesMap = new Map<string, { category: string; placeId: string }[]>();
+        // Combine all places per user with city filtering and deduplication
+        const userPlacesMap = new Map<string, Map<string, string>>(); // userId -> (placeId -> category)
 
-        // Process saved_places
+        // Process saved_places first
         (allSavedPlaces || []).forEach((p: any) => {
-          if (matchesCity(p.city)) {
-            const places = userPlacesMap.get(p.user_id) || [];
-            places.push({ category: normalizeCategory(p.place_category), placeId: p.place_id });
-            userPlacesMap.set(p.user_id, places);
-          }
-        });
-
-        // Process user_saved_locations
-        (allUserSavedLocations || []).forEach((usl: any) => {
-          const loc = usl.locations;
-          if (loc && matchesCity(loc.city)) {
-            const places = userPlacesMap.get(usl.user_id) || [];
-            // Avoid duplicates by place_id/google_place_id
-            const placeId = loc.google_place_id || loc.id;
-            if (!places.some(p => p.placeId === placeId)) {
-              places.push({ category: normalizeCategory(loc.category), placeId });
-              userPlacesMap.set(usl.user_id, places);
+          if (matchesCity(p.city) && p.place_id) {
+            const userPlaces = userPlacesMap.get(p.user_id) || new Map();
+            // Only add if not already present (deduplication)
+            if (!userPlaces.has(p.place_id)) {
+              userPlaces.set(p.place_id, normalizeCategory(p.place_category));
+              userPlacesMap.set(p.user_id, userPlaces);
             }
           }
         });
 
-        // Calculate stats per user
+        // Process user_saved_locations - may override with better category from locations table
+        (allUserSavedLocations || []).forEach((usl: any) => {
+          const loc = usl.locations;
+          if (loc && matchesCity(loc.city)) {
+            const placeId = loc.google_place_id || loc.id;
+            if (placeId) {
+              const userPlaces = userPlacesMap.get(usl.user_id) || new Map();
+              // Override or add - locations table has more reliable category
+              userPlaces.set(placeId, normalizeCategory(loc.category));
+              userPlacesMap.set(usl.user_id, userPlaces);
+            }
+          }
+        });
+
+        // Calculate stats per user with dynamic categories
         for (const followedUser of users) {
-          const places = userPlacesMap.get(followedUser.id) || [];
-          if (places.length > 0) {
-            const stats: UserSavedStats = {
-              userId: followedUser.id,
-              restaurantCount: places.filter(p => p.category === 'restaurant').length,
-              barCount: places.filter(p => p.category === 'bar').length,
-              cafeCount: places.filter(p => p.category === 'cafe').length,
-            };
-            statsMap.set(followedUser.id, stats);
+          const placesMap = userPlacesMap.get(followedUser.id);
+          if (placesMap && placesMap.size > 0) {
+            const categoryCounts: Record<string, number> = {};
+            placesMap.forEach((category) => {
+              if (category) {
+                categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+              }
+            });
+            
+            if (Object.keys(categoryCounts).length > 0) {
+              const stats: UserSavedStats = {
+                userId: followedUser.id,
+                categoryCounts,
+              };
+              statsMap.set(followedUser.id, stats);
+            }
           }
         }
 
@@ -178,6 +186,26 @@ const MapFilterDropdown = () => {
     fetchFollowedUsersWithStats();
   }, [user?.id, currentCity]); // Re-fetch when city changes
 
+  // Category emoji mapping
+  const getCategoryEmoji = (category: string): string => {
+    const emojiMap: Record<string, string> = {
+      'restaurant': '🍽️',
+      'bar': '🍺',
+      'cafe': '☕',
+      'hotel': '🏨',
+      'lodging': '🏨',
+      'museum': '🏛️',
+      'entertainment': '🎭',
+      'shopping': '🛍️',
+      'park': '🌳',
+      'gym': '🏋️',
+      'spa': '💆',
+      'beach': '🏖️',
+      'attraction': '🎡',
+    };
+    return emojiMap[category] || '📍';
+  };
+
   const mapFilters = [
     { id: 'following' as const, name: t('friends'), icon: filterFriendsIcon, iconSize: 'w-7 h-7' },
     { id: 'popular' as const, name: t('everyone'), icon: filterEveryoneIcon, iconSize: 'w-6 h-6' },
@@ -187,7 +215,7 @@ const MapFilterDropdown = () => {
   // Only show friends that have at least one saved location
   const friendsWithSavedLocations = followedUsers.filter(u => {
     const stats = userStats.get(u.id);
-    return stats && (stats.restaurantCount > 0 || stats.barCount > 0 || stats.cafeCount > 0);
+    return stats && Object.keys(stats.categoryCounts).length > 0;
   });
 
   const allSelected = selectedFollowedUserIds.length === friendsWithSavedLocations.length && friendsWithSavedLocations.length > 0;
@@ -302,24 +330,20 @@ const MapFilterDropdown = () => {
                     <span className="text-sm font-medium text-foreground">{followedUser.username}</span>
                   </div>
                   
-                  {/* Stats badges */}
-                  {stats && (
-                    <div className="flex items-center gap-1.5">
-                      {stats.restaurantCount > 0 && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">
-                          🍽️ {stats.restaurantCount}
-                        </span>
-                      )}
-                      {stats.barCount > 0 && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">
-                          🍺 {stats.barCount}
-                        </span>
-                      )}
-                      {stats.cafeCount > 0 && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">
-                          ☕ {stats.cafeCount}
-                        </span>
-                      )}
+                  {/* Stats badges - scrollable */}
+                  {stats && Object.keys(stats.categoryCounts).length > 0 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-[140px] scrollbar-hide">
+                      {Object.entries(stats.categoryCounts)
+                        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                        .map(([category, count]) => (
+                          <span 
+                            key={category}
+                            className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs whitespace-nowrap flex-shrink-0"
+                          >
+                            {getCategoryEmoji(category)} {count}
+                          </span>
+                        ))
+                      }
                     </div>
                   )}
                 </button>
