@@ -509,6 +509,30 @@ export const useUserProfile = (userId?: string) => {
     }
   };
 
+  // Force refresh of follower/following counts
+  const refreshCounts = async () => {
+    if (!userId) return;
+    try {
+      const [followersRes, followingRes] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('following_id', userId),
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('follower_id', userId),
+      ]);
+      setProfile((prev) =>
+        prev
+          ? { ...prev, followers_count: followersRes.count || 0, following_count: followingRes.count || 0 }
+          : prev
+      );
+    } catch (e) {
+      console.error('Error refreshing counts:', e);
+    }
+  };
+
   return {
     profile,
     loading,
@@ -517,5 +541,6 @@ export const useUserProfile = (userId?: string) => {
     unfollowUser,
     cancelFollowRequest,
     followLoading,
+    refreshCounts,
   };
 };

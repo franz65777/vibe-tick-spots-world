@@ -18,6 +18,7 @@ interface FollowersModalProps {
   onClose: () => void;
   initialTab?: 'followers' | 'following';
   userId?: string;
+  onFollowChange?: () => void;
 }
 
 interface UserWithFollowStatus {
@@ -28,7 +29,7 @@ interface UserWithFollowStatus {
   savedPlacesCount?: number;
 }
 
-const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: FollowersModalProps) => {
+const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onFollowChange }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
@@ -108,17 +109,39 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
           
           const userIds = followUsers.map((u: any) => u.id);
 
-          // Fetch saved places (distinct by place_id) for each user
-          const { data: savedPlacesData } = await supabase
-            .from('saved_places')
-            .select('user_id, place_id')
-            .in('user_id', userIds);
+          // Fetch saved places from BOTH saved_places and user_saved_locations for each user
+          const [savedPlacesResult, userSavedLocationsResult] = await Promise.all([
+            supabase
+              .from('saved_places')
+              .select('user_id, place_id')
+              .in('user_id', userIds),
+            supabase
+              .from('user_saved_locations')
+              .select('user_id, location_id')
+              .in('user_id', userIds)
+          ]);
 
+          // Count distinct places for each user (combining both tables)
+          const placesCountMap = new Map<string, number>();
+          
+          // Process saved_places (using place_id as unique identifier)
           const savedPlacesDistinct = new Map<string, Set<string>>();
-          savedPlacesData?.forEach((sp: any) => {
+          savedPlacesResult.data?.forEach((sp: any) => {
             if (!sp.user_id || !sp.place_id) return;
             if (!savedPlacesDistinct.has(sp.user_id)) savedPlacesDistinct.set(sp.user_id, new Set());
-            savedPlacesDistinct.get(sp.user_id)!.add(sp.place_id);
+            savedPlacesDistinct.get(sp.user_id)!.add(`sp_${sp.place_id}`);
+          });
+
+          // Process user_saved_locations (using location_id as unique identifier)
+          userSavedLocationsResult.data?.forEach((usl: any) => {
+            if (!usl.user_id || !usl.location_id) return;
+            if (!savedPlacesDistinct.has(usl.user_id)) savedPlacesDistinct.set(usl.user_id, new Set());
+            savedPlacesDistinct.get(usl.user_id)!.add(`usl_${usl.location_id}`);
+          });
+
+          // Calculate total count for each user
+          savedPlacesDistinct.forEach((places, userId) => {
+            placesCountMap.set(userId, places.size);
           });
 
           // Check follow status for each user
@@ -135,12 +158,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
             usersWithStatus = followUsers.map((u: any) => ({
               ...u,
               isFollowing: followingIds.has(u.id),
-              savedPlacesCount: savedPlacesDistinct.get(u.id)?.size || 0,
+              savedPlacesCount: placesCountMap.get(u.id) || 0,
             }));
           } else {
             usersWithStatus = followUsers.map((u: any) => ({
               ...u,
-              savedPlacesCount: savedPlacesDistinct.get(u.id)?.size || 0,
+              savedPlacesCount: placesCountMap.get(u.id) || 0,
             }));
           }
           
@@ -183,6 +206,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         setUsers(prev => prev.map(u => 
           u.id === targetId ? { ...u, isFollowing: true } : u
         ));
+        // Notify parent about the change
+        onFollowChange?.();
       }
     } catch (error) {
       console.error('Error following user:', error);
@@ -204,6 +229,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
         setUsers(prev => prev.map(u => 
           u.id === targetId ? { ...u, isFollowing: false } : u
         ));
+        // Notify parent about the change
+        onFollowChange?.();
       }
     } catch (error) {
       console.error('Error unfollowing user:', error);
@@ -221,6 +248,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
 
       if (!error) {
         setUsers(prev => prev.filter(u => u.id !== followerId));
+        // Notify parent about the change
+        onFollowChange?.();
       } else {
         console.error('Error removing follower:', error);
       }
