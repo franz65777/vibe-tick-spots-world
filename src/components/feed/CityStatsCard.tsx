@@ -14,9 +14,13 @@ interface CityRanking {
   rank: number | null;
 }
 
-// Simple in-memory cache for city stats
-const statsCache = {
-  data: null as { totalPlaces: number; topCities: CityRanking[]; userCity: CityRanking | null; timestamp: number } | null,
+// Global cache for city stats - NOT per-user since we count ALL saved places globally
+const globalStatsCache = {
+  data: null as { totalPlaces: number; topCities: CityRanking[]; timestamp: number } | null,
+};
+// User-specific cache for userCity only
+const userCityCache = {
+  data: null as { userCity: CityRanking | null; timestamp: number } | null,
   userId: null as string | null,
 };
 const CACHE_DURATION = 60000; // 1 minute cache
@@ -26,32 +30,93 @@ const CityStatsCard = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { location: geoLocation, getCityFromCoordinates } = useGeolocation();
-  const [totalPlaces, setTotalPlaces] = useState(statsCache.data?.totalPlaces || 0);
-  const [topCities, setTopCities] = useState<CityRanking[]>(statsCache.data?.topCities || []);
-  const [userCity, setUserCity] = useState<CityRanking | null>(statsCache.data?.userCity || null);
-  const [loading, setLoading] = useState(!statsCache.data || statsCache.userId !== user?.id);
+  const [totalPlaces, setTotalPlaces] = useState(globalStatsCache.data?.totalPlaces || 0);
+  const [topCities, setTopCities] = useState<CityRanking[]>(globalStatsCache.data?.topCities || []);
+  const [userCity, setUserCity] = useState<CityRanking | null>(
+    userCityCache.userId === user?.id ? userCityCache.data?.userCity || null : null
+  );
+  const [loading, setLoading] = useState(!globalStatsCache.data);
   const [isMinimized, setIsMinimized] = useState(false);
   const fetchingRef = useRef(false);
 
   useEffect(() => {
     if (!user?.id) return;
     
-    // Check if we have valid cached data
+    // Check if we have valid global cached data
     const now = Date.now();
-    if (
-      statsCache.data && 
-      statsCache.userId === user.id && 
-      now - statsCache.data.timestamp < CACHE_DURATION
-    ) {
-      setTotalPlaces(statsCache.data.totalPlaces);
-      setTopCities(statsCache.data.topCities);
-      setUserCity(statsCache.data.userCity);
+    const hasValidGlobalCache = globalStatsCache.data && 
+      now - globalStatsCache.data.timestamp < CACHE_DURATION;
+    const hasValidUserCityCache = userCityCache.data && 
+      userCityCache.userId === user.id && 
+      now - userCityCache.data.timestamp < CACHE_DURATION;
+    
+    if (hasValidGlobalCache) {
+      setTotalPlaces(globalStatsCache.data!.totalPlaces);
+      setTopCities(globalStatsCache.data!.topCities);
+      if (hasValidUserCityCache) {
+        setUserCity(userCityCache.data!.userCity);
+      }
       setLoading(false);
       return;
     }
     
     // Prevent duplicate fetches
     if (fetchingRef.current) return;
+    
+    // Helper to fetch user's current city data
+    const fetchUserCityData = async (cityCountMap: Record<string, number>, sortedCities: { city: string; count: number; rank: number }[]) => {
+      const normalizeCity = (city: string): string => {
+        const cityAliases: Record<string, string> = {
+          'turin': 'Torino',
+          'rome': 'Roma',
+          'milan': 'Milano',
+          'florence': 'Firenze',
+          'venice': 'Venezia',
+          'naples': 'Napoli',
+          'genoa': 'Genova',
+        };
+        const lowerCity = city.toLowerCase().trim();
+        return cityAliases[lowerCity] || city;
+      };
+
+      let currentCityName: string | null = null;
+      
+      if (geoLocation?.city) {
+        currentCityName = geoLocation.city;
+      } else if (geoLocation?.latitude && geoLocation?.longitude) {
+        currentCityName = await getCityFromCoordinates(geoLocation.latitude, geoLocation.longitude);
+      }
+      
+      if (!currentCityName) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('current_city')
+          .eq('id', user.id)
+          .single();
+        currentCityName = profile?.current_city || null;
+      }
+
+      let userCityData: CityRanking | null = null;
+      if (currentCityName) {
+        const normalizedCityName = normalizeCity(currentCityName);
+        const userCityCount = cityCountMap[normalizedCityName] || 0;
+        const userCityRank =
+          sortedCities.findIndex((c) => c.city.toLowerCase() === normalizedCityName.toLowerCase()) + 1;
+
+        userCityData = {
+          city: normalizedCityName,
+          count: userCityCount,
+          rank: userCityRank > 0 ? userCityRank : null,
+        };
+        setUserCity(userCityData);
+        
+        // Update user city cache
+        userCityCache.data = { userCity: userCityData, timestamp: Date.now() };
+        userCityCache.userId = user.id;
+      }
+      
+      return userCityData;
+    };
     
     const fetchStats = async () => {
       fetchingRef.current = true;
@@ -130,50 +195,16 @@ const CityStatsCard = memo(() => {
 
         const top = sortedCities.slice(0, 3);
         setTopCities(top);
-
-        // Get user's current city from geolocation or profile
-        let currentCityName: string | null = null;
         
-        // First try geolocation
-        if (geoLocation?.city) {
-          currentCityName = geoLocation.city;
-        } else if (geoLocation?.latitude && geoLocation?.longitude) {
-          currentCityName = await getCityFromCoordinates(geoLocation.latitude, geoLocation.longitude);
-        }
-        
-        // Fallback to profile
-        if (!currentCityName) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('current_city')
-            .eq('id', user.id)
-            .single();
-          currentCityName = profile?.current_city || null;
-        }
-
-        let userCityData: CityRanking | null = null;
-        if (currentCityName) {
-          const normalizedCityName = normalizeCity(currentCityName);
-          const userCityCount = cityCountMap[normalizedCityName] || 0;
-          const userCityRank =
-            sortedCities.findIndex((c) => c.city.toLowerCase() === normalizedCityName.toLowerCase()) + 1;
-
-          userCityData = {
-            city: normalizedCityName,
-            count: userCityCount,
-            rank: userCityRank > 0 ? userCityRank : null,
-          };
-          setUserCity(userCityData);
-        }
-        
-        // Update cache
-        statsCache.data = {
+        // Update global cache (same for all users)
+        globalStatsCache.data = {
           totalPlaces: total,
           topCities: top,
-          userCity: userCityData,
           timestamp: Date.now()
         };
-        statsCache.userId = user.id;
+
+        // Fetch user-specific city data
+        await fetchUserCityData(cityCountMap, sortedCities);
       } catch (err) {
         console.error('Error fetching city stats:', err);
       } finally {
@@ -191,7 +222,7 @@ const CityStatsCard = memo(() => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'saved_places' },
         () => {
-          statsCache.data = null;
+          globalStatsCache.data = null;
           fetchStats();
         }
       )
@@ -199,7 +230,7 @@ const CityStatsCard = memo(() => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'user_saved_locations' },
         () => {
-          statsCache.data = null;
+          globalStatsCache.data = null;
           fetchStats();
         }
       )
@@ -208,7 +239,7 @@ const CityStatsCard = memo(() => {
         { event: '*', schema: 'public', table: 'locations' },
         () => {
           // Covers cases where a new location is created/updated with a city
-          statsCache.data = null;
+          globalStatsCache.data = null;
           fetchStats();
         }
       )
@@ -220,7 +251,7 @@ const CityStatsCard = memo(() => {
   }, [user?.id, geoLocation?.city, geoLocation?.latitude, geoLocation?.longitude]);
 
   // Show cached data immediately, never show skeleton if we have cache
-  if (loading && !statsCache.data) {
+  if (loading && !globalStatsCache.data) {
     return (
       <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 p-4 animate-pulse shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="h-24 bg-muted/30 rounded-xl" />
