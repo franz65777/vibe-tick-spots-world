@@ -81,12 +81,21 @@ const MapFilterDropdown = () => {
         // Fetch saved location stats for each user - FILTERED BY CURRENT CITY
         const statsMap = new Map<string, UserSavedStats>();
         const normalizedCity = currentCity?.trim().toLowerCase() || '';
-        
+
+        const normalizeCategory = (cat: any) => {
+          const c = String(cat || '').trim().toLowerCase();
+          if (!c) return '';
+          if (c === 'bars' || c === 'pub') return 'bar';
+          if (c === 'restaurants') return 'restaurant';
+          if (c === 'coffee' || c === 'coffee_shop' || c === 'cafè') return 'cafe';
+          return c;
+        };
+
         // Batch fetch all saved places for all followed users
         const userIds = users.map(u => u.id);
         let query = supabase
           .from('saved_places')
-          .select('user_id, place_category, city')
+          .select('user_id, place_id, place_category, city')
           .in('user_id', userIds);
 
         // Only filter by city if we have one
@@ -96,16 +105,31 @@ const MapFilterDropdown = () => {
 
         const { data: allSavedPlaces } = await query;
 
+        // Optional override: if a place exists in our locations table, trust its category
+        const placeIds = Array.from(new Set((allSavedPlaces || []).map((p: any) => p.place_id).filter(Boolean)));
+        const { data: categoryOverrides } = placeIds.length
+          ? await supabase
+              .from('locations')
+              .select('google_place_id, category')
+              .in('google_place_id', placeIds)
+          : { data: [] as any[] };
+
+        const overrideMap = new Map<string, string>();
+        (categoryOverrides || []).forEach((l: any) => {
+          if (l.google_place_id && l.category) overrideMap.set(l.google_place_id, l.category);
+        });
+
         // Group by user and count categories
         if (allSavedPlaces) {
           for (const followedUser of users) {
             const userPlaces = allSavedPlaces.filter(p => p.user_id === followedUser.id);
             if (userPlaces.length > 0) {
+              const categories = userPlaces.map(p => normalizeCategory(overrideMap.get(p.place_id) || p.place_category));
               const stats: UserSavedStats = {
                 userId: followedUser.id,
-                restaurantCount: userPlaces.filter(p => p.place_category === 'restaurant').length,
-                barCount: userPlaces.filter(p => p.place_category === 'bar').length,
-                cafeCount: userPlaces.filter(p => p.place_category === 'cafe').length,
+                restaurantCount: categories.filter(c => c === 'restaurant').length,
+                barCount: categories.filter(c => c === 'bar').length,
+                cafeCount: categories.filter(c => c === 'cafe').length,
               };
               statsMap.set(followedUser.id, stats);
             }
