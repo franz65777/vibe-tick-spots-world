@@ -1013,41 +1013,16 @@ const MobileNotificationItem = ({
                             if (!user || !notification.data?.user_id) return;
                             setIsLoading(true);
                             try {
-                              // Use requester/requested pair - more reliable than request_id
+                              // Use RPC to safely decline the request (handles uuid casting)
                               const requesterId = notification.data.user_id as string;
+                              const requestId = notification.data?.request_id as string | undefined;
 
-                              // Update the pending request to declined
-                              const updateAttempt = await supabase
-                                .from('friend_requests')
-                                .update({ status: 'declined' })
-                                .eq('requester_id', requesterId)
-                                .eq('requested_id', user.id)
-                                .eq('status', 'pending')
-                                .select('id')
-                                .maybeSingle();
+                              const { error: rpcError } = await supabase.rpc('decline_friend_request', {
+                                p_request_id: requestId || null,
+                                p_requester_id: requesterId,
+                              });
 
-                              if (updateAttempt.error) throw updateAttempt.error;
-
-                              // If nothing was updated (stale notification), still attempt to clean up any pending request
-                              if (!updateAttempt.data) {
-                                const { error: cleanupErr } = await supabase
-                                  .from('friend_requests')
-                                  .delete()
-                                  .eq('requester_id', requesterId)
-                                  .eq('requested_id', user.id)
-                                  .eq('status', 'pending');
-                                if (cleanupErr) throw cleanupErr;
-                              } else {
-                                // Remove declined requests to avoid lingering old rows
-                                const { error: deleteErr } = await supabase
-                                  .from('friend_requests')
-                                  .delete()
-                                  .eq('requester_id', requesterId)
-                                  .eq('requested_id', user.id)
-                                  .eq('status', 'declined');
-                                if (deleteErr) throw deleteErr;
-                              }
-
+                              if (rpcError) throw rpcError;
                               // Delete the notification so it disappears immediately
                               if (onDelete) {
                                 await onDelete(notification.id);

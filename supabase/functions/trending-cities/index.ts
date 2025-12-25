@@ -17,13 +17,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Use the global RPC for distinct place counts per city
-    const { data: cities, error } = await supabaseClient.rpc('get_global_city_counts', { limit_count: 12 });
+    // Use the global RPC for distinct place counts per city (now returns pin_count)
+    const { data: cities, error } = await supabaseClient.rpc('get_global_city_counts');
 
     if (error) throw error;
 
+    // Map pin_count to total for consistent API response
     return new Response(
-      JSON.stringify({ cities: (cities as any[]).map((c: any) => ({ city: c.city, total: Number(c.total) })) }),
+      JSON.stringify({ cities: (cities as any[]).slice(0, 12).map((c: any) => ({ city: c.city, total: Number(c.pin_count) })) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {

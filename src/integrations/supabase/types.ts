@@ -3242,6 +3242,10 @@ export type Database = {
       cleanup_expired_stories: { Args: never; Returns: undefined }
       cleanup_old_analytics: { Args: never; Returns: undefined }
       cleanup_sensitive_data: { Args: never; Returns: undefined }
+      decline_friend_request: {
+        Args: { p_request_id?: string; p_requester_id?: string }
+        Returns: string
+      }
       enforce_data_retention: { Args: never; Returns: undefined }
       generate_confirmation_code: { Args: never; Returns: string }
       generate_invite_code: { Args: never; Returns: string }

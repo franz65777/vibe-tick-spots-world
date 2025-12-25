@@ -100,11 +100,11 @@ const CityStatsCard = memo(() => {
         const total = Number(totalData) || 0;
         setTotalPlaces(total);
 
-        // Global city counts
-        const { data: citiesData } = await supabase.rpc('get_global_city_counts', { limit_count: 100 });
+        // Global city counts - get_global_city_counts now returns pin_count (only google_place_id places)
+        const { data: citiesData } = await supabase.rpc('get_global_city_counts');
         const sortedCities: CityRanking[] = ((citiesData as any[]) || []).map((c, idx) => ({
           city: normalizeCity(c.city),
-          count: Number(c.total),
+          count: Number(c.pin_count),
           rank: idx + 1,
         }));
         const top = sortedCities.slice(0, 3);
