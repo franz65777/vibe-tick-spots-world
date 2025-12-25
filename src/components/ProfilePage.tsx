@@ -21,7 +21,7 @@ import ProfileSkeleton from './ProfileSkeleton';
 const ProfilePage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { profile, loading, error } = useOptimizedProfile();
+  const { profile, loading, error, refetch } = useOptimizedProfile();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -166,6 +166,7 @@ const ProfilePage = memo(() => {
         isOpen={modalState.isOpen}
         onClose={closeModal}
         initialTab={modalState.type || 'followers'}
+        onFollowChange={() => refetch()}
       />
 
       <SavedLocationsList

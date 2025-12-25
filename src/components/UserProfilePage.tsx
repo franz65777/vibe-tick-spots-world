@@ -32,7 +32,7 @@ const UserProfilePage = () => {
   const location = useLocation();
   const { user: currentUser } = useAuth();
 
-  const { profile, loading, error, followUser, unfollowUser, cancelFollowRequest, followLoading } = useUserProfile(userId);
+  const { profile, loading, error, followUser, unfollowUser, cancelFollowRequest, followLoading, refreshCounts } = useUserProfile(userId);
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   const { isMuted, toggleMute } = useNotificationMuting(userId);
   const { isBlocked, blockUser, unblockUser } = useUserBlocking(userId);
@@ -466,7 +466,7 @@ const UserProfilePage = () => {
         {renderTabContent()}
       </div>
 
-      <FollowersModal isOpen={modalState.isOpen} onClose={closeModal} initialTab={modalState.type || 'followers'} userId={userId} />
+      <FollowersModal isOpen={modalState.isOpen} onClose={closeModal} initialTab={modalState.type || 'followers'} userId={userId} onFollowChange={refreshCounts} />
 
       <SavedLocationsList isOpen={isLocationsListOpen} onClose={() => {
       setIsLocationsListOpen(false);
