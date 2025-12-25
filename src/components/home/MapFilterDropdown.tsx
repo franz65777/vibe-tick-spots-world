@@ -82,28 +82,33 @@ const MapFilterDropdown = () => {
         const statsMap = new Map<string, UserSavedStats>();
         const normalizedCity = currentCity?.trim().toLowerCase() || '';
         
-        for (const followedUser of users) {
-          // Build query - filter by city if one is selected
-          let query = supabase
-            .from('saved_places')
-            .select('place_category, city')
-            .eq('user_id', followedUser.id);
+        // Batch fetch all saved places for all followed users
+        const userIds = users.map(u => u.id);
+        let query = supabase
+          .from('saved_places')
+          .select('user_id, place_category, city')
+          .in('user_id', userIds);
 
-          // Only filter by city if we have one
-          if (normalizedCity) {
-            query = query.ilike('city', `%${normalizedCity}%`);
-          }
+        // Only filter by city if we have one
+        if (normalizedCity) {
+          query = query.ilike('city', `%${normalizedCity}%`);
+        }
 
-          const { data: savedPlaces } = await query;
+        const { data: allSavedPlaces } = await query;
 
-          if (savedPlaces && savedPlaces.length > 0) {
-            const stats: UserSavedStats = {
-              userId: followedUser.id,
-              restaurantCount: savedPlaces.filter(p => p.place_category === 'restaurant').length,
-              barCount: savedPlaces.filter(p => p.place_category === 'bar').length,
-              cafeCount: savedPlaces.filter(p => p.place_category === 'cafe').length,
-            };
-            statsMap.set(followedUser.id, stats);
+        // Group by user and count categories
+        if (allSavedPlaces) {
+          for (const followedUser of users) {
+            const userPlaces = allSavedPlaces.filter(p => p.user_id === followedUser.id);
+            if (userPlaces.length > 0) {
+              const stats: UserSavedStats = {
+                userId: followedUser.id,
+                restaurantCount: userPlaces.filter(p => p.place_category === 'restaurant').length,
+                barCount: userPlaces.filter(p => p.place_category === 'bar').length,
+                cafeCount: userPlaces.filter(p => p.place_category === 'cafe').length,
+              };
+              statsMap.set(followedUser.id, stats);
+            }
           }
         }
         setUserStats(statsMap);
