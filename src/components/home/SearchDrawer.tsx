@@ -560,10 +560,20 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   }, [dragProgress]);
 
   useEffect(() => {
-    if (!isDragging) {
-      setDragProgress(isDrawerOpen ? 1 : 0);
+    // Keep dragProgress in sync only for fully open/closed states.
+    // When closed we may keep an intermediate "trending peek" progress.
+    if (isDragging) return;
+
+    if (isDrawerOpen) {
+      setDragProgress(1);
+      return;
     }
-  }, [isDrawerOpen, isDragging]);
+
+    // If the drawer was open (progress 1) and got closed, snap to 0.
+    if (dragProgress >= 0.99) {
+      setDragProgress(0);
+    }
+  }, [isDrawerOpen, isDragging, dragProgress]);
 
   const handleClose = () => {
     setIsDragging(false);
