@@ -174,6 +174,9 @@ const HomePage = memo(() => {
   // State for navigation back to messages
   const [fromMessages, setFromMessages] = useState(false);
   const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
+  
+  // State for search drawer visibility (to hide header elements)
+  const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
@@ -721,6 +724,7 @@ const HomePage = memo(() => {
                 isCenteredOnUser={isCenteredOnUser}
                 onCenterStatusChange={handleCenterStatusChange}
                 onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
+                onSearchDrawerStateChange={setIsSearchDrawerOpen}
               />
             </Suspense>
           </div>
@@ -746,6 +750,7 @@ const HomePage = memo(() => {
               onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={handleCenterStatusChange}
+              isSearchDrawerOpen={isSearchDrawerOpen}
             />
           </div>
         )}

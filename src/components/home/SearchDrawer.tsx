@@ -499,8 +499,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     <div
       ref={drawerRef}
       className={cn(
-        "left-3 right-3 z-[1000] flex flex-col-reverse",
-        isExpanded ? 'fixed' : 'absolute'
+        "z-[1000] flex flex-col-reverse",
+        isExpanded ? 'fixed' : 'absolute',
+        // When closed, narrower width; when open, full width
+        isDrawerOpen ? 'left-3 right-3' : 'left-3 right-16'
       )}
       style={{
         bottom: isExpanded 
@@ -518,10 +520,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         style={{ touchAction: 'none' }}
         onClick={handleSearchBarClick}
       >
-        {/* Drag handle inside at top center */}
-        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
+        {/* Drag handle inside at top center - only show when drawer is open */}
+        {isDrawerOpen && (
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
+        )}
         
-        <div className="relative pt-3">
+        <div className={cn("relative", isDrawerOpen ? "pt-3" : "")}>
           <input
             ref={inputRef}
             type="text"

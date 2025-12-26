@@ -37,6 +37,7 @@ interface MapSectionProps {
   isCenteredOnUser?: boolean;
   onCenterStatusChange?: (isCentered: boolean) => void;
   onOpenSearchOverlay?: () => void;
+  onSearchDrawerStateChange?: (isOpen: boolean) => void;
 }
 
 const MapSection = ({ 
@@ -55,6 +56,7 @@ const MapSection = ({
   isCenteredOnUser = false,
   onCenterStatusChange,
   onOpenSearchOverlay,
+  onSearchDrawerStateChange,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
@@ -282,8 +284,8 @@ const MapSection = ({
           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/60 to-transparent pointer-events-none z-[999]" />
         )}
 
-        {/* Map Category Filters - Below header */}
-        {!isListViewOpen && (
+        {/* Map Category Filters - Below header - Hide when drawer is open */}
+        {!isListViewOpen && !isDrawerOpen && (
           <div className={cn(
             "z-[1100] w-full transition-opacity duration-300",
             isExpanded
@@ -312,7 +314,10 @@ const MapSection = ({
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={onCenterStatusChange}
               isExpanded={isExpanded}
-              onDrawerStateChange={setIsDrawerOpen}
+              onDrawerStateChange={(isOpen) => {
+                setIsDrawerOpen(isOpen);
+                onSearchDrawerStateChange?.(isOpen);
+              }}
             />
           </div>
         )}
