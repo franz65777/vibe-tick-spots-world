@@ -397,7 +397,7 @@ const PopularSpots = ({
   // Show cities only when there are city cards AND no location cards
   const showingCities = citySpots.length > 0 && popularSpots.length === 0;
   const hasResults = popularSpots.length > 0 || citySpots.length > 0;
-  return <div className="h-full px-[10px] pt-0 pb-0 relative z-10">
+  return <div className="h-full px-[10px] pt-0 pb-0 relative z-[1200] pointer-events-auto">
       {/* Header + dropdown trigger + cards all in one row */}
       <div className="relative" ref={dropdownRef}>
         {!loading && <div className="flex items-center gap-2">
