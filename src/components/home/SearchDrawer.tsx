@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Loader2, Navigation2, ChevronUp, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MapPin, Loader2, Navigation2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton, PhotonResult } from '@/lib/photonGeocoding';
@@ -43,6 +43,7 @@ interface SearchDrawerProps {
   onCenterStatusChange?: (isCentered: boolean) => void;
   onSpotSelect?: (spot: PopularSpot) => void;
   isExpanded?: boolean;
+  onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
 // Cache for popular spots
@@ -61,6 +62,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   onCenterStatusChange,
   onSpotSelect,
   isExpanded = false,
+  onDrawerStateChange,
 }) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -70,9 +72,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Smooth drag state
+  const [dragProgress, setDragProgress] = useState(0); // 0 = closed, 1 = open
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStartY, setDragStartY] = useState(0);
-  const [currentTranslateY, setCurrentTranslateY] = useState(0);
+  const dragStartY = useRef(0);
+  const dragStartProgress = useRef(0);
+  const velocityRef = useRef(0);
+  const lastYRef = useRef(0);
+  const lastTimeRef = useRef(0);
   
   // Trending section state
   const [filterType, setFilterType] = useState<FilterType>('most_saved');
@@ -80,6 +88,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [loadingSpots, setLoadingSpots] = useState(false);
   
   const processedLocationRef = useRef<string>('');
+
+  // Sync drawer state with parent
+  useEffect(() => {
+    onDrawerStateChange?.(isDrawerOpen);
+  }, [isDrawerOpen, onDrawerStateChange]);
 
   // Handle geolocation success
   useEffect(() => {
@@ -117,7 +130,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const normalizedCity = currentCity.trim().toLowerCase();
 
       if (filterType === 'most_saved') {
-        // Trending filter
         const { data: locationsData } = await supabase
           .from('locations')
           .select('id, name, category, city, address, google_place_id, latitude, longitude')
@@ -156,7 +168,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         setPopularSpots(spots);
         spotsCache.set(cacheKey, { spots, timestamp: Date.now() });
       } else {
-        // Campaign filters
         const campaignTypeMap: Record<string, string> = {
           'discount': 'discount',
           'event': 'event',
@@ -219,59 +230,94 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     getCurrentLocation();
   };
 
-  // Touch handlers for drag
-  const handleTouchStart = (e: React.TouchEvent) => {
+  // Fluid touch handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     setIsDragging(true);
-    setDragStartY(e.touches[0].clientY);
-  };
+    dragStartY.current = e.touches[0].clientY;
+    dragStartProgress.current = dragProgress;
+    velocityRef.current = 0;
+    lastYRef.current = e.touches[0].clientY;
+    lastTimeRef.current = Date.now();
+  }, [dragProgress]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
-    const deltaY = dragStartY - e.touches[0].clientY;
-    setCurrentTranslateY(Math.max(-200, Math.min(200, deltaY)));
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    if (currentTranslateY > 50) {
-      setIsDrawerOpen(true);
-    } else if (currentTranslateY < -50) {
-      setIsDrawerOpen(false);
+    
+    const currentY = e.touches[0].clientY;
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastTimeRef.current;
+    
+    // Calculate velocity for momentum
+    if (deltaTime > 0) {
+      velocityRef.current = (lastYRef.current - currentY) / deltaTime;
     }
-    setCurrentTranslateY(0);
-  };
+    lastYRef.current = currentY;
+    lastTimeRef.current = currentTime;
+    
+    const deltaY = dragStartY.current - currentY;
+    const maxDrag = 280; // Max height of trending section
+    
+    // Calculate new progress based on drag distance
+    const dragDelta = deltaY / maxDrag;
+    let newProgress = dragStartProgress.current + dragDelta;
+    
+    // Clamp with slight rubber band effect
+    if (newProgress < 0) {
+      newProgress = newProgress * 0.3;
+    } else if (newProgress > 1) {
+      newProgress = 1 + (newProgress - 1) * 0.3;
+    }
+    
+    setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
+  }, [isDragging]);
 
-  const toggleDrawer = () => {
-    setIsDrawerOpen(!isDrawerOpen);
-  };
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    // Use velocity to determine final state
+    const velocityThreshold = 0.3;
+    const openThreshold = 0.3;
+    
+    let shouldOpen: boolean;
+    
+    if (Math.abs(velocityRef.current) > velocityThreshold) {
+      // Use velocity direction
+      shouldOpen = velocityRef.current > 0;
+    } else {
+      // Use position threshold
+      shouldOpen = dragProgress > openThreshold;
+    }
+    
+    // Animate to final state
+    setDragProgress(shouldOpen ? 1 : 0);
+    setIsDrawerOpen(shouldOpen);
+  }, [isDragging, dragProgress]);
+
+  // Sync dragProgress with drawer state when not dragging
+  useEffect(() => {
+    if (!isDragging) {
+      setDragProgress(isDrawerOpen ? 1 : 0);
+    }
+  }, [isDrawerOpen, isDragging]);
 
   const getFilterIcon = (type: FilterType) => {
     switch (type) {
-      case 'discount':
-        return discountIcon;
-      case 'event':
-        return eventIcon;
-      case 'promotion':
-        return promotionIcon;
-      case 'new':
-        return newIcon;
-      default:
-        return trendingIcon;
+      case 'discount': return discountIcon;
+      case 'event': return eventIcon;
+      case 'promotion': return promotionIcon;
+      case 'new': return newIcon;
+      default: return trendingIcon;
     }
   };
 
   const getFilterLabel = (type: FilterType) => {
     switch (type) {
-      case 'discount':
-        return t('filters.discount', { ns: 'home' });
-      case 'event':
-        return t('filters.event', { ns: 'home' });
-      case 'promotion':
-        return t('filters.promotion', { ns: 'home' });
-      case 'new':
-        return t('filters.new', { ns: 'home' });
-      default:
-        return t('filters.trending', { ns: 'home' });
+      case 'discount': return t('filters.discount', { ns: 'home' });
+      case 'event': return t('filters.event', { ns: 'home' });
+      case 'promotion': return t('filters.promotion', { ns: 'home' });
+      case 'new': return t('filters.new', { ns: 'home' });
+      default: return t('filters.trending', { ns: 'home' });
     }
   };
 
@@ -287,36 +333,43 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     onCitySelect(spot.city, spot.coordinates);
     onSpotSelect?.(spot);
     setIsDrawerOpen(false);
+    setDragProgress(0);
   };
+
+  // Calculate animated values based on dragProgress
+  const trendingHeight = Math.max(0, dragProgress) * 280;
+  const trendingOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
   return (
     <div
       ref={drawerRef}
       className={cn(
-        "left-3 right-3 z-[1000] transition-all duration-300 ease-out",
-        isExpanded ? 'fixed' : 'absolute'
+        "left-3 z-[1000]",
+        isExpanded ? 'fixed' : 'absolute',
+        isDragging ? '' : 'transition-all duration-300 ease-out'
       )}
       style={{
         bottom: isExpanded 
           ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
           : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))',
-        transform: isDragging ? `translateY(${-currentTranslateY}px)` : undefined,
+        // Leave space for list button when closed
+        right: isDrawerOpen || dragProgress > 0.1 ? '0.75rem' : '3.25rem',
+        transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
     >
       {/* Main drawer container */}
       <div 
-        className={cn(
-          "bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 overflow-hidden transition-all duration-300",
-          isDrawerOpen ? "max-h-[400px]" : "max-h-[56px]"
-        )}
+        className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 overflow-hidden"
+        style={{
+          transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        }}
       >
         {/* Drag handle */}
         <div 
-          className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none"
+          className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none select-none"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          onClick={toggleDrawer}
         >
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
@@ -351,12 +404,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           </div>
         </div>
 
-        {/* Trending section - revealed when drawer is open */}
+        {/* Trending section - animated reveal */}
         <div 
-          className={cn(
-            "overflow-hidden transition-all duration-300",
-            isDrawerOpen ? "opacity-100" : "opacity-0"
-          )}
+          className="overflow-hidden"
+          style={{
+            height: trendingHeight,
+            opacity: trendingOpacity,
+            transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          }}
         >
           {/* Filter chips */}
           <div className="px-3 pb-3">

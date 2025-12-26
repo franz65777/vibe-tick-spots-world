@@ -765,43 +765,7 @@ const HomePage = memo(() => {
           </Suspense>
         )} */}
         
-        {/* Discover Section - 110px */}
-        {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
-          <Suspense fallback={<div className="h-[110px] flex-shrink-0" />}>
-            <HomeDiscoverSection
-              currentCity={currentCity}
-              userLocation={userLocation}
-              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-                if (coordinates) {
-                  setMapCenter(coordinates);
-                }
-              }}
-              onUserClick={(userId: string) => {
-                navigate('/explore');
-              }}
-              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-              onSwipeDiscoveryOpen={() => navigate('/discover')}
-              onSpotSelect={(spot) => {
-                // Convert PopularSpot to Place format and show it
-                setInitialPinToShow({
-                  id: spot.id,
-                  name: spot.name,
-                  category: spot.category,
-                  address: spot.address || '',
-                  coordinates: spot.coordinates,
-                  isFollowing: false,
-                  isNew: false,
-                  likes: 0,
-                  visitors: [],
-                });
-              }}
-              onCitySelect={(city: string) => {
-                setCurrentCity(city);
-                setSearchQuery(city);
-              }}
-            />
-          </Suspense>
-        )}
+        {/* Discover Section - REMOVED - Now inside SearchDrawer */}
       </main>
 
       {/* Full-screen Search Overlay (fades background) */}
