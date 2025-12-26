@@ -129,7 +129,11 @@ const ProfilePage = memo(() => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'posts':
-        return <PostsGrid />;
+        return (
+          <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+            <PostsGrid />
+          </div>
+        );
       case 'trips':
         return <TripsGrid />;
       case 'badges':
@@ -137,12 +141,16 @@ const ProfilePage = memo(() => {
       case 'tagged':
         return <TaggedPostsGrid />;
       default:
-        return <PostsGrid />;
+        return (
+          <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+            <PostsGrid />
+          </div>
+        );
     }
   };
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto overscroll-contain bg-background pt-[env(safe-area-inset-top)]">
+    <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       <ProfileHeader 
         onFollowersClick={() => openModal('followers')}
         onFollowingClick={() => openModal('following')}
@@ -158,7 +166,7 @@ const ProfilePage = memo(() => {
       />
       
       {/* Tab Content */}
-      <div className="flex-1 pb-24">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {renderTabContent()}
       </div>
 

@@ -170,9 +170,9 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const displayedPosts = postFilter === 'photos' ? photoPosts : reviewPosts;
 
   return (
-    <div className="px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+    <div className="px-4">
       {/* Filter Dropdown */}
-      <div className="mb-4 flex justify-start">
+      <div className="sticky top-0 z-20 -mx-4 px-4 mb-4 flex justify-start bg-background">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
