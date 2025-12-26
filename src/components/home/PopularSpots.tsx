@@ -397,23 +397,21 @@ const PopularSpots = ({
   // Show cities only when there are city cards AND no location cards
   const showingCities = citySpots.length > 0 && popularSpots.length === 0;
   const hasResults = popularSpots.length > 0 || citySpots.length > 0;
-  return <div className="h-full px-[10px] pt-0 pb-1 relative z-10">
-      {/* Header + dropdown trigger */}
-      <div className="relative mb-0" ref={dropdownRef}>
+  return <div className="h-full px-[10px] pt-0 pb-0 relative z-10">
+      {/* Header + dropdown trigger + cards all in one row */}
+      <div className="relative" ref={dropdownRef}>
         {!loading && <div className="flex items-center gap-2">
-            {/* Fixed height container to prevent icon movement */}
+            {/* Filter icon and title */}
             <div className="flex items-center gap-2 h-10 flex-shrink-0">
               <button onClick={() => setDropdownOpen(open => !open)} className="flex items-center justify-center h-10" aria-label={t('filters.openFilter', {
             ns: 'home',
             defaultValue: 'Open trending filters'
           })}>
-                {/* Main filter icon - specific sizes (reduced per spec) */}
                 <div className={cn("flex items-center justify-center", filterType === 'most_saved' ? "w-8 h-8" : filterType === 'discount' ? "w-9 h-9" : filterType === 'promotion' ? "w-10 h-10" : filterType === 'event' ? "w-10 h-10" : filterType === 'new' ? "w-12 h-12" : "w-10 h-10")}>
                   {getFilterIcon()}
                 </div>
               </button>
               
-              {/* Show other filter icons inline when dropdown is open */}
               {dropdownOpen && <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                   {filterOptions.filter(opt => opt.value !== filterType).map(option => <button key={option.value} onClick={() => {
               setFilterType(option.value);
@@ -423,9 +421,8 @@ const PopularSpots = ({
                       </button>)}
                 </div>}
 
-              {/* Show title only when dropdown is closed */}
-              {!dropdownOpen && <div>
-                  <h3 className="text-[13px] font-semibold text-foreground leading-tight">
+              {!dropdownOpen && <div className="flex-shrink-0">
+                  <h3 className="text-[13px] font-semibold text-foreground leading-tight whitespace-nowrap">
                     {getFilterLabel()} {showingCities ? t('globally', {
                 ns: 'common',
                 defaultValue: 'Globally'
@@ -433,7 +430,7 @@ const PopularSpots = ({
                 ns: 'common'
               })} ${currentCity}` : ''}
                   </h3>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground whitespace-nowrap">
                     {hasResults ? showingCities ? `${citySpots.length} ${t('cities', {
                 ns: 'common',
                 defaultValue: 'cities'
@@ -448,34 +445,34 @@ const PopularSpots = ({
                   </p>
                 </div>}
             </div>
-            {/* Tinder button removed - now in Explore page header */}
+
+            {/* Cards inline with header */}
+            {!dropdownOpen && !loading && hasResults && <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
+              {showingCities ? citySpots.map(city => <div key={city.city} className="flex-shrink-0">
+                    <button onClick={() => handleCityClick(city)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${city.city}`}>
+                      <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                      <img src={cityIcon} alt="City" className="w-5 h-5 object-contain" />
+                      <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
+                        {city.city} ({city.locationCount})
+                      </span>
+                    </button>
+                  </div>) : popularSpots.map(spot => <div key={spot.id} className="flex-shrink-0">
+                    <button onClick={() => handleSpotClick(spot)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${spot.name}`}>
+                      <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                      <CategoryIcon category={spot.category} className="w-5 h-5" />
+                      <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px] text-left">
+                        {spot.name}
+                      </span>
+                    </button>
+                  </div>)}
+            </div>}
+          </div>}
+
+        {/* Loading state for cards */}
+        {loading && <div className="flex gap-2 overflow-x-auto pb-2">
+            {[1, 2, 3].map(i => <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />)}
           </div>}
       </div>
-
-      {/* Cards section */}
-      {loading ? <div className="flex gap-2 overflow-x-auto pb-2">
-          {[1, 2, 3].map(i => <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />)}
-        </div> : hasResults ? <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {showingCities ? (/* City cards */
-      citySpots.map(city => <div key={city.city} className="flex-shrink-0">
-                <button onClick={() => handleCityClick(city)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${city.city}`}>
-                  <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                  <img src={cityIcon} alt="City" className="w-5 h-5 object-contain" />
-                  <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
-                    {city.city} ({city.locationCount})
-                  </span>
-                </button>
-              </div>)) : (/* Location cards */
-      popularSpots.map(spot => <div key={spot.id} className="flex-shrink-0">
-                <button onClick={() => handleSpotClick(spot)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${spot.name}`}>
-                  <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                  <CategoryIcon category={spot.category} className="w-5 h-5" />
-                  <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px] text-left">
-                    {spot.name}
-                  </span>
-                </button>
-              </div>))}
-        </div> : null}
     </div>;
 };
 export default PopularSpots;
