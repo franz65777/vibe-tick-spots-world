@@ -696,8 +696,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
     >
-      {/* Search bar at bottom - show only when fully closed */}
-      {dragProgress === 0 && (
+      {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
+      {(dragProgress === 0 || isDragging) && (
         <div className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full">
           {/* Drag handle inside search bar at top - for opening trending */}
           <div
