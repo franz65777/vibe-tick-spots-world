@@ -487,8 +487,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   };
 
-  // Calculate expanded height - max 70% of screen
-  const maxExpandedHeight = window.innerHeight * 0.7;
+  // Calculate expanded height - reaches up to category filters level
+  // Category filters are at top-[calc(env(safe-area-inset-top)+60px)], so we need more height
+  const maxExpandedHeight = window.innerHeight * 0.78;
   const expandedHeight = Math.max(0, dragProgress) * maxExpandedHeight;
   const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
@@ -507,7 +508,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       style={{
         bottom: isExpanded 
           ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
-          : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))',
+          : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
       onTouchStart={handleTouchStart}
@@ -585,7 +586,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                   value={internalQuery}
                   onChange={(e) => setInternalQuery(e.target.value)}
                   placeholder={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
-                  className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
                   autoFocus
                 />
                 {isLoading && (
