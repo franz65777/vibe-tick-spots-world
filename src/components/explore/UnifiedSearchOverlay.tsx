@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapPin } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { MapPin, X, Utensils, Pizza, Fuel, ShoppingBasket, Car, Wine, Cross, Sandwich, Bike } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +52,14 @@ const CategoryLoadingCarousel = () => {
   );
 };
 
+// Nearby categories for "Trova nei dintorni" section
+interface NearbyCategory {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
+
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -82,10 +90,31 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number }[]>([]);
   const searchCacheRef = useRef<Map<string, { cities: CityResult[]; locations: LocationResult[] }>>(new Map());
+  
+  // Drag state for closing
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartY = useRef(0);
+  const velocityRef = useRef(0);
+  const lastYRef = useRef(0);
+  const lastTimeRef = useRef(0);
+
+  // Nearby categories
+  const nearbyCategories: NearbyCategory[] = [
+    { id: 'lunch', label: t('nearbyCategories.lunch', { ns: 'explore', defaultValue: 'Pranzo' }), emoji: '🍴', color: 'bg-orange-500' },
+    { id: 'pizzeria', label: t('nearbyCategories.pizzeria', { ns: 'explore', defaultValue: 'Pizzerie' }), emoji: '🍕', color: 'bg-orange-400' },
+    { id: 'gas', label: t('nearbyCategories.gas', { ns: 'explore', defaultValue: 'Benzinai' }), emoji: '⛽', color: 'bg-blue-500' },
+    { id: 'grocery', label: t('nearbyCategories.grocery', { ns: 'explore', defaultValue: 'Negozio di alimentari' }), emoji: '🛒', color: 'bg-yellow-500' },
+    { id: 'parking', label: t('nearbyCategories.parking', { ns: 'explore', defaultValue: 'Parcheggi' }), emoji: '🅿️', color: 'bg-blue-600' },
+    { id: 'bar', label: t('nearbyCategories.bar', { ns: 'explore', defaultValue: 'Bar' }), emoji: '🍸', color: 'bg-orange-500' },
+    { id: 'pharmacy', label: t('nearbyCategories.pharmacy', { ns: 'explore', defaultValue: 'Farmacie' }), emoji: '💊', color: 'bg-pink-500' },
+    { id: 'fastfood', label: t('nearbyCategories.fastfood', { ns: 'explore', defaultValue: 'Fast food' }), emoji: '🍔', color: 'bg-orange-500' },
+    { id: 'bikesharing', label: t('nearbyCategories.bikesharing', { ns: 'explore', defaultValue: 'Servizi di bike sharing' }), emoji: '🚲', color: 'bg-green-500' },
+  ];
 
   const popularCities = [
     { name: 'Dublin', lat: 53.3498053, lng: -6.2603097 },
@@ -100,7 +129,13 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+    if (!isOpen) {
+      setQuery('');
+      setCityResults([]);
+      setLocationResults([]);
+      setDragOffset(0);
     }
   }, [isOpen]);
 
@@ -135,6 +170,49 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         // ignore errors, we'll fallback to static list
       });
   }, [isOpen]);
+
+  // Drag handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).tagName === 'INPUT') return;
+    setIsDragging(true);
+    dragStartY.current = e.touches[0].clientY;
+    velocityRef.current = 0;
+    lastYRef.current = e.touches[0].clientY;
+    lastTimeRef.current = Date.now();
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    const currentY = e.touches[0].clientY;
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastTimeRef.current;
+    
+    if (deltaTime > 0) {
+      velocityRef.current = (currentY - lastYRef.current) / deltaTime;
+    }
+    lastYRef.current = currentY;
+    lastTimeRef.current = currentTime;
+    
+    const deltaY = currentY - dragStartY.current;
+    // Only allow dragging down
+    if (deltaY > 0) {
+      setDragOffset(deltaY);
+    }
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    // Close if dragged far enough or fast enough
+    const shouldClose = dragOffset > 100 || velocityRef.current > 0.5;
+    
+    if (shouldClose) {
+      onClose();
+    }
+    setDragOffset(0);
+  }, [isDragging, dragOffset, onClose]);
 
   useEffect(() => {
     const queryTrimmed = query.trim().toLowerCase();
@@ -478,141 +556,190 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
     onClose();
   };
 
+  const handleNearbyCategoryClick = (category: NearbyCategory) => {
+    // Set the search query to the category label to search for it
+    setQuery(category.label);
+  };
+
   if (!isOpen) return null;
 
   const hasResults = cityResults.length > 0 || locationResults.length > 0;
+  const isSearching = query.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
-      {/* Header with integrated search */}
-      <div className="bg-background px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 shadow-lg border-b border-border" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">📌</span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder={t('searchCitiesAndPlaces', { ns: 'explore' })}
-              className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
-            />
-            {loading && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <CategoryLoadingCarousel />
-              </div>
-            )}
-          </div>
-          {isFocused && (
-            <button
-              onMouseDown={(e) => {
-                e.preventDefault();
-                inputRef.current?.blur();
-                onClose();
-              }}
-              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
-            >
-              {t('cancel', { ns: 'common' })}
-            </button>
-          )}
+    <div 
+      className="fixed inset-0 z-[3000] flex flex-col"
+      style={{ touchAction: 'none' }}
+    >
+      {/* Transparent backdrop - map visible behind */}
+      <div 
+        className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" 
+        onClick={onClose}
+      />
+      
+      {/* Search panel - slides from top */}
+      <div 
+        ref={containerRef}
+        className="relative bg-background rounded-b-3xl shadow-2xl overflow-hidden"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
+          transform: `translateY(${dragOffset}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-2 pb-3">
+          <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-background shadow-xl -mt-[0.3125rem]" onClick={(e) => e.stopPropagation()}>
-        {/* Popular/Trending cities when no query */}
-        {!query.trim() && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
-              const translatedName = translateCityName(item.name, i18n.language);
-              return (
-                <CityEngagementCard
-                  key={item.name}
-                  cityName={translatedName}
-                  coords={'lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined}
-                  onClick={() => {
-                    if ('lat' in item && 'lng' in item) {
-                      handleCitySelect({
-                        name: item.name,
-                        lat: (item as any).lat,
-                        lng: (item as any).lng
-                      });
-                    }
-                  }}
-                  baseCount={'count' in item ? (item as any).count : 0}
-                />
-              );
-            })}
-          </div>
-        )}
-
-        {/* Cities Section */}
-        {cityResults.length > 0 && (
-          <div className="mb-6">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              {t('cities', { ns: 'common', defaultValue: 'Cities' })}
+        {/* Header with search bar */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('searchCitiesAndPlaces', { ns: 'explore' })}
+                className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+              />
+              {loading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <CategoryLoadingCarousel />
+                </div>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {cityResults.map((city, index) => {
-                // Translate city name to user's language for display
-                const displayName = translateCityName(city.name, i18n.language);
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content - scrollable */}
+        <div className="max-h-[60vh] overflow-y-auto px-4 pb-6">
+          {/* Popular/Trending cities when no query */}
+          {!isSearching && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
+                const translatedName = translateCityName(item.name, i18n.language);
                 return (
                   <CityEngagementCard
-                    key={index}
-                    cityName={displayName}
-                    coords={{ lat: city.lat, lng: city.lng }}
-                    onClick={() => handleCitySelect({ ...city, name: displayName })}
+                    key={item.name}
+                    cityName={translatedName}
+                    coords={'lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined}
+                    onClick={() => {
+                      if ('lat' in item && 'lng' in item) {
+                        handleCitySelect({
+                          name: item.name,
+                          lat: (item as any).lat,
+                          lng: (item as any).lng
+                        });
+                      }
+                    }}
+                    baseCount={'count' in item ? (item as any).count : 0}
                   />
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Locations Section */}
-        {locationResults.length > 0 && (
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              {t('locations', { ns: 'common', defaultValue: 'Locations' })}
-            </div>
-            <div className="space-y-2">
-            {locationResults.map((location, index) => {
-                const categoryImage = getCategoryImage(location.category);
-                return (
+          {/* Trova nei dintorni section - only when not searching */}
+          {!isSearching && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t('findNearby', { ns: 'explore', defaultValue: 'Trova nei dintorni' })}
+              </h3>
+              <div className="bg-muted/30 rounded-2xl overflow-hidden divide-y divide-border/50">
+                {nearbyCategories.map((category) => (
                   <button
-                    key={index}
-                    onClick={() => handleLocationSelect(location)}
-                    className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
+                    key={category.id}
+                    onClick={() => handleNearbyCategoryClick(category)}
+                    className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <img src={categoryImage} alt={location.category} className="w-8 h-8 object-contain" />
+                    <div className={`w-9 h-9 rounded-full ${category.color} flex items-center justify-center`}>
+                      <span className="text-lg">{category.emoji}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">
-                        {location.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {/* Show city first, then address */}
-                        {location.city ? `${location.city}${location.address && location.address !== location.city ? `, ${location.address}` : ''}` : location.address}
-                      </div>
-                    </div>
+                    <span className="font-medium text-foreground">{category.label}</span>
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* No results */}
-        {query.trim() && !loading && !hasResults && (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <img src={noResultsIcon} alt="No results" className="w-14 h-20 mb-3 opacity-70 object-contain" />
-            <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore' })}</p>
-            <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore' })}</p>
-          </div>
-        )}
+          {/* Cities Section - when searching */}
+          {isSearching && cityResults.length > 0 && (
+            <div className="mb-6">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                {t('cities', { ns: 'common', defaultValue: 'Cities' })}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {cityResults.map((city, index) => {
+                  // Translate city name to user's language for display
+                  const displayName = translateCityName(city.name, i18n.language);
+                  return (
+                    <CityEngagementCard
+                      key={index}
+                      cityName={displayName}
+                      coords={{ lat: city.lat, lng: city.lng }}
+                      onClick={() => handleCitySelect({ ...city, name: displayName })}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Locations Section - when searching */}
+          {isSearching && locationResults.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                {t('locations', { ns: 'common', defaultValue: 'Locations' })}
+              </div>
+              <div className="space-y-2">
+              {locationResults.map((location, index) => {
+                  const categoryImage = getCategoryImage(location.category);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleLocationSelect(location)}
+                      className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <img src={categoryImage} alt={location.category} className="w-8 h-8 object-contain" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground truncate">
+                          {location.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {/* Show city first, then address */}
+                          {location.city ? `${location.city}${location.address && location.address !== location.city ? `, ${location.address}` : ''}` : location.address}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No results */}
+          {isSearching && !loading && !hasResults && (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <img src={noResultsIcon} alt="No results" className="w-14 h-20 mb-3 opacity-70 object-contain" />
+              <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore' })}</p>
+              <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore' })}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
