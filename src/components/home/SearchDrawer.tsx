@@ -853,22 +853,23 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
+            /* Trending mode: full-width search bar like the search page */
+            <div
+              className="mx-4 mb-3 h-11 rounded-full bg-background border border-input flex items-center gap-3 px-4 cursor-text"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
                 setTimeout(() => inputRef.current?.focus(), 100);
               }}
-              className="mx-4 mb-3 h-11 rounded-full bg-background border border-input flex items-center gap-3 px-4 text-left"
+              role="button"
+              tabIndex={0}
               aria-label={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
             >
-              <span className="text-lg leading-none">📌</span>
-              <span className="text-base font-medium text-foreground leading-none truncate">
-                {currentCity || t('searchCities', { ns: 'home' })}
+              <span className="text-muted-foreground">🔍</span>
+              <span className="flex-1 text-sm text-muted-foreground truncate">
+                {t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
               </span>
-              <span className="ml-auto text-sm text-muted-foreground">🔍</span>
-            </button>
+            </div>
           )}
         </div>
 
