@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { cn } from '@/lib/utils';
-import trendingIcon from '@/assets/trending-icon.png';
+import trendingIcon from '@/assets/trending-hand-icon.png';
 import discountIcon from '@/assets/discount-icon.png';
 import eventIcon from '@/assets/event-icon.png';
 import promotionIcon from '@/assets/filter-promotion.png';
