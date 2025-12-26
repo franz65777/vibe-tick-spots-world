@@ -810,8 +810,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             <div className="w-14 h-1.5 bg-muted-foreground/60 rounded-full" />
           </div>
 
-          {/* Search input - fixed at top */}
-          {isSearchOpen && (
+          {/* Top area: Search bar (Trending) OR Search input (Search mode) */}
+          {isSearchOpen ? (
             <div className="flex items-center gap-3 px-4 pb-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">🔍</span>
@@ -853,6 +853,23 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerMode('search');
+                setDragProgress(1);
+                setTimeout(() => inputRef.current?.focus(), 100);
+              }}
+              className="mx-4 mb-3 h-11 rounded-full bg-white/60 dark:bg-slate-700/60 border border-white/50 dark:border-white/20 backdrop-blur-md flex items-center gap-3 px-4 text-left"
+              aria-label={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
+            >
+              <span className="text-lg leading-none">📌</span>
+              <span className="text-base font-medium text-foreground leading-none truncate">
+                {currentCity || t('searchCities', { ns: 'home' })}
+              </span>
+              <span className="ml-auto text-sm text-muted-foreground">🔍</span>
+            </button>
           )}
         </div>
 
