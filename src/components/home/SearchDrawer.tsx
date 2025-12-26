@@ -155,7 +155,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           const key = i.name.toLowerCase();
           if (!unique.has(key)) unique.set(key, i);
         });
-        setTrendingCities(Array.from(unique.values()));
+        // Sort by count descending to show top cities with most saved locations
+        const sorted = Array.from(unique.values()).sort((a, b) => b.count - a.count);
+        setTrendingCities(sorted);
       })
       .catch(() => {
         // ignore errors
