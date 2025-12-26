@@ -282,13 +282,13 @@ const MapSection = ({
           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/60 to-transparent pointer-events-none z-[999]" />
         )}
 
-        {/* Map Category Filters - Hide when list view is open */}
+        {/* Map Category Filters - Below header */}
         {!isListViewOpen && (
           <div className={cn(
             "z-[1100] w-full transition-opacity duration-300",
             isExpanded
-              ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
-              : "fixed top-[calc(env(safe-area-inset-top)+125px)] left-0 right-0 px-1",
+              ? "fixed top-[calc(env(safe-area-inset-top)+4rem)] left-0 right-0 px-4"
+              : "fixed top-[calc(env(safe-area-inset-top)+60px)] left-0 right-0 px-1",
             filtersVisible ? "opacity-100" : "opacity-0"
           )}>
             <div className="flex justify-center w-full">
