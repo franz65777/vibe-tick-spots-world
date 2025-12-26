@@ -111,7 +111,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [internalQuery, setInternalQuery] = useState('');
   
-  // Drag state
+  // Drag state (Pointer Events for reliable mobile swipe)
   const [dragProgress, setDragProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -119,7 +119,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const velocityRef = useRef(0);
   const lastYRef = useRef(0);
   const lastTimeRef = useRef(0);
-  
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+
   // Search results
   const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
@@ -127,7 +129,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [activeNearbyCategory, setActiveNearbyCategory] = useState<NearbyPromptType | null>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number; lat?: number; lng?: number }[]>([]);
   const searchCacheRef = useRef<Map<string, { cities: { name: string; lat: number; lng: number }[]; locations: LocationResult[] }>>(new Map());
-  
+
   const processedLocationRef = useRef<string>('');
 
   useEffect(() => {
@@ -136,10 +138,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
   useEffect(() => {
     if (!location || !location.city || location.city === 'Unknown City') return;
-    
+
     const locationKey = `${location.latitude}-${location.longitude}-${location.city}`;
     if (processedLocationRef.current === locationKey) return;
-    
+
     processedLocationRef.current = locationKey;
     onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
   }, [location?.latitude, location?.longitude, location?.city]);
@@ -147,12 +149,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   // Fetch trending cities when drawer opens using RPC directly
   useEffect(() => {
     if (!isDrawerOpen) return;
-    
+
     const fetchTrendingCities = async () => {
       try {
         const { data, error } = await supabase.rpc('get_global_city_counts');
         if (error) throw error;
-        
+
         const items = (data || []).slice(0, 5).map((c: any) => ({
           name: String(c.city || '').split(',')[0].trim(),
           count: Number(c.pin_count) || 0,
@@ -162,7 +164,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         console.error('Error fetching trending cities:', err);
       }
     };
-    
+
     fetchTrendingCities();
   }, [isDrawerOpen]);
 
@@ -170,14 +172,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   useEffect(() => {
     const queryTrimmed = internalQuery.trim().toLowerCase();
     const cacheKey = `${queryTrimmed}-${i18n.language}`;
-    
+
     if (!queryTrimmed) {
       setCityResults([]);
       setLocationResults([]);
       setIsLoading(false);
       return;
     }
-    
+
     // Check cache first
     if (searchCacheRef.current.has(cacheKey)) {
       const cached = searchCacheRef.current.get(cacheKey)!;
@@ -186,7 +188,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     const timer = setTimeout(() => {
       searchAll(queryTrimmed);
@@ -199,7 +201,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     if (!queryLower) return;
 
     const cacheKey = `${queryLower}-${i18n.language}`;
-    
+
     if (searchCacheRef.current.has(cacheKey)) {
       const cached = searchCacheRef.current.get(cacheKey)!;
       setCityResults(cached.cities);
@@ -227,11 +229,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       // Map to LocationResult format with deduplication
       const seenLocations = new Map<string, LocationResult>();
-      (locations || []).forEach(loc => {
+      (locations || []).forEach((loc) => {
         const normalizedName = loc.name.toLowerCase().trim();
         const coordKey = `${loc.latitude!.toFixed(4)},${loc.longitude!.toFixed(4)}`;
         const dedupeKey = `${normalizedName}-${coordKey}`;
-        
+
         if (!seenLocations.has(dedupeKey)) {
           seenLocations.set(dedupeKey, {
             id: loc.id,
@@ -244,7 +246,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           });
         }
       });
-      
+
       const mappedLocations: LocationResult[] = Array.from(seenLocations.values());
 
       // Sort by proximity if user location available
@@ -258,11 +260,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       // Extract unique cities
       const citiesFromLocations = new Map<string, { name: string; lat: number; lng: number }>();
-      (locations || []).forEach(loc => {
+      (locations || []).forEach((loc) => {
         if (loc.city && loc.latitude && loc.longitude) {
           let cityLower = loc.city.toLowerCase().trim();
           const cityEnglish = reverseTranslateCityName(cityLower).toLowerCase();
-          
+
           if (cityLower.includes(queryLower) || cityEnglish.includes(queryLower) || cityEnglish.includes(queryEnglish)) {
             if (!citiesFromLocations.has(cityEnglish)) {
               citiesFromLocations.set(cityEnglish, {
@@ -276,14 +278,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       });
 
       // Check popular cities
-      const matchingPopularCities = popularCities.filter(city => {
+      const matchingPopularCities = popularCities.filter((city) => {
         const cityLower = city.name.toLowerCase();
         return cityLower.includes(queryLower) || cityLower.includes(queryEnglish);
       });
 
       // Combine unique cities
       const allCities = [...citiesFromLocations.values()];
-      matchingPopularCities.forEach(pc => {
+      matchingPopularCities.forEach((pc) => {
         const pcEnglish = reverseTranslateCityName(pc.name).toLowerCase();
         if (!citiesFromLocations.has(pcEnglish)) {
           allCities.push({ ...pc, name: pcEnglish });
@@ -293,16 +295,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       // If few results, search external APIs
       if (allCities.length === 0 || mappedLocations.length < 5) {
         const userLoc = location ? { lat: location.latitude, lng: location.longitude } : undefined;
-        
+
         const [nominatimResults, photonResults, overpassResults] = await Promise.all([
           nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc).catch(() => []),
           searchPhoton(queryLower, userLoc, 20).catch(() => []),
           userLoc ? searchOverpass(queryLower, userLoc, 15).catch(() => []) : Promise.resolve([]),
         ]);
-        
-        const existingCoords = new Set(mappedLocations.map(l => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
-        const existingNames = new Set(mappedLocations.map(l => l.name.toLowerCase().trim()));
-        
+
+        const existingCoords = new Set(mappedLocations.map((l) => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
+        const existingNames = new Set(mappedLocations.map((l) => l.name.toLowerCase().trim()));
+
         const isNameDuplicate = (name: string) => {
           const normalized = name.toLowerCase().trim();
           if (existingNames.has(normalized)) return true;
@@ -311,7 +313,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           }
           return false;
         };
-        
+
         // Add Photon results
         photonResults.forEach((result) => {
           const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
@@ -329,7 +331,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             existingNames.add(result.name.toLowerCase().trim());
           }
         });
-        
+
         // Add Overpass results
         overpassResults.forEach((result) => {
           const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
@@ -347,7 +349,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             existingNames.add(result.name.toLowerCase().trim());
           }
         });
-        
+
         // Re-sort by distance
         if (userLoc && mappedLocations.length > 1) {
           mappedLocations.sort((a, b) => {
@@ -381,69 +383,91 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     getCurrentLocation();
   };
 
-  const handleDragStart = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
-    setIsDragging(true);
-    dragStartY.current = e.touches[0].clientY;
-    dragStartProgress.current = dragProgress;
-    velocityRef.current = 0;
-    lastYRef.current = e.touches[0].clientY;
-    lastTimeRef.current = Date.now();
-  }, [dragProgress]);
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      // Only track one pointer at a time
+      if (activePointerIdRef.current !== null) return;
 
-  const handleDragMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const currentY = e.touches[0].clientY;
-    const currentTime = Date.now();
-    const deltaTime = currentTime - lastTimeRef.current;
-    
-    if (deltaTime > 0) {
-      velocityRef.current = (lastYRef.current - currentY) / deltaTime;
-    }
-    lastYRef.current = currentY;
-    lastTimeRef.current = currentTime;
-    
-    const deltaY = dragStartY.current - currentY;
-    const maxDrag = window.innerHeight * 0.55;
-    
-    const dragDelta = deltaY / maxDrag;
-    let newProgress = dragStartProgress.current + dragDelta;
-    
-    if (newProgress < 0) {
-      newProgress = newProgress * 0.3;
-    } else if (newProgress > 1) {
-      newProgress = 1 + (newProgress - 1) * 0.3;
-    }
-    
-    setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
-  }, [isDragging]);
+      // Allow swipe/drag only when open or when touching the drawer surface
+      if (e.pointerType === 'mouse' && !isDrawerOpen) return;
 
-  const handleDragEnd = useCallback(() => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    
-    const velocityThreshold = 0.3;
-    const openThreshold = 0.3;
-    
-    let shouldOpen: boolean;
-    
-    if (Math.abs(velocityRef.current) > velocityThreshold) {
-      shouldOpen = velocityRef.current > 0;
-    } else {
-      shouldOpen = dragProgress > openThreshold;
-    }
-    
-    setDragProgress(shouldOpen ? 1 : 0);
-    setIsDrawerOpen(shouldOpen);
-    
-    if (shouldOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isDragging, dragProgress]);
+      // If user is scrolling inside content, only allow drag-to-close when scroll is at top
+      const isFromScrollable = (e.target as HTMLElement | null)?.closest?.('[data-drawer-scroll]');
+      if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
 
+      activePointerIdRef.current = e.pointerId;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
+      setIsDragging(true);
+      dragStartY.current = e.clientY;
+      dragStartProgress.current = dragProgress;
+      velocityRef.current = 0;
+      lastYRef.current = e.clientY;
+      lastTimeRef.current = Date.now();
+    },
+    [dragProgress, isDrawerOpen]
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      if (activePointerIdRef.current !== e.pointerId) return;
+
+      const currentY = e.clientY;
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastTimeRef.current;
+
+      if (deltaTime > 0) {
+        velocityRef.current = (lastYRef.current - currentY) / deltaTime;
+      }
+      lastYRef.current = currentY;
+      lastTimeRef.current = currentTime;
+
+      const deltaY = dragStartY.current - currentY;
+      const maxDrag = window.innerHeight * 0.55;
+
+      const dragDelta = deltaY / maxDrag;
+      let newProgress = dragStartProgress.current + dragDelta;
+
+      // Rubber banding
+      if (newProgress < 0) {
+        newProgress = newProgress * 0.3;
+      } else if (newProgress > 1) {
+        newProgress = 1 + (newProgress - 1) * 0.3;
+      }
+
+      setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
+    },
+    [isDragging]
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      if (activePointerIdRef.current !== e.pointerId) return;
+
+      setIsDragging(false);
+      activePointerIdRef.current = null;
+
+      const velocityThreshold = 0.25;
+      const openThreshold = 0.3;
+
+      let shouldOpen: boolean;
+      if (Math.abs(velocityRef.current) > velocityThreshold) {
+        shouldOpen = velocityRef.current > 0;
+      } else {
+        shouldOpen = dragProgress > openThreshold;
+      }
+
+      setDragProgress(shouldOpen ? 1 : 0);
+      setIsDrawerOpen(shouldOpen);
+
+      if (shouldOpen && inputRef.current) {
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
+    },
+    [isDragging, dragProgress]
+  );
 
   useEffect(() => {
     if (!isDragging) {
@@ -559,18 +583,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         isDrawerOpen ? 'left-3 right-3' : 'left-3 right-16'
       )}
       style={{
-        bottom: isExpanded 
-          ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
+        bottom: isExpanded
+          ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
           : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
-      onTouchStart={handleDragStart}
-      onTouchMove={handleDragMove}
-      onTouchEnd={handleDragEnd}
     >
       {/* Search bar at bottom - hide when drawer is open */}
       {!isDrawerOpen && (
-        <div 
+        <div
           className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full"
           style={{ touchAction: 'none' }}
           onClick={handleSearchBarClick}
@@ -582,22 +603,27 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               placeholder={t('searchCities', { ns: 'home' })}
               value={currentCity ? `📌  ${currentCity}` : ''}
               readOnly
-              className="w-full h-9 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground cursor-pointer"
+              className="w-full h-11 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground cursor-pointer"
             />
             <button
               onClick={handleCurrentLocation}
               disabled={geoLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
               aria-label={t('currentLocation', { ns: 'common' })}
             >
-              <Navigation2 className={cn("w-4 h-4 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
+              <Navigation2
+                className={cn(
+                  "w-4 h-4 transition-colors rotate-45",
+                  isCenteredOnUser ? 'text-primary fill-primary' : 'text-primary'
+                )}
+              />
             </button>
           </div>
         </div>
       )}
 
       {/* Expanded content panel - includes search input at top */}
-      <div 
+      <div
         className="w-full overflow-hidden bg-white/40 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 dark:border-white/10 flex flex-col"
         style={{
           height: expandedHeight,
@@ -606,20 +632,21 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: isDrawerOpen ? 0 : 8,
         }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
         {/* Fixed header: Drag handle + Search input */}
-        <div 
+        <div
           className="flex-shrink-0 cursor-grab active:cursor-grabbing"
           style={{ touchAction: 'none' }}
-          onTouchStart={handleDragStart}
-          onTouchMove={handleDragMove}
-          onTouchEnd={handleDragEnd}
         >
           {/* Drag handle at top - larger touch area */}
           <div className="flex justify-center pt-4 pb-3">
             <div className="w-14 h-1.5 bg-muted-foreground/60 rounded-full" />
           </div>
-          
+
           {/* Search input - fixed at top */}
           {isDrawerOpen && (
             <div className="flex items-center gap-3 px-4 pb-3">
@@ -632,10 +659,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                   onChange={(e) => setInternalQuery(e.target.value)}
                   placeholder={
                     activeNearbyCategory && isLoading
-                      ? t('searchingNearby', { 
-                          ns: 'explore', 
+                      ? t('searchingNearby', {
+                          ns: 'explore',
                           category: t(`nearbyPrompts.${activeNearbyCategory}`, { ns: 'explore' }),
-                          defaultValue: `Cercando ${activeNearbyCategory} vicini...`
+                          defaultValue: `Cercando ${activeNearbyCategory} vicini...`,
                         })
                       : t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })
                   }
@@ -656,31 +683,39 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             </div>
           )}
         </div>
-        
+
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div ref={scrollRef} data-drawer-scroll className="flex-1 overflow-y-auto px-4 pb-4">
           {/* Top 5 cities with most saved locations - hide when nearby category is active */}
           {!isSearching && !activeNearbyCategory && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {(trendingCities.length > 0 
-                ? trendingCities.slice(0, 5) 
-                : popularCities.slice(0, 5).map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))
+              {(trendingCities.length > 0
+                ? trendingCities.slice(0, 5)
+                : popularCities
+                    .slice(0, 5)
+                    .map((c) => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))
               ).map((item) => {
                 const translatedName = translateCityName(item.name, i18n.language);
-                const cityData = popularCities.find(c => c.name.toLowerCase() === item.name.toLowerCase());
+                const cityData = popularCities.find((c) => c.name.toLowerCase() === item.name.toLowerCase());
                 return (
                   <CityEngagementCard
                     key={item.name}
                     cityName={translatedName}
                     originalCityName={item.name}
-                    coords={cityData ? { lat: cityData.lat, lng: cityData.lng } : ('lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined)}
+                    coords={
+                      cityData
+                        ? { lat: cityData.lat, lng: cityData.lng }
+                        : 'lat' in item && 'lng' in item
+                          ? { lat: (item as any).lat, lng: (item as any).lng }
+                          : undefined
+                    }
                     onClick={() => {
-                      const coords = cityData || ('lat' in item ? item as any : null);
+                      const coords = cityData || ('lat' in item ? (item as any) : null);
                       if (coords) {
                         handleCitySelect({
                           name: item.name,
                           lat: coords.lat,
-                          lng: coords.lng
+                          lng: coords.lng,
                         });
                       }
                     }}
