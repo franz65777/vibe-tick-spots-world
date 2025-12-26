@@ -122,8 +122,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const activePointerIdRef = useRef<number | null>(null);
   const touchActiveRef = useRef(false);
-
-  // Search results
+  const dragStartedOpenRef = useRef(false);
   const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [nearbyResults, setNearbyResults] = useState<NearbySearchResult[]>([]);
@@ -399,6 +398,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       activePointerIdRef.current = e.pointerId;
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 
+      dragStartedOpenRef.current = isDrawerOpen;
       setIsDragging(true);
       dragStartY.current = e.clientY;
       dragStartProgress.current = dragProgress;
@@ -451,6 +451,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsDragging(false);
       activePointerIdRef.current = null;
 
+      // When dragging from the closed state, snap to the Trending peek (do NOT open search)
+      if (!dragStartedOpenRef.current) {
+        const shouldPeekTrending = dragProgress > 0.08;
+        setIsDrawerOpen(false);
+        setDragProgress(shouldPeekTrending ? 0.3 : 0);
+        return;
+      }
+
       const velocityThreshold = 0.2;
       // Higher threshold => less drag needed to close
       const openThreshold = 0.6;
@@ -480,6 +488,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
 
       touchActiveRef.current = true;
+      dragStartedOpenRef.current = isDrawerOpen;
       setIsDragging(true);
       dragStartY.current = e.touches[0]?.clientY ?? 0;
       dragStartProgress.current = dragProgress;
@@ -523,6 +532,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
     setIsDragging(false);
     touchActiveRef.current = false;
+
+    // When dragging from the closed state, snap to the Trending peek (do NOT open search)
+    if (!dragStartedOpenRef.current) {
+      const shouldPeekTrending = dragProgress > 0.08;
+      setIsDrawerOpen(false);
+      setDragProgress(shouldPeekTrending ? 0.3 : 0);
+      return;
+    }
 
     const velocityThreshold = 0.2;
     const openThreshold = 0.6;
@@ -670,20 +687,28 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       {!isDrawerOpen && (
         <div className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full">
           {/* Drag handle inside search bar at top - for opening trending */}
-          <div 
+          <div
             className="absolute top-1 left-1/2 -translate-x-1/2 z-10 px-4 py-1 cursor-grab active:cursor-grabbing"
             style={{ touchAction: 'none' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
           </div>
           <div className="relative flex items-center h-12">
             {/* Left area - pin + city name - opens search page */}
-            <div 
-              className="h-full pl-4 pt-1 flex items-center cursor-pointer"
+            <div
+              className="h-full pl-4 flex items-center cursor-pointer"
               onClick={handleSearchBarClick}
             >
-              <span className="text-lg">📌</span>
-              <span className="ml-3 text-base font-medium text-foreground">
+              <span className="text-lg leading-none">📌</span>
+              <span className="ml-3 text-base font-medium text-foreground leading-none">
                 {currentCity || t('searchCities', { ns: 'home' })}
               </span>
             </div>
@@ -692,8 +717,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             <div 
               className="flex-1 h-full cursor-pointer"
               onClick={() => {
-                setIsDrawerOpen(true);
-                setDragProgress(0.3); // Open to trending height (30% of full)
+                setIsDrawerOpen(false);
+                setDragProgress(0.3); // Open to trending peek height
               }}
             />
             
