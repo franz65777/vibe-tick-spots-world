@@ -668,42 +668,36 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     >
       {/* Search bar at bottom - hide when drawer is open */}
       {!isDrawerOpen && (
-        <div className="flex flex-col items-center">
-          {/* Drag handle above search bar to open drawer */}
-          <div
-            className="w-full flex justify-center pb-2 pt-1 cursor-grab active:cursor-grabbing"
-            style={{ touchAction: 'none' }}
-            onClick={handleSearchBarClick}
-          >
-            <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
+        <div
+          className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full cursor-pointer"
+          onClick={handleSearchBarClick}
+        >
+          {/* Drag handle inside search bar at top */}
+          <div className="absolute top-1 left-1/2 -translate-x-1/2">
+            <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
           </div>
-          <div
-            className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full"
-            onClick={handleSearchBarClick}
-          >
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder={t('searchCities', { ns: 'home' })}
-                value={currentCity ? `📌  ${currentCity}` : ''}
-                readOnly
-                className="w-full h-11 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground cursor-pointer"
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={t('searchCities', { ns: 'home' })}
+              value={currentCity ? `📌  ${currentCity}` : ''}
+              readOnly
+              className="w-full h-11 pl-4 pr-12 pt-1 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground cursor-pointer"
+            />
+            <button
+              onClick={handleCurrentLocation}
+              disabled={geoLoading}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+              aria-label={t('currentLocation', { ns: 'common' })}
+            >
+              <Navigation2
+                className={cn(
+                  "w-5 h-5 transition-colors rotate-45",
+                  isCenteredOnUser ? 'text-primary fill-primary' : 'text-primary'
+                )}
               />
-              <button
-                onClick={handleCurrentLocation}
-                disabled={geoLoading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
-                aria-label={t('currentLocation', { ns: 'common' })}
-              >
-                <Navigation2
-                  className={cn(
-                    "w-4 h-4 transition-colors rotate-45",
-                    isCenteredOnUser ? 'text-primary fill-primary' : 'text-primary'
-                  )}
-                />
-              </button>
-            </div>
+            </button>
           </div>
         </div>
       )}
