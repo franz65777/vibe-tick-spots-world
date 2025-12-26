@@ -16,19 +16,45 @@ export interface NearbySearchResult {
   distance?: number;
 }
 
-// Map app categories to OSM tags
-const categoryToOsmTags: Record<AllowedCategory, string[]> = {
-  restaurant: ['amenity=restaurant', 'amenity=fast_food', 'amenity=food_court'],
-  cafe: ['amenity=cafe', 'amenity=coffee_shop', 'amenity=ice_cream'],
-  bar: ['amenity=bar', 'amenity=pub', 'amenity=biergarten'],
-  bakery: ['amenity=bakery'],
-  hotel: ['tourism=hotel', 'tourism=hostel', 'tourism=guest_house', 'tourism=motel'],
-  museum: ['tourism=museum', 'tourism=gallery', 'amenity=arts_centre'],
-  entertainment: ['amenity=nightclub', 'amenity=theatre', 'amenity=cinema', 'leisure=park', 'tourism=theme_park', 'leisure=amusement_arcade'],
+// Extended prompt type that includes subcategories
+export type NearbyPrompt = AllowedCategory | 'pizzeria' | 'sushi' | 'burger' | 'gelato' | 'cocktail';
+
+// Map prompts to OSM query parts - optimized for speed
+const promptToOsmQuery: Record<NearbyPrompt, string> = {
+  // Main categories - simple queries
+  restaurant: '["amenity"="restaurant"]',
+  cafe: '["amenity"="cafe"]',
+  bar: '["amenity"="bar"]',
+  bakery: '["shop"="bakery"]',
+  hotel: '["tourism"="hotel"]',
+  museum: '["tourism"="museum"]',
+  entertainment: '["amenity"="nightclub"]',
+  // Subcategories - cuisine-specific
+  pizzeria: '["amenity"="restaurant"]["cuisine"~"pizza",i]',
+  sushi: '["amenity"="restaurant"]["cuisine"~"sushi|japanese",i]',
+  burger: '["amenity"="restaurant"]["cuisine"~"burger|american",i]',
+  gelato: '["amenity"="ice_cream"]',
+  cocktail: '["amenity"="bar"]["cocktails"="yes"]',
+};
+
+// Map subcategories to parent categories
+export const promptToCategory: Record<NearbyPrompt, AllowedCategory> = {
+  restaurant: 'restaurant',
+  cafe: 'cafe',
+  bar: 'bar',
+  bakery: 'bakery',
+  hotel: 'hotel',
+  museum: 'museum',
+  entertainment: 'entertainment',
+  pizzeria: 'restaurant',
+  sushi: 'restaurant',
+  burger: 'restaurant',
+  gelato: 'cafe',
+  cocktail: 'bar',
 };
 
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371; // km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
   const a =
@@ -40,113 +66,96 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 }
 
 /**
- * Search for nearby places by category using Overpass API
+ * Search for nearby places by prompt using Overpass API
  */
 export async function searchNearbyByCategory(
-  category: AllowedCategory,
+  prompt: NearbyPrompt,
   userLocation: { lat: number; lng: number },
   radiusMeters: number = 2000
 ): Promise<NearbySearchResult[]> {
-  console.log('[searchNearbyByCategory] Starting search:', { category, userLocation, radiusMeters });
+  console.log('[Nearby] Search:', prompt, userLocation);
   
-  if (!userLocation || !userLocation.lat || !userLocation.lng) {
-    console.warn('[searchNearbyByCategory] No user location provided');
+  if (!userLocation?.lat || !userLocation?.lng) {
+    console.warn('[Nearby] No location');
     return [];
   }
 
-  const tags = categoryToOsmTags[category];
-  if (!tags || tags.length === 0) {
-    console.warn(`[searchNearbyByCategory] Unknown category ${category}`);
+  const queryPart = promptToOsmQuery[prompt];
+  if (!queryPart) {
+    console.warn('[Nearby] Unknown prompt:', prompt);
     return [];
   }
 
-  // Use only the primary tag for faster query
-  const primaryTag = tags[0];
-  const [key, value] = primaryTag.split('=');
+  const category = promptToCategory[prompt];
+  
+  // Ultra-fast compact query - nodes only, minimal output
+  const query = `[out:json][timeout:8];node${queryPart}["name"](around:${radiusMeters},${userLocation.lat},${userLocation.lng});out 12;`;
 
-  // Simplified compact query for speed
-  const overpassQuery = `[out:json][timeout:10];node["${key}"="${value}"]["name"](around:${radiusMeters},${userLocation.lat},${userLocation.lng});out 15;`;
+  console.log('[Nearby] Query:', query);
 
-  console.log('[searchNearbyByCategory] Query:', overpassQuery);
-
-  // Try multiple Overpass servers for reliability
+  // Fast servers first
   const servers = [
     'https://overpass.kumi.systems/api/interpreter',
     'https://overpass-api.de/api/interpreter',
-    'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
   ];
 
   for (const server of servers) {
     try {
-      console.log('[searchNearbyByCategory] Trying server:', server);
-      
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
       const response = await fetch(server, {
         method: 'POST',
-        body: `data=${encodeURIComponent(overpassQuery)}`,
+        body: `data=${encodeURIComponent(query)}`,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        console.warn('[searchNearbyByCategory] Server error:', server, response.status);
-        continue; // Try next server
-      }
+      if (!response.ok) continue;
 
       const data = await response.json();
-      console.log('[searchNearbyByCategory] Elements received:', data.elements?.length || 0);
+      console.log('[Nearby] Elements:', data.elements?.length || 0);
       
-      if (!data.elements || data.elements.length === 0) {
-        continue; // Try next server if no results
-      }
+      if (!data.elements?.length) continue;
 
       const results: NearbySearchResult[] = [];
 
-      for (const element of data.elements) {
-        const elTags = element.tags || {};
-        if (!elTags.name) continue;
+      for (const el of data.elements) {
+        if (!el.tags?.name || !el.lat || !el.lon) continue;
 
-        const lat = element.lat;
-        const lng = element.lon;
-        if (!lat || !lng) continue;
-
-        const city = elTags['addr:city'] || elTags['addr:suburb'] || '';
-        const street = elTags['addr:street'] || '';
-        const houseNumber = elTags['addr:housenumber'] || '';
+        const tags = el.tags;
+        const city = tags['addr:city'] || tags['addr:suburb'] || '';
+        const street = tags['addr:street'] || '';
+        const houseNumber = tags['addr:housenumber'] || '';
         const address = [street, houseNumber].filter(Boolean).join(' ').trim() || city;
 
-        const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
-
         results.push({
-          id: `osm-${element.id}`,
-          name: elTags.name,
-          lat,
-          lng,
+          id: `osm-${el.id}`,
+          name: tags.name,
+          lat: el.lat,
+          lng: el.lon,
           category,
           city,
           address,
-          distance,
+          distance: calculateDistance(userLocation.lat, userLocation.lng, el.lat, el.lon),
         });
 
-        if (results.length >= 15) break;
+        if (results.length >= 12) break;
       }
 
       results.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-      console.log('[searchNearbyByCategory] Final results:', results.length);
       
       if (results.length > 0) {
+        console.log('[Nearby] Found:', results.length);
         return results;
       }
-    } catch (error: any) {
-      console.warn('[searchNearbyByCategory] Server failed:', server, error.message);
-      continue; // Try next server
+    } catch (e: any) {
+      console.warn('[Nearby] Server failed:', server, e.message);
     }
   }
 
-  console.log('[searchNearbyByCategory] All servers failed or no results');
+  console.log('[Nearby] No results');
   return [];
 }

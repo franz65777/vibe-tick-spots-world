@@ -13,7 +13,7 @@ import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/cat
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
 import { searchOverpass } from '@/lib/overpassGeocoding';
-import { searchNearbyByCategory, type NearbySearchResult } from '@/lib/nearbySearch';
+import { searchNearbyByCategory, type NearbySearchResult, type NearbyPrompt as NearbyPromptType, promptToCategory } from '@/lib/nearbySearch';
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 
@@ -55,21 +55,25 @@ interface SearchDrawerProps {
   onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-// Nearby prompts - app categories only
-interface NearbyPrompt {
-  id: AllowedCategory;
-  emoji: string;
-  color: string;
+// Nearby prompts - main categories + subcategories
+interface NearbyPromptItem {
+  id: NearbyPromptType;
+  parentCategory: AllowedCategory;
 }
 
-const nearbyPrompts: NearbyPrompt[] = [
-  { id: 'restaurant', emoji: '🍽️', color: 'bg-orange-500' },
-  { id: 'cafe', emoji: '☕', color: 'bg-amber-600' },
-  { id: 'bar', emoji: '🍸', color: 'bg-purple-500' },
-  { id: 'bakery', emoji: '🥐', color: 'bg-yellow-500' },
-  { id: 'hotel', emoji: '🏨', color: 'bg-blue-500' },
-  { id: 'museum', emoji: '🏛️', color: 'bg-teal-500' },
-  { id: 'entertainment', emoji: '🎭', color: 'bg-pink-500' },
+const nearbyPrompts: NearbyPromptItem[] = [
+  { id: 'restaurant', parentCategory: 'restaurant' },
+  { id: 'pizzeria', parentCategory: 'restaurant' },
+  { id: 'sushi', parentCategory: 'restaurant' },
+  { id: 'burger', parentCategory: 'restaurant' },
+  { id: 'cafe', parentCategory: 'cafe' },
+  { id: 'gelato', parentCategory: 'cafe' },
+  { id: 'bar', parentCategory: 'bar' },
+  { id: 'cocktail', parentCategory: 'bar' },
+  { id: 'bakery', parentCategory: 'bakery' },
+  { id: 'hotel', parentCategory: 'hotel' },
+  { id: 'museum', parentCategory: 'museum' },
+  { id: 'entertainment', parentCategory: 'entertainment' },
 ];
 
 const popularCities = [
@@ -119,7 +123,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [nearbyResults, setNearbyResults] = useState<NearbySearchResult[]>([]);
-  const [activeNearbyCategory, setActiveNearbyCategory] = useState<AllowedCategory | null>(null);
+  const [activeNearbyCategory, setActiveNearbyCategory] = useState<NearbyPromptType | null>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number; lat?: number; lng?: number }[]>([]);
   const searchCacheRef = useRef<Map<string, { cities: { name: string; lat: number; lng: number }[]; locations: LocationResult[] }>>(new Map());
   
@@ -474,32 +478,30 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     handleClose();
   };
 
-  const handleNearbyPromptClick = async (prompt: NearbyPrompt) => {
+  const handleNearbyPromptClick = async (prompt: NearbyPromptItem) => {
     console.log('[NearbySearch] Clicked:', prompt.id);
-    console.log('[NearbySearch] Location:', location);
     
-    // If no location, try to get it first
-    if (!location?.latitude || !location?.longitude) {
+    // Get current location or request it
+    let userLat = location?.latitude;
+    let userLng = location?.longitude;
+    
+    if (!userLat || !userLng) {
       console.log('[NearbySearch] No location, requesting...');
-      await getCurrentLocation();
-      // Check again after getting location
-      if (!location?.latitude || !location?.longitude) {
-        console.warn('[NearbySearch] Still no location after request');
-        return;
-      }
+      getCurrentLocation();
+      return; // Will retry when location updates
     }
     
     setActiveNearbyCategory(prompt.id);
     setIsLoading(true);
     setNearbyResults([]);
     
-    console.log('[NearbySearch] Searching with coords:', location.latitude, location.longitude);
+    console.log('[NearbySearch] Searching:', prompt.id, 'at', userLat, userLng);
     
     try {
       const results = await searchNearbyByCategory(
         prompt.id,
-        { lat: location.latitude, lng: location.longitude },
-        5000 // 5km radius for better results
+        { lat: userLat, lng: userLng },
+        2000 // 2km radius for faster results
       );
       console.log('[NearbySearch] Results:', results.length);
       setNearbyResults(results);
@@ -685,7 +687,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </h3>
               <div className="flex flex-wrap gap-2">
                 {nearbyPrompts.map((prompt) => {
-                  const CategoryIcon = getCategoryIcon(prompt.id);
+                  const CategoryIconComponent = getCategoryIcon(prompt.parentCategory);
                   return (
                     <button
                       key={prompt.id}
@@ -695,7 +697,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                         "bg-muted/30 hover:bg-muted/50 border-border/50"
                       )}
                     >
-                      <CategoryIcon className={cn("w-4 h-4", getCategoryColor(prompt.id))} />
+                      <CategoryIconComponent className={cn("w-4 h-4", getCategoryColor(prompt.parentCategory))} />
                       <span className="font-medium text-sm text-foreground">
                         {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
                       </span>
