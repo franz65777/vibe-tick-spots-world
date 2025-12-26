@@ -5,28 +5,30 @@ import { useCityEngagement } from '@/hooks/useCityEngagement';
 
 interface CityEngagementCardProps {
   cityName: string;
+  originalCityName?: string; // Name used for DB queries (untranslated)
   onClick: () => void;
   baseCount?: number;
   coords?: { lat: number; lng: number };
 }
 
-const CityEngagementCard = ({ cityName, onClick, baseCount = 0, coords }: CityEngagementCardProps) => {
-  const { engagement, loading } = useCityEngagement(cityName, coords);
+const CityEngagementCard = ({ cityName, originalCityName, onClick, baseCount = 0, coords }: CityEngagementCardProps) => {
+  // Use original city name for DB queries, display translated name
+  const { engagement, loading } = useCityEngagement(originalCityName || cityName, coords);
 
   // Always prefer live engagement data; do not cap or fallback to static counts
   const totalPins = typeof engagement?.totalPins === 'number' ? engagement.totalPins : 0;
   const followedUsers = engagement?.followedUsers || [];
 
-  console.log(`🏙️ ${cityName} - Pins: ${totalPins}, Followed users:`, followedUsers.length, coords ? `@ ${coords.lat},${coords.lng}` : '');
+  console.log(`🏙️ ${cityName} (${originalCityName}) - Pins: ${totalPins}, Followed users:`, followedUsers.length, coords ? `@ ${coords.lat},${coords.lng}` : '');
 
   const displayCount = `${totalPins}`;
 
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-muted/30 hover:bg-muted/50 rounded-full transition-all border border-border/50 shadow-sm hover:shadow-md min-w-0"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 hover:bg-muted/50 rounded-full transition-all border border-border/50 shadow-sm hover:shadow-md min-w-0"
     >
-      <span className="font-semibold text-foreground truncate">{cityName}</span>
+      <span className="font-medium text-sm text-foreground truncate">{cityName}</span>
 
       {totalPins > 0 && (
         <span className="shrink-0 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -36,18 +38,18 @@ const CityEngagementCard = ({ cityName, onClick, baseCount = 0, coords }: CityEn
       )}
 
       {followedUsers.length > 0 && (
-        <div className="flex items-center -space-x-2 shrink-0">
+        <div className="flex items-center -space-x-1.5 shrink-0">
           {followedUsers.slice(0, 2).map((user) => (
-            <Avatar key={user.id} className="w-6 h-6 border-2 border-background">
+            <Avatar key={user.id} className="w-5 h-5 border border-background">
               <AvatarImage src={user.avatar_url || ''} />
-              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-[10px]">
+              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-[8px]">
                 {user.username?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
           ))}
           {followedUsers.length > 2 && (
-            <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-              <span className="text-[10px] font-semibold text-foreground">
+            <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center">
+              <span className="text-[8px] font-semibold text-foreground">
                 +{followedUsers.length - 2}
               </span>
             </div>
