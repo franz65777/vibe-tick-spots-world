@@ -19,22 +19,22 @@ export interface NearbySearchResult {
 // Extended prompt type that includes subcategories
 export type NearbyPrompt = AllowedCategory | 'pizzeria' | 'sushi' | 'burger' | 'gelato' | 'cocktail';
 
-// Map prompts to OSM query parts - search nodes AND ways for better coverage
+// Map prompts to OSM query parts - optimized queries with fallbacks
 const promptToOsmQuery: Record<NearbyPrompt, string> = {
-  // Main categories - include multiple tags for better results
-  restaurant: '["amenity"~"restaurant|fast_food"]',
-  cafe: '["amenity"~"cafe|coffee_shop"]',
-  bar: '["amenity"~"bar|pub|biergarten"]',
-  bakery: '["shop"="bakery"]',
-  hotel: '["tourism"~"hotel|hostel|guest_house|motel"]',
-  museum: '["tourism"~"museum|gallery"]["name"]',
-  entertainment: '["amenity"~"nightclub|cinema|theatre"]',
-  // Subcategories - cuisine-specific
-  pizzeria: '["cuisine"~"pizza",i]',
-  sushi: '["cuisine"~"sushi|japanese",i]',
-  burger: '["cuisine"~"burger|american",i]',
-  gelato: '["amenity"~"ice_cream|cafe"]["cuisine"~"ice_cream|gelato",i]',
-  cocktail: '["amenity"~"bar|cocktail_bar"]',
+  // Main categories - broader queries for better results
+  restaurant: '["amenity"~"restaurant|fast_food|food_court"]',
+  cafe: '["amenity"~"cafe|coffee_shop|coffee"]',
+  bar: '["amenity"~"bar|pub|biergarten|wine_bar"]',
+  bakery: '["shop"~"bakery|pastry"]',
+  hotel: '["tourism"~"hotel|hostel|guest_house|motel|apartment"]',
+  museum: '["tourism"~"museum|gallery|artwork"]',
+  entertainment: '["amenity"~"nightclub|cinema|theatre|casino"]',
+  // Subcategories
+  pizzeria: '["amenity"~"restaurant|fast_food"]["cuisine"~"pizza",i]',
+  sushi: '["amenity"~"restaurant"]["cuisine"~"sushi|japanese|asian",i]',
+  burger: '["amenity"~"restaurant|fast_food"]["cuisine"~"burger|american|hamburger",i]',
+  gelato: '["amenity"~"ice_cream"]',
+  cocktail: '["amenity"~"bar|nightclub"]',
 };
 
 // Map subcategories to parent categories
@@ -88,9 +88,9 @@ export async function searchNearbyByCategory(
 
   const category = promptToCategory[prompt];
   
-  // Search both nodes and ways for better coverage, increase radius
-  const searchRadius = radiusMeters < 3000 ? 3000 : radiusMeters;
-  const query = `[out:json][timeout:10];(node${queryPart}["name"](around:${searchRadius},${userLocation.lat},${userLocation.lng});way${queryPart}["name"](around:${searchRadius},${userLocation.lat},${userLocation.lng}););out center 15;`;
+  // Search nodes and ways with larger radius for better coverage
+  const searchRadius = Math.max(radiusMeters, 5000); // minimum 5km
+  const query = `[out:json][timeout:15];(node${queryPart}["name"](around:${searchRadius},${userLocation.lat},${userLocation.lng});way${queryPart}["name"](around:${searchRadius},${userLocation.lat},${userLocation.lng}););out center 20;`;
 
   console.log('[Nearby] Query:', query);
 
@@ -103,7 +103,7 @@ export async function searchNearbyByCategory(
   for (const server of servers) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
       const response = await fetch(server, {
         method: 'POST',
