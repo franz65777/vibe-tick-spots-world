@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Loader2, Navigation2 } from 'lucide-react';
+import { Loader2, Navigation2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PhotonResult } from '@/lib/photonGeocoding';
 import { useTranslation } from 'react-i18next';
@@ -7,14 +7,14 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
-import trendingIcon from '@/assets/trending-icon.png';
-import discountIcon from '@/assets/discount-icon.png';
-import eventIcon from '@/assets/event-icon.png';
-import promotionIcon from '@/assets/filter-promotion.png';
-import newIcon from '@/assets/new-icon.png';
-
-type FilterType = 'most_saved' | 'discount' | 'event' | 'promotion' | 'new';
+import { translateCityName, reverseTranslateCityName } from '@/utils/cityTranslations';
+import CityEngagementCard from '@/components/explore/CityEngagementCard';
+import { getCategoryImage } from '@/utils/categoryIcons';
+import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { searchPhoton } from '@/lib/photonGeocoding';
+import { searchOverpass } from '@/lib/overpassGeocoding';
+import noResultsIcon from '@/assets/no-results-pin.png';
+import type { AllowedCategory } from '@/utils/allowedCategories';
 
 interface PopularSpot {
   id: string;
@@ -28,6 +28,16 @@ interface PopularSpot {
     lat: number;
     lng: number;
   };
+}
+
+interface LocationResult {
+  id: string;
+  name: string;
+  city: string;
+  address: string;
+  lat: number;
+  lng: number;
+  category: AllowedCategory;
 }
 
 interface SearchDrawerProps {
@@ -44,9 +54,24 @@ interface SearchDrawerProps {
   onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-const spotsCache = new Map<string, { spots: PopularSpot[]; timestamp: number }>();
-const SPOTS_CACHE_DURATION = 5 * 60 * 1000;
-const SPOTS_CACHE_VERSION = 2;
+// Nearby categories for "Trova nei dintorni" section
+interface NearbyCategory {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
+
+const popularCities = [
+  { name: 'Dublin', lat: 53.3498053, lng: -6.2603097 },
+  { name: 'London', lat: 51.5074, lng: -0.1278 },
+  { name: 'Paris', lat: 48.8566, lng: 2.3522 },
+  { name: 'New York', lat: 40.7128, lng: -74.0060 },
+  { name: 'Tokyo', lat: 35.6762, lng: 139.6503 },
+  { name: 'Barcelona', lat: 41.3851, lng: 2.1734 },
+  { name: 'Amsterdam', lat: 52.3676, lng: 4.9041 },
+  { name: 'Rome', lat: 41.9028, lng: 12.4964 }
+];
 
 const SearchDrawer: React.FC<SearchDrawerProps> = ({
   searchQuery,
@@ -61,7 +86,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   isExpanded = false,
   onDrawerStateChange,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +94,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [internalQuery, setInternalQuery] = useState('');
   
+  // Drag state
   const [dragProgress, setDragProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -78,11 +105,26 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastYRef = useRef(0);
   const lastTimeRef = useRef(0);
   
-  const [filterType, setFilterType] = useState<FilterType>('most_saved');
-  const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
-  const [loadingSpots, setLoadingSpots] = useState(false);
+  // Search results
+  const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
+  const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
+  const [trendingCities, setTrendingCities] = useState<{ name: string; count: number; lat?: number; lng?: number }[]>([]);
+  const searchCacheRef = useRef<Map<string, { cities: { name: string; lat: number; lng: number }[]; locations: LocationResult[] }>>(new Map());
   
   const processedLocationRef = useRef<string>('');
+
+  // Nearby categories
+  const nearbyCategories: NearbyCategory[] = [
+    { id: 'lunch', label: t('nearbyCategories.lunch', { ns: 'explore', defaultValue: 'Pranzo' }), emoji: '🍴', color: 'bg-orange-500' },
+    { id: 'pizzeria', label: t('nearbyCategories.pizzeria', { ns: 'explore', defaultValue: 'Pizzerie' }), emoji: '🍕', color: 'bg-orange-400' },
+    { id: 'gas', label: t('nearbyCategories.gas', { ns: 'explore', defaultValue: 'Benzinai' }), emoji: '⛽', color: 'bg-blue-500' },
+    { id: 'grocery', label: t('nearbyCategories.grocery', { ns: 'explore', defaultValue: 'Negozio di alimentari' }), emoji: '🛒', color: 'bg-yellow-500' },
+    { id: 'parking', label: t('nearbyCategories.parking', { ns: 'explore', defaultValue: 'Parcheggi' }), emoji: '🅿️', color: 'bg-blue-600' },
+    { id: 'bar', label: t('nearbyCategories.bar', { ns: 'explore', defaultValue: 'Bar' }), emoji: '🍸', color: 'bg-orange-500' },
+    { id: 'pharmacy', label: t('nearbyCategories.pharmacy', { ns: 'explore', defaultValue: 'Farmacie' }), emoji: '💊', color: 'bg-pink-500' },
+    { id: 'fastfood', label: t('nearbyCategories.fastfood', { ns: 'explore', defaultValue: 'Fast food' }), emoji: '🍔', color: 'bg-orange-500' },
+    { id: 'bikesharing', label: t('nearbyCategories.bikesharing', { ns: 'explore', defaultValue: 'Servizi di bike sharing' }), emoji: '🚲', color: 'bg-green-500' },
+  ];
 
   useEffect(() => {
     onDrawerStateChange?.(isDrawerOpen);
@@ -98,118 +140,230 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
   }, [location?.latitude, location?.longitude, location?.city]);
 
+  // Fetch trending cities when drawer opens
   useEffect(() => {
-    if (isDrawerOpen) {
-      fetchPopularSpots();
-    }
-  }, [isDrawerOpen, filterType, currentCity]);
-
-  const fetchPopularSpots = async () => {
-    if (!currentCity || currentCity === 'Unknown City') {
-      setPopularSpots([]);
-      return;
-    }
-
-    const cacheKey = `${SPOTS_CACHE_VERSION}-${currentCity}-${filterType}`;
-    const cached = spotsCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < SPOTS_CACHE_DURATION)) {
-      setPopularSpots(cached.spots);
-      return;
-    }
-
-    try {
-      setLoadingSpots(true);
-      const normalizedCity = currentCity.trim().toLowerCase();
-
-      if (filterType === 'most_saved') {
-        const { data: locationsData } = await supabase
-          .from('locations')
-          .select('id, name, category, city, address, google_place_id, latitude, longitude')
-          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
-          .limit(200);
-
-        const locationIds = locationsData?.map(l => l.id) || [];
-
-        const { data: savesData } = locationIds.length > 0
-          ? await supabase.from('user_saved_locations').select('location_id').in('location_id', locationIds)
-          : { data: [] };
-
-        const savesMap = new Map<string, number>();
-        savesData?.forEach(save => {
-          savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
-        });
-
-        const spots: PopularSpot[] = (locationsData || [])
-          .map(location => ({
-            id: location.id,
-            name: location.name,
-            category: location.category,
-            city: location.city || 'Unknown',
-            address: location.address,
-            google_place_id: location.google_place_id,
-            savesCount: savesMap.get(location.id) || 0,
-            coordinates: {
-              lat: parseFloat(location.latitude?.toString() || '0'),
-              lng: parseFloat(location.longitude?.toString() || '0'),
-            },
-          }))
-          .filter(s => s.savesCount > 0)
-          .sort((a, b) => b.savesCount - a.savesCount)
-          .slice(0, 10);
-
-        setPopularSpots(spots);
-        spotsCache.set(cacheKey, { spots, timestamp: Date.now() });
-      } else {
-        const campaignTypeMap: Record<string, string> = {
-          'discount': 'discount',
-          'event': 'event',
-          'promotion': 'promo',
-          'new': 'new_opening',
-        };
-
-        const { data: campaignsData } = await supabase
-          .from('marketing_campaigns')
-          .select('location_id')
-          .eq('campaign_type', campaignTypeMap[filterType])
-          .eq('is_active', true)
-          .gte('end_date', new Date().toISOString());
-
-        const campaignLocationIds = campaignsData?.map(c => c.location_id) || [];
-        
-        if (campaignLocationIds.length === 0) {
-          setPopularSpots([]);
-          setLoadingSpots(false);
-          return;
-        }
-
-        const { data: locationsData } = await supabase
-          .from('locations')
-          .select('id, name, category, city, address, google_place_id, latitude, longitude')
-          .in('id', campaignLocationIds)
-          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`);
-
-        const spots: PopularSpot[] = (locationsData || []).map(location => ({
-          id: location.id,
-          name: location.name,
-          category: location.category,
-          city: location.city || 'Unknown',
-          address: location.address,
-          google_place_id: location.google_place_id,
-          savesCount: 0,
-          coordinates: {
-            lat: parseFloat(location.latitude?.toString() || '0'),
-            lng: parseFloat(location.longitude?.toString() || '0'),
-          },
+    if (!isDrawerOpen) return;
+    fetch('/functions/v1/trending-cities')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        const items = (data?.cities || []).map((c: any) => ({
+          name: String(c.city || '').split(',')[0].trim(),
+          count: Number(c.total) || 0,
         }));
+        const unique = new Map<string, { name: string; count: number }>();
+        items.forEach((i: { name: string; count: number }) => {
+          const key = i.name.toLowerCase();
+          if (!unique.has(key)) unique.set(key, i);
+        });
+        setTrendingCities(Array.from(unique.values()));
+      })
+      .catch(() => {
+        // ignore errors
+      });
+  }, [isDrawerOpen]);
 
-        setPopularSpots(spots);
-        spotsCache.set(cacheKey, { spots, timestamp: Date.now() });
+  // Search effect
+  useEffect(() => {
+    const queryTrimmed = internalQuery.trim().toLowerCase();
+    const cacheKey = `${queryTrimmed}-${i18n.language}`;
+    
+    if (!queryTrimmed) {
+      setCityResults([]);
+      setLocationResults([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    // Check cache first
+    if (searchCacheRef.current.has(cacheKey)) {
+      const cached = searchCacheRef.current.get(cacheKey)!;
+      setCityResults(cached.cities);
+      setLocationResults(cached.locations);
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      searchAll(queryTrimmed);
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [internalQuery, i18n.language]);
+
+  const searchAll = async (queryLower: string) => {
+    if (!queryLower) return;
+
+    const cacheKey = `${queryLower}-${i18n.language}`;
+    
+    if (searchCacheRef.current.has(cacheKey)) {
+      const cached = searchCacheRef.current.get(cacheKey)!;
+      setCityResults(cached.cities);
+      setLocationResults(cached.locations);
+      setIsLoading(false);
+      return;
+    }
+
+    const queryEnglish = reverseTranslateCityName(queryLower).toLowerCase();
+
+    setIsLoading(true);
+    try {
+      // Search saved locations from database
+      const { data: locations, error } = await supabase
+        .from('locations')
+        .select('id, name, city, address, latitude, longitude, category')
+        .or(`name.ilike.%${queryLower}%,city.ilike.%${queryLower}%`)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .limit(30);
+
+      if (error) {
+        console.error('Location search error:', error);
       }
+
+      // Map to LocationResult format with deduplication
+      const seenLocations = new Map<string, LocationResult>();
+      (locations || []).forEach(loc => {
+        const normalizedName = loc.name.toLowerCase().trim();
+        const coordKey = `${loc.latitude!.toFixed(4)},${loc.longitude!.toFixed(4)}`;
+        const dedupeKey = `${normalizedName}-${coordKey}`;
+        
+        if (!seenLocations.has(dedupeKey)) {
+          seenLocations.set(dedupeKey, {
+            id: loc.id,
+            name: loc.name,
+            city: loc.city || '',
+            address: loc.address || '',
+            lat: loc.latitude!,
+            lng: loc.longitude!,
+            category: (loc.category || 'restaurant') as AllowedCategory,
+          });
+        }
+      });
+      
+      const mappedLocations: LocationResult[] = Array.from(seenLocations.values());
+
+      // Sort by proximity if user location available
+      if (location && mappedLocations.length > 0) {
+        mappedLocations.sort((a, b) => {
+          const distA = calculateDistance(location.latitude, location.longitude, a.lat, a.lng);
+          const distB = calculateDistance(location.latitude, location.longitude, b.lat, b.lng);
+          return distA - distB;
+        });
+      }
+
+      // Extract unique cities
+      const citiesFromLocations = new Map<string, { name: string; lat: number; lng: number }>();
+      (locations || []).forEach(loc => {
+        if (loc.city && loc.latitude && loc.longitude) {
+          let cityLower = loc.city.toLowerCase().trim();
+          const cityEnglish = reverseTranslateCityName(cityLower).toLowerCase();
+          
+          if (cityLower.includes(queryLower) || cityEnglish.includes(queryLower) || cityEnglish.includes(queryEnglish)) {
+            if (!citiesFromLocations.has(cityEnglish)) {
+              citiesFromLocations.set(cityEnglish, {
+                name: cityEnglish,
+                lat: loc.latitude,
+                lng: loc.longitude,
+              });
+            }
+          }
+        }
+      });
+
+      // Check popular cities
+      const matchingPopularCities = popularCities.filter(city => {
+        const cityLower = city.name.toLowerCase();
+        return cityLower.includes(queryLower) || cityLower.includes(queryEnglish);
+      });
+
+      // Combine unique cities
+      const allCities = [...citiesFromLocations.values()];
+      matchingPopularCities.forEach(pc => {
+        const pcEnglish = reverseTranslateCityName(pc.name).toLowerCase();
+        if (!citiesFromLocations.has(pcEnglish)) {
+          allCities.push({ ...pc, name: pcEnglish });
+        }
+      });
+
+      // If few results, search external APIs
+      if (allCities.length === 0 || mappedLocations.length < 5) {
+        const userLoc = location ? { lat: location.latitude, lng: location.longitude } : undefined;
+        
+        const [nominatimResults, photonResults, overpassResults] = await Promise.all([
+          nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc).catch(() => []),
+          searchPhoton(queryLower, userLoc, 20).catch(() => []),
+          userLoc ? searchOverpass(queryLower, userLoc, 15).catch(() => []) : Promise.resolve([]),
+        ]);
+        
+        const existingCoords = new Set(mappedLocations.map(l => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
+        const existingNames = new Set(mappedLocations.map(l => l.name.toLowerCase().trim()));
+        
+        const isNameDuplicate = (name: string) => {
+          const normalized = name.toLowerCase().trim();
+          if (existingNames.has(normalized)) return true;
+          for (const existing of existingNames) {
+            if (normalized.includes(existing) || existing.includes(normalized)) return true;
+          }
+          return false;
+        };
+        
+        // Add Photon results
+        photonResults.forEach((result) => {
+          const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
+          if (!existingCoords.has(coordKey) && !isNameDuplicate(result.name)) {
+            mappedLocations.push({
+              id: result.id,
+              name: result.name,
+              city: result.city,
+              address: result.displayAddress,
+              lat: result.lat,
+              lng: result.lng,
+              category: result.category,
+            });
+            existingCoords.add(coordKey);
+            existingNames.add(result.name.toLowerCase().trim());
+          }
+        });
+        
+        // Add Overpass results
+        overpassResults.forEach((result) => {
+          const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
+          if (!existingCoords.has(coordKey) && !isNameDuplicate(result.name)) {
+            mappedLocations.push({
+              id: result.id,
+              name: result.name,
+              city: result.city,
+              address: result.address,
+              lat: result.lat,
+              lng: result.lng,
+              category: result.category,
+            });
+            existingCoords.add(coordKey);
+            existingNames.add(result.name.toLowerCase().trim());
+          }
+        });
+        
+        // Re-sort by distance
+        if (userLoc && mappedLocations.length > 1) {
+          mappedLocations.sort((a, b) => {
+            const distA = calculateDistance(userLoc.lat, userLoc.lng, a.lat, a.lng);
+            const distB = calculateDistance(userLoc.lat, userLoc.lng, b.lat, b.lng);
+            return distA - distB;
+          });
+        }
+      }
+
+      // Cache results
+      searchCacheRef.current.set(cacheKey, { cities: allCities, locations: mappedLocations });
+      setCityResults(allCities);
+      setLocationResults(mappedLocations.slice(0, 8));
     } catch (error) {
-      console.error('Error fetching popular spots:', error);
-      setPopularSpots([]);
+      console.error('Search error:', error);
+      setCityResults([]);
+      setLocationResults([]);
     } finally {
-      setLoadingSpots(false);
+      setIsLoading(false);
     }
   };
 
@@ -248,7 +402,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     lastTimeRef.current = currentTime;
     
     const deltaY = dragStartY.current - currentY;
-    const maxDrag = 280;
+    const maxDrag = window.innerHeight * 0.55; // Max height is 55% of screen
     
     const dragDelta = deltaY / maxDrag;
     let newProgress = dragStartProgress.current + dragDelta;
@@ -279,6 +433,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     
     setDragProgress(shouldOpen ? 1 : 0);
     setIsDrawerOpen(shouldOpen);
+    
+    // Focus input when opening
+    if (shouldOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
   }, [isDragging, dragProgress]);
 
   useEffect(() => {
@@ -287,56 +446,77 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   }, [isDrawerOpen, isDragging]);
 
-  const getFilterLabel = (type: FilterType) => {
-    switch (type) {
-      case 'discount': return t('filters.discount', { ns: 'home' });
-      case 'event': return t('filters.event', { ns: 'home' });
-      case 'promotion': return t('filters.promotion', { ns: 'home' });
-      case 'new': return t('filters.new', { ns: 'home' });
-      default: return t('filters.trending', { ns: 'home' });
+  const handleClose = () => {
+    setIsDrawerOpen(false);
+    setDragProgress(0);
+    setInternalQuery('');
+    setCityResults([]);
+    setLocationResults([]);
+  };
+
+  const handleCitySelect = (city: { name: string; lat: number; lng: number }) => {
+    const displayName = translateCityName(city.name, i18n.language);
+    onCitySelect(displayName, { lat: city.lat, lng: city.lng });
+    onSearchChange(displayName);
+    handleClose();
+  };
+
+  const handleLocationResultSelect = (loc: LocationResult) => {
+    onCitySelect(loc.city, { lat: loc.lat, lng: loc.lng });
+    onSpotSelect?.({
+      id: loc.id,
+      name: loc.name,
+      category: loc.category,
+      city: loc.city,
+      address: loc.address,
+      savesCount: 0,
+      coordinates: { lat: loc.lat, lng: loc.lng },
+    });
+    handleClose();
+  };
+
+  const handleNearbyCategoryClick = (category: NearbyCategory) => {
+    setInternalQuery(category.label);
+  };
+
+  const handleSearchBarClick = () => {
+    if (!isDrawerOpen) {
+      setIsDrawerOpen(true);
+      setDragProgress(1);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  const filterOptions: { value: FilterType; icon: string }[] = [
-    { value: 'most_saved', icon: trendingIcon },
-    { value: 'discount', icon: discountIcon },
-    { value: 'event', icon: eventIcon },
-    { value: 'promotion', icon: promotionIcon },
-    { value: 'new', icon: newIcon },
-  ];
+  // Calculate expanded height - max 70% of screen
+  const maxExpandedHeight = window.innerHeight * 0.7;
+  const expandedHeight = Math.max(0, dragProgress) * maxExpandedHeight;
+  const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
-  const handleSpotClick = (spot: PopularSpot) => {
-    onCitySelect(spot.city, spot.coordinates);
-    onSpotSelect?.(spot);
-    setIsDrawerOpen(false);
-    setDragProgress(0);
-  };
-
-  const trendingHeight = Math.max(0, dragProgress) * 280;
-  const trendingOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
+  const isSearching = internalQuery.trim().length > 0;
+  const hasResults = cityResults.length > 0 || locationResults.length > 0;
 
   return (
     <div
       ref={drawerRef}
       className={cn(
-        "left-3 z-[1000] flex flex-col",
+        "left-3 right-3 z-[1000] flex flex-col-reverse",
         isExpanded ? 'fixed' : 'absolute'
       )}
       style={{
         bottom: isExpanded 
           ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
           : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))',
-        right: isDrawerOpen || dragProgress > 0.1 ? '0.75rem' : '3.25rem',
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Search bar with integrated drag handle - touch target for drawer */}
+      {/* Search bar at bottom */}
       <div 
         className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full"
         style={{ touchAction: 'none' }}
+        onClick={handleSearchBarClick}
       >
         {/* Drag handle inside at top center */}
         <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
@@ -346,111 +526,213 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             ref={inputRef}
             type="text"
             placeholder={t('searchCities', { ns: 'home' })}
-            value={(() => {
-              // When user is typing (searchQuery different from currentCity), show search emoji
-              if (searchQuery && searchQuery !== currentCity) return `🔎  ${searchQuery}`;
-              // When showing currentCity, show pin
-              if (!searchQuery && currentCity) return `📌  ${currentCity}`;
-              if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
-              return searchQuery;
-            })()}
-            onChange={(e) => onSearchChange(e.target.value.replace(/^[📌🔎]\s*/, ''))}
-            onFocus={() => onFocusOpen?.()}
+            value={isDrawerOpen ? internalQuery : (currentCity ? `📌  ${currentCity}` : '')}
+            onChange={(e) => setInternalQuery(e.target.value)}
+            onFocus={() => {
+              if (!isDrawerOpen) {
+                setIsDrawerOpen(true);
+                setDragProgress(1);
+              }
+            }}
             className="w-full h-10 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
           />
-          <button
-            onClick={handleCurrentLocation}
-            disabled={geoLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
-            aria-label={t('currentLocation', { ns: 'common' })}
-          >
-            <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
-          </button>
+          {isDrawerOpen ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClose();
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors"
+              aria-label={t('cancel', { ns: 'common' })}
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          ) : (
+            <button
+              onClick={handleCurrentLocation}
+              disabled={geoLoading}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+              aria-label={t('currentLocation', { ns: 'common' })}
+            >
+              <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Trending section - slides up */}
+      {/* Expanded content panel - appears above search bar */}
       <div 
-        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 mt-2"
+        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-xl border border-border/30 mb-2"
         style={{
-          height: trendingHeight,
-          opacity: trendingOpacity,
+          height: expandedHeight,
+          opacity: expandedOpacity,
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           display: dragProgress > 0 ? 'block' : 'none',
         }}
       >
-        <div className="px-3 pt-3 pb-2">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-            {filterOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setFilterType(option.value)}
-                className={cn(
-                  "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                  filterType === option.value
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <img src={option.icon} alt="" className="w-4 h-4 object-contain" />
-                <span>{getFilterLabel(option.value)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-3 pb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">
-              {getFilterLabel(filterType)} {currentCity ? `in ${currentCity}` : ''}
-            </h3>
-            {popularSpots.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {popularSpots.length} {t('places', { ns: 'common', defaultValue: 'places' })}
-              </span>
-            )}
-          </div>
-
-          {loadingSpots ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            </div>
-          ) : popularSpots.length > 0 ? (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-              {popularSpots.map((spot) => (
-                <button
-                  key={spot.id}
-                  onClick={() => handleSpotClick(spot)}
-                  className="flex-shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors min-w-[80px] max-w-[80px]"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <CategoryIcon category={spot.category} className="w-5 h-5" />
+        <div className="h-full overflow-y-auto px-4 py-4">
+          {/* Search input when expanded (duplicate for visual clarity) */}
+          {isDrawerOpen && (
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
+                <input
+                  type="text"
+                  value={internalQuery}
+                  onChange={(e) => setInternalQuery(e.target.value)}
+                  placeholder={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
+                  className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+                  autoFocus
+                />
+                {isLoading && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
                   </div>
-                  <span className="text-[10px] font-medium text-foreground text-center line-clamp-2 leading-tight">
-                    {spot.name}
-                  </span>
-                  {spot.savesCount > 0 && (
-                    <span className="text-[9px] text-muted-foreground">
-                      {spot.savesCount} saves
-                    </span>
-                  )}
-                </button>
-              ))}
+                )}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClose();
+                }}
+                className="p-2 rounded-full hover:bg-muted/50 transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              {t('filters.noLocationsWithFilter', {
-                ns: 'home',
-                filter: getFilterLabel(filterType).toLowerCase(),
-                city: currentCity,
-                defaultValue: `No ${getFilterLabel(filterType).toLowerCase()} in ${currentCity}`
+          )}
+
+          {/* Popular/Trending cities when no query */}
+          {!isSearching && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(trendingCities.length > 0 ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
+                const translatedName = translateCityName(item.name, i18n.language);
+                const cityData = popularCities.find(c => c.name.toLowerCase() === item.name.toLowerCase());
+                return (
+                  <CityEngagementCard
+                    key={item.name}
+                    cityName={translatedName}
+                    coords={cityData ? { lat: cityData.lat, lng: cityData.lng } : ('lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined)}
+                    onClick={() => {
+                      const coords = cityData || ('lat' in item ? item as any : null);
+                      if (coords) {
+                        handleCitySelect({
+                          name: item.name,
+                          lat: coords.lat,
+                          lng: coords.lng
+                        });
+                      }
+                    }}
+                    baseCount={'count' in item ? (item as any).count : 0}
+                  />
+                );
               })}
-            </p>
+            </div>
+          )}
+
+          {/* Trova nei dintorni section - only when not searching */}
+          {!isSearching && (
+            <div className="mt-2">
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t('findNearby', { ns: 'explore', defaultValue: 'Trova nei dintorni' })}
+              </h3>
+              <div className="bg-muted/30 rounded-2xl overflow-hidden divide-y divide-border/50">
+                {nearbyCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleNearbyCategoryClick(category)}
+                    className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <div className={`w-9 h-9 rounded-full ${category.color} flex items-center justify-center`}>
+                      <span className="text-lg">{category.emoji}</span>
+                    </div>
+                    <span className="font-medium text-foreground">{category.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cities Section - when searching */}
+          {isSearching && cityResults.length > 0 && (
+            <div className="mb-4">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                {t('cities', { ns: 'common', defaultValue: 'Cities' })}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {cityResults.map((city, index) => {
+                  const displayName = translateCityName(city.name, i18n.language);
+                  return (
+                    <CityEngagementCard
+                      key={index}
+                      cityName={displayName}
+                      coords={{ lat: city.lat, lng: city.lng }}
+                      onClick={() => handleCitySelect(city)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Locations Section - when searching */}
+          {isSearching && locationResults.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                {t('locations', { ns: 'common', defaultValue: 'Locations' })}
+              </div>
+              <div className="space-y-2">
+                {locationResults.map((loc, index) => {
+                  const categoryImage = getCategoryImage(loc.category);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleLocationResultSelect(loc)}
+                      className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <img src={categoryImage} alt={loc.category} className="w-8 h-8 object-contain" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground truncate">
+                          {loc.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {loc.city ? `${loc.city}${loc.address && loc.address !== loc.city ? `, ${loc.address}` : ''}` : loc.address}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No results */}
+          {isSearching && !isLoading && !hasResults && (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <img src={noResultsIcon} alt="No results" className="w-14 h-20 mb-3 opacity-70 object-contain" />
+              <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore', defaultValue: 'Nessun risultato' })}</p>
+              <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore', defaultValue: 'Prova con un\'altra ricerca' })}</p>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 };
+
+// Helper function to calculate distance
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
 export default SearchDrawer;
