@@ -487,8 +487,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   };
 
-  // Calculate expanded height - stops at category filters level (around 60% of screen)
-  const maxExpandedHeight = window.innerHeight * 0.60;
+  // Calculate expanded height - reaches up to category filters level
+  // Category filters are at ~60px from top, bottom nav ~80px, so we calculate available space
+  const maxExpandedHeight = window.innerHeight * 0.68;
   const expandedHeight = Math.max(0, dragProgress) * maxExpandedHeight;
   const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
