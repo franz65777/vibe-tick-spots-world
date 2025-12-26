@@ -619,7 +619,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           <div className="flex justify-center pt-4 pb-3">
             <div className="w-14 h-1.5 bg-muted-foreground/60 rounded-full" />
           </div>
-          </div>
           
           {/* Search input - fixed at top */}
           {isDrawerOpen && (
