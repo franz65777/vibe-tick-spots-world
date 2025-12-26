@@ -381,9 +381,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     getCurrentLocation();
   };
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if ((e.target as HTMLElement).tagName === 'INPUT') return;
-    
+  const handleDragStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     setIsDragging(true);
     dragStartY.current = e.touches[0].clientY;
     dragStartProgress.current = dragProgress;
@@ -392,8 +391,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     lastTimeRef.current = Date.now();
   }, [dragProgress]);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleDragMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
+    e.preventDefault();
+    e.stopPropagation();
     
     const currentY = e.touches[0].clientY;
     const currentTime = Date.now();
@@ -406,7 +407,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     lastTimeRef.current = currentTime;
     
     const deltaY = dragStartY.current - currentY;
-    const maxDrag = window.innerHeight * 0.55; // Max height is 55% of screen
+    const maxDrag = window.innerHeight * 0.55;
     
     const dragDelta = deltaY / maxDrag;
     let newProgress = dragStartProgress.current + dragDelta;
@@ -420,7 +421,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
   }, [isDragging]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleDragEnd = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
     
@@ -438,11 +439,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setDragProgress(shouldOpen ? 1 : 0);
     setIsDrawerOpen(shouldOpen);
     
-    // Focus input when opening
     if (shouldOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isDragging, dragProgress]);
+
 
   useEffect(() => {
     if (!isDragging) {
@@ -563,9 +564,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onTouchStart={handleDragStart}
+      onTouchMove={handleDragMove}
+      onTouchEnd={handleDragEnd}
     >
       {/* Search bar at bottom - hide when drawer is open */}
       {!isDrawerOpen && (
@@ -609,13 +610,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         {/* Fixed header: Drag handle + Search input */}
         <div 
           className="flex-shrink-0 cursor-grab active:cursor-grabbing"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          style={{ touchAction: 'none' }}
+          onTouchStart={handleDragStart}
+          onTouchMove={handleDragMove}
+          onTouchEnd={handleDragEnd}
         >
           {/* Drag handle at top - larger touch area */}
-          <div className="flex justify-center pt-3 pb-2">
-            <div className="w-12 h-1.5 bg-muted-foreground/50 rounded-full" />
+          <div className="flex justify-center pt-4 pb-3">
+            <div className="w-14 h-1.5 bg-muted-foreground/60 rounded-full" />
+          </div>
           </div>
           
           {/* Search input - fixed at top */}
