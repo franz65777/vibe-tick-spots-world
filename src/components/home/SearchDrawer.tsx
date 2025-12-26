@@ -780,7 +780,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div
-        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-white/25 dark:border-white/10 flex flex-col backdrop-blur-xl bg-white/55 dark:bg-slate-900/55"
+        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-white/25 dark:border-white/10 flex flex-col backdrop-blur-xl bg-white/80 dark:bg-slate-900/80"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
