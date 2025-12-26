@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Loader2, Locate } from 'lucide-react';
+import { MapPin, Loader2, Navigation2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton, PhotonResult } from '@/lib/photonGeocoding';
 import { useTranslation } from 'react-i18next';
@@ -222,8 +223,8 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           type="text"
           placeholder={t('searchCities', { ns: 'home' })}
           value={(() => {
-            if (!searchQuery && currentCity) return `📌 ${currentCity}`;
-            if (searchQuery && currentCity && searchQuery === currentCity) return `📌 ${searchQuery}`;
+            if (!searchQuery && currentCity) return `📌  ${currentCity}`;
+            if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
             return searchQuery;
           })()}
           onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
@@ -246,7 +247,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
           aria-label={t('currentLocation', { ns: 'common' })}
         >
-          <Locate className="w-4 h-4 text-foreground" />
+          <Navigation2 className={cn("w-4 h-4 transition-colors", geoLoading ? "text-primary fill-primary" : "text-primary")} />
         </button>
       </div>
 
