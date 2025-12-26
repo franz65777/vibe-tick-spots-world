@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { translateCityName, reverseTranslateCityName } from '@/utils/cityTranslations';
 import CityEngagementCard from '@/components/explore/CityEngagementCard';
+import PopularSpots from '@/components/home/PopularSpots';
 import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
@@ -106,6 +107,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const lastPopularCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   
   type DrawerMode = 'closed' | 'trending' | 'search';
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
@@ -841,180 +843,216 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
         {/* Scrollable content */}
         <div ref={scrollRef} data-drawer-scroll className="flex-1 overflow-y-auto px-4 pb-4">
-          {/* Top 5 cities with most saved locations - hide when nearby category is active */}
-          {!isSearching && !activeNearbyCategory && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {(trendingCities.length > 0
-                ? trendingCities.slice(0, 5)
-                : popularCities
-                    .slice(0, 5)
-                    .map((c) => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))
-              ).map((item) => {
-                const translatedName = translateCityName(item.name, i18n.language);
-                const cityData = popularCities.find((c) => c.name.toLowerCase() === item.name.toLowerCase());
-                return (
-                  <CityEngagementCard
-                    key={item.name}
-                    cityName={translatedName}
-                    originalCityName={item.name}
-                    coords={
-                      cityData
-                        ? { lat: cityData.lat, lng: cityData.lng }
-                        : 'lat' in item && 'lng' in item
-                          ? { lat: (item as any).lat, lng: (item as any).lng }
-                          : undefined
-                    }
-                    onClick={() => {
-                      const coords = cityData || ('lat' in item ? (item as any) : null);
-                      if (coords) {
-                        handleCitySelect({
-                          name: item.name,
-                          lat: coords.lat,
-                          lng: coords.lng,
-                        });
-                      }
-                    }}
-                    baseCount={'count' in item ? (item as any).count : 0}
-                  />
-                );
-              })}
+          {/* TRENDING MODE: show the PopularSpots (Tendenza/Sconto/Evento/Promozione/Nuovo) UI */}
+          {!isSearchOpen && (
+            <div className="pt-1">
+              <PopularSpots
+                currentCity={currentCity}
+                onLocationClick={(coords) => {
+                  lastPopularCoordsRef.current = coords;
+                }}
+                onSpotSelect={(spot) => {
+                  onSpotSelect?.(spot);
+                  handleClose();
+                }}
+                onCitySelect={(city) => {
+                  const coords = lastPopularCoordsRef.current ?? undefined;
+                  onCitySelect(city, coords);
+                  onSearchChange(city);
+                  lastPopularCoordsRef.current = null;
+                  handleClose();
+                }}
+              />
             </div>
           )}
 
-          {/* Find nearby section - only when not searching */}
-          {!isSearching && !activeNearbyCategory && (
-            <div className="mt-2">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                {t('findNearby', { ns: 'explore', defaultValue: 'Find nearby' })}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {nearbyPrompts.map((prompt) => (
-                  <button
-                    key={prompt.id}
-                    onClick={() => handleNearbyPromptClick(prompt)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md active:scale-95",
-                      "bg-white/60 dark:bg-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-600/60 border-white/50 dark:border-white/20"
-                    )}
-                  >
-                    <span className="text-base">{prompt.emoji}</span>
-                    <span className="font-medium text-sm text-foreground">
-                      {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Nearby results - when a category is selected */}
-          {activeNearbyCategory && (
-            <div className="mt-2">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  {t(`nearbyPrompts.${activeNearbyCategory}`, { ns: 'explore' })}
-                </h3>
-                <button onClick={clearNearbySearch} className="p-1 hover:bg-muted rounded-full">
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </div>
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              ) : nearbyResults.length > 0 ? (
-                <div className="space-y-2">
-                  {nearbyResults.map((result) => {
-                    const categoryImage = getCategoryImage(result.category);
+          {/* SEARCH MODE: keep the existing search UI */}
+          {isSearchOpen && (
+            <>
+              {/* Top 5 cities with most saved locations - hide when nearby category is active */}
+              {!isSearching && !activeNearbyCategory && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(trendingCities.length > 0
+                    ? trendingCities.slice(0, 5)
+                    : popularCities
+                        .slice(0, 5)
+                        .map((c) => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))
+                  ).map((item) => {
+                    const translatedName = translateCityName(item.name, i18n.language);
+                    const cityData = popularCities.find((c) => c.name.toLowerCase() === item.name.toLowerCase());
                     return (
-                      <button
-                        key={result.id}
-                        onClick={() => handleNearbyResultSelect(result)}
-                        className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
-                      >
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <img src={categoryImage} alt={result.category} className="w-8 h-8 object-contain" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-foreground truncate">{result.name}</div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {result.distance ? `${result.distance.toFixed(1)} km • ` : ''}{result.address || result.city}
-                          </div>
-                        </div>
-                      </button>
+                      <CityEngagementCard
+                        key={item.name}
+                        cityName={translatedName}
+                        originalCityName={item.name}
+                        coords={
+                          cityData
+                            ? { lat: cityData.lat, lng: cityData.lng }
+                            : 'lat' in item && 'lng' in item
+                              ? { lat: (item as any).lat, lng: (item as any).lng }
+                              : undefined
+                        }
+                        onClick={() => {
+                          const coords = cityData || ('lat' in item ? (item as any) : null);
+                          if (coords) {
+                            handleCitySelect({
+                              name: item.name,
+                              lat: coords.lat,
+                              lng: coords.lng,
+                            });
+                          }
+                        }}
+                        baseCount={'count' in item ? (item as any).count : 0}
+                      />
                     );
                   })}
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>{t('noResultsFound', { ns: 'explore', defaultValue: 'No results found' })}</p>
+              )}
+
+              {/* Find nearby section - only when not searching */}
+              {!isSearching && !activeNearbyCategory && (
+                <div className="mt-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    {t('findNearby', { ns: 'explore', defaultValue: 'Find nearby' })}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {nearbyPrompts.map((prompt) => (
+                      <button
+                        key={prompt.id}
+                        onClick={() => handleNearbyPromptClick(prompt)}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md active:scale-95",
+                          "bg-white/60 dark:bg-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-600/60 border-white/50 dark:border-white/20"
+                        )}
+                      >
+                        <span className="text-base">{prompt.emoji}</span>
+                        <span className="font-medium text-sm text-foreground">
+                          {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Cities Section - when searching */}
-          {isSearching && cityResults.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                {t('cities', { ns: 'common', defaultValue: 'Cities' })}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {cityResults.map((city, index) => {
-                  const displayName = translateCityName(city.name, i18n.language);
-                  return (
-                    <CityEngagementCard
-                      key={index}
-                      cityName={displayName}
-                      coords={{ lat: city.lat, lng: city.lng }}
-                      onClick={() => handleCitySelect(city)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Locations Section - when searching */}
-          {isSearching && locationResults.length > 0 && (
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                {t('locations', { ns: 'common', defaultValue: 'Locations' })}
-              </div>
-              <div className="space-y-2">
-                {locationResults.map((loc, index) => {
-                  const categoryImage = getCategoryImage(loc.category);
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleLocationResultSelect(loc)}
-                      className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
-                    >
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <img src={categoryImage} alt={loc.category} className="w-8 h-8 object-contain" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-foreground truncate">
-                          {loc.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground truncate">
-                          {loc.city ? `${loc.city}${loc.address && loc.address !== loc.city ? `, ${loc.address}` : ''}` : loc.address}
-                        </div>
-                      </div>
+              {/* Nearby results - when a category is selected */}
+              {activeNearbyCategory && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {t(`nearbyPrompts.${activeNearbyCategory}`, { ns: 'explore' })}
+                    </h3>
+                    <button onClick={clearNearbySearch} className="p-1 hover:bg-muted rounded-full">
+                      <X className="w-4 h-4 text-muted-foreground" />
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                  </div>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    </div>
+                  ) : nearbyResults.length > 0 ? (
+                    <div className="space-y-2">
+                      {nearbyResults.map((result) => {
+                        const categoryImage = getCategoryImage(result.category);
+                        return (
+                          <button
+                            key={result.id}
+                            onClick={() => handleNearbyResultSelect(result)}
+                            className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
+                          >
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <img src={categoryImage} alt={result.category} className="w-8 h-8 object-contain" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-foreground truncate">{result.name}</div>
+                              <div className="text-sm text-muted-foreground truncate">
+                                {result.distance ? `${result.distance.toFixed(1)} km • ` : ''}{result.address || result.city}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>{t('noResultsFound', { ns: 'explore', defaultValue: 'No results found' })}</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
-          {/* No results */}
-          {isSearching && !isLoading && !hasResults && (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <img src={noResultsIcon} alt="No results" className="w-14 h-20 mb-3 opacity-70 object-contain" />
-              <p className="text-lg font-medium">{t('noResultsFound', { ns: 'explore', defaultValue: 'Nessun risultato' })}</p>
-              <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore', defaultValue: 'Prova con un\'altra ricerca' })}</p>
-            </div>
+              {/* Cities Section - when searching */}
+              {isSearching && cityResults.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    {t('cities', { ns: 'common', defaultValue: 'Cities' })}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {cityResults.map((city, index) => {
+                      const displayName = translateCityName(city.name, i18n.language);
+                      return (
+                        <CityEngagementCard
+                          key={index}
+                          cityName={displayName}
+                          coords={{ lat: city.lat, lng: city.lng }}
+                          onClick={() => handleCitySelect(city)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Locations Section - when searching */}
+              {isSearching && locationResults.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    {t('locations', { ns: 'common', defaultValue: 'Locations' })}
+                  </div>
+                  <div className="space-y-2">
+                    {locationResults.map((loc, index) => {
+                      const categoryImage = getCategoryImage(loc.category);
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleLocationResultSelect(loc)}
+                          className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
+                        >
+                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <img src={categoryImage} alt={loc.category} className="w-8 h-8 object-contain" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-foreground truncate">{loc.name}</div>
+                            <div className="text-sm text-muted-foreground truncate">
+                              {loc.city
+                                ? `${loc.city}${loc.address && loc.address !== loc.city ? `, ${loc.address}` : ''}`
+                                : loc.address}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* No results */}
+              {isSearching && !isLoading && !hasResults && (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <img
+                    src={noResultsIcon}
+                    alt="No results"
+                    className="w-14 h-20 mb-3 opacity-70 object-contain"
+                  />
+                  <p className="text-lg font-medium">
+                    {t('noResultsFound', { ns: 'explore', defaultValue: 'Nessun risultato' })}
+                  </p>
+                  <p className="text-sm opacity-75 mt-1">
+                    {t('tryDifferentSearch', { ns: 'explore', defaultValue: "Prova con un'altra ricerca" })}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
