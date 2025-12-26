@@ -645,8 +645,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
-          {/* Top 5 cities with most saved locations */}
-          {!isSearching && (
+          {/* Top 5 cities with most saved locations - hide when nearby category is active */}
+          {!isSearching && !activeNearbyCategory && (
             <div className="flex flex-wrap gap-2 mb-4">
               {(trendingCities.length > 0 
                 ? trendingCities.slice(0, 5) 
