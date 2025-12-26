@@ -121,6 +121,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastTimeRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const activePointerIdRef = useRef<number | null>(null);
+  const touchActiveRef = useRef(false);
 
   // Search results
   const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
@@ -424,7 +425,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       lastTimeRef.current = currentTime;
 
       const deltaY = dragStartY.current - currentY;
-      const maxDrag = window.innerHeight * 0.55;
+      // Smaller distance => easier swipe-down to close on mobile
+      const maxDrag = window.innerHeight * 0.4;
 
       const dragDelta = deltaY / maxDrag;
       let newProgress = dragStartProgress.current + dragDelta;
@@ -449,8 +451,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsDragging(false);
       activePointerIdRef.current = null;
 
-      const velocityThreshold = 0.25;
-      const openThreshold = 0.3;
+      const velocityThreshold = 0.2;
+      // Higher threshold => less drag needed to close
+      const openThreshold = 0.6;
 
       let shouldOpen: boolean;
       if (Math.abs(velocityRef.current) > velocityThreshold) {
@@ -468,6 +471,76 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     },
     [isDragging, dragProgress]
   );
+
+  // Touch fallback (some mobile WebViews can be flaky with Pointer Events)
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchActiveRef.current) return;
+      const isFromScrollable = (e.target as HTMLElement | null)?.closest?.('[data-drawer-scroll]');
+      if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
+
+      touchActiveRef.current = true;
+      setIsDragging(true);
+      dragStartY.current = e.touches[0]?.clientY ?? 0;
+      dragStartProgress.current = dragProgress;
+      velocityRef.current = 0;
+      lastYRef.current = dragStartY.current;
+      lastTimeRef.current = Date.now();
+    },
+    [dragProgress]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging || !touchActiveRef.current) return;
+      e.preventDefault();
+
+      const currentY = e.touches[0]?.clientY ?? 0;
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastTimeRef.current;
+
+      if (deltaTime > 0) {
+        velocityRef.current = (lastYRef.current - currentY) / deltaTime;
+      }
+      lastYRef.current = currentY;
+      lastTimeRef.current = currentTime;
+
+      const deltaY = dragStartY.current - currentY;
+      const maxDrag = window.innerHeight * 0.4;
+      const dragDelta = deltaY / maxDrag;
+      let newProgress = dragStartProgress.current + dragDelta;
+
+      if (newProgress < 0) newProgress = newProgress * 0.3;
+      else if (newProgress > 1) newProgress = 1 + (newProgress - 1) * 0.3;
+
+      setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
+    },
+    [isDragging]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchActiveRef.current) return;
+
+    setIsDragging(false);
+    touchActiveRef.current = false;
+
+    const velocityThreshold = 0.2;
+    const openThreshold = 0.6;
+
+    let shouldOpen: boolean;
+    if (Math.abs(velocityRef.current) > velocityThreshold) {
+      shouldOpen = velocityRef.current > 0;
+    } else {
+      shouldOpen = dragProgress > openThreshold;
+    }
+
+    setDragProgress(shouldOpen ? 1 : 0);
+    setIsDrawerOpen(shouldOpen);
+
+    if (shouldOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [dragProgress]);
 
   useEffect(() => {
     if (!isDragging) {
@@ -631,16 +704,29 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: isDrawerOpen ? 0 : 8,
+          touchAction: 'none',
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         {/* Fixed header: Drag handle + Search input */}
         <div
           className="flex-shrink-0 cursor-grab active:cursor-grabbing"
           style={{ touchAction: 'none' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           {/* Drag handle at top - larger touch area */}
           <div className="flex justify-center pt-4 pb-3">
