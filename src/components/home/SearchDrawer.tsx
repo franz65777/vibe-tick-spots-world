@@ -451,16 +451,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsDragging(false);
       activePointerIdRef.current = null;
 
-      // When dragging from the closed state, snap to the Trending peek (do NOT open search)
+      // When dragging from the closed state: only show the Trending peek (do NOT open the search)
       if (!dragStartedOpenRef.current) {
         const shouldPeekTrending = dragProgress > 0.08;
         setIsDrawerOpen(false);
         setDragProgress(shouldPeekTrending ? 0.3 : 0);
+        dragStartedOpenRef.current = false;
         return;
       }
 
       const velocityThreshold = 0.2;
-      // Higher threshold => less drag needed to close
       const openThreshold = 0.6;
 
       let shouldOpen: boolean;
@@ -472,6 +472,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       setDragProgress(shouldOpen ? 1 : 0);
       setIsDrawerOpen(shouldOpen);
+      dragStartedOpenRef.current = false;
 
       if (shouldOpen && inputRef.current) {
         setTimeout(() => inputRef.current?.focus(), 100);
@@ -496,7 +497,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       lastYRef.current = dragStartY.current;
       lastTimeRef.current = Date.now();
     },
-    [dragProgress]
+    [dragProgress, isDrawerOpen]
   );
 
   const handleTouchMove = useCallback(
@@ -533,11 +534,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setIsDragging(false);
     touchActiveRef.current = false;
 
-    // When dragging from the closed state, snap to the Trending peek (do NOT open search)
+    // When dragging from the closed state: only show the Trending peek (do NOT open the search)
     if (!dragStartedOpenRef.current) {
       const shouldPeekTrending = dragProgress > 0.08;
       setIsDrawerOpen(false);
       setDragProgress(shouldPeekTrending ? 0.3 : 0);
+      dragStartedOpenRef.current = false;
       return;
     }
 
@@ -553,6 +555,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
     setDragProgress(shouldOpen ? 1 : 0);
     setIsDrawerOpen(shouldOpen);
+    dragStartedOpenRef.current = false;
 
     if (shouldOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -683,8 +686,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       className={cn(
         "z-[1000] flex flex-col-reverse",
         isExpanded ? 'fixed' : 'absolute',
-        // When closed, narrower width; when open, full width
-        isDrawerOpen ? 'left-3 right-3' : 'left-3 right-16'
+        // When closed (no peek), narrower width; when peek/open, full width
+        isDrawerOpen || dragProgress > 0 ? 'left-3 right-3' : 'left-3 right-16'
       )}
       style={{
         bottom: isExpanded
@@ -693,8 +696,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
     >
-      {/* Search bar at bottom - hide when drawer is open */}
-      {!isDrawerOpen && (
+      {/* Search bar at bottom - show only when fully closed */}
+      {dragProgress === 0 && (
         <div className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full">
           {/* Drag handle inside search bar at top - for opening trending */}
           <div
@@ -723,12 +726,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </span>
             </div>
             
-            {/* Right area - tap opens trending */}
+            {/* Right area - tap opens trending peek (WITHOUT search input) */}
             <div 
               className="flex-1 h-full cursor-pointer"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isDrawerOpen) return; // Do nothing if already open
+                // Show trending peek without search
                 setIsDrawerOpen(false);
-                setDragProgress(0.3); // Open to trending peek height
+                setDragProgress(0.3);
               }}
             />
             
