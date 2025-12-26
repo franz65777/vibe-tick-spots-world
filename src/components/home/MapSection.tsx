@@ -9,7 +9,7 @@ import { useMapLocations } from '@/hooks/useMapLocations';
 import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
-import { List, Maximize2, Minimize2 } from 'lucide-react';
+import { List } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -323,11 +323,11 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Controls - List View and Expand Toggle - Inside map - Always render but hide when dropdowns open */}
+        {/* Map Controls - List View Toggle - Inside map - Always render but hide when dropdowns open */}
         {!isListViewOpen && (
         <div 
           className={cn(
-            "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-all duration-150",
+            "right-3 z-[1000] flex flex-row gap-2 transition-all duration-150",
             isExpanded ? 'fixed' : 'absolute',
             filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
           )} 
@@ -335,22 +335,7 @@ const MapSection = ({
             bottom: isExpanded 
               ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
               : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
-          }}
-          data-has-sharing={false}>
-          {/* Expand/Collapse Button */}
-          {onToggleExpand && (
-            <button
-              onClick={onToggleExpand}
-              className="rounded-full bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border border-primary/30 shadow-lg hover:bg-gray-300/50 dark:hover:bg-slate-700/70 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
-            >
-              {isExpanded ? (
-                <Minimize2 className="w-4 h-4 text-foreground" />
-              ) : (
-                <Maximize2 className="w-4 h-4 text-foreground" />
-              )}
-            </button>
-          )}
-
+          }}>
           {/* List View Toggle */}
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
             <SheetTrigger asChild>

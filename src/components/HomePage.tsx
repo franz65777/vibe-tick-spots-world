@@ -729,11 +729,11 @@ const HomePage = memo(() => {
         {/* Fixed Header - ~60px - on top of map */}
         {!isCreateStoryModalOpen && !showOnboarding && (
           <div className="relative z-20 pointer-events-none [&>*]:pointer-events-auto">
-            {/* Top fade gradient overlay */}
+            {/* Top fade gradient overlay - more intense at top, less at bottom */}
             <div 
-              className="pointer-events-none absolute inset-x-0 top-0 h-4 z-0"
+              className="pointer-events-none absolute inset-x-0 top-0 h-20 z-0"
               style={{ 
-                background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.6) 60%, transparent 100%)' 
+                background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 30%, hsl(var(--background) / 0.4) 60%, hsl(var(--background) / 0.1) 80%, transparent 100%)' 
               }}
             />
             <Header
