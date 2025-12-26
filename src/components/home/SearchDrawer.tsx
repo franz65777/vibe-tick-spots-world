@@ -549,6 +549,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   }, [isDrawerOpen, isDragging]);
 
   const handleClose = () => {
+    setIsDragging(false);
+    activePointerIdRef.current = null;
+    touchActiveRef.current = false;
+    velocityRef.current = 0;
     setIsDrawerOpen(false);
     setDragProgress(0);
     setInternalQuery('');
@@ -704,32 +708,25 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: isDrawerOpen ? 0 : 8,
-          touchAction: 'none',
+          // Allow scrolling inside the panel; drag is handled only by the top handle
+          touchAction: 'pan-y',
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
       >
         {/* Fixed header: Drag handle + Search input */}
-        <div
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing"
-          style={{ touchAction: 'none' }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-        >
-          {/* Drag handle at top - larger touch area */}
-          <div className="flex justify-center pt-4 pb-3">
+        <div className="flex-shrink-0">
+          {/* Drag handle at top - larger touch area (drag-to-close) */}
+          <div
+            className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing"
+            style={{ touchAction: 'none' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+          >
             <div className="w-14 h-1.5 bg-muted-foreground/60 rounded-full" />
           </div>
 
@@ -758,11 +755,20 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 />
               </div>
               <button
+                type="button"
+                onPointerDown={(e) => {
+                  // Prevent drag handlers from starting on the close button
+                  e.stopPropagation();
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleClose();
                 }}
                 className="p-2 rounded-full hover:bg-muted/50 transition-colors flex-shrink-0"
+                aria-label={t('close', { ns: 'common', defaultValue: 'Chiudi' })}
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
