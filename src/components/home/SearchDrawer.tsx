@@ -597,7 +597,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div 
-        className="w-full overflow-hidden bg-white/60 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/40 dark:border-white/10 flex flex-col"
+        className="w-full overflow-hidden bg-white/40 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 dark:border-white/10 flex flex-col"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
@@ -607,10 +607,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         }}
       >
         {/* Fixed header: Drag handle + Search input */}
-        <div className="flex-shrink-0">
-          {/* Drag handle at top */}
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
+        <div 
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Drag handle at top - larger touch area */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-12 h-1.5 bg-muted-foreground/50 rounded-full" />
           </div>
           
           {/* Search input - fixed at top */}
