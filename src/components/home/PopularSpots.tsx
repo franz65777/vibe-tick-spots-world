@@ -1,20 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Users, ChevronDown, UserPlus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { cn } from '@/lib/utils';
-import fireIcon from '@/assets/fire-icon-3d.png';
 import trendingIcon from '@/assets/trending-icon.png';
 import discountIcon from '@/assets/discount-icon.png';
 import eventIcon from '@/assets/event-icon.png';
 import promotionIcon from '@/assets/filter-promotion.png';
 import newIcon from '@/assets/new-icon.png';
 import cityIcon from '@/assets/city-icon-new.png';
-import tinderIcon from '@/assets/tinder-icon.png';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+
 type FilterType = 'most_saved' | 'discount' | 'event' | 'promotion' | 'new';
+
 interface PopularSpot {
   id: string;
   name: string;
@@ -35,6 +33,7 @@ interface PopularSpot {
     userRegistered?: boolean;
   };
 }
+
 interface CitySpot {
   city: string;
   locationCount: number;
@@ -43,53 +42,58 @@ interface CitySpot {
     lng: number;
   };
 }
+
 interface PopularSpotsProps {
   currentCity?: string;
-  onLocationClick?: (coords: {
-    lat: number;
-    lng: number;
-  }) => void;
+  onLocationClick?: (coords: { lat: number; lng: number }) => void;
   onSwipeDiscoveryOpen?: () => void;
   onSpotSelect?: (spot: PopularSpot) => void;
   onCitySelect?: (city: string) => void;
 }
+
 // Cache for popular spots to avoid redundant queries
 const spotsCache = new Map<string, { spots: PopularSpot[]; cities: CitySpot[]; timestamp: number }>();
 const SPOTS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 // Bump this when fetch logic changes to avoid serving stale cached results
 const SPOTS_CACHE_VERSION = 2;
 
-const PopularSpots = ({
-  currentCity,
-  onLocationClick,
-  onSwipeDiscoveryOpen,
-  onSpotSelect,
-  onCitySelect
-}: PopularSpotsProps) => {
-  const {
-    t
-  } = useTranslation();
-  const {
-    user
-  } = useAuth();
+const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSpotSelect, onCitySelect }: PopularSpotsProps) => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [citySpots, setCitySpots] = useState<CitySpot[]>([]);
-  const [loading, setLoading] = useState(false); // Start with false
+  const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('most_saved');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetchPopularSpots();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCity, filterType]);
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
+  const getFilterLabel = (ft: FilterType) => {
+    switch (ft) {
+      case 'discount':
+        return t('filters.discount', { ns: 'home' });
+      case 'event':
+        return t('filters.event', { ns: 'home' });
+      case 'promotion':
+        return t('filters.promotion', { ns: 'home' });
+      case 'new':
+        return t('filters.new', { ns: 'home' });
+      default:
+        return t('filters.trending', { ns: 'home' });
+    }
+  };
+
+  const filterOptions: Array<{ value: FilterType; label: string; icon: string }> = [
+    { value: 'most_saved', label: getFilterLabel('most_saved'), icon: trendingIcon },
+    { value: 'discount', label: getFilterLabel('discount'), icon: discountIcon },
+    { value: 'event', label: getFilterLabel('event'), icon: eventIcon },
+    { value: 'promotion', label: getFilterLabel('promotion'), icon: promotionIcon },
+    { value: 'new', label: getFilterLabel('new'), icon: newIcon },
+  ];
+
   const fetchPopularSpots = async () => {
     if (!currentCity || currentCity === 'Unknown City') {
       setPopularSpots([]);
@@ -97,33 +101,36 @@ const PopularSpots = ({
       setLoading(false);
       return;
     }
-    
+
     const cacheKey = `${SPOTS_CACHE_VERSION}-${currentCity}-${filterType}`;
     const cached = spotsCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < SPOTS_CACHE_DURATION)) {
+    if (cached && Date.now() - cached.timestamp < SPOTS_CACHE_DURATION) {
       setPopularSpots(cached.spots);
       setCitySpots(cached.cities);
-      return; // Instant return from cache
+      return;
     }
-    
+
     try {
       setLoading(true);
       const normalizedCity = currentCity.trim().toLowerCase();
 
       // For non-trending filters, first check if there are locations in current city
       if (filterType !== 'most_saved') {
-        const campaignTypeMap = {
-          'discount': 'discount',
-          'event': 'event',
-          'promotion': 'promo',
-          'new': 'new_opening'
+        const campaignTypeMap: Record<Exclude<FilterType, 'most_saved'>, string> = {
+          discount: 'discount',
+          event: 'event',
+          promotion: 'promo',
+          new: 'new_opening',
         };
 
-        // Get all active campaigns of this type
-        const {
-          data: campaignsData
-        } = await supabase.from('marketing_campaigns').select('location_id, campaign_type').eq('campaign_type', campaignTypeMap[filterType]).eq('is_active', true).gte('end_date', new Date().toISOString());
-        const campaignLocationIds = campaignsData?.map(c => c.location_id) || [];
+        const { data: campaignsData } = await supabase
+          .from('marketing_campaigns')
+          .select('location_id, campaign_type')
+          .eq('campaign_type', campaignTypeMap[filterType])
+          .eq('is_active', true)
+          .gte('end_date', new Date().toISOString());
+
+        const campaignLocationIds = campaignsData?.map((c) => c.location_id) || [];
         if (campaignLocationIds.length === 0) {
           setCitySpots([]);
           setPopularSpots([]);
@@ -131,14 +138,15 @@ const PopularSpots = ({
           return;
         }
 
-        // Get locations with these campaigns in the current city first
-        const {
-          data: currentCityLocations
-        } = await supabase.from('locations').select('id, name, category, city, address, google_place_id, latitude, longitude').in('id', campaignLocationIds).or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`);
+        const { data: currentCityLocations } = await supabase
+          .from('locations')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .in('id', campaignLocationIds)
+          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`);
 
         // If there are locations in the current city, show them as location cards
         if (currentCityLocations && currentCityLocations.length > 0) {
-          const locationSpots: PopularSpot[] = currentCityLocations.map(location => ({
+          const locationSpots: PopularSpot[] = currentCityLocations.map((location) => ({
             id: location.id,
             name: location.name,
             category: location.category,
@@ -148,9 +156,10 @@ const PopularSpots = ({
             savesCount: 0,
             coordinates: {
               lat: parseFloat(location.latitude?.toString() || '0'),
-              lng: parseFloat(location.longitude?.toString() || '0')
-            }
+              lng: parseFloat(location.longitude?.toString() || '0'),
+            },
           }));
+
           setPopularSpots(locationSpots);
           setCitySpots([]);
           spotsCache.set(cacheKey, { spots: locationSpots, cities: [], timestamp: Date.now() });
@@ -159,17 +168,13 @@ const PopularSpots = ({
         }
 
         // If no locations in current city, show city cards from other cities
-        const {
-          data: locationsData
-        } = await supabase.from('locations').select('city, latitude, longitude').in('id', campaignLocationIds);
+        const { data: locationsData } = await supabase
+          .from('locations')
+          .select('city, latitude, longitude')
+          .in('id', campaignLocationIds);
 
-        // Group by city and count
-        const cityMap = new Map<string, {
-          count: number;
-          lat: number;
-          lng: number;
-        }>();
-        locationsData?.forEach(location => {
+        const cityMap = new Map<string, { count: number; lat: number; lng: number }>();
+        locationsData?.forEach((location) => {
           if (!location.city) return;
           const city = location.city.trim();
           const locationCity = city.toLowerCase();
@@ -178,80 +183,81 @@ const PopularSpots = ({
           if (locationCity.includes(normalizedCity) || normalizedCity.includes(locationCity)) {
             return;
           }
+
           const existing = cityMap.get(city);
           if (existing) {
-            cityMap.set(city, {
-              ...existing,
-              count: existing.count + 1
-            });
+            cityMap.set(city, { ...existing, count: existing.count + 1 });
           } else {
             cityMap.set(city, {
               count: 1,
               lat: parseFloat(location.latitude?.toString() || '0'),
-              lng: parseFloat(location.longitude?.toString() || '0')
+              lng: parseFloat(location.longitude?.toString() || '0'),
             });
           }
         });
-        const cities = Array.from(cityMap.entries()).map(([city, data]) => ({
-          city,
-          locationCount: data.count,
-          coordinates: {
-            lat: data.lat,
-            lng: data.lng
-          }
-        })).sort((a, b) => b.locationCount - a.locationCount).slice(0, 10);
+
+        const cities = Array.from(cityMap.entries())
+          .map(([city, data]) => ({
+            city,
+            locationCount: data.count,
+            coordinates: { lat: data.lat, lng: data.lng },
+          }))
+          .sort((a, b) => b.locationCount - a.locationCount)
+          .slice(0, 10);
+
         setCitySpots(cities);
         setPopularSpots([]);
         spotsCache.set(cacheKey, { spots: [], cities, timestamp: Date.now() });
       } else {
         // Trending filter: include both locations table AND saved_places (Google)
-        // 1) Fetch from locations table
-        const locationsQuery = supabase.from('locations').select('id, name, category, city, address, google_place_id, latitude, longitude').or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`).limit(200);
-        const locationsResult = await locationsQuery;
-        if (locationsResult.error) throw locationsResult.error;
-        const locationsData = locationsResult.data || [];
-        const locationIds = locationsData.map(l => l.id);
+        const locationsResult = await supabase
+          .from('locations')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
+          .limit(200);
 
-        // Get saves count for locations
-        const {
-          data: savesData
-        } = locationIds.length > 0 
-          ? await supabase.from('user_saved_locations').select('location_id').in('location_id', locationIds)
-          : { data: [] };
+        if (locationsResult.error) throw locationsResult.error;
+
+        const locationsData = locationsResult.data || [];
+        const locationIds = locationsData.map((l) => l.id);
+
+        const { data: savesData } =
+          locationIds.length > 0
+            ? await supabase.from('user_saved_locations').select('location_id').in('location_id', locationIds)
+            : { data: [] };
+
         const savesMap = new Map<string, number>();
-        savesData?.forEach(save => {
+        savesData?.forEach((save) => {
           savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
         });
 
-        // 2) Get ALL saved_places for this city (includes Google places not in locations table)
-        const {
-          data: googleSavesData
-        } = await supabase.from('saved_places').select('place_id, place_name, place_category, city, coordinates').ilike('city', `%${normalizedCity}%`);
-        
-        // Count saves per place_id and store unique places
+        const { data: googleSavesData } = await supabase
+          .from('saved_places')
+          .select('place_id, place_name, place_category, city, coordinates')
+          .ilike('city', `%${normalizedCity}%`);
+
         const googleSavesMap = new Map<string, number>();
         const googlePlacesMap = new Map<string, any>();
-        googleSavesData?.forEach(save => {
+        googleSavesData?.forEach((save) => {
           googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
-          if (!googlePlacesMap.has(save.place_id)) {
-            googlePlacesMap.set(save.place_id, save);
-          }
+          if (!googlePlacesMap.has(save.place_id)) googlePlacesMap.set(save.place_id, save);
         });
 
-        // Build set of google_place_ids already in locations table
         const googlePlaceIdsInLocations = new Set(
-          locationsData.filter(l => l.google_place_id).map(l => l.google_place_id)
+          locationsData.filter((l) => l.google_place_id).map((l) => l.google_place_id)
         );
 
-        // Process locations from locations table
         const locationMap = new Map<string, PopularSpot>();
-        locationsData?.forEach(location => {
+        locationsData.forEach((location) => {
           const locationCity = location.city?.trim().toLowerCase();
-          if (!locationCity || !locationCity.includes(normalizedCity) && !normalizedCity.includes(locationCity)) {
+          if (!locationCity || (!locationCity.includes(normalizedCity) && !normalizedCity.includes(locationCity))) {
             return;
           }
+
           const key = location.google_place_id || location.id;
-          const savesCount = (savesMap.get(location.id) || 0) + (location.google_place_id ? googleSavesMap.get(location.google_place_id) || 0 : 0);
+          const savesCount =
+            (savesMap.get(location.id) || 0) + (location.google_place_id ? googleSavesMap.get(location.google_place_id) || 0 : 0);
+
           if (savesCount > 0) {
             if (!locationMap.has(key) || (locationMap.get(key)?.savesCount || 0) < savesCount) {
               locationMap.set(key, {
@@ -264,22 +270,21 @@ const PopularSpots = ({
                 savesCount,
                 coordinates: {
                   lat: parseFloat(location.latitude?.toString() || '0'),
-                  lng: parseFloat(location.longitude?.toString() || '0')
-                }
+                  lng: parseFloat(location.longitude?.toString() || '0'),
+                },
               });
             }
           }
         });
 
-        // 3) Add saved_places that are NOT in locations table (pure Google places)
         googlePlacesMap.forEach((sp, placeId) => {
-          if (googlePlaceIdsInLocations.has(placeId)) return; // Skip if already in locations
-          
+          if (googlePlaceIdsInLocations.has(placeId)) return;
+
           const coords = sp.coordinates as any;
           const lat = Number(coords?.lat);
           const lng = Number(coords?.lng);
           if (!lat || !lng) return;
-          
+
           const savesCount = googleSavesMap.get(placeId) || 0;
           if (savesCount > 0) {
             locationMap.set(placeId, {
@@ -290,15 +295,17 @@ const PopularSpots = ({
               address: undefined,
               google_place_id: placeId,
               savesCount,
-              coordinates: { lat, lng }
+              coordinates: { lat, lng },
             });
           }
         });
 
-        const topSpots = Array.from(locationMap.values()).sort((a, b) => b.savesCount - a.savesCount).slice(0, 10);
+        const topSpots = Array.from(locationMap.values())
+          .sort((a, b) => b.savesCount - a.savesCount)
+          .slice(0, 10);
+
         setPopularSpots(topSpots);
         setCitySpots([]);
-        // Cache the result
         spotsCache.set(cacheKey, { spots: topSpots, cities: [], timestamp: Date.now() });
       }
     } catch (error) {
@@ -309,170 +316,107 @@ const PopularSpots = ({
       setLoading(false);
     }
   };
+
   const handleSpotClick = (spot: PopularSpot) => {
     onLocationClick?.(spot.coordinates);
     onSpotSelect?.(spot);
   };
+
   const handleCityClick = (city: CitySpot) => {
     onLocationClick?.(city.coordinates);
     onCitySelect?.(city.city);
   };
-  const getFilterIcon = () => {
-    switch (filterType) {
-      case 'discount':
-        return <img src={discountIcon} alt="Discount" className="w-full h-full object-contain" />;
-      case 'event':
-        return <img src={eventIcon} alt="Event" className="w-full h-full object-contain" />;
-      case 'promotion':
-        return <img src={promotionIcon} alt="Promotion" className="w-full h-full object-contain" />;
-      case 'new':
-        return <img src={newIcon} alt="New" className="w-full h-full object-contain" />;
-      default:
-        return <img src={trendingIcon} alt="Trending" className="w-full h-full object-contain" />;
-    }
-  };
-  const getFilterLabel = () => {
-    switch (filterType) {
-      case 'discount':
-        return t('filters.discount', {
-          ns: 'home'
-        });
-      case 'event':
-        return t('filters.event', {
-          ns: 'home'
-        });
-      case 'promotion':
-        return t('filters.promotion', {
-          ns: 'home'
-        });
-      case 'new':
-        return t('filters.new', {
-          ns: 'home'
-        });
-      default:
-        return t('filters.trending', {
-          ns: 'home'
-        });
-    }
-  };
-  const filterOptions = [{
-    value: 'most_saved' as FilterType,
-    label: t('filters.trending', {
-      ns: 'home'
-    }),
-    icon: trendingIcon
-  }, {
-    value: 'discount' as FilterType,
-    label: t('filters.discount', {
-      ns: 'home'
-    }),
-    icon: discountIcon
-  }, {
-    value: 'event' as FilterType,
-    label: t('filters.event', {
-      ns: 'home'
-    }),
-    icon: eventIcon
-  }, {
-    value: 'promotion' as FilterType,
-    label: t('filters.promotion', {
-      ns: 'home'
-    }),
-    icon: promotionIcon
-  }, {
-    value: 'new' as FilterType,
-    label: t('filters.new', {
-      ns: 'home'
-    }),
-    icon: newIcon
-  }];
-  useEffect(() => {
-    if (dropdownOpen) {
-      window.dispatchEvent(new CustomEvent('filter-dropdown-open'));
-    } else {
-      window.dispatchEvent(new CustomEvent('filter-dropdown-close'));
-    }
-  }, [dropdownOpen]);
 
   // Show cities only when there are city cards AND no location cards
   const showingCities = citySpots.length > 0 && popularSpots.length === 0;
   const hasResults = popularSpots.length > 0 || citySpots.length > 0;
-  return <div className="h-full px-[10px] pt-0 pb-0 relative z-[1200] pointer-events-auto">
-      {/* Header + dropdown trigger + cards all in one row */}
-      <div className="relative" ref={dropdownRef}>
-        {!loading && <div className="flex items-center gap-2">
-            {/* Filter icon and title */}
-            <div className="flex items-center gap-2 h-10 flex-shrink-0">
-              <button onClick={() => setDropdownOpen(open => !open)} className="flex items-center justify-center h-10" aria-label={t('filters.openFilter', {
-            ns: 'home',
-            defaultValue: 'Open trending filters'
-          })}>
-                <div className={cn("flex items-center justify-center", filterType === 'most_saved' ? "w-8 h-8" : filterType === 'discount' ? "w-9 h-9" : filterType === 'promotion' ? "w-10 h-10" : filterType === 'event' ? "w-10 h-10" : filterType === 'new' ? "w-12 h-12" : "w-10 h-10")}>
-                  {getFilterIcon()}
-                </div>
+
+  const sectionTitle = `${getFilterLabel(filterType)} ${t('in', { ns: 'common' })} ${currentCity}`;
+
+  return (
+    <section className="h-full px-4 pb-2">
+      {/* Filter pills */}
+      <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 py-2 w-max">
+          {filterOptions.map((opt) => {
+            const active = opt.value === filterType;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFilterType(opt.value)}
+                className={cn(
+                  'inline-flex items-center gap-2 h-10 px-4 rounded-full border transition-colors select-none',
+                  active
+                    ? 'bg-primary text-primary-foreground border-primary/40'
+                    : 'bg-secondary text-secondary-foreground border-border hover:bg-accent'
+                )}
+                aria-pressed={active}
+                aria-label={opt.label}
+              >
+                <span className="w-5 h-5 shrink-0">
+                  <img src={opt.icon} alt={opt.label} className="w-5 h-5 object-contain" loading="lazy" />
+                </span>
+                <span className="text-sm font-medium whitespace-nowrap">{opt.label}</span>
               </button>
-              
-              {dropdownOpen && <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                  {filterOptions.filter(opt => opt.value !== filterType).map(option => <button key={option.value} onClick={() => {
-              setFilterType(option.value);
-              setDropdownOpen(false);
-            }} className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity">
-                        <img src={option.icon} alt={option.label} className={cn("object-contain", option.value === 'most_saved' ? "w-8 h-8" : option.value === 'discount' ? "w-9 h-9" : option.value === 'promotion' ? "w-10 h-10" : option.value === 'event' ? "w-10 h-10" : option.value === 'new' ? "w-12 h-12" : "w-10 h-10")} />
-                      </button>)}
-                </div>}
-
-              {!dropdownOpen && <div className="flex-shrink-0">
-                  <h3 className="text-[13px] font-semibold text-foreground leading-tight whitespace-nowrap">
-                    {getFilterLabel()} {showingCities ? t('globally', {
-                ns: 'common',
-                defaultValue: 'Globally'
-              }) : currentCity ? `${t('in', {
-                ns: 'common'
-              })} ${currentCity}` : ''}
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground whitespace-nowrap">
-                    {hasResults ? showingCities ? `${citySpots.length} ${t('cities', {
-                ns: 'common',
-                defaultValue: 'cities'
-              })}` : t('filters.placesFound', {
-                ns: 'home',
-                count: popularSpots.length
-              }) : t('filters.noLocationsWithFilter', {
-                ns: 'home',
-                filter: getFilterLabel().toLowerCase(),
-                city: currentCity
-              })}
-                  </p>
-                </div>}
-            </div>
-
-            {/* Cards inline with header */}
-            {!dropdownOpen && !loading && hasResults && <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
-              {showingCities ? citySpots.map(city => <div key={city.city} className="flex-shrink-0">
-                    <button onClick={() => handleCityClick(city)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${city.city}`}>
-                      <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                      <img src={cityIcon} alt="City" className="w-5 h-5 object-contain" />
-                      <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
-                        {city.city} ({city.locationCount})
-                      </span>
-                    </button>
-                  </div>) : popularSpots.map(spot => <div key={spot.id} className="flex-shrink-0">
-                    <button onClick={() => handleSpotClick(spot)} className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden" aria-label={`Zoom to ${spot.name}`}>
-                      <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                      <CategoryIcon category={spot.category} className="w-5 h-5" />
-                      <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px] text-left">
-                        {spot.name}
-                      </span>
-                    </button>
-                  </div>)}
-            </div>}
-          </div>}
-
-        {/* Loading state for cards */}
-        {loading && <div className="flex gap-2 overflow-x-auto pb-2">
-            {[1, 2, 3].map(i => <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />)}
-          </div>}
+            );
+          })}
+        </div>
       </div>
-    </div>;
+
+      {/* Title */}
+      <h2 className="mt-3 text-xl font-semibold text-foreground">{sectionTitle}</h2>
+
+      {/* Content */}
+      {loading ? (
+        <div className="mt-4 flex gap-3 overflow-x-auto scrollbar-hide">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex-shrink-0 w-40 h-28 rounded-2xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : !hasResults ? (
+        <div className="mt-6 text-sm text-muted-foreground">{t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(filterType).toLowerCase(), city: currentCity })}</div>
+      ) : (
+        <div className="mt-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-3 w-max pb-2">
+            {showingCities
+              ? citySpots.map((city) => (
+                  <button
+                    key={city.city}
+                    type="button"
+                    onClick={() => handleCityClick(city)}
+                    className="w-40 rounded-2xl border border-border bg-card hover:bg-accent transition-colors p-4 text-left"
+                    aria-label={`Apri ${city.city}`}
+                  >
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                      <img src={cityIcon} alt="Città" className="w-7 h-7 object-contain" loading="lazy" />
+                    </div>
+                    <div className="mt-3 font-semibold text-foreground line-clamp-1">{city.city}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">{city.locationCount} luoghi</div>
+                  </button>
+                ))
+              : popularSpots.map((spot) => (
+                  <button
+                    key={spot.id}
+                    type="button"
+                    onClick={() => handleSpotClick(spot)}
+                    className="w-40 rounded-2xl border border-border bg-card hover:bg-accent transition-colors p-4 text-left"
+                    aria-label={`Apri ${spot.name}`}
+                  >
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                      <CategoryIcon category={spot.category} className="w-8 h-8" />
+                    </div>
+                    <div className="mt-3 font-semibold text-foreground line-clamp-1">{spot.name}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {typeof spot.savesCount === 'number' && spot.savesCount > 0 ? `${spot.savesCount} saves` : ''}
+                    </div>
+                  </button>
+                ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 };
+
 export default PopularSpots;
