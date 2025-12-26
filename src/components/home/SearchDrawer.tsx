@@ -597,7 +597,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div 
-        className="w-full overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/40 dark:border-white/20 flex flex-col"
+        className="w-full overflow-hidden bg-white/60 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/40 dark:border-white/10 flex flex-col"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
@@ -632,7 +632,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                         })
                       : t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })
                   }
-                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-muted/50 border border-border rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-white/60 dark:bg-slate-700/60 border border-white/50 dark:border-white/20 rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
                   autoFocus
                   disabled={activeNearbyCategory !== null && isLoading}
                 />
@@ -697,7 +697,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                     onClick={() => handleNearbyPromptClick(prompt)}
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md active:scale-95",
-                      "bg-muted/30 hover:bg-muted/50 border-border/50"
+                      "bg-white/60 dark:bg-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-600/60 border-white/50 dark:border-white/20"
                     )}
                   >
                     <span className="text-base">{prompt.emoji}</span>
