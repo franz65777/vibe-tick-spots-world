@@ -608,6 +608,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                   <CityEngagementCard
                     key={item.name}
                     cityName={translatedName}
+                    originalCityName={item.name}
                     coords={cityData ? { lat: cityData.lat, lng: cityData.lng } : ('lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined)}
                     onClick={() => {
                       const coords = cityData || ('lat' in item ? item as any : null);
