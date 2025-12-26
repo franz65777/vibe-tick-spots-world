@@ -129,6 +129,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const activePointerIdRef = useRef<number | null>(null);
   const touchActiveRef = useRef(false);
   const dragStartedOpenRef = useRef(false);
+  const dragStartedModeRef = useRef<DrawerMode>('closed');
   const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [nearbyResults, setNearbyResults] = useState<NearbySearchResult[]>([]);
@@ -139,9 +140,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const processedLocationRef = useRef<string>('');
 
   useEffect(() => {
-    // Notify parent only when the SEARCH drawer is open (avoid triggering "cerca" when showing Trending).
-    onDrawerStateChange?.(isSearchOpen);
-  }, [isSearchOpen, onDrawerStateChange]);
+    // Notify parent when ANY drawer state is visible (Trending or Search).
+    // Used by the map UI to hide the "liste" button/controls while the drawer is open.
+    onDrawerStateChange?.(isDrawerVisible);
+  }, [isDrawerVisible, onDrawerStateChange]);
 
   useEffect(() => {
     if (!location || !location.city || location.city === 'Unknown City') return;
@@ -402,8 +404,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       activePointerIdRef.current = e.pointerId;
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 
-      // Only allow full open/close behavior if the drag started from SEARCH mode.
-      dragStartedOpenRef.current = isSearchOpen;
+      // Track which mode we started from to decide what we snap to on release.
+      dragStartedModeRef.current = drawerMode;
+      dragStartedOpenRef.current = drawerMode !== 'closed';
+
       setIsDragging(true);
       dragStartY.current = e.clientY;
       dragStartProgress.current = dragProgress;
@@ -411,7 +415,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       lastYRef.current = e.clientY;
       lastTimeRef.current = Date.now();
     },
-    [dragProgress, isSearchOpen]
+    [dragProgress, drawerMode]
   );
 
   const handlePointerMove = useCallback(
@@ -456,11 +460,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsDragging(false);
       activePointerIdRef.current = null;
 
-      // Drag started from a CLOSED/TRENDING state: open Trending peek only.
-      if (!dragStartedOpenRef.current) {
-        const shouldPeekTrending = dragProgress > 0.08;
-        setDrawerMode(shouldPeekTrending ? 'trending' : 'closed');
-        setDragProgress(shouldPeekTrending ? 0.3 : 0);
+      const startedMode = dragStartedModeRef.current;
+
+      // Drag started CLOSED: pulling up should open Trending (FULL), not a preview.
+      if (startedMode === 'closed') {
+        const shouldOpenTrending = dragProgress > 0.08;
+        setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
+        setDragProgress(shouldOpenTrending ? 1 : 0);
         dragStartedOpenRef.current = false;
         return;
       }
@@ -468,18 +474,19 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const velocityThreshold = 0.2;
       const openThreshold = 0.6;
 
-      let shouldOpen: boolean;
+      let shouldStayOpen: boolean;
       if (Math.abs(velocityRef.current) > velocityThreshold) {
-        shouldOpen = velocityRef.current > 0;
+        // Positive velocity = swipe up (open), negative = swipe down (close)
+        shouldStayOpen = velocityRef.current > 0;
       } else {
-        shouldOpen = dragProgress > openThreshold;
+        shouldStayOpen = dragProgress > openThreshold;
       }
 
-      setDragProgress(shouldOpen ? 1 : 0);
-      setDrawerMode(shouldOpen ? 'search' : 'closed');
+      setDragProgress(shouldStayOpen ? 1 : 0);
+      setDrawerMode(shouldStayOpen ? startedMode : 'closed');
       dragStartedOpenRef.current = false;
 
-      if (shouldOpen && inputRef.current) {
+      if (shouldStayOpen && startedMode === 'search' && inputRef.current) {
         setTimeout(() => inputRef.current?.focus(), 100);
       }
     },
@@ -494,7 +501,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
 
       touchActiveRef.current = true;
-      dragStartedOpenRef.current = isSearchOpen;
+      dragStartedModeRef.current = drawerMode;
+      dragStartedOpenRef.current = drawerMode !== 'closed';
       setIsDragging(true);
       dragStartY.current = e.touches[0]?.clientY ?? 0;
       dragStartProgress.current = dragProgress;
@@ -502,7 +510,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       lastYRef.current = dragStartY.current;
       lastTimeRef.current = Date.now();
     },
-    [dragProgress, isSearchOpen]
+    [dragProgress, drawerMode]
   );
 
   const handleTouchMove = useCallback(
@@ -539,11 +547,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setIsDragging(false);
     touchActiveRef.current = false;
 
-    // Drag started from a CLOSED/TRENDING state: open Trending peek only.
-    if (!dragStartedOpenRef.current) {
-      const shouldPeekTrending = dragProgress > 0.08;
-      setDrawerMode(shouldPeekTrending ? 'trending' : 'closed');
-      setDragProgress(shouldPeekTrending ? 0.3 : 0);
+    const startedMode = dragStartedModeRef.current;
+
+    // Drag started CLOSED: pulling up should open Trending (FULL), not a preview.
+    if (startedMode === 'closed') {
+      const shouldOpenTrending = dragProgress > 0.08;
+      setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
+      setDragProgress(shouldOpenTrending ? 1 : 0);
       dragStartedOpenRef.current = false;
       return;
     }
@@ -551,21 +561,21 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     const velocityThreshold = 0.2;
     const openThreshold = 0.6;
 
-    let shouldOpen: boolean;
+    let shouldStayOpen: boolean;
     if (Math.abs(velocityRef.current) > velocityThreshold) {
-      shouldOpen = velocityRef.current > 0;
+      shouldStayOpen = velocityRef.current > 0;
     } else {
-      shouldOpen = dragProgress > openThreshold;
+      shouldStayOpen = dragProgress > openThreshold;
     }
 
-    setDragProgress(shouldOpen ? 1 : 0);
-    setDrawerMode(shouldOpen ? 'search' : 'closed');
+    setDragProgress(shouldStayOpen ? 1 : 0);
+    setDrawerMode(shouldStayOpen ? startedMode : 'closed');
     dragStartedOpenRef.current = false;
 
-    if (shouldOpen && inputRef.current) {
+    if (shouldStayOpen && startedMode === 'search' && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [dragProgress]);
+  }, [dragProgress, drawerMode]);
 
   useEffect(() => {
     // Keep dragProgress in sync only for settled states.
@@ -577,8 +587,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
 
     if (drawerMode === 'trending') {
-      // Snap to the fixed peek height.
-      if (dragProgress !== 0.3) setDragProgress(0.3);
+      // Trending should open fully (no preview/peek).
+      if (dragProgress !== 1) setDragProgress(1);
       return;
     }
 
@@ -734,13 +744,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </span>
             </div>
             
-            {/* Right area - tap opens trending peek (WITHOUT search input) */}
+            {/* Right area - tap opens trending (FULL) */}
             <div
               className="flex-1 h-full cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setDrawerMode('trending');
-                setDragProgress(0.3);
+                setDragProgress(1);
               }}
             />
             
