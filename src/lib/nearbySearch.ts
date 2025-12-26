@@ -33,37 +33,42 @@ const categoryToOsmTags: Record<AllowedCategory, string[]> = {
 export async function searchNearbyByCategory(
   category: AllowedCategory,
   userLocation: { lat: number; lng: number },
-  radiusMeters: number = 3000
+  radiusMeters: number = 5000
 ): Promise<NearbySearchResult[]> {
-  if (!userLocation) {
-    console.warn('searchNearbyByCategory: No user location provided');
+  console.log('[searchNearbyByCategory] Starting search:', { category, userLocation, radiusMeters });
+  
+  if (!userLocation || !userLocation.lat || !userLocation.lng) {
+    console.warn('[searchNearbyByCategory] No user location provided');
     return [];
   }
 
   const tags = categoryToOsmTags[category];
   if (!tags || tags.length === 0) {
-    console.warn(`searchNearbyByCategory: Unknown category ${category}`);
+    console.warn(`[searchNearbyByCategory] Unknown category ${category}`);
     return [];
   }
 
+  console.log('[searchNearbyByCategory] Using OSM tags:', tags);
+
   try {
-    // Build Overpass query for the category
+    // Build Overpass query - simplified and more robust
     const tagQueries = tags.map(tag => {
       const [key, value] = tag.split('=');
-      return `node["${key}"="${value}"](around:${radiusMeters},${userLocation.lat},${userLocation.lng});
-              way["${key}"="${value}"](around:${radiusMeters},${userLocation.lat},${userLocation.lng});`;
-    }).join('\n');
+      return `
+        nwr["${key}"="${value}"]["name"](around:${radiusMeters},${userLocation.lat},${userLocation.lng});`;
+    }).join('');
 
     const overpassQuery = `
-      [out:json][timeout:15];
-      (
-        ${tagQueries}
+      [out:json][timeout:25];
+      (${tagQueries}
       );
-      out center body;
+      out center body 30;
     `;
 
+    console.log('[searchNearbyByCategory] Overpass query:', overpassQuery.substring(0, 200) + '...');
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
@@ -76,15 +81,21 @@ export async function searchNearbyByCategory(
 
     clearTimeout(timeoutId);
 
+    console.log('[searchNearbyByCategory] Response status:', response.status);
+
     if (!response.ok) {
-      console.warn('Overpass API error:', response.status);
+      const text = await response.text();
+      console.warn('[searchNearbyByCategory] API error:', response.status, text.substring(0, 200));
       return [];
     }
 
     const data = await response.json();
+    console.log('[searchNearbyByCategory] Elements received:', data.elements?.length || 0);
+    
     const results: NearbySearchResult[] = [];
 
     if (!data.elements || !Array.isArray(data.elements)) {
+      console.log('[searchNearbyByCategory] No elements in response');
       return [];
     }
 
@@ -122,13 +133,18 @@ export async function searchNearbyByCategory(
     // Sort by distance
     results.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
+    console.log('[searchNearbyByCategory] Final results:', results.length);
+    if (results.length > 0) {
+      console.log('[searchNearbyByCategory] First result:', results[0]);
+    }
+
     return results;
   } catch (error: any) {
     if (error?.name === 'AbortError') {
-      console.log('Nearby search timed out');
+      console.log('[searchNearbyByCategory] Timed out');
       return [];
     }
-    console.error('Nearby search error:', error);
+    console.error('[searchNearbyByCategory] Error:', error);
     return [];
   }
 }
