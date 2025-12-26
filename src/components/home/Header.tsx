@@ -17,6 +17,7 @@ interface HeaderProps {
   onOpenSearchOverlay: () => void;
   isCenteredOnUser?: boolean;
   onCenterStatusChange?: (isCentered: boolean) => void;
+  isSearchDrawerOpen?: boolean;
 }
 
 const Header = ({
@@ -29,10 +30,16 @@ const Header = ({
   onOpenSearchOverlay,
   isCenteredOnUser = false,
   onCenterStatusChange,
+  isSearchDrawerOpen = false,
 }: HeaderProps) => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
+
+  // Hide header content when search drawer is open
+  if (isSearchDrawerOpen) {
+    return null;
+  }
 
   return (
     <>

@@ -20,10 +20,11 @@ interface HomeMapContainerProps {
   isCenteredOnUser?: boolean;
   onCenterStatusChange?: (isCentered: boolean) => void;
   onOpenSearchOverlay?: () => void;
+  onSearchDrawerStateChange?: (isOpen: boolean) => void;
 }
 
 const HomeMapContainer = memo((props: HomeMapContainerProps) => {
-  const { isExpanded, isSearchOverlayOpen, onCitySelect, fromMessages, returnToUserId, onBackToMessages, searchQuery, onSearchChange, isCenteredOnUser, onCenterStatusChange, onOpenSearchOverlay, ...mapProps } = props;
+  const { isExpanded, isSearchOverlayOpen, onCitySelect, fromMessages, returnToUserId, onBackToMessages, searchQuery, onSearchChange, isCenteredOnUser, onCenterStatusChange, onOpenSearchOverlay, onSearchDrawerStateChange, ...mapProps } = props;
   
   return (
     <div className={isExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "w-full h-full"}>
@@ -43,6 +44,7 @@ const HomeMapContainer = memo((props: HomeMapContainerProps) => {
         isCenteredOnUser={isCenteredOnUser}
         onCenterStatusChange={onCenterStatusChange}
         onOpenSearchOverlay={onOpenSearchOverlay}
+        onSearchDrawerStateChange={onSearchDrawerStateChange}
       />
     </div>
   );
