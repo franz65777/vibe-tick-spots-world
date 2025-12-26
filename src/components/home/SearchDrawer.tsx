@@ -55,25 +55,26 @@ interface SearchDrawerProps {
   onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-// Nearby prompts - main categories + subcategories
+// Nearby prompts - main categories + subcategories with emojis
 interface NearbyPromptItem {
   id: NearbyPromptType;
   parentCategory: AllowedCategory;
+  emoji: string;
 }
 
 const nearbyPrompts: NearbyPromptItem[] = [
-  { id: 'restaurant', parentCategory: 'restaurant' },
-  { id: 'pizzeria', parentCategory: 'restaurant' },
-  { id: 'sushi', parentCategory: 'restaurant' },
-  { id: 'burger', parentCategory: 'restaurant' },
-  { id: 'cafe', parentCategory: 'cafe' },
-  { id: 'gelato', parentCategory: 'cafe' },
-  { id: 'bar', parentCategory: 'bar' },
-  { id: 'cocktail', parentCategory: 'bar' },
-  { id: 'bakery', parentCategory: 'bakery' },
-  { id: 'hotel', parentCategory: 'hotel' },
-  { id: 'museum', parentCategory: 'museum' },
-  { id: 'entertainment', parentCategory: 'entertainment' },
+  { id: 'restaurant', parentCategory: 'restaurant', emoji: '🍽️' },
+  { id: 'pizzeria', parentCategory: 'restaurant', emoji: '🍕' },
+  { id: 'sushi', parentCategory: 'restaurant', emoji: '🍣' },
+  { id: 'burger', parentCategory: 'restaurant', emoji: '🍔' },
+  { id: 'cafe', parentCategory: 'cafe', emoji: '☕' },
+  { id: 'gelato', parentCategory: 'cafe', emoji: '🍨' },
+  { id: 'bar', parentCategory: 'bar', emoji: '🍸' },
+  { id: 'cocktail', parentCategory: 'bar', emoji: '🍹' },
+  { id: 'bakery', parentCategory: 'bakery', emoji: '🥐' },
+  { id: 'hotel', parentCategory: 'hotel', emoji: '🏨' },
+  { id: 'museum', parentCategory: 'museum', emoji: '🏛️' },
+  { id: 'entertainment', parentCategory: 'entertainment', emoji: '🎭' },
 ];
 
 const popularCities = [
@@ -686,24 +687,21 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 {t('findNearby', { ns: 'explore', defaultValue: 'Find nearby' })}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {nearbyPrompts.map((prompt) => {
-                  const CategoryIconComponent = getCategoryIcon(prompt.parentCategory);
-                  return (
-                    <button
-                      key={prompt.id}
-                      onClick={() => handleNearbyPromptClick(prompt)}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md",
-                        "bg-muted/30 hover:bg-muted/50 border-border/50"
-                      )}
-                    >
-                      <CategoryIconComponent className={cn("w-4 h-4", getCategoryColor(prompt.parentCategory))} />
-                      <span className="font-medium text-sm text-foreground">
-                        {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
-                      </span>
-                    </button>
-                  );
-                })}
+                {nearbyPrompts.map((prompt) => (
+                  <button
+                    key={prompt.id}
+                    onClick={() => handleNearbyPromptClick(prompt)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md active:scale-95",
+                      "bg-muted/30 hover:bg-muted/50 border-border/50"
+                    )}
+                  >
+                    <span className="text-base">{prompt.emoji}</span>
+                    <span className="font-medium text-sm text-foreground">
+                      {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           )}

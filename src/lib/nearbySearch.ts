@@ -19,22 +19,22 @@ export interface NearbySearchResult {
 // Extended prompt type that includes subcategories
 export type NearbyPrompt = AllowedCategory | 'pizzeria' | 'sushi' | 'burger' | 'gelato' | 'cocktail';
 
-// Map prompts to OSM query parts - optimized for speed
+// Map prompts to OSM query parts - search nodes AND ways for better coverage
 const promptToOsmQuery: Record<NearbyPrompt, string> = {
-  // Main categories - simple queries
-  restaurant: '["amenity"="restaurant"]',
-  cafe: '["amenity"="cafe"]',
-  bar: '["amenity"="bar"]',
+  // Main categories - include multiple tags for better results
+  restaurant: '["amenity"~"restaurant|fast_food"]',
+  cafe: '["amenity"~"cafe|coffee_shop"]',
+  bar: '["amenity"~"bar|pub|biergarten"]',
   bakery: '["shop"="bakery"]',
-  hotel: '["tourism"="hotel"]',
-  museum: '["tourism"="museum"]',
-  entertainment: '["amenity"="nightclub"]',
+  hotel: '["tourism"~"hotel|hostel|guest_house|motel"]',
+  museum: '["tourism"~"museum|gallery"]["name"]',
+  entertainment: '["amenity"~"nightclub|cinema|theatre"]',
   // Subcategories - cuisine-specific
-  pizzeria: '["amenity"="restaurant"]["cuisine"~"pizza",i]',
-  sushi: '["amenity"="restaurant"]["cuisine"~"sushi|japanese",i]',
-  burger: '["amenity"="restaurant"]["cuisine"~"burger|american",i]',
-  gelato: '["amenity"="ice_cream"]',
-  cocktail: '["amenity"="bar"]["cocktails"="yes"]',
+  pizzeria: '["cuisine"~"pizza",i]',
+  sushi: '["cuisine"~"sushi|japanese",i]',
+  burger: '["cuisine"~"burger|american",i]',
+  gelato: '["amenity"~"ice_cream|cafe"]["cuisine"~"ice_cream|gelato",i]',
+  cocktail: '["amenity"~"bar|cocktail_bar"]',
 };
 
 // Map subcategories to parent categories
@@ -88,8 +88,9 @@ export async function searchNearbyByCategory(
 
   const category = promptToCategory[prompt];
   
-  // Ultra-fast compact query - nodes only, minimal output
-  const query = `[out:json][timeout:8];node${queryPart}["name"](around:${radiusMeters},${userLocation.lat},${userLocation.lng});out 12;`;
+  // Search both nodes and ways for better coverage, increase radius
+  const searchRadius = radiusMeters < 3000 ? 3000 : radiusMeters;
+  const query = `[out:json][timeout:10];(node${queryPart}["name"](around:${searchRadius},${userLocation.lat},${userLocation.lng});way${queryPart}["name"](around:${searchRadius},${userLocation.lat},${userLocation.lng}););out center 15;`;
 
   console.log('[Nearby] Query:', query);
 
@@ -123,7 +124,10 @@ export async function searchNearbyByCategory(
       const results: NearbySearchResult[] = [];
 
       for (const el of data.elements) {
-        if (!el.tags?.name || !el.lat || !el.lon) continue;
+        // Handle both nodes and ways (ways have center property)
+        const lat = el.lat || el.center?.lat;
+        const lon = el.lon || el.center?.lon;
+        if (!el.tags?.name || !lat || !lon) continue;
 
         const tags = el.tags;
         const city = tags['addr:city'] || tags['addr:suburb'] || '';
@@ -134,15 +138,15 @@ export async function searchNearbyByCategory(
         results.push({
           id: `osm-${el.id}`,
           name: tags.name,
-          lat: el.lat,
-          lng: el.lon,
+          lat,
+          lng: lon,
           category,
           city,
           address,
-          distance: calculateDistance(userLocation.lat, userLocation.lng, el.lat, el.lon),
+          distance: calculateDistance(userLocation.lat, userLocation.lng, lat, lon),
         });
 
-        if (results.length >= 12) break;
+        if (results.length >= 15) break;
       }
 
       results.sort((a, b) => (a.distance || 0) - (b.distance || 0));
