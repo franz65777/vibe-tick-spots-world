@@ -13,6 +13,7 @@ import { getCategoryImage } from '@/utils/categoryIcons';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
 import { searchOverpass } from '@/lib/overpassGeocoding';
+import { searchNearbyByCategory, type NearbySearchResult } from '@/lib/nearbySearch';
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 
@@ -54,13 +55,22 @@ interface SearchDrawerProps {
   onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-// Nearby categories for "Trova nei dintorni" section
-interface NearbyCategory {
-  id: string;
-  label: string;
+// Nearby prompts - app categories only
+interface NearbyPrompt {
+  id: AllowedCategory;
   emoji: string;
   color: string;
 }
+
+const nearbyPrompts: NearbyPrompt[] = [
+  { id: 'restaurant', emoji: '🍽️', color: 'bg-orange-500' },
+  { id: 'cafe', emoji: '☕', color: 'bg-amber-600' },
+  { id: 'bar', emoji: '🍸', color: 'bg-purple-500' },
+  { id: 'bakery', emoji: '🥐', color: 'bg-yellow-500' },
+  { id: 'hotel', emoji: '🏨', color: 'bg-blue-500' },
+  { id: 'museum', emoji: '🏛️', color: 'bg-teal-500' },
+  { id: 'entertainment', emoji: '🎭', color: 'bg-pink-500' },
+];
 
 const popularCities = [
   { name: 'Dublin', lat: 53.3498053, lng: -6.2603097 },
@@ -108,23 +118,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   // Search results
   const [cityResults, setCityResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
+  const [nearbyResults, setNearbyResults] = useState<NearbySearchResult[]>([]);
+  const [activeNearbyCategory, setActiveNearbyCategory] = useState<AllowedCategory | null>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number; lat?: number; lng?: number }[]>([]);
   const searchCacheRef = useRef<Map<string, { cities: { name: string; lat: number; lng: number }[]; locations: LocationResult[] }>>(new Map());
   
   const processedLocationRef = useRef<string>('');
-
-  // Nearby categories
-  const nearbyCategories: NearbyCategory[] = [
-    { id: 'lunch', label: t('nearbyCategories.lunch', { ns: 'explore', defaultValue: 'Pranzo' }), emoji: '🍴', color: 'bg-orange-500' },
-    { id: 'pizzeria', label: t('nearbyCategories.pizzeria', { ns: 'explore', defaultValue: 'Pizzerie' }), emoji: '🍕', color: 'bg-orange-400' },
-    { id: 'gas', label: t('nearbyCategories.gas', { ns: 'explore', defaultValue: 'Benzinai' }), emoji: '⛽', color: 'bg-blue-500' },
-    { id: 'grocery', label: t('nearbyCategories.grocery', { ns: 'explore', defaultValue: 'Negozio di alimentari' }), emoji: '🛒', color: 'bg-yellow-500' },
-    { id: 'parking', label: t('nearbyCategories.parking', { ns: 'explore', defaultValue: 'Parcheggi' }), emoji: '🅿️', color: 'bg-blue-600' },
-    { id: 'bar', label: t('nearbyCategories.bar', { ns: 'explore', defaultValue: 'Bar' }), emoji: '🍸', color: 'bg-orange-500' },
-    { id: 'pharmacy', label: t('nearbyCategories.pharmacy', { ns: 'explore', defaultValue: 'Farmacie' }), emoji: '💊', color: 'bg-pink-500' },
-    { id: 'fastfood', label: t('nearbyCategories.fastfood', { ns: 'explore', defaultValue: 'Fast food' }), emoji: '🍔', color: 'bg-orange-500' },
-    { id: 'bikesharing', label: t('nearbyCategories.bikesharing', { ns: 'explore', defaultValue: 'Servizi di bike sharing' }), emoji: '🚲', color: 'bg-green-500' },
-  ];
 
   useEffect(() => {
     onDrawerStateChange?.(isDrawerOpen);
@@ -475,8 +474,47 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     handleClose();
   };
 
-  const handleNearbyCategoryClick = (category: NearbyCategory) => {
-    setInternalQuery(category.label);
+  const handleNearbyPromptClick = async (prompt: NearbyPrompt) => {
+    if (!location?.latitude || !location?.longitude) {
+      console.warn('No user location for nearby search');
+      return;
+    }
+    
+    setActiveNearbyCategory(prompt.id);
+    setIsLoading(true);
+    setNearbyResults([]);
+    
+    try {
+      const results = await searchNearbyByCategory(
+        prompt.id,
+        { lat: location.latitude, lng: location.longitude },
+        3000 // 3km radius
+      );
+      setNearbyResults(results);
+    } catch (err) {
+      console.error('Nearby search error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNearbyResultSelect = (result: NearbySearchResult) => {
+    onCitySelect(result.city || currentCity, { lat: result.lat, lng: result.lng });
+    onSpotSelect?.({
+      id: result.id,
+      name: result.name,
+      category: result.category,
+      city: result.city || currentCity,
+      address: result.address,
+      savesCount: 0,
+      coordinates: { lat: result.lat, lng: result.lng },
+    });
+    handleClose();
+  };
+
+  const clearNearbySearch = () => {
+    setActiveNearbyCategory(null);
+    setNearbyResults([]);
   };
 
   const handleSearchBarClick = () => {
@@ -627,26 +665,75 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             </div>
           )}
 
-          {/* Trova nei dintorni section - only when not searching */}
-          {!isSearching && (
+          {/* Find nearby section - only when not searching */}
+          {!isSearching && !activeNearbyCategory && (
             <div className="mt-2">
-              <h3 className="text-lg font-semibold text-foreground mb-3">
-                {t('findNearby', { ns: 'explore', defaultValue: 'Trova nei dintorni' })}
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                {t('findNearby', { ns: 'explore', defaultValue: 'Find nearby' })}
               </h3>
-              <div className="bg-muted/30 rounded-2xl overflow-hidden divide-y divide-border/50">
-                {nearbyCategories.map((category) => (
+              <div className="flex flex-wrap gap-2">
+                {nearbyPrompts.map((prompt) => (
                   <button
-                    key={category.id}
-                    onClick={() => handleNearbyCategoryClick(category)}
-                    className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left"
+                    key={prompt.id}
+                    onClick={() => handleNearbyPromptClick(prompt)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md",
+                      "bg-muted/30 hover:bg-muted/50 border-border/50"
+                    )}
                   >
-                    <div className={`w-9 h-9 rounded-full ${category.color} flex items-center justify-center`}>
-                      <span className="text-lg">{category.emoji}</span>
-                    </div>
-                    <span className="font-medium text-foreground">{category.label}</span>
+                    <span className="text-base">{prompt.emoji}</span>
+                    <span className="font-medium text-sm text-foreground">
+                      {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
+                    </span>
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Nearby results - when a category is selected */}
+          {activeNearbyCategory && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t(`nearbyPrompts.${activeNearbyCategory}`, { ns: 'explore' })}
+                </h3>
+                <button onClick={clearNearbySearch} className="p-1 hover:bg-muted rounded-full">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : nearbyResults.length > 0 ? (
+                <div className="space-y-2">
+                  {nearbyResults.map((result) => {
+                    const categoryImage = getCategoryImage(result.category);
+                    return (
+                      <button
+                        key={result.id}
+                        onClick={() => handleNearbyResultSelect(result)}
+                        className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl text-left"
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <img src={categoryImage} alt={result.category} className="w-8 h-8 object-contain" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground truncate">{result.name}</div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            {result.distance ? `${result.distance.toFixed(1)} km • ` : ''}{result.address || result.city}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>{t('noResultsFound', { ns: 'explore', defaultValue: 'No results found' })}</p>
+                </div>
+              )}
             </div>
           )}
 
