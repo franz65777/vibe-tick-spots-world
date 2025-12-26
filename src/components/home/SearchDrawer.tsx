@@ -107,7 +107,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  type DrawerMode = 'closed' | 'trending' | 'search';
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
+  const isSearchOpen = drawerMode === 'search';
+  const isDrawerVisible = drawerMode !== 'closed';
+
   const [isLoading, setIsLoading] = useState(false);
   const [internalQuery, setInternalQuery] = useState('');
   
@@ -133,8 +137,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const processedLocationRef = useRef<string>('');
 
   useEffect(() => {
-    onDrawerStateChange?.(isDrawerOpen);
-  }, [isDrawerOpen, onDrawerStateChange]);
+    // Notify parent only when the SEARCH drawer is open (avoid triggering "cerca" when showing Trending).
+    onDrawerStateChange?.(isSearchOpen);
+  }, [isSearchOpen, onDrawerStateChange]);
 
   useEffect(() => {
     if (!location || !location.city || location.city === 'Unknown City') return;
@@ -146,9 +151,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
   }, [location?.latitude, location?.longitude, location?.city]);
 
-  // Fetch trending cities when drawer opens using RPC directly
+  // Fetch trending cities when the drawer becomes visible
   useEffect(() => {
-    if (!isDrawerOpen) return;
+    if (!isDrawerVisible) return;
 
     const fetchTrendingCities = async () => {
       try {
@@ -166,7 +171,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     };
 
     fetchTrendingCities();
-  }, [isDrawerOpen]);
+  }, [isDrawerVisible]);
 
   // Search effect
   useEffect(() => {
@@ -392,13 +397,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const isFromScrollable = (e.target as HTMLElement | null)?.closest?.('[data-drawer-scroll]');
       if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
 
-      // Debug
-      console.log('[SearchDrawer] pointerDown', { pointerType: e.pointerType, isDrawerOpen, dragProgress });
-
       activePointerIdRef.current = e.pointerId;
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 
-      dragStartedOpenRef.current = isDrawerOpen;
+      // Only allow full open/close behavior if the drag started from SEARCH mode.
+      dragStartedOpenRef.current = isSearchOpen;
       setIsDragging(true);
       dragStartY.current = e.clientY;
       dragStartProgress.current = dragProgress;
@@ -406,7 +409,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       lastYRef.current = e.clientY;
       lastTimeRef.current = Date.now();
     },
-    [dragProgress, isDrawerOpen]
+    [dragProgress, isSearchOpen]
   );
 
   const handlePointerMove = useCallback(
@@ -451,10 +454,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsDragging(false);
       activePointerIdRef.current = null;
 
-      // When dragging from the closed state: only show the Trending peek (do NOT open the search)
+      // Drag started from a CLOSED/TRENDING state: open Trending peek only.
       if (!dragStartedOpenRef.current) {
         const shouldPeekTrending = dragProgress > 0.08;
-        setIsDrawerOpen(false);
+        setDrawerMode(shouldPeekTrending ? 'trending' : 'closed');
         setDragProgress(shouldPeekTrending ? 0.3 : 0);
         dragStartedOpenRef.current = false;
         return;
@@ -471,7 +474,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       }
 
       setDragProgress(shouldOpen ? 1 : 0);
-      setIsDrawerOpen(shouldOpen);
+      setDrawerMode(shouldOpen ? 'search' : 'closed');
       dragStartedOpenRef.current = false;
 
       if (shouldOpen && inputRef.current) {
@@ -489,7 +492,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
 
       touchActiveRef.current = true;
-      dragStartedOpenRef.current = isDrawerOpen;
+      dragStartedOpenRef.current = isSearchOpen;
       setIsDragging(true);
       dragStartY.current = e.touches[0]?.clientY ?? 0;
       dragStartProgress.current = dragProgress;
@@ -497,7 +500,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       lastYRef.current = dragStartY.current;
       lastTimeRef.current = Date.now();
     },
-    [dragProgress, isDrawerOpen]
+    [dragProgress, isSearchOpen]
   );
 
   const handleTouchMove = useCallback(
@@ -534,10 +537,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setIsDragging(false);
     touchActiveRef.current = false;
 
-    // When dragging from the closed state: only show the Trending peek (do NOT open the search)
+    // Drag started from a CLOSED/TRENDING state: open Trending peek only.
     if (!dragStartedOpenRef.current) {
       const shouldPeekTrending = dragProgress > 0.08;
-      setIsDrawerOpen(false);
+      setDrawerMode(shouldPeekTrending ? 'trending' : 'closed');
       setDragProgress(shouldPeekTrending ? 0.3 : 0);
       dragStartedOpenRef.current = false;
       return;
@@ -554,7 +557,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
 
     setDragProgress(shouldOpen ? 1 : 0);
-    setIsDrawerOpen(shouldOpen);
+    setDrawerMode(shouldOpen ? 'search' : 'closed');
     dragStartedOpenRef.current = false;
 
     if (shouldOpen && inputRef.current) {
@@ -563,27 +566,30 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   }, [dragProgress]);
 
   useEffect(() => {
-    // Keep dragProgress in sync only for fully open/closed states.
-    // When closed we may keep an intermediate "trending peek" progress.
+    // Keep dragProgress in sync only for settled states.
     if (isDragging) return;
 
-    if (isDrawerOpen) {
+    if (drawerMode === 'search') {
       setDragProgress(1);
       return;
     }
 
-    // If the drawer was open (progress 1) and got closed, snap to 0.
-    if (dragProgress >= 0.99) {
-      setDragProgress(0);
+    if (drawerMode === 'trending') {
+      // Snap to the fixed peek height.
+      if (dragProgress !== 0.3) setDragProgress(0.3);
+      return;
     }
-  }, [isDrawerOpen, isDragging, dragProgress]);
+
+    // drawerMode === 'closed'
+    if (dragProgress !== 0) setDragProgress(0);
+  }, [drawerMode, isDragging, dragProgress]);
 
   const handleClose = () => {
     setIsDragging(false);
     activePointerIdRef.current = null;
     touchActiveRef.current = false;
     velocityRef.current = 0;
-    setIsDrawerOpen(false);
+    setDrawerMode('closed');
     setDragProgress(0);
     setInternalQuery('');
     setCityResults([]);
@@ -665,8 +671,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleSearchBarClick = () => {
-    if (!isDrawerOpen) {
-      setIsDrawerOpen(true);
+    if (!isSearchOpen) {
+      setDrawerMode('search');
       setDragProgress(1);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
@@ -687,7 +693,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         "z-[1000] flex flex-col-reverse",
         isExpanded ? 'fixed' : 'absolute',
         // When closed (no peek), narrower width; when peek/open, full width
-        isDrawerOpen || dragProgress > 0 ? 'left-3 right-3' : 'left-3 right-16'
+        isDrawerVisible || dragProgress > 0 ? 'left-3 right-3' : 'left-3 right-16'
       )}
       style={{
         bottom: isExpanded
@@ -731,9 +737,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               className="flex-1 h-full cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                console.log('[SearchDrawer] openTrendingPeek tap');
-                // Show trending peek without search
-                setIsDrawerOpen(false);
+                setDrawerMode('trending');
                 setDragProgress(0.3);
               }}
             />
@@ -766,7 +770,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           opacity: expandedOpacity,
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           display: dragProgress > 0 ? 'flex' : 'none',
-          marginBottom: isDrawerOpen ? 0 : 8,
+          marginBottom: isSearchOpen ? 0 : 8,
           // Allow scrolling inside the panel; drag is handled only by the top handle
           touchAction: 'pan-y',
         }}
@@ -790,7 +794,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           </div>
 
           {/* Search input - fixed at top */}
-          {isDrawerOpen && (
+          {isSearchOpen && (
             <div className="flex items-center gap-3 px-4 pb-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">🔍</span>
