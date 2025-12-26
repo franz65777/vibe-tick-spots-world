@@ -222,9 +222,13 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder={searchQuery ? '' : currentCity || t('searchCities', { ns: 'home' })}
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={t('searchCities', { ns: 'home' })}
+          value={(() => {
+            if (!searchQuery && currentCity) return `📌 ${currentCity}`;
+            if (searchQuery && currentCity && searchQuery === currentCity) return `📌 ${searchQuery}`;
+            return searchQuery;
+          })()}
+          onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
           onKeyPress={onSearchKeyPress}
           onFocus={() => {
             onFocusOpen?.();
