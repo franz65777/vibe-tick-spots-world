@@ -721,7 +721,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     >
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
-        <div className="w-full relative bg-card/95 backdrop-blur-xl shadow-2xl border border-border/60 rounded-full">
+        <div className="w-full relative backdrop-blur-xl shadow-2xl border border-white/25 dark:border-white/10 rounded-full bg-white/65 dark:bg-slate-900/65">
           {/* Drag handle inside search bar at top - for opening trending */}
           <div
             className="absolute top-1 left-1/2 -translate-x-1/2 z-10 px-4 py-1 cursor-grab active:cursor-grabbing"
@@ -780,7 +780,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div
-        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-white/25 dark:border-white/10 flex flex-col backdrop-blur-xl bg-white/95 dark:bg-slate-900/95"
+        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-white/25 dark:border-white/10 flex flex-col backdrop-blur-xl bg-white/65 dark:bg-slate-900/65"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
@@ -855,7 +855,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           ) : (
             /* Trending mode: full-width search bar like the search page */
             <div
-              className="mx-4 mb-3 h-12 rounded-full backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/25 dark:border-white/10 flex items-center gap-3 px-4 cursor-text"
+              className="mx-4 mb-3 h-12 rounded-full backdrop-blur-xl bg-white/65 dark:bg-slate-900/65 border border-white/25 dark:border-white/10 flex items-center gap-3 px-4 cursor-text"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
