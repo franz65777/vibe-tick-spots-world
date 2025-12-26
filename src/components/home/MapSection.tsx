@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import MapCategoryFilters from './MapCategoryFilters';
-import MapFilterDropdown from './MapFilterDropdown';
+import CityAutocompleteBar from '../common/CityAutocompleteBar';
 import { cn } from '@/lib/utils';
 import { LocationShareModal } from '../explore/LocationShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
@@ -32,6 +32,11 @@ interface MapSectionProps {
   onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
   fromMessages?: boolean;
   onBackToMessages?: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  isCenteredOnUser?: boolean;
+  onCenterStatusChange?: (isCentered: boolean) => void;
+  onOpenSearchOverlay?: () => void;
 }
 
 const MapSection = ({ 
@@ -45,6 +50,11 @@ const MapSection = ({
   onCitySelect,
   fromMessages,
   onBackToMessages,
+  searchQuery = '',
+  onSearchChange,
+  isCenteredOnUser = false,
+  onCenterStatusChange,
+  onOpenSearchOverlay,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
@@ -286,11 +296,11 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Filter Dropdown and Sharing Controls - Bottom Left */}
+        {/* Search Bar - Bottom Left */}
         {!isListViewOpen && (
           <div 
             className={cn(
-              "left-3 z-[1000] transition-opacity duration-300 flex items-center gap-2",
+              "left-3 right-14 z-[1000] transition-opacity duration-300",
               isExpanded ? 'fixed' : 'absolute',
               filtersVisible ? "opacity-100" : "opacity-0"
             )}
@@ -300,7 +310,16 @@ const MapSection = ({
                 : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
             }}
           >
-            <MapFilterDropdown />
+            <CityAutocompleteBar 
+              currentCity={currentCity}
+              onCitySelect={onCitySelect || (() => {})}
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange || (() => {})}
+              onSearchKeyPress={() => {}}
+              onFocusOpen={onOpenSearchOverlay}
+              isCenteredOnUser={isCenteredOnUser}
+              onCenterStatusChange={onCenterStatusChange}
+            />
           </div>
         )}
 

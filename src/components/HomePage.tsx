@@ -716,6 +716,11 @@ const HomePage = memo(() => {
                   setReturnToUserId(null);
                   navigate('/messages', { state: { initialUserId: userId } });
                 }}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                isCenteredOnUser={isCenteredOnUser}
+                onCenterStatusChange={handleCenterStatusChange}
+                onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
               />
             </Suspense>
           </div>

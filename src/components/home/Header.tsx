@@ -2,10 +2,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import CityAutocompleteBar from '../common/CityAutocompleteBar';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import ChatIcon from '@/components/icons/ChatIcon';
+import MapFilterDropdown from './MapFilterDropdown';
 
 interface HeaderProps {
   searchQuery: string;
@@ -38,18 +38,9 @@ const Header = ({
     <>
       <header className="sticky top-0 z-40">
         <div className="flex items-center justify-between pl-[10px] pr-2 py-2 gap-2">
-          {/* Left: City Selection - Now with more space */}
-          <div className="flex-1 min-w-0">
-            <CityAutocompleteBar 
-              currentCity={currentCity}
-              onCitySelect={onCitySelect}
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-              onSearchKeyPress={onSearchKeyPress}
-              onFocusOpen={onOpenSearchOverlay}
-              isCenteredOnUser={isCenteredOnUser}
-              onCenterStatusChange={onCenterStatusChange}
-            />
+          {/* Left: Filter Dropdown */}
+          <div className="flex-shrink-0">
+            <MapFilterDropdown />
           </div>
 
           {/* Right: Action Buttons */}
