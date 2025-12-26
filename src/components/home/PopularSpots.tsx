@@ -377,22 +377,22 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       ) : !hasResults ? (
         <div className="mt-6 text-sm text-muted-foreground">{t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(filterType).toLowerCase(), city: currentCity })}</div>
       ) : (
-        <div className="mt-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-3 w-max pb-2">
+        <div className="mt-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 w-max pb-2">
             {showingCities
               ? citySpots.map((city) => (
                   <button
                     key={city.city}
                     type="button"
                     onClick={() => handleCityClick(city)}
-                    className="w-40 rounded-2xl border border-border bg-card hover:bg-accent transition-colors p-4 text-left"
+                    className="w-28 rounded-xl border border-border bg-card hover:bg-accent transition-colors p-2 text-center"
                     aria-label={`Apri ${city.city}`}
                   >
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-                      <img src={cityIcon} alt="Città" className="w-7 h-7 object-contain" loading="lazy" />
+                    <div className="w-10 h-10 mx-auto rounded-full bg-muted flex items-center justify-center">
+                      <img src={cityIcon} alt="Città" className="w-5 h-5 object-contain" loading="lazy" />
                     </div>
-                    <div className="mt-3 font-semibold text-foreground line-clamp-1">{city.city}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">{city.locationCount} luoghi</div>
+                    <div className="mt-1.5 text-xs font-medium text-foreground line-clamp-1">{city.city}</div>
+                    <div className="text-[10px] text-muted-foreground">{city.locationCount} luoghi</div>
                   </button>
                 ))
               : popularSpots.map((spot) => (
@@ -400,14 +400,14 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                     key={spot.id}
                     type="button"
                     onClick={() => handleSpotClick(spot)}
-                    className="w-40 rounded-2xl border border-border bg-card hover:bg-accent transition-colors p-4 text-left"
+                    className="w-28 rounded-xl border border-border bg-card hover:bg-accent transition-colors p-2 text-center"
                     aria-label={`Apri ${spot.name}`}
                   >
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-                      <CategoryIcon category={spot.category} className="w-8 h-8" />
+                    <div className="w-10 h-10 mx-auto rounded-full bg-muted flex items-center justify-center">
+                      <CategoryIcon category={spot.category} className="w-5 h-5" />
                     </div>
-                    <div className="mt-3 font-semibold text-foreground line-clamp-1">{spot.name}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
+                    <div className="mt-1.5 text-xs font-medium text-foreground line-clamp-1">{spot.name}</div>
+                    <div className="text-[10px] text-muted-foreground">
                       {typeof spot.savesCount === 'number' && spot.savesCount > 0 ? `${spot.savesCount} saves` : ''}
                     </div>
                   </button>
