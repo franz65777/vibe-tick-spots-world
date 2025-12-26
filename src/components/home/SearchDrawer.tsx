@@ -487,9 +487,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   };
 
-  // Calculate expanded height - reaches up to category filters level
-  // Category filters are at top-[calc(env(safe-area-inset-top)+60px)], so we need more height
-  const maxExpandedHeight = window.innerHeight * 0.78;
+  // Calculate expanded height - stops at category filters level (around 60% of screen)
+  const maxExpandedHeight = window.innerHeight * 0.60;
   const expandedHeight = Math.max(0, dragProgress) * maxExpandedHeight;
   const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
@@ -515,67 +514,51 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Search bar at bottom */}
-      <div 
-        className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full"
-        style={{ touchAction: 'none' }}
-        onClick={handleSearchBarClick}
-      >
-        {/* Drag handle inside at top center - only show when drawer is open */}
-        {isDrawerOpen && (
-          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
-        )}
-        
-        <div className={cn("relative", isDrawerOpen ? "pt-3" : "")}>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder={t('searchCities', { ns: 'home' })}
-            value={isDrawerOpen ? internalQuery : (currentCity ? `📌  ${currentCity}` : '')}
-            onChange={(e) => setInternalQuery(e.target.value)}
-            onFocus={() => {
-              if (!isDrawerOpen) {
-                setIsDrawerOpen(true);
-                setDragProgress(1);
-              }
-            }}
-            className="w-full h-10 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
-          />
-          {isDrawerOpen ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClose();
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors"
-              aria-label={t('cancel', { ns: 'common' })}
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
-          ) : (
+      {/* Search bar at bottom - hide when drawer is open */}
+      {!isDrawerOpen && (
+        <div 
+          className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full"
+          style={{ touchAction: 'none' }}
+          onClick={handleSearchBarClick}
+        >
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={t('searchCities', { ns: 'home' })}
+              value={currentCity ? `📌  ${currentCity}` : ''}
+              readOnly
+              className="w-full h-9 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground cursor-pointer"
+            />
             <button
               onClick={handleCurrentLocation}
               disabled={geoLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
               aria-label={t('currentLocation', { ns: 'common' })}
             >
-              <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
+              <Navigation2 className={cn("w-4 h-4 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Expanded content panel - appears above search bar */}
+      {/* Expanded content panel - includes search input at top */}
       <div 
-        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-xl border border-border/30 mb-2"
+        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-xl border border-border/30"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           display: dragProgress > 0 ? 'block' : 'none',
+          marginBottom: isDrawerOpen ? 0 : 8,
         }}
       >
-        <div className="h-full overflow-y-auto px-4 py-4">
+        {/* Drag handle at top */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
+        </div>
+        
+        <div className="h-[calc(100%-1rem)] overflow-y-auto px-4 pb-4">
           {/* Search input when expanded (duplicate for visual clarity) */}
           {isDrawerOpen && (
             <div className="flex items-center gap-3 mb-4">
