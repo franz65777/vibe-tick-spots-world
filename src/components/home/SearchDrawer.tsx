@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { translateCityName, reverseTranslateCityName } from '@/utils/cityTranslations';
 import CityEngagementCard from '@/components/explore/CityEngagementCard';
-import { getCategoryImage } from '@/utils/categoryIcons';
+import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
 import { searchOverpass } from '@/lib/overpassGeocoding';
@@ -475,24 +475,36 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleNearbyPromptClick = async (prompt: NearbyPrompt) => {
+    console.log('[NearbySearch] Clicked:', prompt.id);
+    console.log('[NearbySearch] Location:', location);
+    
+    // If no location, try to get it first
     if (!location?.latitude || !location?.longitude) {
-      console.warn('No user location for nearby search');
-      return;
+      console.log('[NearbySearch] No location, requesting...');
+      await getCurrentLocation();
+      // Check again after getting location
+      if (!location?.latitude || !location?.longitude) {
+        console.warn('[NearbySearch] Still no location after request');
+        return;
+      }
     }
     
     setActiveNearbyCategory(prompt.id);
     setIsLoading(true);
     setNearbyResults([]);
     
+    console.log('[NearbySearch] Searching with coords:', location.latitude, location.longitude);
+    
     try {
       const results = await searchNearbyByCategory(
         prompt.id,
         { lat: location.latitude, lng: location.longitude },
-        3000 // 3km radius
+        5000 // 5km radius for better results
       );
+      console.log('[NearbySearch] Results:', results.length);
       setNearbyResults(results);
     } catch (err) {
-      console.error('Nearby search error:', err);
+      console.error('[NearbySearch] Error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -672,21 +684,24 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 {t('findNearby', { ns: 'explore', defaultValue: 'Find nearby' })}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {nearbyPrompts.map((prompt) => (
-                  <button
-                    key={prompt.id}
-                    onClick={() => handleNearbyPromptClick(prompt)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md",
-                      "bg-muted/30 hover:bg-muted/50 border-border/50"
-                    )}
-                  >
-                    <span className="text-base">{prompt.emoji}</span>
-                    <span className="font-medium text-sm text-foreground">
-                      {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
-                    </span>
-                  </button>
-                ))}
+                {nearbyPrompts.map((prompt) => {
+                  const CategoryIcon = getCategoryIcon(prompt.id);
+                  return (
+                    <button
+                      key={prompt.id}
+                      onClick={() => handleNearbyPromptClick(prompt)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all border shadow-sm hover:shadow-md",
+                        "bg-muted/30 hover:bg-muted/50 border-border/50"
+                      )}
+                    >
+                      <CategoryIcon className={cn("w-4 h-4", getCategoryColor(prompt.id))} />
+                      <span className="font-medium text-sm text-foreground">
+                        {t(`nearbyPrompts.${prompt.id}`, { ns: 'explore', defaultValue: prompt.id })}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
