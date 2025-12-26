@@ -668,27 +668,31 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     >
       {/* Search bar at bottom - hide when drawer is open */}
       {!isDrawerOpen && (
-        <div
-          className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full cursor-pointer"
-          onClick={handleSearchBarClick}
-        >
-          {/* Drag handle inside search bar at top */}
-          <div className="absolute top-1 left-1/2 -translate-x-1/2">
+        <div className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full">
+          {/* Drag handle inside search bar at top - for opening trending */}
+          <div 
+            className="absolute top-1 left-1/2 -translate-x-1/2 z-10 px-4 py-1 cursor-grab active:cursor-grabbing"
+            style={{ touchAction: 'none' }}
+          >
             <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
           </div>
-          <div className="relative">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={t('searchCities', { ns: 'home' })}
-              value={currentCity ? `📌  ${currentCity}` : ''}
-              readOnly
-              className="w-full h-11 pl-4 pr-12 pt-1 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground cursor-pointer"
-            />
+          <div className="relative flex items-center">
+            {/* Left/center clickable area - opens search page */}
+            <div 
+              className="flex-1 h-11 pl-4 pt-1 flex items-center cursor-pointer"
+              onClick={handleSearchBarClick}
+            >
+              <span className="text-sm font-medium text-foreground">
+                {currentCity ? `📌  ${currentCity}` : t('searchCities', { ns: 'home' })}
+              </span>
+            </div>
+            {/* Right button - repositioning */}
             <button
-              onClick={handleCurrentLocation}
+              onClick={(e) => {
+                handleCurrentLocation(e);
+              }}
               disabled={geoLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+              className="p-2 mr-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
               aria-label={t('currentLocation', { ns: 'common' })}
             >
               <Navigation2
