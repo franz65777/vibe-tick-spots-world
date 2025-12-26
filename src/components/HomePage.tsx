@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, memo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
@@ -76,15 +76,29 @@ const HomePage = memo(() => {
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [isCenteredOnUser, setIsCenteredOnUser] = useState(false);
+  const ignoreMoveEventRef = useRef(false);
 
   // Listen for map movement to reset centered state
   useEffect(() => {
     const handleMapMoved = () => {
+      // Ignore the moveend event that happens right after centering
+      if (ignoreMoveEventRef.current) {
+        ignoreMoveEventRef.current = false;
+        return;
+      }
       setIsCenteredOnUser(false);
     };
     window.addEventListener('map:user-moved', handleMapMoved);
     return () => window.removeEventListener('map:user-moved', handleMapMoved);
   }, []);
+
+  // Wrapper to handle centering - sets flag to ignore immediate moveend
+  const handleCenterStatusChange = (isCentered: boolean) => {
+    if (isCentered) {
+      ignoreMoveEventRef.current = true;
+    }
+    setIsCenteredOnUser(isCentered);
+  };
 
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -726,7 +740,7 @@ const HomePage = memo(() => {
               onCitySelect={handleCityChange}
               onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
               isCenteredOnUser={isCenteredOnUser}
-              onCenterStatusChange={setIsCenteredOnUser}
+              onCenterStatusChange={handleCenterStatusChange}
             />
           </div>
         )}
