@@ -388,12 +388,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       // Only track one pointer at a time
       if (activePointerIdRef.current !== null) return;
 
-      // Allow swipe/drag only when open or when touching the drawer surface
-      if (e.pointerType === 'mouse' && !isDrawerOpen) return;
-
       // If user is scrolling inside content, only allow drag-to-close when scroll is at top
       const isFromScrollable = (e.target as HTMLElement | null)?.closest?.('[data-drawer-scroll]');
       if (isFromScrollable && (scrollRef.current?.scrollTop || 0) > 0) return;
+
+      // Debug
+      console.log('[SearchDrawer] pointerDown', { pointerType: e.pointerType, isDrawerOpen, dragProgress });
 
       activePointerIdRef.current = e.pointerId;
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -727,11 +727,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             </div>
             
             {/* Right area - tap opens trending peek (WITHOUT search input) */}
-            <div 
+            <div
               className="flex-1 h-full cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                if (isDrawerOpen) return; // Do nothing if already open
+                console.log('[SearchDrawer] openTrendingPeek tap');
                 // Show trending peek without search
                 setIsDrawerOpen(false);
                 setDragProgress(0.3);
