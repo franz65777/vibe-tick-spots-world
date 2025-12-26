@@ -229,6 +229,8 @@ const LeafletMapSetup = ({
       const center = map.getCenter();
       const bounds = map.getBounds();
       onMapMove?.({ lat: center.lat, lng: center.lng }, bounds);
+      // Dispatch event to reset centered-on-user state
+      window.dispatchEvent(new CustomEvent('map:user-moved'));
     });
 
     // Map zoom event - check for city label display
