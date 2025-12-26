@@ -140,28 +140,26 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
   }, [location?.latitude, location?.longitude, location?.city]);
 
-  // Fetch trending cities when drawer opens
+  // Fetch trending cities when drawer opens using RPC directly
   useEffect(() => {
     if (!isDrawerOpen) return;
-    fetch('/functions/v1/trending-cities')
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => {
-        const items = (data?.cities || []).map((c: any) => ({
+    
+    const fetchTrendingCities = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_global_city_counts');
+        if (error) throw error;
+        
+        const items = (data || []).slice(0, 5).map((c: any) => ({
           name: String(c.city || '').split(',')[0].trim(),
-          count: Number(c.total) || 0,
+          count: Number(c.pin_count) || 0,
         }));
-        const unique = new Map<string, { name: string; count: number }>();
-        items.forEach((i: { name: string; count: number }) => {
-          const key = i.name.toLowerCase();
-          if (!unique.has(key)) unique.set(key, i);
-        });
-        // Sort by count descending to show top cities with most saved locations
-        const sorted = Array.from(unique.values()).sort((a, b) => b.count - a.count);
-        setTrendingCities(sorted);
-      })
-      .catch(() => {
-        // ignore errors
-      });
+        setTrendingCities(items);
+      } catch (err) {
+        console.error('Error fetching trending cities:', err);
+      }
+    };
+    
+    fetchTrendingCities();
   }, [isDrawerOpen]);
 
   // Search effect
