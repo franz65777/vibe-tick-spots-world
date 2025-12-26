@@ -695,8 +695,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   };
 
-  // Calculate expanded height - reaches up to category filters level
-  const maxExpandedHeight = window.innerHeight * 0.80;
+  // Calculate expanded height - use smaller height for trending mode to fit content
+  const trendingHeight = Math.min(window.innerHeight * 0.50, 420); // Fit content for trending
+  const searchHeight = window.innerHeight * 0.80; // Larger for search results
+  const maxExpandedHeight = isSearchOpen ? searchHeight : trendingHeight;
   const expandedHeight = Math.max(0, dragProgress) * maxExpandedHeight;
   const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
@@ -780,7 +782,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div
-        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-white/25 dark:border-white/10 flex flex-col backdrop-blur-xl bg-white/55 dark:bg-slate-900/55"
+        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-white/25 dark:border-white/10 flex flex-col backdrop-blur-xl bg-white/85 dark:bg-slate-900/85"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
