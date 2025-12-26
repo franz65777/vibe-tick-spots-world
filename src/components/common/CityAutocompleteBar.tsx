@@ -216,9 +216,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
       <div className="relative">
         {isLoading || geoLoading ? (
           <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
-        ) : (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">📌</span>
-        )}
+        ) : null}
         <input
           ref={inputRef}
           type="text"
@@ -240,7 +238,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
               setLocationResults([]);
             }, 200);
           }}
-          className="w-full h-10 pl-9 pr-10 rounded-full bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
+          className="w-full h-10 pl-3 pr-10 rounded-full bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground text-left"
         />
         <button
           onClick={handleCurrentLocation}
