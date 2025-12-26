@@ -331,13 +331,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const showingCities = citySpots.length > 0 && popularSpots.length === 0;
   const hasResults = popularSpots.length > 0 || citySpots.length > 0;
 
-  const sectionTitle = `${getFilterLabel(filterType)} ${t('in', { ns: 'common' })} ${currentCity}`;
+  
 
   return (
     <section className="h-full px-4 pb-2">
       {/* Filter pills */}
       <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2 py-2 w-max">
+        <div className="flex gap-2 py-1 w-max">
           {filterOptions.map((opt) => {
             const active = opt.value === filterType;
             return (
@@ -364,20 +364,17 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         </div>
       </div>
 
-      {/* Title */}
-      <h2 className="mt-3 text-xl font-semibold text-foreground">{sectionTitle}</h2>
-
       {/* Content */}
       {loading ? (
-        <div className="mt-4 flex gap-3 overflow-x-auto scrollbar-hide">
+        <div className="mt-2 flex gap-2 overflow-x-auto scrollbar-hide">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-shrink-0 w-40 h-28 rounded-2xl bg-muted animate-pulse" />
+            <div key={i} className="flex-shrink-0 w-36 h-14 rounded-xl bg-muted animate-pulse" />
           ))}
         </div>
       ) : !hasResults ? (
-        <div className="mt-6 text-sm text-muted-foreground">{t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(filterType).toLowerCase(), city: currentCity })}</div>
+        <div className="mt-4 text-sm text-muted-foreground">{t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(filterType).toLowerCase(), city: currentCity })}</div>
       ) : (
-        <div className="mt-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+        <div className="mt-2 -mx-4 px-4 overflow-x-auto scrollbar-hide">
           <div className="flex gap-2 w-max pb-2">
             {showingCities
               ? citySpots.map((city) => (
@@ -385,14 +382,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                     key={city.city}
                     type="button"
                     onClick={() => handleCityClick(city)}
-                    className="w-24 rounded-xl border border-border bg-card hover:bg-accent transition-colors p-1.5 text-center"
+                    className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
                     aria-label={`Apri ${city.city}`}
                   >
-                    <div className="w-8 h-8 mx-auto rounded-full bg-muted flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                       <img src={cityIcon} alt="Città" className="w-4 h-4 object-contain" loading="lazy" />
                     </div>
-                    <div className="mt-1 text-[11px] font-medium text-foreground line-clamp-1">{city.city}</div>
-                    <div className="text-[9px] text-muted-foreground">{city.locationCount} luoghi</div>
+                    <div className="text-left">
+                      <div className="text-[11px] font-medium text-foreground line-clamp-1">{city.city}</div>
+                      <div className="text-[9px] text-muted-foreground">{city.locationCount} luoghi</div>
+                    </div>
                   </button>
                 ))
               : popularSpots.map((spot) => (
@@ -400,15 +399,17 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                     key={spot.id}
                     type="button"
                     onClick={() => handleSpotClick(spot)}
-                    className="w-24 rounded-xl border border-border bg-card hover:bg-accent transition-colors p-1.5 text-center"
+                    className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
                     aria-label={`Apri ${spot.name}`}
                   >
-                    <div className="w-8 h-8 mx-auto rounded-full bg-muted flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                       <CategoryIcon category={spot.category} className="w-4 h-4" />
                     </div>
-                    <div className="mt-1 text-[11px] font-medium text-foreground line-clamp-1">{spot.name}</div>
-                    <div className="text-[9px] text-muted-foreground">
-                      {typeof spot.savesCount === 'number' && spot.savesCount > 0 ? `${spot.savesCount} saves` : ''}
+                    <div className="text-left">
+                      <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
+                      <div className="text-[9px] text-muted-foreground">
+                        {typeof spot.savesCount === 'number' && spot.savesCount > 0 ? `${spot.savesCount} saves` : ''}
+                      </div>
                     </div>
                   </button>
                 ))}
