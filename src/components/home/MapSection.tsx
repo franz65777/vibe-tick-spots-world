@@ -64,6 +64,7 @@ const MapSection = ({
   const [activeSharesCount, setActiveSharesCount] = useState(0);
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
   const [shouldRestoreListView, setShouldRestoreListView] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   const { t } = useTranslation();
   
@@ -311,22 +312,23 @@ const MapSection = ({
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={onCenterStatusChange}
               isExpanded={isExpanded}
+              onDrawerStateChange={setIsDrawerOpen}
             />
           </div>
         )}
 
-        {/* Map Controls - List View Toggle - Inside map - Always render but hide when dropdowns open */}
-        {!isListViewOpen && (
+        {/* Map Controls - List View Toggle - Hide when drawer is open */}
+        {!isListViewOpen && !isDrawerOpen && (
         <div 
           className={cn(
-            "right-3 z-[1001] flex flex-row gap-2 transition-all duration-150",
+            "right-3 z-[1001] flex flex-row gap-2 transition-all duration-300",
             isExpanded ? 'fixed' : 'absolute',
             filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
           )} 
           style={{
             bottom: isExpanded 
               ? 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' 
-              : 'calc(9rem + env(safe-area-inset-bottom, 0px))'
+              : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))'
           }}>
           {/* List View Toggle */}
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
