@@ -544,27 +544,29 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div 
-        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-xl border border-border/30"
+        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-xl border border-border/30 flex flex-col"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          display: dragProgress > 0 ? 'block' : 'none',
+          display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: isDrawerOpen ? 0 : 8,
         }}
       >
-        {/* Drag handle at top */}
-        <div className="flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
-        </div>
-        
-        <div className="h-[calc(100%-1rem)] overflow-y-auto px-4 pb-4">
-          {/* Search input when expanded (duplicate for visual clarity) */}
+        {/* Fixed header: Drag handle + Search input */}
+        <div className="flex-shrink-0">
+          {/* Drag handle at top */}
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
+          </div>
+          
+          {/* Search input - fixed at top */}
           {isDrawerOpen && (
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 px-4 pb-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
                 <input
+                  ref={inputRef}
                   type="text"
                   value={internalQuery}
                   onChange={(e) => setInternalQuery(e.target.value)}
@@ -583,13 +585,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                   e.stopPropagation();
                   handleClose();
                 }}
-                className="p-2 rounded-full hover:bg-muted/50 transition-colors"
+                className="p-2 rounded-full hover:bg-muted/50 transition-colors flex-shrink-0"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
           )}
-
+        </div>
+        
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
           {/* Popular/Trending cities when no query */}
           {!isSearching && (
             <div className="flex flex-wrap gap-2 mb-4">
