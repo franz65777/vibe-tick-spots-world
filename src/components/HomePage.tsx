@@ -702,7 +702,7 @@ const HomePage = memo(() => {
           <div className="relative z-20 pointer-events-none [&>*]:pointer-events-auto">
             {/* Top fade gradient overlay */}
             <div 
-              className="pointer-events-none absolute inset-x-0 top-0 h-6 z-0"
+              className="pointer-events-none absolute inset-x-0 top-0 h-4 z-0"
               style={{ 
                 background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.6) 60%, transparent 100%)' 
               }}

@@ -247,7 +247,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
           aria-label={t('currentLocation', { ns: 'common' })}
         >
-          <Navigation2 className={cn("w-4 h-4 transition-colors", geoLoading ? "text-primary fill-primary" : "text-primary")} />
+          <Navigation2 className={cn("w-4 h-4 transition-colors -rotate-45", geoLoading ? "text-primary fill-primary" : "text-primary")} />
         </button>
       </div>
 
