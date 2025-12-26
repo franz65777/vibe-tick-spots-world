@@ -133,33 +133,18 @@ const SaveLocationPage = () => {
       const existingByCoords = existingLocationsCache.current.byCoords;
       const existingByNameCity = existingLocationsCache.current.byNameCity;
       
-      // Search for POIs by category types around user location using q= parameter
-      const searchTerms = ['restaurant', 'bar', 'cafe', 'pizza'];
-      const allResults: any[] = [];
+      // Single search term for faster initial load - fetch more later if needed
+      const searchUrl = `https://nominatim.openstreetmap.org/search?q=restaurant&format=json&limit=20&bounded=1&viewbox=${lng - 0.02},${lat + 0.02},${lng + 0.02},${lat - 0.02}&addressdetails=1`;
       
-      // Fetch POIs for each search term (parallel)
-      const searchPromises = searchTerms.map(async (term) => {
-        const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(term)}&format=json&limit=15&bounded=1&viewbox=${lng - 0.03},${lat + 0.03},${lng + 0.03},${lat - 0.03}&addressdetails=1`;
-        
-        try {
-          const response = await fetch(searchUrl, {
-            headers: { 
-              'Accept-Language': 'en',
-              'User-Agent': 'SpottApp/1.0'
-            }
-          });
-          const results = await response.json();
-          return Array.isArray(results) ? results : [];
-        } catch (e) {
-          console.log(`Failed to fetch ${term}:`, e);
-          return [];
+      const response = await fetch(searchUrl, {
+        headers: { 
+          'Accept-Language': 'en',
+          'User-Agent': 'SpottApp/1.0'
         }
       });
+      const allResults = await response.json();
       
-      const searchResults = await Promise.all(searchPromises);
-      searchResults.forEach(results => allResults.push(...results));
-      
-      const newLocations = allResults
+      const newLocations = (Array.isArray(allResults) ? allResults : [])
         .filter((result: any) => {
           if (!result.name) return false;
           
@@ -192,7 +177,7 @@ const SaveLocationPage = () => {
             isExisting: false
           };
         })
-        .filter((loc: any) => loc.distance <= 3 && loc.name) // 3km radius
+        .filter((loc: any) => loc.distance <= 2 && loc.name) // 2km radius for speed
         .sort((a: any, b: any) => a.distance - b.distance);
 
       // Remove duplicates by name
@@ -202,7 +187,7 @@ const SaveLocationPage = () => {
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-      }).slice(0, 10);
+      }).slice(0, 8);
 
       setNearbyLocations(uniqueLocations);
     } catch (error) {
