@@ -538,6 +538,7 @@ const resources = {
         museum: 'Museums',
         entertainment: 'Entertainment',
       },
+      searchingNearby: 'Searching {{category}} nearby...',
     },
     add: {
       newPost: 'New Post',
@@ -1534,6 +1535,7 @@ const resources = {
         museum: 'Museos',
         entertainment: 'Entretenimiento',
       },
+      searchingNearby: 'Buscando {{category}} cerca...',
     },
     add: {
       newPost: 'Nueva publicación',
@@ -2523,6 +2525,7 @@ const resources = {
         museum: 'Musei',
         entertainment: 'Divertimento',
       },
+      searchingNearby: 'Cercando {{category}} vicini...',
     },
     add: {
       newPost: 'Nuovo Post',
@@ -3493,6 +3496,7 @@ const resources = {
         museum: 'Musées',
         entertainment: 'Divertissement',
       },
+      searchingNearby: 'Recherche de {{category}} à proximité...',
     },
     add: {
       newPost: 'Nouveau post',
@@ -4345,6 +4349,7 @@ const resources = {
         museum: 'Museen',
         entertainment: 'Unterhaltung',
       },
+      searchingNearby: '{{category}} in der Nähe suchen...',
     },
     add: {
       newPost: 'Neuer Beitrag',
@@ -5135,6 +5140,7 @@ const resources = {
         museum: 'Museus',
         entertainment: 'Entretenimento',
       },
+      searchingNearby: 'Buscando {{category}} perto...',
     },
     add: {
       newPost: 'Nova publicação',
@@ -5876,6 +5882,7 @@ const resources = {
         museum: '博物馆',
         entertainment: '娱乐',
       },
+      searchingNearby: '正在搜索附近的{{category}}...',
     },
     add: {
       newPost: '新帖子',
@@ -6541,6 +6548,7 @@ const resources = {
         museum: '美術館・博物館',
         entertainment: 'エンターテイメント',
       },
+      searchingNearby: '近くの{{category}}を検索中...',
     },
     add: {
       newPost: '新しい投稿',
@@ -7247,6 +7255,7 @@ const resources = {
         museum: '박물관',
         entertainment: '오락',
       },
+      searchingNearby: '근처 {{category}} 검색 중...',
     },
     add: {
       newPost: '새 게시물',
@@ -7936,6 +7945,7 @@ const resources = {
         museum: 'متاحف',
         entertainment: 'ترفيه',
       },
+      searchingNearby: 'البحث عن {{category}} قريب...',
     },
     add: {
       newPost: 'منشور جديد',
@@ -8610,6 +8620,7 @@ const resources = {
         museum: 'संग्रहालय',
         entertainment: 'मनोरंजन',
       },
+      searchingNearby: 'आस-पास {{category}} खोज रहे हैं...',
     },
     add: {
       newPost: 'नई पोस्ट',
@@ -9301,6 +9312,7 @@ const resources = {
         museum: 'Музеи',
         entertainment: 'Развлечения',
       },
+      searchingNearby: 'Поиск {{category}} поблизости...',
     },
     add: {
       newPost: 'Новый пост',
