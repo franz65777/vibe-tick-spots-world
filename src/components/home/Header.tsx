@@ -33,7 +33,7 @@ const Header = ({
   return (
     <>
       <header className="sticky top-0 z-40">
-        <div className="flex items-center justify-between pl-[10px] pr-0 py-2 gap-1">
+        <div className="flex items-center justify-between pl-[10px] pr-2 py-2 gap-2">
           {/* Left: City Selection - Now with more space */}
           <div className="flex-1 min-w-0">
             <CityAutocompleteBar 
@@ -47,17 +47,17 @@ const Header = ({
           </div>
 
           {/* Right: Action Buttons */}
-          <div className="flex items-center gap-0 flex-shrink-0 pr-2.5">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Notifications Button */}
             <button 
               onClick={() => navigate('/notifications')} 
-              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all duration-200 active:scale-95"
+              className="relative w-10 h-10 flex items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 rounded-full text-foreground hover:bg-white/90 dark:hover:bg-black/60 transition-all duration-200 active:scale-95"
             >
               <div className="relative">
-                <Bell className="w-6 h-6" />
+                <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold leading-none">
+                  <div className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-[9px] font-bold leading-none">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   </div>
@@ -68,14 +68,14 @@ const Header = ({
             {/* Messages Button */}
             <button 
               onClick={() => navigate('/messages')} 
-              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all duration-200 active:scale-95"
+              className="relative w-10 h-10 flex items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 rounded-full text-foreground hover:bg-white/90 dark:hover:bg-black/60 transition-all duration-200 active:scale-95"
               aria-label="Open messages"
             >
               <div className="relative">
-                <ChatIcon size={24} />
+                <ChatIcon size={20} />
                 {unreadMessagesCount > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold leading-none">
+                  <div className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-[9px] font-bold leading-none">
                       {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                     </span>
                   </div>

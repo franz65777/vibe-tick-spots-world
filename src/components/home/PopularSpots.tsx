@@ -397,13 +397,13 @@ const PopularSpots = ({
   // Show cities only when there are city cards AND no location cards
   const showingCities = citySpots.length > 0 && popularSpots.length === 0;
   const hasResults = popularSpots.length > 0 || citySpots.length > 0;
-  return <div className="h-full px-[10px] pt-0 pb-1 bg-background/60 backdrop-blur-sm relative z-10">
+  return <div className="h-full px-[10px] pt-0 pb-1 relative z-10">
       {/* Header + dropdown trigger */}
-      <div className="relative mb-1" ref={dropdownRef}>
-        {!loading && <div className="flex items-center justify-between">
+      <div className="relative mb-0" ref={dropdownRef}>
+        {!loading && <div className="flex items-center gap-2">
             {/* Fixed height container to prevent icon movement */}
-            <div className="flex items-center gap-2 h-12">
-              <button onClick={() => setDropdownOpen(open => !open)} className="flex items-center justify-start h-12" aria-label={t('filters.openFilter', {
+            <div className="flex items-center gap-2 h-10 flex-shrink-0">
+              <button onClick={() => setDropdownOpen(open => !open)} className="flex items-center justify-center h-10" aria-label={t('filters.openFilter', {
             ns: 'home',
             defaultValue: 'Open trending filters'
           })}>
