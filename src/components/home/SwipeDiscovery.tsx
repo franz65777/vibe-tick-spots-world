@@ -259,34 +259,46 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       }
 
 
-      // Get internal locations from user_saved_locations for followed users
-      const { data: internalSaves } = await supabase
+      // Get saved locations from followed users (without auto-join since FK not defined)
+      const { data: savedLocationsData } = await supabase
         .from('user_saved_locations')
-        .select(`
-          location_id,
-          user_id,
-          created_at,
-          locations (
-            id,
-            name,
-            category,
-            city,
-            address,
-            latitude,
-            longitude,
-            image_url
-          ),
-          profiles:user_id (
-            id,
-            username,
-            avatar_url
-          )
-        `)
+        .select('location_id, user_id, created_at')
         .in('user_id', followingIds)
         .order('created_at', { ascending: false })
         .limit(100);
 
-      const raw = (internalSaves || []) as any[];
+      const savedLocations = savedLocationsData || [];
+      
+      if (savedLocations.length === 0) {
+        setFollowedUsers([]);
+        setLocations([]);
+        setCurrentIndex(0);
+        setLoading(false);
+        return;
+      }
+
+      // Get unique location IDs and user IDs
+      const locationIds = [...new Set(savedLocations.map(s => s.location_id).filter(Boolean))] as string[];
+      const userIds = [...new Set(savedLocations.map(s => s.user_id).filter(Boolean))] as string[];
+
+      // Fetch locations and profiles in parallel
+      const [locationsResult, profilesResult] = await Promise.all([
+        supabase.from('locations').select('id, name, category, city, address, latitude, longitude, image_url').in('id', locationIds),
+        supabase.from('profiles').select('id, username, avatar_url').in('id', userIds)
+      ]);
+
+      // Build lookup maps
+      const locationsMap = new Map((locationsResult.data || []).map(l => [l.id, l]));
+      const profilesMap = new Map((profilesResult.data || []).map(p => [p.id, p]));
+
+      // Combine into raw data format that the rest of the code expects
+      const raw = savedLocations.map(s => ({
+        location_id: s.location_id,
+        user_id: s.user_id,
+        created_at: s.created_at,
+        locations: locationsMap.get(s.location_id as string) || null,
+        profiles: profilesMap.get(s.user_id) || null
+      }));
 
       // Build followed users list, excluding already processed and saved locations
       try {
