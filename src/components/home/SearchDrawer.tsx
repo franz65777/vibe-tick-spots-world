@@ -459,6 +459,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       setIsDragging(false);
       activePointerIdRef.current = null;
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
 
       const startedMode = dragStartedModeRef.current;
 
@@ -466,14 +469,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       if (startedMode === 'closed') {
         const shouldOpenTrending = dragProgress > 0.08;
         setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
-        // Note: dragProgress will be synced to TRENDING_PROGRESS by the useEffect.
         if (!shouldOpenTrending) setDragProgress(0);
         dragStartedOpenRef.current = false;
         return;
       }
 
-      const velocityThreshold = 0.2;
-      const openThreshold = 0.6;
+      // More sensitive velocity threshold for closing
+      const velocityThreshold = 0.15;
+      // Lower threshold to make closing easier
+      const openThreshold = 0.45;
 
       let shouldStayOpen: boolean;
       if (Math.abs(velocityRef.current) > velocityThreshold) {
@@ -554,14 +558,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     if (startedMode === 'closed') {
       const shouldOpenTrending = dragProgress > 0.08;
       setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
-      // Note: dragProgress will be synced to TRENDING_PROGRESS by the useEffect.
       if (!shouldOpenTrending) setDragProgress(0);
       dragStartedOpenRef.current = false;
       return;
     }
 
-    const velocityThreshold = 0.2;
-    const openThreshold = 0.6;
+    // More sensitive velocity threshold for closing
+    const velocityThreshold = 0.15;
+    // Lower threshold to make closing easier
+    const openThreshold = 0.45;
 
     let shouldStayOpen: boolean;
     if (Math.abs(velocityRef.current) > velocityThreshold) {
