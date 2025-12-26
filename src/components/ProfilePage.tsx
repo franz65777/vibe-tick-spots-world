@@ -158,7 +158,7 @@ const ProfilePage = memo(() => {
       />
       
       {/* Tab Content */}
-      <div className="flex-1 pb-4">
+      <div className="flex-1 pb-24">
         {renderTabContent()}
       </div>
 
