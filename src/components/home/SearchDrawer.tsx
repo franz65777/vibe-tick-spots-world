@@ -579,8 +579,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   }, [dragProgress, drawerMode]);
 
-  // Trending mode uses a compact height (just enough for tabs + one row of cards).
-  const TRENDING_PROGRESS = 0.38;
+  // Trending mode opens to a medium height so the layout is fully readable (like Search),
+  // while still leaving map context visible.
+  const TRENDING_PROGRESS = 0.62;
 
   useEffect(() => {
     // Keep dragProgress in sync only for settled states.
@@ -592,7 +593,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
 
     if (drawerMode === 'trending') {
-      // Trending opens to a compact height, not full.
       if (dragProgress !== TRENDING_PROGRESS) setDragProgress(TRENDING_PROGRESS);
       return;
     }
@@ -721,7 +721,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     >
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
-        <div className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full">
+        <div className="w-full relative bg-card/95 backdrop-blur-xl shadow-2xl border border-border/60 rounded-full">
           {/* Drag handle inside search bar at top - for opening trending */}
           <div
             className="absolute top-1 left-1/2 -translate-x-1/2 z-10 px-4 py-1 cursor-grab active:cursor-grabbing"
@@ -748,17 +748,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 {currentCity || t('searchCities', { ns: 'home' })}
               </span>
             </div>
-            
-            {/* Right area - tap opens trending at compact height */}
+
+            {/* Right area - tap opens trending */}
             <div
               className="flex-1 h-full cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setDrawerMode('trending');
-                // dragProgress will be synced to TRENDING_PROGRESS by the useEffect
               }}
             />
-            
+
             {/* Repositioning button */}
             <button
               onClick={(e) => {
@@ -781,7 +780,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div
-        className="w-full overflow-hidden bg-white/40 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 dark:border-white/10 flex flex-col"
+        className="w-full overflow-hidden bg-card text-card-foreground rounded-3xl shadow-2xl border border-border/60 flex flex-col"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
@@ -829,7 +828,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                         })
                       : t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })
                   }
-                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-white/60 dark:bg-slate-700/60 border border-white/50 dark:border-white/20 rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-background border border-input rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
                   autoFocus
                   disabled={activeNearbyCategory !== null && isLoading}
                 />
@@ -861,7 +860,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 setDragProgress(1);
                 setTimeout(() => inputRef.current?.focus(), 100);
               }}
-              className="mx-4 mb-3 h-11 rounded-full bg-white/60 dark:bg-slate-700/60 border border-white/50 dark:border-white/20 backdrop-blur-md flex items-center gap-3 px-4 text-left"
+              className="mx-4 mb-3 h-11 rounded-full bg-background border border-input flex items-center gap-3 px-4 text-left"
               aria-label={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
             >
               <span className="text-lg leading-none">📌</span>
