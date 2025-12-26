@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import i18n from 'i18next';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
-import { loadingKeywordsTranslations, loadingKeywordKeys } from '@/i18n-loading-keywords';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +55,6 @@ const SaveLocationPage = () => {
     return shouldRestore && !!sessionStorage.getItem('saveLocationSearchQuery');
   });
   const [initialLoading, setInitialLoading] = useState(true);
-  const [keywordIndex, setKeywordIndex] = useState(0);
   
   // Cache for existing locations to avoid repeated fetches
   const existingLocationsCache = React.useRef<{
@@ -68,47 +65,35 @@ const SaveLocationPage = () => {
   
   // Abort controller for search requests
   const searchAbortRef = React.useRef<AbortController | null>(null);
-
-  // Get current language loading translations
-  const currentLang = i18n.language?.split('-')[0] || 'en';
-  const loadingTranslations = useMemo(() => {
-    const lang = (loadingKeywordsTranslations as any)[currentLang] || loadingKeywordsTranslations.en;
-    return lang.loading;
-  }, [currentLang]);
-
-  // Cycle through keywords for loading animation
-  useEffect(() => {
-    if (!initialLoading) return;
-    
-    const interval = setInterval(() => {
-      setKeywordIndex((prev) => (prev + 1) % loadingKeywordKeys.length);
-    }, 800);
-    
-    return () => clearInterval(interval);
-  }, [initialLoading]);
   
-  // Load existing locations cache once
+  // Load existing locations cache in background (don't block initial render)
   useEffect(() => {
     const loadExistingLocations = async () => {
       if (existingLocationsCache.current.loaded) return;
       
-      const { data: existingLocations } = await supabase
-        .from('locations')
-        .select('name, latitude, longitude, city');
-      
-      existingLocationsCache.current.byCoords = new Set(
-        existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
-          `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
-        ) || []
-      );
-      
-      existingLocationsCache.current.byNameCity = new Set(
-        existingLocations?.map(loc => 
-          `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
-        ) || []
-      );
-      
-      existingLocationsCache.current.loaded = true;
+      try {
+        const { data: existingLocations } = await supabase
+          .from('locations')
+          .select('name, latitude, longitude, city')
+          .limit(500); // Limit for faster load
+        
+        existingLocationsCache.current.byCoords = new Set(
+          existingLocations?.filter(loc => loc.latitude && loc.longitude).map(loc => 
+            `${Number(loc.latitude).toFixed(4)}-${Number(loc.longitude).toFixed(4)}`
+          ) || []
+        );
+        
+        existingLocationsCache.current.byNameCity = new Set(
+          existingLocations?.map(loc => 
+            `${loc.name?.toLowerCase().trim()}-${loc.city?.toLowerCase().trim() || ''}`
+          ) || []
+        );
+        
+        existingLocationsCache.current.loaded = true;
+      } catch (e) {
+        console.log('Cache load failed, continuing without:', e);
+        existingLocationsCache.current.loaded = true; // Mark as loaded to prevent retries
+      }
     };
     
     loadExistingLocations();
@@ -124,27 +109,44 @@ const SaveLocationPage = () => {
   const fetchNearbyLocations = async () => {
     if (!location) return;
     
+    // Show loading state immediately but don't block on cache
     setInitialLoading(true);
+    
     try {
       const lat = location.latitude!;
       const lng = location.longitude!;
       
-      // Use cached existing locations
+      // Use cached existing locations (non-blocking - may be empty on first load)
       const existingByCoords = existingLocationsCache.current.byCoords;
       const existingByNameCity = existingLocationsCache.current.byNameCity;
       
-      // Single search term for faster initial load - fetch more later if needed
-      const searchUrl = `https://nominatim.openstreetmap.org/search?q=restaurant&format=json&limit=20&bounded=1&viewbox=${lng - 0.02},${lat + 0.02},${lng + 0.02},${lat - 0.02}&addressdetails=1`;
+      // Search for POIs by category types around user location using q= parameter
+      const searchTerms = ['restaurant', 'bar', 'cafe', 'pizza'];
       
-      const response = await fetch(searchUrl, {
-        headers: { 
-          'Accept-Language': 'en',
-          'User-Agent': 'SpottApp/1.0'
+      // Fetch POIs for each search term (parallel)
+      const searchPromises = searchTerms.map(async (term) => {
+        const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(term)}&format=json&limit=15&bounded=1&viewbox=${lng - 0.03},${lat + 0.03},${lng + 0.03},${lat - 0.03}&addressdetails=1`;
+        
+        try {
+          const response = await fetch(searchUrl, {
+            headers: { 
+              'Accept-Language': 'en',
+              'User-Agent': 'SpottApp/1.0'
+            }
+          });
+          const results = await response.json();
+          return Array.isArray(results) ? results : [];
+        } catch (e) {
+          console.log(`Failed to fetch ${term}:`, e);
+          return [];
         }
       });
-      const allResults = await response.json();
       
-      const newLocations = (Array.isArray(allResults) ? allResults : [])
+      const searchResults = await Promise.all(searchPromises);
+      const allResults: any[] = [];
+      searchResults.forEach(results => allResults.push(...results));
+      
+      const newLocations = allResults
         .filter((result: any) => {
           if (!result.name) return false;
           
@@ -177,7 +179,7 @@ const SaveLocationPage = () => {
             isExisting: false
           };
         })
-        .filter((loc: any) => loc.distance <= 2 && loc.name) // 2km radius for speed
+        .filter((loc: any) => loc.distance <= 3 && loc.name) // 3km radius
         .sort((a: any, b: any) => a.distance - b.distance);
 
       // Remove duplicates by name
@@ -187,7 +189,7 @@ const SaveLocationPage = () => {
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-      }).slice(0, 8);
+      }).slice(0, 10);
 
       setNearbyLocations(uniqueLocations);
     } catch (error) {
@@ -612,14 +614,23 @@ const SaveLocationPage = () => {
             </div>
           )}
 
-          {/* Loading State */}
+          {/* Loading State - Show skeleton cards for faster perceived load */}
           {!searchQuery && initialLoading && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="text-lg font-medium">🔍 {loadingTranslations.findingNearbyPlaces}</p>
-              <p className="text-xl font-semibold text-primary mt-3 transition-all duration-300">
-                {loadingTranslations.keywords[loadingKeywordKeys[keywordIndex]]}
-              </p>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">{t('nearbyPlaces')}</h3>
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="w-full p-4 rounded-xl border border-border animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-muted" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded w-3/4" />
+                        <div className="h-3 bg-muted rounded w-1/2" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
