@@ -44,7 +44,6 @@ interface SearchDrawerProps {
   onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-// Cache for popular spots
 const spotsCache = new Map<string, { spots: PopularSpot[]; timestamp: number }>();
 const SPOTS_CACHE_DURATION = 5 * 60 * 1000;
 const SPOTS_CACHE_VERSION = 2;
@@ -71,7 +70,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Smooth drag state
   const [dragProgress, setDragProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -80,19 +78,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastYRef = useRef(0);
   const lastTimeRef = useRef(0);
   
-  // Trending section state
   const [filterType, setFilterType] = useState<FilterType>('most_saved');
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loadingSpots, setLoadingSpots] = useState(false);
   
   const processedLocationRef = useRef<string>('');
 
-  // Sync drawer state with parent
   useEffect(() => {
     onDrawerStateChange?.(isDrawerOpen);
   }, [isDrawerOpen, onDrawerStateChange]);
 
-  // Handle geolocation success
   useEffect(() => {
     if (!location || !location.city || location.city === 'Unknown City') return;
     
@@ -103,7 +98,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
   }, [location?.latitude, location?.longitude, location?.city]);
 
-  // Fetch trending spots when drawer opens or filter changes
   useEffect(() => {
     if (isDrawerOpen) {
       fetchPopularSpots();
@@ -229,7 +223,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     getCurrentLocation();
   };
 
-  // Fluid touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if ((e.target as HTMLElement).tagName === 'INPUT') return;
     
@@ -326,7 +319,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     <div
       ref={drawerRef}
       className={cn(
-        "left-3 z-[1000] flex flex-col items-center",
+        "left-3 z-[1000] flex flex-col",
         isExpanded ? 'fixed' : 'absolute'
       )}
       style={{
@@ -340,12 +333,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Drag handle - above search bar */}
-      <div className="w-10 h-1 bg-muted-foreground/50 rounded-full mb-2" />
-      
-      {/* Search bar - no container, just the input */}
-      <div className="w-full relative">
-        <div className="relative">
+      {/* Search bar with integrated drag handle */}
+      <div className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full overflow-hidden">
+        {/* Drag handle inside at top center */}
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-muted-foreground/40 rounded-full z-10" />
+        
+        <div className="relative pt-3">
           {isLoading || geoLoading ? (
             <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
           ) : null}
@@ -360,12 +353,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             })()}
             onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
             onFocus={() => onFocusOpen?.()}
-            className="w-full h-14 pl-4 pr-14 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-base font-medium text-foreground"
+            className="w-full h-10 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
           />
           <button
             onClick={handleCurrentLocation}
             disabled={geoLoading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
             aria-label={t('currentLocation', { ns: 'common' })}
           >
             <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
@@ -373,7 +366,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         </div>
       </div>
 
-      {/* Trending section - slides up from below search bar */}
+      {/* Trending section - slides up */}
       <div 
         className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 mt-2"
         style={{
@@ -383,7 +376,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           display: dragProgress > 0 ? 'block' : 'none',
         }}
       >
-        {/* Filter chips */}
         <div className="px-3 pt-3 pb-2">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
             {filterOptions.map((option) => (
@@ -404,7 +396,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           </div>
         </div>
 
-        {/* Trending places list */}
         <div className="px-3 pb-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-foreground">
