@@ -333,25 +333,28 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Search bar with integrated drag handle */}
-      <div className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full overflow-hidden">
+      {/* Search bar with integrated drag handle - touch target for drawer */}
+      <div 
+        className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full"
+        style={{ touchAction: 'none' }}
+      >
         {/* Drag handle inside at top center */}
-        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-muted-foreground/40 rounded-full z-10" />
+        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
         
         <div className="relative pt-3">
-          {isLoading || geoLoading ? (
-            <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
-          ) : null}
           <input
             ref={inputRef}
             type="text"
             placeholder={t('searchCities', { ns: 'home' })}
             value={(() => {
+              // When user is typing (searchQuery different from currentCity), show search emoji
+              if (searchQuery && searchQuery !== currentCity) return `🔎  ${searchQuery}`;
+              // When showing currentCity, show pin
               if (!searchQuery && currentCity) return `📌  ${currentCity}`;
               if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
               return searchQuery;
             })()}
-            onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
+            onChange={(e) => onSearchChange(e.target.value.replace(/^[📌🔎]\s*/, ''))}
             onFocus={() => onFocusOpen?.()}
             className="w-full h-10 pl-4 pr-12 bg-transparent focus:outline-none transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
           />
