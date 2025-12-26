@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Loader2, Navigation2 } from 'lucide-react';
+import { Loader2, Navigation2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
-import { searchPhoton, PhotonResult } from '@/lib/photonGeocoding';
+import { PhotonResult } from '@/lib/photonGeocoding';
 import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { getCategoryIcon } from '@/utils/categoryIcons';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,7 +62,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   isExpanded = false,
   onDrawerStateChange,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,7 +72,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   // Smooth drag state
-  const [dragProgress, setDragProgress] = useState(0); // 0 = closed, 1 = open
+  const [dragProgress, setDragProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const dragStartProgress = useRef(0);
@@ -221,7 +219,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   };
 
-  const handleCurrentLocation = async () => {
+  const handleCurrentLocation = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (location && location.city && location.city !== 'Unknown City') {
       onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
       onSearchChange(location.city);
@@ -230,8 +229,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     getCurrentLocation();
   };
 
-  // Fluid touch handlers
+  // Fluid touch handlers - applied to the whole search bar
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't start drag if touching the input
+    if ((e.target as HTMLElement).tagName === 'INPUT') return;
+    
     setIsDragging(true);
     dragStartY.current = e.touches[0].clientY;
     dragStartProgress.current = dragProgress;
@@ -255,13 +257,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     lastTimeRef.current = currentTime;
     
     const deltaY = dragStartY.current - currentY;
-    const maxDrag = 280; // Max height of trending section
+    const maxDrag = 280;
     
-    // Calculate new progress based on drag distance
     const dragDelta = deltaY / maxDrag;
     let newProgress = dragStartProgress.current + dragDelta;
     
-    // Clamp with slight rubber band effect
+    // Rubber band effect
     if (newProgress < 0) {
       newProgress = newProgress * 0.3;
     } else if (newProgress > 1) {
@@ -275,21 +276,17 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     if (!isDragging) return;
     setIsDragging(false);
     
-    // Use velocity to determine final state
     const velocityThreshold = 0.3;
     const openThreshold = 0.3;
     
     let shouldOpen: boolean;
     
     if (Math.abs(velocityRef.current) > velocityThreshold) {
-      // Use velocity direction
       shouldOpen = velocityRef.current > 0;
     } else {
-      // Use position threshold
       shouldOpen = dragProgress > openThreshold;
     }
     
-    // Animate to final state
     setDragProgress(shouldOpen ? 1 : 0);
     setIsDrawerOpen(shouldOpen);
   }, [isDragging, dragProgress]);
@@ -300,16 +297,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setDragProgress(isDrawerOpen ? 1 : 0);
     }
   }, [isDrawerOpen, isDragging]);
-
-  const getFilterIcon = (type: FilterType) => {
-    switch (type) {
-      case 'discount': return discountIcon;
-      case 'event': return eventIcon;
-      case 'promotion': return promotionIcon;
-      case 'new': return newIcon;
-      default: return trendingIcon;
-    }
-  };
 
   const getFilterLabel = (type: FilterType) => {
     switch (type) {
@@ -345,62 +332,58 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       ref={drawerRef}
       className={cn(
         "left-3 z-[1000]",
-        isExpanded ? 'fixed' : 'absolute',
-        isDragging ? '' : 'transition-all duration-300 ease-out'
+        isExpanded ? 'fixed' : 'absolute'
       )}
       style={{
         bottom: isExpanded 
           ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
           : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))',
-        // Leave space for list button when closed
         right: isDrawerOpen || dragProgress > 0.1 ? '0.75rem' : '3.25rem',
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
     >
-      {/* Main drawer container */}
+      {/* Search bar with integrated drawer - taller design */}
       <div 
-        className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 overflow-hidden"
+        className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 overflow-hidden touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         }}
       >
-        {/* Drag handle */}
-        <div 
-          className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none select-none"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
-        </div>
-
-        {/* Search bar */}
-        <div className="px-3 pb-3">
-          <div className="relative">
-            {isLoading || geoLoading ? (
-              <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
-            ) : null}
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={t('searchCities', { ns: 'home' })}
-              value={(() => {
-                if (!searchQuery && currentCity) return `📌  ${currentCity}`;
-                if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
-                return searchQuery;
-              })()}
-              onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
-              onFocus={() => onFocusOpen?.()}
-              className="w-full h-10 pl-3 pr-10 rounded-full bg-muted/50 border border-border/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
-            />
-            <button
-              onClick={handleCurrentLocation}
-              disabled={geoLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
-              aria-label={t('currentLocation', { ns: 'common' })}
-            >
-              <Navigation2 className={cn("w-4 h-4 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
-            </button>
+        {/* Search bar with integrated drag handle */}
+        <div className="relative">
+          {/* Drag handle integrated at top of search bar */}
+          <div className="absolute top-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
+          
+          <div className="pt-4 px-3 pb-3">
+            <div className="relative">
+              {isLoading || geoLoading ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
+              ) : null}
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder={t('searchCities', { ns: 'home' })}
+                value={(() => {
+                  if (!searchQuery && currentCity) return `📌  ${currentCity}`;
+                  if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
+                  return searchQuery;
+                })()}
+                onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
+                onFocus={() => onFocusOpen?.()}
+                className="w-full h-12 pl-4 pr-12 rounded-xl bg-muted/40 border border-border/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-base font-medium text-foreground"
+              />
+              <button
+                onClick={handleCurrentLocation}
+                disabled={geoLoading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+                aria-label={t('currentLocation', { ns: 'common' })}
+              >
+                <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
+              </button>
+            </div>
           </div>
         </div>
 
