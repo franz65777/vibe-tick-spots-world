@@ -564,14 +564,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           {isDrawerOpen && (
             <div className="flex items-center gap-3 px-4 pb-3">
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">🔍</span>
                 <input
                   ref={inputRef}
                   type="text"
                   value={internalQuery}
                   onChange={(e) => setInternalQuery(e.target.value)}
                   placeholder={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
-                  className="w-full pl-10 pr-10 py-3 text-base bg-muted/50 border border-border rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-muted/50 border border-border rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
                   autoFocus
                 />
                 {isLoading && (
@@ -595,10 +595,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
-          {/* Popular/Trending cities when no query */}
+          {/* Top 5 cities with most saved locations */}
           {!isSearching && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {(trendingCities.length > 0 ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
+              {(trendingCities.length > 0 
+                ? trendingCities.slice(0, 5) 
+                : popularCities.slice(0, 5).map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))
+              ).map((item) => {
                 const translatedName = translateCityName(item.name, i18n.language);
                 const cityData = popularCities.find(c => c.name.toLowerCase() === item.name.toLowerCase());
                 return (
