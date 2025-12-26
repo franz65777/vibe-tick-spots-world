@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import MapCategoryFilters from './MapCategoryFilters';
-import CityAutocompleteBar from '../common/CityAutocompleteBar';
+import SearchDrawer from './SearchDrawer';
 import { cn } from '@/lib/utils';
 import { LocationShareModal } from '../explore/LocationShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
@@ -296,29 +296,21 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Search Bar - Bottom Left */}
+        {/* Search Drawer - Bottom */}
         {!isListViewOpen && (
-          <div 
-            className={cn(
-              "left-3 right-14 z-[1000] transition-opacity duration-300",
-              isExpanded ? 'fixed' : 'absolute',
-              filtersVisible ? "opacity-100" : "opacity-0"
-            )}
-            style={{
-              bottom: isExpanded 
-                ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
-                : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
-            }}
-          >
-            <CityAutocompleteBar 
+          <div className={cn(
+            "transition-opacity duration-300",
+            filtersVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}>
+            <SearchDrawer 
               currentCity={currentCity}
               onCitySelect={onCitySelect || (() => {})}
               searchQuery={searchQuery}
               onSearchChange={onSearchChange || (() => {})}
-              onSearchKeyPress={() => {}}
               onFocusOpen={onOpenSearchOverlay}
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={onCenterStatusChange}
+              isExpanded={isExpanded}
             />
           </div>
         )}
@@ -327,14 +319,14 @@ const MapSection = ({
         {!isListViewOpen && (
         <div 
           className={cn(
-            "right-3 z-[1000] flex flex-row gap-2 transition-all duration-150",
+            "right-3 z-[1001] flex flex-row gap-2 transition-all duration-150",
             isExpanded ? 'fixed' : 'absolute',
             filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
           )} 
           style={{
             bottom: isExpanded 
-              ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' 
-              : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+              ? 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' 
+              : 'calc(9rem + env(safe-area-inset-bottom, 0px))'
           }}>
           {/* List View Toggle */}
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
