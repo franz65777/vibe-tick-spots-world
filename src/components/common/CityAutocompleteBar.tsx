@@ -215,9 +215,9 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     <div className="group relative" id="city-search-bar">
       <div className="relative">
         {isLoading || geoLoading ? (
-          <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
         ) : (
-          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
         )}
         <input
           ref={inputRef}
@@ -236,15 +236,15 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
               setLocationResults([]);
             }, 200);
           }}
-          className="w-full h-11 pl-11 pr-14 rounded-full bg-muted/50 dark:bg-muted border-2 border-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
+          className="w-full h-10 pl-9 pr-10 rounded-full bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
         />
         <button
           onClick={handleCurrentLocation}
           disabled={geoLoading}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent rounded-full transition-colors disabled:opacity-50"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
           aria-label={t('currentLocation', { ns: 'common' })}
         >
-          <Locate className="w-4 h-4 text-primary" />
+          <Locate className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
