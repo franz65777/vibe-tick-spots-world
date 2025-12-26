@@ -217,12 +217,12 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         {isLoading || geoLoading ? (
           <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
         ) : (
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">📌</span>
         )}
         <input
           ref={inputRef}
           type="text"
-          placeholder={searchQuery ? '' : `📌 ${currentCity || t('searchCities', { ns: 'home' })}`}
+          placeholder={searchQuery ? '' : currentCity || t('searchCities', { ns: 'home' })}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
