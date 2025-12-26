@@ -229,9 +229,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     getCurrentLocation();
   };
 
-  // Fluid touch handlers - applied to the whole search bar
+  // Fluid touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Don't start drag if touching the input
     if ((e.target as HTMLElement).tagName === 'INPUT') return;
     
     setIsDragging(true);
@@ -249,7 +248,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     const currentTime = Date.now();
     const deltaTime = currentTime - lastTimeRef.current;
     
-    // Calculate velocity for momentum
     if (deltaTime > 0) {
       velocityRef.current = (lastYRef.current - currentY) / deltaTime;
     }
@@ -262,7 +260,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     const dragDelta = deltaY / maxDrag;
     let newProgress = dragStartProgress.current + dragDelta;
     
-    // Rubber band effect
     if (newProgress < 0) {
       newProgress = newProgress * 0.3;
     } else if (newProgress > 1) {
@@ -291,7 +288,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setIsDrawerOpen(shouldOpen);
   }, [isDragging, dragProgress]);
 
-  // Sync dragProgress with drawer state when not dragging
   useEffect(() => {
     if (!isDragging) {
       setDragProgress(isDrawerOpen ? 1 : 0);
@@ -323,7 +319,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     setDragProgress(0);
   };
 
-  // Calculate animated values based on dragProgress
   const trendingHeight = Math.max(0, dragProgress) * 280;
   const trendingOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
@@ -331,7 +326,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     <div
       ref={drawerRef}
       className={cn(
-        "left-3 z-[1000]",
+        "left-3 z-[1000] flex flex-col items-center",
         isExpanded ? 'fixed' : 'absolute'
       )}
       style={{
@@ -341,132 +336,123 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         right: isDrawerOpen || dragProgress > 0.1 ? '0.75rem' : '3.25rem',
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      {/* Search bar with integrated drawer - taller design */}
+      {/* Drag handle - above search bar */}
+      <div className="w-10 h-1 bg-muted-foreground/50 rounded-full mb-2" />
+      
+      {/* Search bar - no container, just the input */}
+      <div className="w-full relative">
+        <div className="relative">
+          {isLoading || geoLoading ? (
+            <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
+          ) : null}
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={t('searchCities', { ns: 'home' })}
+            value={(() => {
+              if (!searchQuery && currentCity) return `📌  ${currentCity}`;
+              if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
+              return searchQuery;
+            })()}
+            onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
+            onFocus={() => onFocusOpen?.()}
+            className="w-full h-14 pl-4 pr-14 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-base font-medium text-foreground"
+          />
+          <button
+            onClick={handleCurrentLocation}
+            disabled={geoLoading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
+            aria-label={t('currentLocation', { ns: 'common' })}
+          >
+            <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
+          </button>
+        </div>
+      </div>
+
+      {/* Trending section - slides up from below search bar */}
       <div 
-        className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 overflow-hidden touch-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl border border-border/30 mt-2"
         style={{
+          height: trendingHeight,
+          opacity: trendingOpacity,
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          display: dragProgress > 0 ? 'block' : 'none',
         }}
       >
-        {/* Search bar with integrated drag handle */}
-        <div className="relative">
-          {/* Drag handle integrated at top of search bar */}
-          <div className="absolute top-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-muted-foreground/40 rounded-full z-10" />
-          
-          <div className="pt-4 px-3 pb-3">
-            <div className="relative">
-              {isLoading || geoLoading ? (
-                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground animate-spin" />
-              ) : null}
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder={t('searchCities', { ns: 'home' })}
-                value={(() => {
-                  if (!searchQuery && currentCity) return `📌  ${currentCity}`;
-                  if (searchQuery && currentCity && searchQuery === currentCity) return `📌  ${searchQuery}`;
-                  return searchQuery;
-                })()}
-                onChange={(e) => onSearchChange(e.target.value.replace(/^📌\s*/, ''))}
-                onFocus={() => onFocusOpen?.()}
-                className="w-full h-12 pl-4 pr-12 rounded-xl bg-muted/40 border border-border/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-muted-foreground text-base font-medium text-foreground"
-              />
+        {/* Filter chips */}
+        <div className="px-3 pt-3 pb-2">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+            {filterOptions.map((option) => (
               <button
-                onClick={handleCurrentLocation}
-                disabled={geoLoading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
-                aria-label={t('currentLocation', { ns: 'common' })}
+                key={option.value}
+                onClick={() => setFilterType(option.value)}
+                className={cn(
+                  "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  filterType === option.value
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                )}
               >
-                <Navigation2 className={cn("w-5 h-5 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
+                <img src={option.icon} alt="" className="w-4 h-4 object-contain" />
+                <span>{getFilterLabel(option.value)}</span>
               </button>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Trending section - animated reveal */}
-        <div 
-          className="overflow-hidden"
-          style={{
-            height: trendingHeight,
-            opacity: trendingOpacity,
-            transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          }}
-        >
-          {/* Filter chips */}
-          <div className="px-3 pb-3">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-              {filterOptions.map((option) => (
+        {/* Trending places list */}
+        <div className="px-3 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              {getFilterLabel(filterType)} {currentCity ? `in ${currentCity}` : ''}
+            </h3>
+            {popularSpots.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {popularSpots.length} {t('places', { ns: 'common', defaultValue: 'places' })}
+              </span>
+            )}
+          </div>
+
+          {loadingSpots ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            </div>
+          ) : popularSpots.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {popularSpots.map((spot) => (
                 <button
-                  key={option.value}
-                  onClick={() => setFilterType(option.value)}
-                  className={cn(
-                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                    filterType === option.value
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                  )}
+                  key={spot.id}
+                  onClick={() => handleSpotClick(spot)}
+                  className="flex-shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors min-w-[80px] max-w-[80px]"
                 >
-                  <img src={option.icon} alt="" className="w-4 h-4 object-contain" />
-                  <span>{getFilterLabel(option.value)}</span>
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <CategoryIcon category={spot.category} className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-medium text-foreground text-center line-clamp-2 leading-tight">
+                    {spot.name}
+                  </span>
+                  {spot.savesCount > 0 && (
+                    <span className="text-[9px] text-muted-foreground">
+                      {spot.savesCount} saves
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Trending places list */}
-          <div className="px-3 pb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-foreground">
-                {getFilterLabel(filterType)} {currentCity ? `in ${currentCity}` : ''}
-              </h3>
-              {popularSpots.length > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {popularSpots.length} {t('places', { ns: 'common', defaultValue: 'places' })}
-                </span>
-              )}
-            </div>
-
-            {loadingSpots ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              </div>
-            ) : popularSpots.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {popularSpots.map((spot) => (
-                  <button
-                    key={spot.id}
-                    onClick={() => handleSpotClick(spot)}
-                    className="flex-shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors min-w-[80px] max-w-[80px]"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <CategoryIcon category={spot.category} className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] font-medium text-foreground text-center line-clamp-2 leading-tight">
-                      {spot.name}
-                    </span>
-                    {spot.savesCount > 0 && (
-                      <span className="text-[9px] text-muted-foreground">
-                        {spot.savesCount} saves
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                {t('filters.noLocationsWithFilter', {
-                  ns: 'home',
-                  filter: getFilterLabel(filterType).toLowerCase(),
-                  city: currentCity,
-                  defaultValue: `No ${getFilterLabel(filterType).toLowerCase()} in ${currentCity}`
-                })}
-              </p>
-            )}
-          </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              {t('filters.noLocationsWithFilter', {
+                ns: 'home',
+                filter: getFilterLabel(filterType).toLowerCase(),
+                city: currentCity,
+                defaultValue: `No ${getFilterLabel(filterType).toLowerCase()} in ${currentCity}`
+              })}
+            </p>
+          )}
         </div>
       </div>
     </div>
