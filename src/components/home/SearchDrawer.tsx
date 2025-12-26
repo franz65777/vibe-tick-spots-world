@@ -462,11 +462,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       const startedMode = dragStartedModeRef.current;
 
-      // Drag started CLOSED: pulling up should open Trending (FULL), not a preview.
+      // Drag started CLOSED: pulling up should open Trending at compact height.
       if (startedMode === 'closed') {
         const shouldOpenTrending = dragProgress > 0.08;
         setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
-        setDragProgress(shouldOpenTrending ? 1 : 0);
+        // Note: dragProgress will be synced to TRENDING_PROGRESS by the useEffect.
+        if (!shouldOpenTrending) setDragProgress(0);
         dragStartedOpenRef.current = false;
         return;
       }
@@ -549,11 +550,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
     const startedMode = dragStartedModeRef.current;
 
-    // Drag started CLOSED: pulling up should open Trending (FULL), not a preview.
+    // Drag started CLOSED: pulling up should open Trending at compact height.
     if (startedMode === 'closed') {
       const shouldOpenTrending = dragProgress > 0.08;
       setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
-      setDragProgress(shouldOpenTrending ? 1 : 0);
+      // Note: dragProgress will be synced to TRENDING_PROGRESS by the useEffect.
+      if (!shouldOpenTrending) setDragProgress(0);
       dragStartedOpenRef.current = false;
       return;
     }
@@ -577,6 +579,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
   }, [dragProgress, drawerMode]);
 
+  // Trending mode uses a compact height (just enough for tabs + one row of cards).
+  const TRENDING_PROGRESS = 0.38;
+
   useEffect(() => {
     // Keep dragProgress in sync only for settled states.
     if (isDragging) return;
@@ -587,8 +592,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     }
 
     if (drawerMode === 'trending') {
-      // Trending should open fully (no preview/peek).
-      if (dragProgress !== 1) setDragProgress(1);
+      // Trending opens to a compact height, not full.
+      if (dragProgress !== TRENDING_PROGRESS) setDragProgress(TRENDING_PROGRESS);
       return;
     }
 
@@ -744,13 +749,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </span>
             </div>
             
-            {/* Right area - tap opens trending (FULL) */}
+            {/* Right area - tap opens trending at compact height */}
             <div
               className="flex-1 h-full cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setDrawerMode('trending');
-                setDragProgress(1);
+                // dragProgress will be synced to TRENDING_PROGRESS by the useEffect
               }}
             />
             
