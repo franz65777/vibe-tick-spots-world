@@ -570,7 +570,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       {/* Search bar at bottom - hide when drawer is open */}
       {!isDrawerOpen && (
         <div 
-          className="w-full relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-xl border border-border/30 rounded-full"
+          className="w-full relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-2xl border border-white/40 dark:border-white/20 rounded-full"
           style={{ touchAction: 'none' }}
           onClick={handleSearchBarClick}
         >
@@ -597,7 +597,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div 
-        className="w-full overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-xl border border-border/30 flex flex-col"
+        className="w-full overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/40 dark:border-white/20 flex flex-col"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
