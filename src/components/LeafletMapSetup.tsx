@@ -1182,21 +1182,17 @@ const SharingControls = ({
   t: any;
   filtersVisible?: boolean;
 }) => {
-  const { isFilterExpanded, isFriendsDropdownOpen, filterDropdownRightEdge } = useMapFilter();
+  const { isFilterExpanded, isFriendsDropdownOpen } = useMapFilter();
   
   if (!userActiveShare || isFilterExpanded || isFriendsDropdownOpen) return null;
   
-  // Position directly next to the filter dropdown using its right edge + small gap
-  const leftPosition = filterDropdownRightEdge + 6; // right edge + 6px gap
-  
   return (
     <div 
-      className={`${fullScreen ? 'fixed' : 'absolute'} z-[1000] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`${fullScreen ? 'fixed' : 'absolute'} left-3 z-[1001] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       style={{ 
-        left: `${leftPosition}px`,
         bottom: fullScreen 
           ? 'calc(env(safe-area-inset-bottom, 0px) + 4.5rem)'
-          : 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+          : 'calc(8.5rem + env(safe-area-inset-bottom, 0px))'
       }}
     >
       <button
