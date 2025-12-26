@@ -75,6 +75,16 @@ const HomePage = memo(() => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  const [isCenteredOnUser, setIsCenteredOnUser] = useState(false);
+
+  // Listen for map movement to reset centered state
+  useEffect(() => {
+    const handleMapMoved = () => {
+      setIsCenteredOnUser(false);
+    };
+    window.addEventListener('map:user-moved', handleMapMoved);
+    return () => window.removeEventListener('map:user-moved', handleMapMoved);
+  }, []);
 
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -715,6 +725,8 @@ const HomePage = memo(() => {
               onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
               onCitySelect={handleCityChange}
               onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
+              isCenteredOnUser={isCenteredOnUser}
+              onCenterStatusChange={setIsCenteredOnUser}
             />
           </div>
         )}

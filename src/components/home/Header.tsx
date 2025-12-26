@@ -15,6 +15,8 @@ interface HeaderProps {
   onCreateStoryClick: () => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
   onOpenSearchOverlay: () => void;
+  isCenteredOnUser?: boolean;
+  onCenterStatusChange?: (isCentered: boolean) => void;
 }
 
 const Header = ({
@@ -24,7 +26,9 @@ const Header = ({
   onSearchKeyPress,
   onCreateStoryClick,
   onCitySelect,
-  onOpenSearchOverlay
+  onOpenSearchOverlay,
+  isCenteredOnUser = false,
+  onCenterStatusChange,
 }: HeaderProps) => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
@@ -43,6 +47,8 @@ const Header = ({
               onSearchChange={onSearchChange}
               onSearchKeyPress={onSearchKeyPress}
               onFocusOpen={onOpenSearchOverlay}
+              isCenteredOnUser={isCenteredOnUser}
+              onCenterStatusChange={onCenterStatusChange}
             />
           </div>
 

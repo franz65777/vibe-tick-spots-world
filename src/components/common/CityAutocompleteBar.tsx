@@ -15,6 +15,8 @@ interface CityAutocompleteBarProps {
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
   onLocationSelect?: (location: PhotonResult) => void;
   onFocusOpen?: () => void;
+  isCenteredOnUser?: boolean;
+  onCenterStatusChange?: (isCentered: boolean) => void;
 }
 
 interface CityResult {
@@ -32,6 +34,8 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   onCitySelect,
   onLocationSelect,
   onFocusOpen,
+  isCenteredOnUser = false,
+  onCenterStatusChange,
 }) => {
   const { t, i18n } = useTranslation();
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
@@ -193,6 +197,8 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           lng: location.longitude 
         });
         onSearchChange(location.city);
+        // Set centered status to true
+        onCenterStatusChange?.(true);
       }
       
       // Always fetch fresh location to update if user moved
@@ -247,7 +253,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent/50 rounded-full transition-colors disabled:opacity-50"
           aria-label={t('currentLocation', { ns: 'common' })}
         >
-          <Navigation2 className={cn("w-4 h-4 transition-colors -rotate-45", geoLoading ? "text-primary fill-primary" : "text-primary")} />
+          <Navigation2 className={cn("w-4 h-4 transition-colors rotate-45", isCenteredOnUser ? "text-primary fill-primary" : "text-primary")} />
         </button>
       </div>
 
