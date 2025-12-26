@@ -676,17 +676,28 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           >
             <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
           </div>
-          <div className="relative flex items-center">
-            {/* Left/center clickable area - opens search page */}
+          <div className="relative flex items-center h-12">
+            {/* Left area - pin + city name - opens search page */}
             <div 
-              className="flex-1 h-11 pl-4 pt-1 flex items-center cursor-pointer"
+              className="h-full pl-4 pt-1 flex items-center cursor-pointer"
               onClick={handleSearchBarClick}
             >
-              <span className="text-sm font-medium text-foreground">
-                {currentCity ? `📌  ${currentCity}` : t('searchCities', { ns: 'home' })}
+              <span className="text-lg">📌</span>
+              <span className="ml-3 text-base font-medium text-foreground">
+                {currentCity || t('searchCities', { ns: 'home' })}
               </span>
             </div>
-            {/* Right button - repositioning */}
+            
+            {/* Right area - tap opens trending */}
+            <div 
+              className="flex-1 h-full cursor-pointer"
+              onClick={() => {
+                setIsDrawerOpen(true);
+                setDragProgress(0.3); // Open to trending height (30% of full)
+              }}
+            />
+            
+            {/* Repositioning button */}
             <button
               onClick={(e) => {
                 handleCurrentLocation(e);
