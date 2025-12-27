@@ -787,7 +787,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div
-        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-border/30 flex flex-col backdrop-blur-xl bg-card"
+        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-border/10 flex flex-col backdrop-blur-xl bg-background/60"
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
@@ -862,7 +862,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           ) : (
             /* Trending mode: full-width search bar like the search page */
             <div
-              className="mx-4 mb-1 h-12 rounded-full backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/25 dark:border-white/10 flex items-center gap-3 px-4 cursor-text"
+              className="mx-4 mb-1 h-12 rounded-full backdrop-blur-md bg-background/30 border border-border/10 flex items-center gap-3 px-4 cursor-text"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
