@@ -100,12 +100,22 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [sheetProgress, setSheetProgress] = useState(0); // 0=collapsed, 1=expanded
+  const [isUserDragging, setIsUserDragging] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Touch/drag gesture tracking for swipe to expand/collapse
   const touchStartY = useRef<number | null>(null);
   const touchStartTime = useRef<number>(0);
+  const startProgressRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
   const isDragging = useRef(false);
+
+  // Keep progress in sync when state changes (without interfering during drag)
+  useEffect(() => {
+    if (isUserDragging) return;
+    setSheetProgress(isExpanded ? 1 : 0);
+  }, [isExpanded, isUserDragging]);
   
   // Check if onboarding is active on map-guide step
   const [isOnboardingMapStep, setIsOnboardingMapStep] = useState(false);
@@ -519,74 +529,98 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           }
         }}
       >
+        
         <DrawerContent 
           data-pin-detail-card="true" 
           showHandle={false}
           hideOverlay={true}
-          className={`transition-all duration-300 rounded-t-3xl ${isExpanded ? 'max-h-[90vh]' : 'max-h-[35vh]'} ${onBack ? 'z-[10020]' : 'z-[2000]'} ${dropdownOpen ? 'overflow-visible' : 'overflow-hidden'}`}
+          className={cn(
+            "rounded-t-3xl",
+            onBack ? "z-[10020]" : "z-[2000]",
+            dropdownOpen ? "overflow-visible" : "overflow-hidden",
+            isUserDragging ? "transition-none" : "transition-[max-height] duration-300"
+          )}
+          style={{
+            maxHeight: `${35 + (90 - 35) * sheetProgress}vh`,
+          }}
         >
-          {/* Compact Draggable Header - Swipe to expand/collapse */}
+          {/* Compact Draggable Header - Drag to expand/collapse (follows finger) */}
           <div 
             className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => {
               e.stopPropagation();
-              // Capture pointer for smooth tracking
               const target = e.currentTarget as HTMLElement;
               target.setPointerCapture(e.pointerId);
+
               touchStartY.current = e.clientY;
               touchStartTime.current = Date.now();
+              startProgressRef.current = sheetProgress;
               isDragging.current = true;
+              setIsUserDragging(true);
             }}
             onPointerMove={(e) => {
               if (!isDragging.current || touchStartY.current === null) return;
               e.stopPropagation();
               e.preventDefault();
+
+              const deltaY = touchStartY.current - e.clientY; // + = swipe up
+              const dragRangePx = 220; // how many px to go from collapsed to expanded
+              const next = Math.min(1, Math.max(0, startProgressRef.current + deltaY / dragRangePx));
+
+              if (rafRef.current) cancelAnimationFrame(rafRef.current);
+              rafRef.current = requestAnimationFrame(() => setSheetProgress(next));
             }}
             onPointerUp={(e) => {
               if (touchStartY.current === null || !isDragging.current) return;
               e.stopPropagation();
-              
+
               const target = e.currentTarget as HTMLElement;
               target.releasePointerCapture(e.pointerId);
-              
+
               const deltaY = touchStartY.current - e.clientY;
               const deltaTime = Math.max(Date.now() - touchStartTime.current, 1);
-              
-              // Calculate velocity (pixels per ms)
-              const velocity = Math.abs(deltaY) / deltaTime;
-              
-              // Very low thresholds for responsive swipe
-              const minSwipeDistance = 10;
-              const minSwipeVelocity = 0.1;
-              
-              if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
-                if (deltaY > 0) {
-                  // Swiped up - expand
-                  setIsExpanded(true);
-                } else {
-                  // Swiped down - collapse or close
-                  if (isExpanded) {
-                    setIsExpanded(false);
-                  } else {
-                    // Already collapsed, close the card
-                    if (onBack) {
-                      onBack();
-                    } else {
-                      onClose();
-                    }
-                  }
-                }
+              const velocity = deltaY / deltaTime; // signed (px/ms)
+
+              const openVelocity = 0.25;
+              const closeVelocity = -0.25;
+
+              // Decide final snap
+              let nextExpanded: boolean;
+              if (velocity > openVelocity) nextExpanded = true;
+              else if (velocity < closeVelocity) nextExpanded = false;
+              else nextExpanded = sheetProgress >= 0.5;
+
+              // If already collapsed and user swipes down strongly -> close
+              const shouldClose = !isExpanded && !nextExpanded && (deltaY < -30 || velocity < -0.35);
+              if (shouldClose) {
+                if (onBack) onBack();
+                else onClose();
+              } else {
+                setIsExpanded(nextExpanded);
+                setSheetProgress(nextExpanded ? 1 : 0);
               }
-              
+
               touchStartY.current = null;
               isDragging.current = false;
+              setIsUserDragging(false);
+              if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+              }
             }}
             onPointerCancel={(e) => {
               const target = e.currentTarget as HTMLElement;
               target.releasePointerCapture(e.pointerId);
               touchStartY.current = null;
               isDragging.current = false;
+              setIsUserDragging(false);
+              if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+              }
+              // Snap back to current state
+              setSheetProgress(isExpanded ? 1 : 0);
             }}
           >
             {/* Handle indicator - larger touch target area */}
