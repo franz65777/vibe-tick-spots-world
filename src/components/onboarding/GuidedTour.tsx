@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { X, ChevronRight, MapPin, Users, Upload, Check, Sparkles } from 'lucide-react';
+import { X, ChevronRight, Upload, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,8 +13,8 @@ import { AvatarCropEditor } from '@/components/settings/AvatarCropEditor';
 import cameraIcon from '@/assets/onboarding-camera.png';
 import binocularsIcon from '@/assets/onboarding-binoculars.png';
 import friendsIcon from '@/assets/onboarding-friends.png';
-import travelIcon from '@/assets/onboarding-travel.png';
-import reviewIcon from '@/assets/onboarding-review.png';
+import spottLogo from '@/assets/spott-logo-onboarding.png';
+import onboardingCollage from '@/assets/onboarding-collage.png';
 
 export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'welcome' | 'complete';
 
@@ -509,70 +509,31 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete, t }) => {
   return (
-    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
-        {/* Decorative icons grid */}
-        <div className="relative w-full max-w-xs h-48 mb-4">
-          {/* Travel suitcase - center top */}
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center safe-top safe-bottom overflow-y-auto bg-gradient-to-br from-blue-50/80 via-white/60 to-purple-50/80 dark:from-slate-900/80 dark:via-slate-800/60 dark:to-slate-900/80 backdrop-blur-xl">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-md mx-auto">
+        {/* Collage image */}
+        <div className="w-full max-w-sm mb-4">
           <img 
-            src={travelIcon} 
-            alt="" 
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-28 object-contain animate-fade-in"
-            style={{ animationDelay: '0.1s' }}
-          />
-          {/* Friends dining - bottom left */}
-          <img 
-            src={friendsIcon} 
-            alt="" 
-            className="absolute bottom-0 left-0 w-24 h-24 object-contain animate-fade-in"
-            style={{ animationDelay: '0.3s' }}
-          />
-          {/* Review/rating - bottom right */}
-          <img 
-            src={reviewIcon} 
-            alt="" 
-            className="absolute bottom-0 right-0 w-24 h-24 object-contain animate-fade-in"
-            style={{ animationDelay: '0.5s' }}
+            src={onboardingCollage} 
+            alt="Spott experiences" 
+            className="w-full object-contain animate-fade-in"
           />
         </div>
 
-        {/* Welcome Title */}
+        {/* Welcome Title with Logo */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold flex items-center justify-center gap-2 flex-wrap">
             {t('welcomeTitle')}
+            <img src={spottLogo} alt="Spott" className="h-10 object-contain" />
           </h1>
           <p className="text-muted-foreground text-sm">{t('welcomeSubtitle')}</p>
-        </div>
-
-        {/* Feature highlights */}
-        <div className="w-full max-w-sm space-y-3 mt-4">
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-sm text-foreground">{t('welcomeFeature1')}</p>
-          </div>
-          
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-sm text-foreground">{t('welcomeFeature2')}</p>
-          </div>
-          
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <Users className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-sm text-foreground">{t('welcomeFeature3')}</p>
-          </div>
         </div>
 
         {/* Start button */}
         <Button 
           onClick={onComplete} 
           size="lg"
-          className="w-full max-w-sm rounded-xl h-14 text-lg font-semibold mt-6"
+          className="w-full max-w-sm rounded-full h-12 text-base font-semibold mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
         >
           {t('letsGo')}
           <ChevronRight className="w-5 h-5 ml-2" />
