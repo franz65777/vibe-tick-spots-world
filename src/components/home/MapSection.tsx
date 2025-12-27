@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import MapCategoryFilters from './MapCategoryFilters';
 import SearchDrawer from './SearchDrawer';
@@ -66,7 +66,9 @@ const MapSection = ({
   const [activeSharesCount, setActiveSharesCount] = useState(0);
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
   const [shouldRestoreListView, setShouldRestoreListView] = useState(false);
+  const [shouldRestoreTrendingDrawer, setShouldRestoreTrendingDrawer] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const reopenTrendingRef = useRef<(() => void) | null>(null);
   
   const { t } = useTranslation();
   
@@ -256,6 +258,11 @@ const MapSection = ({
               setIsListViewOpen(true);
               setShouldRestoreListView(false);
             }
+            // Restore trending drawer if it was open before selecting a trending spot
+            if (shouldRestoreTrendingDrawer) {
+              setShouldRestoreTrendingDrawer(false);
+              reopenTrendingRef.current?.();
+            }
           }}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
@@ -317,6 +324,30 @@ const MapSection = ({
               onDrawerStateChange={(isOpen) => {
                 setIsDrawerOpen(isOpen);
                 onSearchDrawerStateChange?.(isOpen);
+              }}
+              onSpotSelect={(spot) => {
+                // Mark that we should restore trending drawer when pin card closes
+                setShouldRestoreTrendingDrawer(true);
+                // Center map on the spot
+                onCitySelect?.(spot.city, spot.coordinates);
+                // Create a Place from the spot and show it
+                const placeFromSpot: Place = {
+                  id: spot.id,
+                  name: spot.name,
+                  category: spot.category as any,
+                  coordinates: spot.coordinates,
+                  address: spot.address || '',
+                  city: spot.city,
+                  google_place_id: spot.google_place_id,
+                  isFollowing: false,
+                  isNew: false,
+                  likes: 0,
+                  visitors: [],
+                };
+                setSelectedPlace(placeFromSpot);
+              }}
+              registerReopenTrending={(reopenFn) => {
+                reopenTrendingRef.current = reopenFn;
               }}
             />
           </div>
