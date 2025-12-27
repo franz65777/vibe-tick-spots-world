@@ -501,7 +501,7 @@ const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onNex
   );
 };
 
-// Welcome Screen - Final onboarding step
+// Welcome Screen - Final onboarding step (ONLY collage + title with logo + button)
 interface WelcomeScreenProps {
   onComplete: () => void;
   t: (key: string) => string;
@@ -509,30 +509,30 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete, t }) => {
   return (
-    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom">
-      <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto">
-        {/* Collage image at top */}
-        <div className="w-full max-w-sm mb-6">
+    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom overflow-auto">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto w-full">
+        {/* Collage image at top - this is the ONLY image content */}
+        <div className="w-full max-w-sm mb-8">
           <img 
             src={onboardingCollage} 
             alt="Spott experiences" 
-            className="w-full object-contain animate-fade-in"
+            className="w-full object-contain"
           />
         </div>
 
-        {/* Welcome Title with Logo - same line */}
-        <div className="flex items-center justify-center gap-3 mb-2">
+        {/* Welcome Title with Logo on same line */}
+        <div className="flex items-center justify-center gap-3 mb-3">
           <h1 className="text-3xl font-bold">{t('welcomeTitle')}</h1>
-          <img src={spottLogo} alt="Spott" className="h-14 object-contain" />
+          <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
         </div>
         
-        <p className="text-muted-foreground text-sm mb-8">{t('welcomeSubtitle')}</p>
+        <p className="text-muted-foreground text-sm text-center mb-10">{t('welcomeSubtitle')}</p>
 
-        {/* Start button */}
+        {/* Start button - no feature cards above this */}
         <Button 
           onClick={onComplete} 
           size="lg"
-          className="w-full max-w-sm rounded-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
+          className="w-full max-w-sm rounded-full h-14 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg"
         >
           {t('letsGo')}
           <ChevronRight className="w-5 h-5 ml-2" />
