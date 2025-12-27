@@ -449,12 +449,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto w-full">
         {/* Collage image at top - this is the ONLY image content */}
         <div className="w-full max-w-sm mb-8">
-          <img
-            src={onboardingCollage}
-            alt="Collage foto onboarding Spott"
-            loading="lazy"
-            className="w-full h-auto object-contain"
-          />
+          
         </div>
 
         {/* Welcome Title with Logo on same line */}
