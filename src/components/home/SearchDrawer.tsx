@@ -881,7 +881,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         </div>
 
         {/* Scrollable content */}
-        <div ref={scrollRef} data-drawer-scroll className="flex-1 overflow-y-auto px-4 pb-4">
+        <div ref={scrollRef} data-drawer-scroll className="flex-1 overflow-y-auto px-4 pb-4 bg-background/20 backdrop-blur-md">
           {/* TRENDING MODE: show the PopularSpots (Tendenza/Sconto/Evento/Promozione/Nuovo) UI */}
           {!isSearchOpen && (
             <div className="pt-1">
