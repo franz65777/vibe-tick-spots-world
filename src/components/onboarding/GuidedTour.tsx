@@ -466,32 +466,26 @@ interface ExploreGuideOverlayProps {
 const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onNext, t }) => {
   return (
     <div className="fixed inset-0 z-[1999] pointer-events-none">
-      <div className="absolute inset-0 bg-black/50" />
-      
-      {/* Highlight the search area */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-transparent"
-           style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)', position: 'relative', zIndex: 1 }} />
-
-      {/* Coach mark card */}
-      <div className="absolute top-36 left-4 right-4 pointer-events-auto">
-        <div className="bg-background rounded-2xl p-5 shadow-xl animate-fade-in max-w-md mx-auto">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
-              <img src={friendsIcon} alt="" className="w-10 h-10 object-contain" />
+      {/* Bottom card - positioned at bottom to keep focus on suggested users */}
+      <div className="absolute bottom-6 left-4 right-4 pointer-events-auto">
+        <div className="bg-background rounded-2xl p-5 shadow-2xl animate-fade-in max-w-sm mx-auto border border-border/50">
+          <div className="flex items-start gap-4 mb-2">
+            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img src={friendsIcon} alt="" className="w-12 h-12 object-contain" />
             </div>
-            <div>
-              <h3 className="font-bold">{t('exploreTitle')}</h3>
-              <p className="text-xs text-muted-foreground">{t('step')} 3/4</p>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold leading-tight">{t('exploreTitle')}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('step')} 3/4</p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">{t('exploreDescription')}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onSkip} className="flex-1 rounded-xl text-sm">
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{t('exploreDescription')}</p>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onSkip} className="flex-1 rounded-xl h-12">
               {t('skip')}
             </Button>
-            <Button onClick={onNext} className="flex-1 rounded-xl text-sm">
+            <Button onClick={onNext} className="flex-1 rounded-xl h-12">
               {t('next')}
-              <ChevronRight className="w-4 h-4 ml-1" />
+              <ChevronRight className="w-5 h-5 ml-1" />
             </Button>
           </div>
         </div>
