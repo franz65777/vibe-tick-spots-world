@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { ChevronRight } from 'lucide-react';
 import mapIcon from '@/assets/onboarding-map.png';
 import exploreIcon from '@/assets/onboarding-explore.png';
 import listIcon from '@/assets/onboarding-list.png';
@@ -14,8 +15,8 @@ import followIcon from '@/assets/onboarding-follow.png';
 import likeIcon from '@/assets/onboarding-like.png';
 import shareIcon from '@/assets/onboarding-share.png';
 import messagesIcon from '@/assets/onboarding-messages.png';
-import rocketIcon from '@/assets/onboarding-rocket.png';
 import spottLogo from '@/assets/spott-logo-onboarding.png';
+import onboardingCollage from '@/assets/onboarding-collage.png';
 
 interface OnboardingModalProps {
   open: boolean;
@@ -131,35 +132,16 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
       ),
     },
     {
-      title: t('getStartedTitle'),
+      title: t('welcomeTitle'),
       description: t('getStartedDescription'),
+      showFinalLogo: true,
       content: (
-        <div className="space-y-6 py-4">
-          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-6 text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-              <img src={rocketIcon} alt="Mission" className="w-10 h-10 object-contain" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-2">{t('firstMission')}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t('firstMissionDescription')}
-              </p>
-            </div>
-            <div className="space-y-2 text-left text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">1</div>
-                <span>{t('mission1')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">2</div>
-                <span>{t('mission2')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">3</div>
-                <span>{t('mission3')}</span>
-              </div>
-            </div>
-          </div>
+        <div className="flex flex-col items-center py-4">
+          <img 
+            src={onboardingCollage} 
+            alt="Spott experiences" 
+            className="w-full max-w-sm object-contain"
+          />
         </div>
       ),
     },
@@ -236,7 +218,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
           display: none !important;
         }
       `}</style>
-      <div className="fixed inset-0 z-[2000] bg-background flex items-center justify-center safe-top safe-bottom">
+      <div className="fixed inset-0 z-[2000] flex items-center justify-center safe-top safe-bottom bg-gradient-to-br from-blue-50/80 via-white/60 to-purple-50/80 dark:from-slate-900/80 dark:via-slate-800/60 dark:to-slate-900/80 backdrop-blur-xl">
         <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6 pt-safe pb-safe">
           {/* Progress bar */}
           <div className="space-y-2 mb-4">
@@ -265,6 +247,11 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
                   {steps[currentStep].title}
                   <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
                 </h2>
+              ) : steps[currentStep].showFinalLogo ? (
+                <h2 className="text-3xl font-bold flex items-center justify-center gap-2 flex-wrap">
+                  {steps[currentStep].title}
+                  <img src={spottLogo} alt="Spott" className="h-10 object-contain" />
+                </h2>
               ) : (
                 <h2 className="text-3xl font-bold">
                   {steps[currentStep].title}
@@ -279,7 +266,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
 
           {/* Navigation buttons */}
           <div className="flex gap-2 pt-4">
-            {currentStep > 0 && (
+            {currentStep > 0 && currentStep < steps.length - 1 && (
               <Button
                 variant="outline"
                 onClick={() => setCurrentStep(currentStep - 1)}
@@ -288,12 +275,22 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
                 {t('back')}
               </Button>
             )}
-            <Button
-              onClick={handleNext}
-              className="flex-1 rounded-2xl h-12"
-            >
-              {currentStep === steps.length - 1 ? t('letsGo') : t('next')}
-            </Button>
+            {currentStep === steps.length - 1 ? (
+              <Button
+                onClick={handleNext}
+                className="flex-1 rounded-2xl h-14 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-lg"
+              >
+                {t('letsGo')}
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                className="flex-1 rounded-2xl h-12"
+              >
+                {t('next')}
+              </Button>
+            )}
           </div>
         </div>
       </div>
