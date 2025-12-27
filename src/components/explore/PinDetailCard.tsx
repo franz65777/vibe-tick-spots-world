@@ -530,24 +530,25 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => {
+              e.stopPropagation();
               // Capture pointer for smooth tracking
-              (e.target as HTMLElement).setPointerCapture(e.pointerId);
+              const target = e.currentTarget as HTMLElement;
+              target.setPointerCapture(e.pointerId);
               touchStartY.current = e.clientY;
               touchStartTime.current = Date.now();
               isDragging.current = true;
             }}
             onPointerMove={(e) => {
               if (!isDragging.current || touchStartY.current === null) return;
-              // Track movement for velocity calculation
-              const currentY = e.clientY;
-              const deltaY = touchStartY.current - currentY;
-              // Optional: add visual feedback during drag
-              // This helps users see the card is responding
+              e.stopPropagation();
+              e.preventDefault();
             }}
             onPointerUp={(e) => {
               if (touchStartY.current === null || !isDragging.current) return;
+              e.stopPropagation();
               
-              (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+              const target = e.currentTarget as HTMLElement;
+              target.releasePointerCapture(e.pointerId);
               
               const deltaY = touchStartY.current - e.clientY;
               const deltaTime = Math.max(Date.now() - touchStartTime.current, 1);
@@ -555,9 +556,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               // Calculate velocity (pixels per ms)
               const velocity = Math.abs(deltaY) / deltaTime;
               
-              // Lower thresholds for more responsive swipe
-              const minSwipeDistance = 15;
-              const minSwipeVelocity = 0.15;
+              // Very low thresholds for responsive swipe
+              const minSwipeDistance = 10;
+              const minSwipeVelocity = 0.1;
               
               if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
                 if (deltaY > 0) {
@@ -582,13 +583,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               isDragging.current = false;
             }}
             onPointerCancel={(e) => {
-              (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+              const target = e.currentTarget as HTMLElement;
+              target.releasePointerCapture(e.pointerId);
               touchStartY.current = null;
               isDragging.current = false;
             }}
           >
-            {/* Handle indicator - larger and more prominent for better touch target */}
-            <div className="w-14 h-2 bg-muted-foreground/50 rounded-full mx-auto mb-3" />
+            {/* Handle indicator - larger touch target area */}
+            <div className="w-20 h-2 bg-muted-foreground/50 rounded-full mx-auto mb-3" />
             <div className="flex items-center gap-3">
               {(sourcePostId || onBack) && (
                 <Button
