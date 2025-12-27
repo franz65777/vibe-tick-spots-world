@@ -50,11 +50,21 @@ const ExplorePage = memo(() => {
   const [isSearching, setIsSearching] = useState(false);
   const [inputFocused, setInputFocused] = useState(() => {
     const state = location.state as { fromOnboarding?: boolean } | null;
-    return state?.fromOnboarding === true;
+    const fromOnboarding = state?.fromOnboarding === true;
+    // Check sessionStorage for persistent onboarding state
+    const persistedOnboarding = sessionStorage.getItem('explore-onboarding-active') === 'true';
+    return fromOnboarding || persistedOnboarding;
   });
   const [showGuidedTour, setShowGuidedTour] = useState(() => {
     const state = location.state as { fromOnboarding?: boolean } | null;
-    return state?.fromOnboarding === true;
+    const fromOnboarding = state?.fromOnboarding === true;
+    // Check sessionStorage for persistent onboarding state
+    const persistedOnboarding = sessionStorage.getItem('explore-onboarding-active') === 'true';
+    // If coming from onboarding, persist it
+    if (fromOnboarding) {
+      sessionStorage.setItem('explore-onboarding-active', 'true');
+    }
+    return fromOnboarding || persistedOnboarding;
   });
   const [guidedTourStep, setGuidedTourStep] = useState<GuidedTourStep>('explore-guide');
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
@@ -674,6 +684,7 @@ const ExplorePage = memo(() => {
         onStepChange={setGuidedTourStep}
         onComplete={() => {
           setShowGuidedTour(false);
+          sessionStorage.removeItem('explore-onboarding-active');
           navigate('/');
         }}
       />

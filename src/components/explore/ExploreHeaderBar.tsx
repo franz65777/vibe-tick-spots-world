@@ -1,4 +1,4 @@
-import { memo, RefObject } from 'react';
+import { memo, RefObject, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ interface ExploreHeaderBarProps {
 const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [isOnboarding, setIsOnboarding] = useState(false);
   const {
     searchQuery,
     inputFocused,
@@ -27,13 +28,28 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
     onClearSearch
   } = props;
 
+  // Check if in onboarding mode
+  useEffect(() => {
+    const checkOnboarding = () => {
+      const onboardingStep = document.body.getAttribute('data-onboarding-step');
+      setIsOnboarding(!!onboardingStep);
+    };
+
+    checkOnboarding();
+    
+    const observer = new MutationObserver(checkOnboarding);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-onboarding-step'] });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="bg-background">
       <div className="px-4 py-4">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
-          {/* Swipe Discovery Button - Hidden when search is active */}
-          {!inputFocused && !searchQuery && (
+          {/* Swipe Discovery Button - Hidden when search is active or during onboarding */}
+          {!inputFocused && !searchQuery && !isOnboarding && (
             <Button
               onClick={() => navigate('/discover')}
               variant="ghost"
