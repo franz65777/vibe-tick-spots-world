@@ -728,7 +728,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     >
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
-        <div className="w-full relative bg-card/95 backdrop-blur-xl shadow-2xl border border-border/60 rounded-full">
+        <div className="w-full relative bg-background/20 backdrop-blur-md border border-border/5 rounded-full">
           {/* Drag handle inside search bar at top - for opening trending */}
           <div
             className="absolute top-1 left-1/2 -translate-x-1/2 z-10 px-4 py-1 cursor-grab active:cursor-grabbing"
