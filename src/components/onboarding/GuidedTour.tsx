@@ -14,7 +14,7 @@ import cameraIcon from '@/assets/onboarding-camera.png';
 import binocularsIcon from '@/assets/onboarding-binoculars.png';
 import friendsIcon from '@/assets/onboarding-friends.png';
 import spottLogo from '@/assets/spott-logo-onboarding.png';
-import onboardingCollage from '@/assets/onboarding-collage-user.png';
+import onboardingCollage from '@/assets/onboarding-collage-welcome.png';
 export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'welcome' | 'complete';
 interface GuidedTourProps {
   isActive: boolean;
