@@ -375,11 +375,11 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
   const [showFullOverlay, setShowFullOverlay] = useState(true);
   const [isPinCardOpen, setIsPinCardOpen] = useState(false);
   
-  // Remove overlay from map after 4 seconds
+  // Remove overlay from map after 2.5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFullOverlay(false);
-    }, 4000);
+    }, 2500);
     
     return () => clearTimeout(timer);
   }, []);
