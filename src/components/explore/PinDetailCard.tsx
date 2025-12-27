@@ -527,31 +527,37 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         >
           {/* Compact Draggable Header - Swipe to expand/collapse */}
           <div 
-            className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing touch-pan-x"
-            onTouchStart={(e) => {
-              touchStartY.current = e.touches[0].clientY;
+            className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+            style={{ touchAction: 'none' }}
+            onPointerDown={(e) => {
+              // Capture pointer for smooth tracking
+              (e.target as HTMLElement).setPointerCapture(e.pointerId);
+              touchStartY.current = e.clientY;
               touchStartTime.current = Date.now();
               isDragging.current = true;
             }}
-            onTouchMove={(e) => {
-              // Prevent default to stop page scroll while dragging the handle
-              if (isDragging.current) {
-                e.preventDefault();
-              }
+            onPointerMove={(e) => {
+              if (!isDragging.current || touchStartY.current === null) return;
+              // Track movement for velocity calculation
+              const currentY = e.clientY;
+              const deltaY = touchStartY.current - currentY;
+              // Optional: add visual feedback during drag
+              // This helps users see the card is responding
             }}
-            onTouchEnd={(e) => {
+            onPointerUp={(e) => {
               if (touchStartY.current === null || !isDragging.current) return;
               
-              const touchEndY = e.changedTouches[0].clientY;
-              const deltaY = touchStartY.current - touchEndY;
-              const deltaTime = Date.now() - touchStartTime.current;
+              (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+              
+              const deltaY = touchStartY.current - e.clientY;
+              const deltaTime = Math.max(Date.now() - touchStartTime.current, 1);
               
               // Calculate velocity (pixels per ms)
               const velocity = Math.abs(deltaY) / deltaTime;
               
-              // Swipe threshold: reduced for better responsiveness
-              const minSwipeDistance = 20;
-              const minSwipeVelocity = 0.2;
+              // Lower thresholds for more responsive swipe
+              const minSwipeDistance = 15;
+              const minSwipeVelocity = 0.15;
               
               if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
                 if (deltaY > 0) {
@@ -575,37 +581,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               touchStartY.current = null;
               isDragging.current = false;
             }}
-            onMouseDown={(e) => {
-              touchStartY.current = e.clientY;
-              touchStartTime.current = Date.now();
-              isDragging.current = true;
-            }}
-            onMouseUp={(e) => {
-              if (touchStartY.current === null || !isDragging.current) return;
-              
-              const deltaY = touchStartY.current - e.clientY;
-              const deltaTime = Date.now() - touchStartTime.current;
-              const velocity = Math.abs(deltaY) / deltaTime;
-              
-              const minSwipeDistance = 20;
-              const minSwipeVelocity = 0.2;
-              
-              if (Math.abs(deltaY) > minSwipeDistance || velocity > minSwipeVelocity) {
-                if (deltaY > 0) {
-                  setIsExpanded(true);
-                } else {
-                  if (isExpanded) {
-                    setIsExpanded(false);
-                  } else {
-                    if (onBack) {
-                      onBack();
-                    } else {
-                      onClose();
-                    }
-                  }
-                }
-              }
-              
+            onPointerCancel={(e) => {
+              (e.target as HTMLElement).releasePointerCapture(e.pointerId);
               touchStartY.current = null;
               isDragging.current = false;
             }}
