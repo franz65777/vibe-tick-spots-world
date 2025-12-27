@@ -54,6 +54,7 @@ interface SearchDrawerProps {
   onSpotSelect?: (spot: PopularSpot) => void;
   isExpanded?: boolean;
   onDrawerStateChange?: (isOpen: boolean) => void;
+  registerReopenTrending?: (reopenFn: () => void) => void;
 }
 
 // Nearby prompts - main categories + subcategories with emojis
@@ -101,6 +102,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   onSpotSelect,
   isExpanded = false,
   onDrawerStateChange,
+  registerReopenTrending,
 }) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -110,6 +112,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastPopularCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   
   type DrawerMode = 'closed' | 'trending' | 'search';
+  const TRENDING_PROGRESS = 0.62;
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
   const isSearchOpen = drawerMode === 'search';
   const isDrawerVisible = drawerMode !== 'closed';
@@ -138,6 +141,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const searchCacheRef = useRef<Map<string, { cities: { name: string; lat: number; lng: number }[]; locations: LocationResult[] }>>(new Map());
 
   const processedLocationRef = useRef<string>('');
+
+  // Register the reopen function for parent to call
+  useEffect(() => {
+    if (registerReopenTrending) {
+      registerReopenTrending(() => {
+        setDrawerMode('trending');
+        setDragProgress(TRENDING_PROGRESS);
+      });
+    }
+  }, [registerReopenTrending]);
 
   useEffect(() => {
     // Notify parent when ANY drawer state is visible (Trending or Search).
@@ -586,7 +599,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
   // Trending mode opens to a medium height so the layout is fully readable (like Search),
   // while still leaving map context visible.
-  const TRENDING_PROGRESS = 0.62;
 
   useEffect(() => {
     // Keep dragProgress in sync only for settled states.
