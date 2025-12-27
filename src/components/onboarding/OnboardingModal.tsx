@@ -17,6 +17,7 @@ import shareIcon from '@/assets/onboarding-share.png';
 import messagesIcon from '@/assets/onboarding-messages.png';
 import rocketIcon from '@/assets/onboarding-rocket.png';
 import spottLogo from '@/assets/spott-logo-onboarding.png';
+import onboardingCollage from '@/assets/onboarding-collage-user.png';
 
 interface OnboardingModalProps {
   open: boolean;
@@ -239,73 +240,86 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
       `}</style>
       <div className="fixed inset-0 z-[2000] flex items-center justify-center safe-top safe-bottom bg-gradient-to-br from-blue-50/80 via-white/60 to-purple-50/80 dark:from-slate-900/80 dark:via-slate-800/60 dark:to-slate-900/80 backdrop-blur-xl">
         <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6 pt-safe pb-safe">
-          {/* Progress bar */}
-          <div className="space-y-2 mb-4">
-            <Progress value={progress} className="h-1.5" />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
-              {currentStep < steps.length - 1 && (
-                <button
-                  onClick={handleSkip}
-                  className="hover:text-foreground transition-colors"
-                >
-                  {t('skip')}
-                </button>
-              )}
-            </div>
-          </div>
+          {/* Final step: only collage + title + button (no old content) */}
+          {currentStep === steps.length - 1 ? (
+            <div className="flex-1 flex flex-col items-center justify-center px-6">
+              <div className="w-full max-w-sm mb-6">
+                <img
+                  src={onboardingCollage}
+                  alt="Collage foto esperienze Spott"
+                  className="w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
 
-          {/* Step content with transition */}
-          <div 
-            key={currentStep}
-            className="flex-1 flex flex-col justify-center space-y-3 animate-fade-in"
-          >
-            <div className="text-center space-y-2">
-              {steps[currentStep].showLogo ? (
-                <h2 className="text-3xl font-bold flex items-center justify-center gap-2 flex-wrap">
-                  {steps[currentStep].title}
-                  <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
-                </h2>
-              ) : (
-                <h2 className="text-3xl font-bold">
-                  {steps[currentStep].title}
-                </h2>
-              )}
-              <p className="text-base text-muted-foreground">
-                {steps[currentStep].description}
-              </p>
-            </div>
-            {steps[currentStep].content}
-          </div>
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">{t('welcomeTitle')}</h1>
+                <img src={spottLogo} alt="Logo Spott" className="h-14 object-contain" loading="lazy" />
+              </div>
 
-          {/* Navigation buttons */}
-          <div className="flex gap-3 pt-4">
-            {currentStep > 0 && currentStep < steps.length - 1 && (
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(currentStep - 1)}
-                className="flex-1 rounded-full h-14 text-base font-medium bg-white/80 dark:bg-secondary/30 border-gray-200 dark:border-transparent hover:bg-white dark:hover:bg-secondary/50"
-              >
-                {t('back')}
-              </Button>
-            )}
-            {currentStep === steps.length - 1 ? (
+              <p className="text-base text-muted-foreground mb-8">{t('welcomeDescription')}</p>
+
               <Button
                 onClick={handleNext}
-                className="flex-1 rounded-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-base"
+                className="w-full max-w-sm rounded-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-base"
               >
                 {t('letsGo')}
                 <ChevronRight className="w-5 h-5 ml-1" />
               </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                className="flex-1 rounded-full h-14 text-base font-medium bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
-              >
-                {t('next')}
-              </Button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Progress bar */}
+              <div className="space-y-2 mb-4">
+                <Progress value={progress} className="h-1.5" />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    {t('step')} {currentStep + 1} {t('of')} {steps.length}
+                  </span>
+                  {currentStep < steps.length - 1 && (
+                    <button onClick={handleSkip} className="hover:text-foreground transition-colors">
+                      {t('skip')}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Step content with transition */}
+              <div key={currentStep} className="flex-1 flex flex-col justify-center space-y-3 animate-fade-in">
+                <div className="text-center space-y-2">
+                  {steps[currentStep].showLogo ? (
+                    <h2 className="text-3xl font-bold flex items-center justify-center gap-2 flex-wrap">
+                      {steps[currentStep].title}
+                      <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
+                    </h2>
+                  ) : (
+                    <h2 className="text-3xl font-bold">{steps[currentStep].title}</h2>
+                  )}
+                  <p className="text-base text-muted-foreground">{steps[currentStep].description}</p>
+                </div>
+                {steps[currentStep].content}
+              </div>
+
+              {/* Navigation buttons */}
+              <div className="flex gap-3 pt-4">
+                {currentStep > 0 && currentStep < steps.length - 1 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(currentStep - 1)}
+                    className="flex-1 rounded-full h-14 text-base font-medium bg-white/80 dark:bg-secondary/30 border-gray-200 dark:border-transparent hover:bg-white dark:hover:bg-secondary/50"
+                  >
+                    {t('back')}
+                  </Button>
+                )}
+                <Button
+                  onClick={handleNext}
+                  className="flex-1 rounded-full h-14 text-base font-medium bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
+                >
+                  {t('next')}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>
