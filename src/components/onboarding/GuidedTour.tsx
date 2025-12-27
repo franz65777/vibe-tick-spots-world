@@ -316,14 +316,14 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
             <Button 
               variant="outline" 
               onClick={handleSkipStep} 
-              className="flex-1 rounded-xl h-12"
+              className="flex-1 rounded-full h-12 bg-white/80 dark:bg-secondary/30 border-gray-200 dark:border-transparent"
               disabled={isUploading}
             >
               {t('skip')}
             </Button>
             <Button 
               onClick={() => fileInputRef.current?.click()} 
-              className="flex-1 rounded-xl h-12"
+              className="flex-1 rounded-full h-12"
               disabled={isUploading}
             >
               {isUploading ? (
@@ -441,7 +441,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
             {/* Success state with continue button */}
             {hasSavedPlace ? (
               <>
-                <div className="flex items-center gap-3 mb-4 p-4 rounded-2xl bg-green-500/10 border border-green-500/20">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <Check className="w-5 h-5 text-white" />
                   </div>

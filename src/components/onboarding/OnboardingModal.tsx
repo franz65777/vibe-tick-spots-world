@@ -292,7 +292,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
             {currentStep === steps.length - 1 ? (
               <Button
                 onClick={handleNext}
-                className="flex-1 rounded-full h-14 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-lg"
+                className="flex-1 rounded-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-base"
               >
                 {t('letsGo')}
                 <ChevronRight className="w-5 h-5 ml-1" />
