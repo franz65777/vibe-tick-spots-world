@@ -10,12 +10,12 @@ import mapIcon from '@/assets/onboarding-map.png';
 import exploreIcon from '@/assets/onboarding-explore.png';
 import listIcon from '@/assets/onboarding-list.png';
 import profileIcon from '@/assets/onboarding-profile.png';
-import friendsIcon from '@/assets/onboarding-friends.png';
 import followIcon from '@/assets/onboarding-follow.png';
 import likeIcon from '@/assets/onboarding-like.png';
 import shareIcon from '@/assets/onboarding-share.png';
 import messagesIcon from '@/assets/onboarding-messages.png';
 import rocketIcon from '@/assets/onboarding-rocket.png';
+import spottLogo from '@/assets/spott-logo-onboarding.png';
 
 interface OnboardingModalProps {
   open: boolean;
@@ -64,6 +64,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
     {
       title: t('welcomeTitle'),
       description: t('welcomeDescription'),
+      showLogo: true,
       content: (
         <div className="space-y-6 py-4">
           <div className="grid grid-cols-2 gap-4">
@@ -96,9 +97,6 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
       description: t('connectDescription'),
       content: (
         <div className="space-y-2 py-2">
-          <div className="flex items-center justify-center mb-4">
-            <img src={friendsIcon} alt={t('connectTitle')} className="w-24 h-24 object-contain" />
-          </div>
           <div className="space-y-2">
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
               <img src={followIcon} alt={t('followFriends')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
@@ -262,9 +260,18 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
             className="flex-1 flex flex-col justify-center space-y-3 animate-fade-in"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold">
-                {steps[currentStep].title}
-              </h2>
+              {steps[currentStep].showLogo ? (
+                <div className="flex flex-col items-center gap-2">
+                  <h2 className="text-3xl font-bold">
+                    {steps[currentStep].title}
+                  </h2>
+                  <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
+                </div>
+              ) : (
+                <h2 className="text-3xl font-bold">
+                  {steps[currentStep].title}
+                </h2>
+              )}
               <p className="text-base text-muted-foreground">
                 {steps[currentStep].description}
               </p>
