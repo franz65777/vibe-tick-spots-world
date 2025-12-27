@@ -65,7 +65,7 @@ const SplashScreen = ({ onComplete, minDisplayTime = 2500 }: SplashScreenProps) 
         playsInline
         onEnded={handleVideoEnd}
         onError={handleVideoError}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-cover"
       >
         <source src={introVideo} type="video/mp4" />
       </video>
