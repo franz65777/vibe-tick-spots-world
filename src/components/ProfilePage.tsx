@@ -139,7 +139,11 @@ const ProfilePage = memo(() => {
       case 'badges':
         return <Achievements userId={user?.id} />;
       case 'tagged':
-        return <TaggedPostsGrid />;
+        return (
+          <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+            <TaggedPostsGrid />
+          </div>
+        );
       default:
         return (
           <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">

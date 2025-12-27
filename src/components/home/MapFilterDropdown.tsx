@@ -379,7 +379,7 @@ const MapFilterDropdown = () => {
       <div
         className={cn(
           "flex items-center gap-1.5 rounded-full backdrop-blur-md transition-all duration-300 relative",
-          "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 shadow-lg",
+          "bg-background/20 backdrop-blur-md border border-border/5 shadow-lg",
           isFilterExpanded ? "pr-1.5" : "pr-2.5"
         )}
       >
