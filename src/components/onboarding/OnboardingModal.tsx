@@ -261,12 +261,10 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
           >
             <div className="text-center space-y-2">
               {steps[currentStep].showLogo ? (
-                <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-3xl font-bold">
-                    {steps[currentStep].title}
-                  </h2>
-                  <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
-                </div>
+                <h2 className="text-3xl font-bold flex items-center justify-center gap-2 flex-wrap">
+                  {steps[currentStep].title}
+                  <img src={spottLogo} alt="Spott" className="h-10 object-contain" />
+                </h2>
               ) : (
                 <h2 className="text-3xl font-bold">
                   {steps[currentStep].title}
