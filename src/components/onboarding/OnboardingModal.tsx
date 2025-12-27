@@ -175,9 +175,32 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
     }
   };
 
-  const handleSkip = () => {
-    // Skipping goes directly to guided tour (step 1)
-    handleComplete();
+  const handleSkip = async () => {
+    // Skipping onboarding should still show the guided tour (all 4 parts)
+    if (!user?.id) return;
+
+    try {
+      // Mark onboarding as completed in the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error updating onboarding status:', error);
+        toast.error(t('errorSaving') || 'Failed to save progress');
+        return;
+      }
+
+      // Close the modal and start the guided tour
+      onComplete();
+      if (onStartGuidedTour) {
+        onStartGuidedTour();
+      }
+    } catch (error) {
+      console.error('Onboarding skip error:', error);
+      toast.error(t('errorGeneric') || 'Something went wrong');
+    }
   };
 
   const handleComplete = async () => {
