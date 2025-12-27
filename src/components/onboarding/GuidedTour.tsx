@@ -509,10 +509,10 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete, t }) => {
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center safe-top safe-bottom overflow-y-auto bg-gradient-to-br from-blue-50/80 via-white/60 to-purple-50/80 dark:from-slate-900/80 dark:via-slate-800/60 dark:to-slate-900/80 backdrop-blur-xl">
-      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-md mx-auto">
-        {/* Collage image */}
-        <div className="w-full max-w-sm mb-4">
+    <div className="fixed inset-0 z-[2000] bg-background flex flex-col safe-top safe-bottom">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto">
+        {/* Collage image at top */}
+        <div className="w-full max-w-sm mb-6">
           <img 
             src={onboardingCollage} 
             alt="Spott experiences" 
@@ -520,20 +520,19 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete, t }) => {
           />
         </div>
 
-        {/* Welcome Title with Logo */}
-        <div className="text-center space-y-3">
-          <h1 className="text-3xl font-bold flex items-center justify-center gap-3">
-            {t('welcomeTitle')}
-            <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
-          </h1>
-          <p className="text-muted-foreground text-sm">{t('welcomeSubtitle')}</p>
+        {/* Welcome Title with Logo - same line */}
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold">{t('welcomeTitle')}</h1>
+          <img src={spottLogo} alt="Spott" className="h-14 object-contain" />
         </div>
+        
+        <p className="text-muted-foreground text-sm mb-8">{t('welcomeSubtitle')}</p>
 
         {/* Start button */}
         <Button 
           onClick={onComplete} 
           size="lg"
-          className="w-full max-w-sm rounded-full h-12 text-base font-semibold mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
+          className="w-full max-w-sm rounded-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
         >
           {t('letsGo')}
           <ChevronRight className="w-5 h-5 ml-2" />
