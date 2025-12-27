@@ -116,6 +116,9 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     }
   }, [currentStep, hasSavedPlace]);
 
+  // Track if initial navigation for each step has been done
+  const [initialNavDone, setInitialNavDone] = useState<Record<string, boolean>>({});
+
   // Handle step transitions and set global onboarding state
   useEffect(() => {
     if (!isActive) {
@@ -126,19 +129,23 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     // Set current step as data attribute for other components to detect
     document.body.setAttribute('data-onboarding-step', currentStep);
 
-    if (currentStep === 'profile-photo') {
-      navigate('/');
-    } else if (currentStep === 'map-guide') {
-      navigate('/');
-    } else if (currentStep === 'explore-guide') {
-      // Navigate with state to open search bar focused
-      navigate('/explore', { state: { fromOnboarding: true } });
+    // Only navigate on initial entry to a step, not on every render
+    if (!initialNavDone[currentStep]) {
+      if (currentStep === 'profile-photo') {
+        navigate('/');
+      } else if (currentStep === 'map-guide') {
+        navigate('/');
+      } else if (currentStep === 'explore-guide') {
+        // Navigate with state to open search bar focused
+        navigate('/explore', { state: { fromOnboarding: true } });
+      }
+      setInitialNavDone(prev => ({ ...prev, [currentStep]: true }));
     }
     
     return () => {
       document.body.removeAttribute('data-onboarding-step');
     };
-  }, [currentStep, isActive, navigate]);
+  }, [currentStep, isActive, navigate, initialNavDone]);
 
   const handleSkipStep = () => {
     if (currentStep === 'profile-photo') {
@@ -434,7 +441,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
             {/* Success state with continue button */}
             {hasSavedPlace ? (
               <>
-                <div className="flex items-center gap-3 mb-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                <div className="flex items-center gap-3 mb-4 p-4 rounded-2xl bg-green-500/10 border border-green-500/20">
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <Check className="w-5 h-5 text-white" />
                   </div>
@@ -442,7 +449,7 @@ const MapGuideOverlay: React.FC<MapGuideOverlayProps> = ({ onNext, hasSavedPlace
                 </div>
                 <Button 
                   onClick={onNext} 
-                  className="w-full rounded-xl h-12 text-base font-semibold"
+                  className="w-full rounded-2xl h-12 text-base font-semibold"
                 >
                   {t('continueToNext')}
                   <ChevronRight className="w-5 h-5 ml-1" />
@@ -480,10 +487,10 @@ const ExploreGuideOverlay: React.FC<ExploreGuideOverlayProps> = ({ onSkip, onNex
           </div>
           <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{t('exploreDescription')}</p>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onSkip} className="flex-1 rounded-xl h-12">
+            <Button variant="outline" onClick={onSkip} className="flex-1 rounded-2xl h-12">
               {t('skip')}
             </Button>
-            <Button onClick={onNext} className="flex-1 rounded-xl h-12">
+            <Button onClick={onNext} className="flex-1 rounded-2xl h-12">
               {t('next')}
               <ChevronRight className="w-5 h-5 ml-1" />
             </Button>
