@@ -521,10 +521,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete, t }) => {
         </div>
 
         {/* Welcome Title with Logo */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold flex items-center justify-center gap-2 flex-wrap">
+        <div className="text-center space-y-3">
+          <h1 className="text-3xl font-bold flex items-center justify-center gap-3">
             {t('welcomeTitle')}
-            <img src={spottLogo} alt="Spott" className="h-10 object-contain" />
+            <img src={spottLogo} alt="Spott" className="h-12 object-contain" />
           </h1>
           <p className="text-muted-foreground text-sm">{t('welcomeSubtitle')}</p>
         </div>
