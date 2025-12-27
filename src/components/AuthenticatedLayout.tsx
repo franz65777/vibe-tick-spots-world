@@ -7,7 +7,7 @@ import { UIStateProvider, useUIState } from '@/contexts/UIStateContext';
 const AuthenticatedLayoutContent: React.FC = () => {
   const location = useLocation();
   const { isShareProfileOpen } = useUIState();
-  const isBusinessRoute = location.pathname.startsWith('/business');
+  const isBusinessRoute = location.pathname.startsWith('/business') && !location.pathname.startsWith('/business/view');
   const isDiscoverRoute = location.pathname === '/discover';
   const isSettingsRoute = location.pathname === '/settings';
   const isPrivacySettingsRoute = location.pathname === '/privacy-settings';
