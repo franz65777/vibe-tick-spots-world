@@ -69,22 +69,22 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
       content: (
         <div className="space-y-6 py-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={mapIcon} alt={t('map')} className="w-12 h-12 mb-2 object-contain" />
               <h3 className="font-semibold text-sm">{t('map')}</h3>
               <p className="text-xs text-muted-foreground text-center">{t('mapDescription')}</p>
             </div>
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={exploreIcon} alt={t('explore')} className="w-12 h-12 mb-2 object-contain" />
               <h3 className="font-semibold text-sm">{t('explore')}</h3>
               <p className="text-xs text-muted-foreground text-center">{t('exploreDescription')}</p>
             </div>
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={listIcon} alt={t('lists')} className="w-12 h-12 mb-2 object-contain" />
               <h3 className="font-semibold text-sm">{t('lists')}</h3>
               <p className="text-xs text-muted-foreground text-center">{t('listsDescription')}</p>
             </div>
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={profileIcon} alt={t('profile')} className="w-12 h-12 mb-2 object-contain" />
               <h3 className="font-semibold text-sm">{t('profile')}</h3>
               <p className="text-xs text-muted-foreground text-center">{t('profileDescription')}</p>
@@ -99,28 +99,28 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
       content: (
         <div className="space-y-2 py-2">
           <div className="space-y-2">
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={followIcon} alt={t('followFriends')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('followFriends')}</h3>
                 <p className="text-xs text-muted-foreground">{t('followFriendsDescription')}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={likeIcon} alt={t('likeComment')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('likeComment')}</h3>
                 <p className="text-xs text-muted-foreground">{t('likeCommentDescription')}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={shareIcon} alt={t('shareExperiences')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('shareExperiences')}</h3>
                 <p className="text-xs text-muted-foreground">{t('shareExperiencesDescription')}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-secondary/30 backdrop-blur-sm shadow-sm border border-white/50 dark:border-transparent">
               <img src={messagesIcon} alt={t('directMessages')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('directMessages')}</h3>
@@ -265,12 +265,12 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-3 pt-4">
             {currentStep > 0 && currentStep < steps.length - 1 && (
               <Button
                 variant="outline"
                 onClick={() => setCurrentStep(currentStep - 1)}
-                className="flex-1 rounded-2xl h-12"
+                className="flex-1 rounded-full h-14 text-base font-medium bg-white/80 dark:bg-secondary/30 border-gray-200 dark:border-transparent hover:bg-white dark:hover:bg-secondary/50"
               >
                 {t('back')}
               </Button>
@@ -278,7 +278,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
             {currentStep === steps.length - 1 ? (
               <Button
                 onClick={handleNext}
-                className="flex-1 rounded-2xl h-14 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-lg"
+                className="flex-1 rounded-full h-14 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-lg"
               >
                 {t('letsGo')}
                 <ChevronRight className="w-5 h-5 ml-1" />
@@ -286,7 +286,7 @@ const OnboardingModal = ({ open, onComplete, onStartGuidedTour }: OnboardingModa
             ) : (
               <Button
                 onClick={handleNext}
-                className="flex-1 rounded-2xl h-12"
+                className="flex-1 rounded-full h-14 text-base font-medium bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
               >
                 {t('next')}
               </Button>
