@@ -37,6 +37,7 @@ const AdminBusinessRequestsPage = lazy(() => import('@/pages/AdminBusinessReques
 const BusinessOverviewPageV2 = lazy(() => import('@/pages/business/BusinessOverviewPageV2'));
 const BusinessAnalyticsPage = lazy(() => import('@/pages/business/BusinessAnalyticsPage'));
 const BusinessProfilePage = lazy(() => import('@/pages/business/BusinessProfilePage'));
+const PublicBusinessProfilePage = lazy(() => import('@/pages/business/PublicBusinessProfilePage'));
 const BusinessAddPage = lazy(() => import('@/pages/business/BusinessAddPage'));
 const BusinessFeedPage = lazy(() => import('@/pages/business/BusinessFeedPage'));
 const BusinessMessagesPage = lazy(() => import('@/pages/business/BusinessMessagesPage'));
@@ -133,7 +134,7 @@ function AppContent() {
           <Route path="/business/add" element={<BusinessAddPage />} />
           <Route path="/business/feed" element={<BusinessFeedPage />} />
           <Route path="/business/profile" element={<BusinessProfilePage />} />
-          <Route path="/business/profile/:userId" element={<BusinessProfilePage />} />
+          <Route path="/business/view/:userId" element={<PublicBusinessProfilePage />} />
           <Route path="/business/edit-campaign" element={<BusinessEditCampaignPage />} />
           <Route path="/business/notifications" element={<BusinessNotificationsPage />} />
           <Route path="/business/messages" element={<BusinessMessagesPage />} />

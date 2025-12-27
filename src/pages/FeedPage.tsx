@@ -348,9 +348,9 @@ const FeedPage = memo(() => {
       // Save scroll position before navigating to profile
       storeFeedScrollAnchor();
       
-      // Navigate to business profile page if it's a business account
+      // Navigate to public business view page if it's a business account
       if (isBusiness) {
-        navigate(`/business/profile/${userId}`);
+        navigate(`/business/view/${userId}`);
       } else {
         navigate(`/profile/${userId}`);
       }
