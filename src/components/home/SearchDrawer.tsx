@@ -799,7 +799,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         }}
       >
         {/* Fixed header: Drag handle + Search input */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 bg-background/20 backdrop-blur-md rounded-t-3xl">
           {/* Drag handle at top - larger touch area (drag-to-close) */}
           <div
             className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing"
