@@ -1193,8 +1193,8 @@ const SharingControls = ({
       className={`${fullScreen ? 'fixed' : 'absolute'} left-3 z-[1001] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       style={{ 
         bottom: fullScreen 
-          ? 'calc(env(safe-area-inset-bottom, 0px) + 7rem)'
-          : 'calc(11rem + env(safe-area-inset-bottom, 0px))'
+          ? 'calc(env(safe-area-inset-bottom, 0px) + 5rem)'
+          : 'calc(9rem + env(safe-area-inset-bottom, 0px))'
       }}
     >
       <button
