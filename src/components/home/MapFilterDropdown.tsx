@@ -442,7 +442,7 @@ const MapFilterDropdown = () => {
             onClick={() => handleFilterSelect(filter.id)}
             className={cn(
               "flex items-center gap-1.5 px-2 h-9 rounded-full backdrop-blur-md transition-all duration-200",
-              "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70 shadow-lg"
+              "bg-gray-200/40 dark:bg-slate-800/65 border border-border/30 hover:bg-gray-300/50 dark:hover:bg-slate-700/70"
             )}
           >
             <img 
