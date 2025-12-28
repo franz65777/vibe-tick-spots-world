@@ -51,30 +51,32 @@ export const useUserSavedCities = (userId?: string) => {
 
       // Count from user_saved_locations
       if (!locError && savedLocations) {
-        savedLocations.forEach(loc => {
+        savedLocations.forEach((loc: any) => {
           totalCount++;
           const city = (loc.locations as any)?.city;
           if (city) {
             cityCount[city] = (cityCount[city] || 0) + 1;
           }
-          // Count by save_tag - handle both underscore and hyphen formats
+          // Count by save_tag - treat unknown/general as "to try" so totals match category sum
           if (loc.save_tag === 'been') beenCount++;
-          else if (loc.save_tag === 'to-try' || loc.save_tag === 'to_try') toTryCount++;
+          else if (loc.save_tag === 'to-try' || loc.save_tag === 'to_try' || loc.save_tag === 'general') toTryCount++;
           else if (loc.save_tag === 'favourite') favouriteCount++;
+          else toTryCount++;
         });
       }
 
       // Count from saved_places (Google Places) - avoiding duplicates by tracking place IDs
       if (!spError && savedPlaces) {
-        savedPlaces.forEach(sp => {
+        savedPlaces.forEach((sp: any) => {
           totalCount++;
           if (sp.city) {
             cityCount[sp.city] = (cityCount[sp.city] || 0) + 1;
           }
-          // Count by save_tag - handle both underscore and hyphen formats
+          // Count by save_tag - treat unknown/general as "to try" so totals match category sum
           if (sp.save_tag === 'been') beenCount++;
-          else if (sp.save_tag === 'to-try' || sp.save_tag === 'to_try') toTryCount++;
+          else if (sp.save_tag === 'to-try' || sp.save_tag === 'to_try' || sp.save_tag === 'general') toTryCount++;
           else if (sp.save_tag === 'favourite') favouriteCount++;
+          else toTryCount++;
         });
       }
       
