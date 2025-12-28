@@ -1,4 +1,5 @@
 import { X, MapPin, Eye, Bookmark, MessageCircle, Users, Star, Utensils } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Trip, useTrips } from '@/hooks/useTrips';
 import { useState, useEffect } from 'react';
@@ -92,6 +93,7 @@ const LocationCardWithStats = ({ location, notes, onClick }: { location: any; no
 };
 
 const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDetailModalProps) => {
+  const { t } = useTranslation();
   const [trip, setTrip] = useState<Trip | null>(providedTrip || null);
   const [loading, setLoading] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
@@ -246,8 +248,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
             </div>
             <div className="flex items-center gap-1.5">
               <Bookmark className="h-4 w-4" />
-              <span className="font-medium">{trip.save_count || 0}</span>
-              <span>saves</span>
+              <span className="font-medium">{t('savesCount', { count: trip.save_count || 0 })}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />
