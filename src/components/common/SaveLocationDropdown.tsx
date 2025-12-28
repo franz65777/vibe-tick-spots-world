@@ -136,36 +136,17 @@ export const SaveLocationDropdown = ({
     );
   }
 
+  // When not saved, clicking directly saves with "to_try" tag
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant={variant as any}
-          size={size}
-          disabled={disabled}
-          className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : className}
-        >
-          <Bookmark className="h-5 w-5" />
-          {showLabel && <span className="text-xs">{t('save', { ns: 'common', defaultValue: 'Save' })}</span>}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end"
-        side="top"
-        sideOffset={8}
-        className="w-48 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] p-1"
-      >
-        {SAVE_TAG_OPTIONS.map((option) => (
-          <DropdownMenuItem
-            key={option.value}
-            onClick={() => handleSaveWithTag(option.value)}
-            className="cursor-pointer flex items-center gap-2.5 py-2 px-3 hover:bg-accent rounded-xl"
-          >
-            <TagIcon option={option} />
-            <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant={variant as any}
+      size={size}
+      disabled={disabled}
+      className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : className}
+      onClick={() => onSave('to_try')}
+    >
+      <Bookmark className="h-5 w-5" />
+      {showLabel && <span className="text-xs">{t('save', { ns: 'common', defaultValue: 'Save' })}</span>}
+    </Button>
   );
 };
