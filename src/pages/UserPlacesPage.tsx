@@ -120,8 +120,11 @@ const UserPlacesPage = () => {
         // Apply category filter at query level if not 'all'
         // Handle both hyphen and underscore formats for save_tag
         if (filterCategory !== 'all' && filterCategory !== 'common') {
-          const dbFilterCategory = filterCategory === 'to-try' ? 'to_try' : filterCategory;
-          internalQuery = internalQuery.eq('save_tag', dbFilterCategory);
+          if (filterCategory === 'to-try') {
+            internalQuery = internalQuery.in('save_tag', ['to_try', 'to-try', 'general']);
+          } else {
+            internalQuery = internalQuery.eq('save_tag', filterCategory);
+          }
         }
 
         const { data: internalLocs } = await internalQuery;
@@ -152,8 +155,11 @@ const UserPlacesPage = () => {
 
         // Handle both hyphen and underscore formats for save_tag
         if (filterCategory !== 'all' && filterCategory !== 'common') {
-          const dbFilterCategory = filterCategory === 'to-try' ? 'to_try' : filterCategory;
-          savedPlacesQuery = savedPlacesQuery.eq('save_tag', dbFilterCategory);
+          if (filterCategory === 'to-try') {
+            savedPlacesQuery = savedPlacesQuery.in('save_tag', ['to_try', 'to-try', 'general']);
+          } else {
+            savedPlacesQuery = savedPlacesQuery.eq('save_tag', filterCategory);
+          }
         }
 
         const { data: savedPlaces } = await savedPlacesQuery;

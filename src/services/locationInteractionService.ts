@@ -11,7 +11,7 @@ export interface LocationInteraction {
 
 class LocationInteractionService {
   // Save a location for the user - IMPROVED duplicate prevention
-  async saveLocation(locationId: string, locationData?: any, saveTag: string = 'general'): Promise<boolean> {
+  async saveLocation(locationId: string, locationData?: any, saveTag: string = 'to_try'): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
