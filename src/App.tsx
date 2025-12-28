@@ -11,6 +11,18 @@ import './App.css';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { supabase } from '@/integrations/supabase/client';
 import i18n from '@/i18n';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
+
+// Lock screen orientation to portrait on app start
+const lockOrientation = async () => {
+  try {
+    await ScreenOrientation.lock({ orientation: 'portrait' });
+  } catch (e) {
+    // Silently fail on web or unsupported platforms
+    console.log('Screen orientation lock not supported');
+  }
+};
+lockOrientation();
 
 // Lazy load pages for better initial load performance
 import Index from '@/pages/Index';
