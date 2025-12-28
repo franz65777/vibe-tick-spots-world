@@ -64,8 +64,10 @@ export const PostActions = ({
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
   const [showLikersModal, setShowLikersModal] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<'top' | 'bottom'>('top');
   const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Load location save status
   useEffect(() => {
@@ -217,6 +219,20 @@ export const PostActions = ({
       // Unsave location directly
       handleUnsaveLocation();
     } else {
+      // Calculate dropdown position based on button position
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        const spaceAbove = rect.top;
+        const dropdownHeight = 160; // Approximate height of dropdown
+        const headerHeight = 60; // Approximate header height
+        
+        // If not enough space above (accounting for header), show dropdown below
+        if (spaceAbove < dropdownHeight + headerHeight) {
+          setDropdownPosition('bottom');
+        } else {
+          setDropdownPosition('top');
+        }
+      }
       // Show category dropdown to choose save tag
       setShowCategoryDropdown(true);
     }
@@ -330,6 +346,7 @@ export const PostActions = ({
       {/* Pin/Save button with dropdown */}
       <div className="relative ml-auto" ref={dropdownRef}>
         <button
+          ref={buttonRef}
           onClick={handlePinClick}
           className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all font-medium ${
             isLocationSaved
@@ -341,9 +358,13 @@ export const PostActions = ({
           <Pin className={`w-5 h-5 ${isLocationSaved ? 'fill-current' : ''}`} />
         </button>
 
-        {/* Category dropdown */}
+        {/* Category dropdown - position dynamically based on available space */}
         {showCategoryDropdown && (
-          <div className="absolute bottom-full right-0 mb-2 bg-background border border-border rounded-xl shadow-lg p-2 min-w-[140px] z-50">
+          <div 
+            className={`absolute right-0 bg-background border border-border rounded-xl shadow-lg p-2 min-w-[140px] z-50 ${
+              dropdownPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
+          >
             <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
               {t('saveAs', { ns: 'common', defaultValue: 'Save as' })}
             </div>
