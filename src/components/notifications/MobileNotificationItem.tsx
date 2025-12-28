@@ -111,6 +111,8 @@ const MobileNotificationItem = ({
   const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>({});
   const [isLocationShareActive, setIsLocationShareActive] = useState(true);
   const [followRequestHandled, setFollowRequestHandled] = useState(false);
+  const [targetIsPrivate, setTargetIsPrivate] = useState(false);
+  const [followRequestSent, setFollowRequestSent] = useState(false);
 
   // Infer content type (e.g. review) when old notifications miss content_type
   const [inferredContentType, setInferredContentType] = useState<string | null>(null);
@@ -278,13 +280,31 @@ const MobileNotificationItem = ({
 
         // Check follow status when we have both current user and target
         if (user?.id && uid) {
-          const { data } = await supabase
-            .from('follows')
-            .select('id')
-            .eq('follower_id', user.id)
-            .eq('following_id', uid)
-            .maybeSingle();
-          setIsFollowing(!!data);
+          // Check if target user is private and if we already have a pending follow request
+          const [followData, privacyData, pendingRequestData] = await Promise.all([
+            supabase
+              .from('follows')
+              .select('id')
+              .eq('follower_id', user.id)
+              .eq('following_id', uid)
+              .maybeSingle(),
+            supabase
+              .from('user_privacy_settings')
+              .select('is_private')
+              .eq('user_id', uid)
+              .maybeSingle(),
+            supabase
+              .from('friend_requests')
+              .select('id, status')
+              .eq('requester_id', user.id)
+              .eq('requested_id', uid)
+              .eq('status', 'pending')
+              .maybeSingle()
+          ]);
+          
+          setIsFollowing(!!followData.data);
+          setTargetIsPrivate((privacyData.data as any)?.is_private ?? false);
+          setFollowRequestSent(!!pendingRequestData.data);
 
           // Check if user has active stories and fetch them
           const { data: stories } = await supabase
@@ -493,8 +513,57 @@ const MobileNotificationItem = ({
 
         setIsFollowing(false);
         toast.success(t('unfollowed', { ns: 'common' }));
+      } else if (followRequestSent) {
+        // Already sent a follow request - cancel it
+        await supabase
+          .from('friend_requests')
+          .delete()
+          .eq('requester_id', user.id)
+          .eq('requested_id', targetUserId)
+          .eq('status', 'pending');
+        
+        setFollowRequestSent(false);
+        toast.success(t('requestCancelled', { ns: 'notifications', defaultValue: 'Richiesta annullata' }));
+      } else if (targetIsPrivate) {
+        // Target user is private - send a follow request instead of following directly
+        // Check if any request already exists (pending or declined)
+        const { data: existingRequest } = await supabase
+          .from('friend_requests')
+          .select('id, status')
+          .eq('requester_id', user.id)
+          .eq('requested_id', targetUserId)
+          .maybeSingle();
+
+        if (existingRequest) {
+          if (existingRequest.status === 'pending') {
+            // Request already pending
+            setFollowRequestSent(true);
+          } else {
+            // Request was declined - update it to pending to re-request
+            const { error } = await supabase
+              .from('friend_requests')
+              .update({ status: 'pending', updated_at: new Date().toISOString() })
+              .eq('id', existingRequest.id);
+
+            if (error) throw error;
+            setFollowRequestSent(true);
+          }
+        } else {
+          // Insert new request – the database trigger will create the notification
+          const { error } = await supabase
+            .from('friend_requests')
+            .insert({
+              requester_id: user.id,
+              requested_id: targetUserId,
+              status: 'pending',
+            });
+
+          if (error) throw error;
+          setFollowRequestSent(true);
+        }
+        toast.success(t('requestSent', { ns: 'notifications', defaultValue: 'Richiesta inviata' }));
       } else {
-        // Follow
+        // Public account - follow directly
         const { error } = await supabase
           .from('follows')
           .insert({
@@ -502,6 +571,30 @@ const MobileNotificationItem = ({
             following_id: targetUserId,
           });
         if (error) throw error;
+
+        // Get current user's profile for notification
+        const { data: followerProfile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        // Create follow notification for the user being followed
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          type: 'follow',
+          title: t('newFollowerTitle', { ns: 'notifications', defaultValue: 'Nuovo follower' }),
+          message: t('startedFollowing', { ns: 'notifications', defaultValue: '{{username}} ha iniziato a seguirti' }),
+          data: {
+            user_id: user.id,
+            user_name: followerProfile?.username,
+            avatar_url: followerProfile?.avatar_url
+          },
+          expires_at: expiresAt.toISOString()
+        });
 
         setIsFollowing(true);
         toast.success(t('following', { ns: 'common' }));
@@ -1203,14 +1296,18 @@ const MobileNotificationItem = ({
                     onTouchEnd={(e) => e.stopPropagation()}
                     disabled={isLoading}
                     size="sm"
-                    variant={isFollowing ? 'outline' : 'default'}
+                    variant={isFollowing || followRequestSent ? 'outline' : 'default'}
                     className={`px-4 h-7 text-[12px] font-semibold rounded-lg ${
-                      isFollowing 
+                      isFollowing || followRequestSent
                         ? 'border-border hover:bg-accent' 
                         : 'bg-primary hover:bg-primary/90'
                     }`}
                   >
-                    {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
+                    {isFollowing 
+                      ? t('following', { ns: 'common' }) 
+                      : followRequestSent 
+                        ? t('requested', { ns: 'common', defaultValue: 'Richiesta' })
+                        : t('follow', { ns: 'common' })}
                   </Button>
                 ) : isReviewLike ? (
                   <div 

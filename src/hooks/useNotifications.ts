@@ -64,6 +64,7 @@ export const useNotifications = () => {
     const pruneOrphaned = async (list: Notification[]) => {
       // Remove notifications that reference content that no longer exists (e.g. deleted post/comment)
       // Also validate follow notifications to check if the user still follows
+      // Also validate follow_accepted notifications to check if the current user still follows that person
       const postIds = Array.from(
         new Set(list.map((n) => n.data?.post_id).filter(Boolean) as string[])
       );
@@ -71,13 +72,19 @@ export const useNotifications = () => {
         new Set(list.map((n) => n.data?.comment_id).filter(Boolean) as string[])
       );
       
-      // Get user IDs from follow notifications to validate they still follow
+      // Get user IDs from follow notifications to validate they still follow ME
       const followNotifications = list.filter(n => n.type === 'follow' && n.data?.user_id);
       const followerUserIds = Array.from(
         new Set(followNotifications.map(n => n.data?.user_id).filter(Boolean) as string[])
       );
 
-      const [postsRes, commentsRes, followsRes] = await Promise.all([
+      // Get user IDs from follow_accepted notifications to validate I still follow THEM
+      const followAcceptedNotifications = list.filter(n => n.type === 'follow_accepted' && n.data?.user_id);
+      const followAcceptedUserIds = Array.from(
+        new Set(followAcceptedNotifications.map(n => n.data?.user_id).filter(Boolean) as string[])
+      );
+
+      const [postsRes, commentsRes, followsRes, myFollowsRes] = await Promise.all([
         postIds.length
           ? supabase.from('posts').select('id').in('id', postIds)
           : Promise.resolve({ data: [] as any[], error: null as any }),
@@ -87,11 +94,15 @@ export const useNotifications = () => {
         followerUserIds.length
           ? supabase.from('follows').select('follower_id').eq('following_id', user.id).in('follower_id', followerUserIds)
           : Promise.resolve({ data: [] as any[], error: null as any }),
+        followAcceptedUserIds.length
+          ? supabase.from('follows').select('following_id').eq('follower_id', user.id).in('following_id', followAcceptedUserIds)
+          : Promise.resolve({ data: [] as any[], error: null as any }),
       ]);
 
       const existingPostIds = new Set((postsRes.data || []).map((p: any) => p.id));
       const existingCommentIds = new Set((commentsRes.data || []).map((c: any) => c.id));
       const activeFollowerIds = new Set((followsRes.data || []).map((f: any) => f.follower_id));
+      const myActiveFollowingIds = new Set((myFollowsRes.data || []).map((f: any) => f.following_id));
 
       const invalidIds = list
         .filter((n) => {
@@ -99,9 +110,13 @@ export const useNotifications = () => {
           const cid = n.data?.comment_id as string | undefined;
           if (pid && !existingPostIds.has(pid)) return true;
           if (cid && !existingCommentIds.has(cid)) return true;
-          // Check if follow notification is from someone who no longer follows
+          // Check if follow notification is from someone who no longer follows ME
           if (n.type === 'follow' && n.data?.user_id) {
             if (!activeFollowerIds.has(n.data.user_id)) return true;
+          }
+          // Check if follow_accepted notification is from someone I no longer follow
+          if (n.type === 'follow_accepted' && n.data?.user_id) {
+            if (!myActiveFollowingIds.has(n.data.user_id)) return true;
           }
           return false;
         })
