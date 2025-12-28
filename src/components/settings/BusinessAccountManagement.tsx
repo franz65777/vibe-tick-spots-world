@@ -99,8 +99,8 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
-        <div className="h-full flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-          <SheetHeader className="p-4">
+        <div className="h-full flex flex-col">
+          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+8px)] p-4">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
