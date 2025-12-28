@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import LocationDetailDrawer from './LocationDetailDrawer';
 import { ArrowLeft, MapPin, Search, UserPlus } from 'lucide-react';
 import discoverMascot from '@/assets/discover-mascot.png';
+import filterEveryoneIcon from '@/assets/icons/filter-everyone.png';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -549,7 +550,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
       {/* Followed Users Row - only show if there are locations to swipe */}
       {followedUsers.length > 0 && filteredLocations.length > 0 && (
-        <div className="bg-background px-4 pt-5 pb-3 overflow-visible relative z-30">
+        <div className="bg-background px-4 pt-2 pb-3 overflow-visible relative z-30">
           <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pt-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -566,7 +567,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
             <div className={`relative z-[90] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted overflow-hidden ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
-              <img src={discoverMascot} alt="All" className="w-10 h-10 object-contain" />
+              <img src={filterEveryoneIcon} alt="All" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
