@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 const NotificationsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, refresh } = useNotifications();
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
 
@@ -161,6 +161,7 @@ const NotificationsPage = () => {
                 notification={notification}
                 onMarkAsRead={handleMarkAsRead}
                 onAction={handleNotificationClick}
+                onRefresh={refresh}
                 onDelete={async (id) => {
                   // For grouped likes we store the real row ids in data.grouped_notification_ids
                   const ids: string[] = notification.data?.grouped_notification_ids || [id];
