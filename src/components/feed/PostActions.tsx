@@ -64,6 +64,7 @@ export const PostActions = ({
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
   const [showLikersModal, setShowLikersModal] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<'top' | 'bottom'>('top');
   const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('been');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -181,16 +182,17 @@ export const PostActions = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowCategoryDropdown(false);
+        setShowRemoveConfirm(false);
       }
     };
 
-    if (showCategoryDropdown) {
+    if (showCategoryDropdown || showRemoveConfirm) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showCategoryDropdown]);
+  }, [showCategoryDropdown, showRemoveConfirm]);
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -216,8 +218,8 @@ export const PostActions = ({
     }
     
     if (isLocationSaved) {
-      // Unsave location directly
-      handleUnsaveLocation();
+      // Show remove confirmation instead of unsaving directly
+      setShowRemoveConfirm(true);
     } else {
       // Calculate dropdown position based on button position
       if (buttonRef.current) {
@@ -357,6 +359,24 @@ export const PostActions = ({
         >
           <Pin className={`w-5 h-5 ${isLocationSaved ? 'fill-current' : ''}`} />
         </button>
+
+        {/* Remove confirmation button */}
+        {showRemoveConfirm && (
+          <div 
+            className={`absolute right-full mr-2 flex items-center z-50`}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUnsaveLocation();
+                setShowRemoveConfirm(false);
+              }}
+              className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap hover:bg-destructive/90 transition-colors"
+            >
+              {t('remove', { ns: 'common', defaultValue: 'Remove' })}
+            </button>
+          </div>
+        )}
 
         {/* Category dropdown - position dynamically based on available space */}
         {showCategoryDropdown && (
