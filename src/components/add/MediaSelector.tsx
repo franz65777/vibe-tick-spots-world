@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Video } from 'lucide-react';
 import addPostButton from '@/assets/add-post-button.png';
 import listIcon from '@/assets/list-icon.png';
-import postIcon from '@/assets/post-icon.png';
+import postIcon from '@/assets/camera-icon.png';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
