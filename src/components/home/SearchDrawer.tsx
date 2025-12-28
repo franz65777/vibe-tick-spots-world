@@ -799,7 +799,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       {/* Expanded content panel - includes search input at top */}
       <div
-        className="w-full overflow-hidden rounded-3xl shadow-2xl border border-border/10 flex flex-col backdrop-blur-xl bg-white/90 dark:bg-background/80"
+        className={cn(
+          "w-full overflow-hidden rounded-3xl shadow-2xl border border-border/10 flex flex-col",
+          isSearchOpen ? "backdrop-blur-xl bg-background/60" : "bg-background"
+        )}
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
@@ -811,7 +814,10 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         }}
       >
         {/* Fixed header: Drag handle + Search input */}
-        <div className="flex-shrink-0 bg-transparent rounded-t-3xl">
+        <div className={cn(
+          "flex-shrink-0 rounded-t-3xl",
+          isSearchOpen ? "bg-background/20 backdrop-blur-md" : "bg-background"
+        )}>
           {/* Drag handle at top - larger touch area (drag-to-close) */}
           <div
             className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing"
@@ -892,7 +898,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         </div>
 
         {/* Scrollable content */}
-        <div ref={scrollRef} data-drawer-scroll className="flex-1 overflow-y-auto px-4 pb-4 bg-transparent">
+        <div
+          ref={scrollRef}
+          data-drawer-scroll
+          className={cn(
+            "flex-1 overflow-y-auto px-4 pb-4",
+            isSearchOpen ? "bg-background/20 backdrop-blur-md" : "bg-background"
+          )}
+        >
           {/* TRENDING MODE: show the PopularSpots (Tendenza/Sconto/Evento/Promozione/Nuovo) UI */}
           {!isSearchOpen && (
             <div className="pt-1">
