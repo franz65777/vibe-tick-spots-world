@@ -1,7 +1,8 @@
 import React from 'react';
-import { MapPin, ImagePlus, FolderPlus } from 'lucide-react';
+import { MapPin, FolderPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import cameraIcon from '@/assets/camera-icon.png';
 
 interface AddMenuDropdownProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export const AddMenuDropdown = ({ isOpen, onClose, onSelectOption }: AddMenuDrop
     },
     {
       id: 'post' as const,
-      icon: ImagePlus,
+      customIcon: cameraIcon,
       label: t('navigation:addPost', { defaultValue: 'Aggiungi post' }),
       color: 'bg-purple-500 hover:bg-purple-600'
     },
@@ -64,7 +65,11 @@ export const AddMenuDropdown = ({ isOpen, onClose, onSelectOption }: AddMenuDrop
             }}
           >
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <option.icon className="w-5 h-5" />
+              {'customIcon' in option && option.customIcon ? (
+                <img src={option.customIcon} alt="" className="w-6 h-6 object-contain" />
+              ) : (
+                <option.icon className="w-5 h-5" />
+              )}
             </div>
             <span className="font-medium text-sm whitespace-nowrap">
               {option.label}
