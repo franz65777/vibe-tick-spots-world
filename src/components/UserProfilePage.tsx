@@ -24,6 +24,7 @@ import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import ShareProfileModal from './profile/ShareProfileModal';
 import { AvatarPreviewModal } from './profile/AvatarPreviewModal';
+import { UnfollowConfirmDialog } from './profile/UnfollowConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 const UserProfilePage = () => {
@@ -50,6 +51,7 @@ const UserProfilePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
   const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
+  const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
 
   const badgesSheetRef = useRef<HTMLDivElement | null>(null);
   const dragStartYRef = useRef<number | null>(null);
@@ -120,12 +122,22 @@ const UserProfilePage = () => {
   };
   const handleFollowToggle = () => {
     if (profile?.is_following) {
-      unfollowUser();
+      // If the user is private, show confirmation dialog
+      if (profile?.is_private) {
+        setIsUnfollowDialogOpen(true);
+      } else {
+        unfollowUser();
+      }
     } else if (profile?.follow_request_status === 'pending') {
       cancelFollowRequest();
     } else {
       followUser();
     }
+  };
+
+  const handleConfirmUnfollow = () => {
+    setIsUnfollowDialogOpen(false);
+    unfollowUser();
   };
 
   // Determine follow button text
@@ -552,6 +564,14 @@ const UserProfilePage = () => {
           setIsShareModalOpen(true);
         }}
         followLoading={followLoading}
+      />
+
+      <UnfollowConfirmDialog
+        isOpen={isUnfollowDialogOpen}
+        onClose={() => setIsUnfollowDialogOpen(false)}
+        onConfirm={handleConfirmUnfollow}
+        avatarUrl={profile.avatar_url}
+        username={displayUsername}
       />
     </div>;
 };
