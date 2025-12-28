@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMapPins } from '@/hooks/useMapPins';
 import { Place } from '@/types/place';
@@ -6,6 +7,7 @@ import Header from './home/Header';
 import FilterButtons from './home/FilterButtons';
 
 const SimpleHomePage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('following');
@@ -118,7 +120,7 @@ const SimpleHomePage = () => {
                       <p className="text-muted-foreground text-xs">{place.address}</p>
                       <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                         <span>❤️ {place.likes}</span>
-                        <span>📍 {place.totalSaves} saves</span>
+                        <span>📍 {t('savesCount', { count: place.totalSaves || 0 })}</span>
                       </div>
                     </div>
                   ))}
