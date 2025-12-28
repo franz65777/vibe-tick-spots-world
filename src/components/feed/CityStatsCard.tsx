@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import globeAnimation from '@/assets/globe-animation.gif';
+import noUsersCharacter from '@/assets/no-users-character.png';
 import { cn } from '@/lib/utils';
 
 interface CityRanking {
@@ -159,7 +159,7 @@ const CityStatsCard = memo(() => {
       <div className="mx-4 mb-4 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 px-4 py-3 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={globeAnimation} alt="" className="w-8 h-8 object-contain" />
+            <img src={noUsersCharacter} alt="" className="w-8 h-8 object-contain" />
             <h3 className="text-base font-bold text-foreground">
               {t('discoverPlaces', { defaultValue: 'discover places' })}
             </h3>
@@ -197,7 +197,7 @@ const CityStatsCard = memo(() => {
           >
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
           </button>
-          <img src={globeAnimation} alt="" className="w-14 h-14 object-contain" />
+          <img src={noUsersCharacter} alt="" className="w-14 h-14 object-contain" />
         </div>
       </div>
 
