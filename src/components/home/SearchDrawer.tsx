@@ -55,6 +55,7 @@ interface SearchDrawerProps {
   isExpanded?: boolean;
   onDrawerStateChange?: (isOpen: boolean) => void;
   registerReopenTrending?: (reopenFn: () => void) => void;
+  registerCloseDrawer?: (closeFn: () => void) => void;
 }
 
 // Nearby prompts - main categories + subcategories with emojis
@@ -103,6 +104,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   isExpanded = false,
   onDrawerStateChange,
   registerReopenTrending,
+  registerCloseDrawer,
 }) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -151,6 +153,16 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       });
     }
   }, [registerReopenTrending]);
+
+  // Register the close function for parent to call
+  useEffect(() => {
+    if (registerCloseDrawer) {
+      registerCloseDrawer(() => {
+        setDrawerMode('closed');
+        setDragProgress(0);
+      });
+    }
+  }, [registerCloseDrawer]);
 
   useEffect(() => {
     // Notify parent when ANY drawer state is visible (Trending or Search).
