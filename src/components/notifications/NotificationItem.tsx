@@ -96,7 +96,35 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
       });
       if (followErr) throw followErr;
 
-      // 3) Delete notification
+      // 3) Get current user's profile to include in the notification
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      // 4) Send notification to the requester that their request was accepted
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      
+      await supabase.from('notifications').insert({
+        user_id: notification.data.user_id,
+        type: 'follow_accepted',
+        title: t('followAcceptedTitle', { ns: 'notifications', defaultValue: 'Richiesta accettata' }),
+        message: t('followAcceptedMessage', { 
+          ns: 'notifications', 
+          username: currentProfile?.username || 'User',
+          defaultValue: `{{username}} ha accettato la tua richiesta di seguirlo`
+        }),
+        data: {
+          user_id: user.id,
+          username: currentProfile?.username,
+          avatar_url: currentProfile?.avatar_url
+        },
+        expires_at: expiresAt.toISOString()
+      });
+
+      // 5) Delete notification
       const { error: notifErr } = await supabase
         .from('notifications')
         .delete()
@@ -183,6 +211,12 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
         gradient: 'bg-gradient-to-r from-yellow-500 to-orange-500',
         bgColor: 'bg-yellow-50',
         borderColor: 'border-yellow-200',
+      },
+      follow_accepted: {
+        icon: <UserPlus className="w-5 h-5 text-white" />,
+        gradient: 'bg-gradient-to-r from-green-500 to-teal-500',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
       },
       place_recommendation: {
         icon: <MapPin className="w-5 h-5 text-white" />,
