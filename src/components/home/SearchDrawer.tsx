@@ -453,14 +453,23 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const dragDelta = deltaY / maxDrag;
       let newProgress = dragStartProgress.current + dragDelta;
 
-      // Rubber banding
+      // Determine max progress based on mode - trending drawer has a fixed max height
+      const maxProgress = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS : 1;
+
+      // Rubber banding only below 0, hard cap at max for trending
       if (newProgress < 0) {
         newProgress = newProgress * 0.3;
-      } else if (newProgress > 1) {
-        newProgress = 1 + (newProgress - 1) * 0.3;
+      } else if (newProgress > maxProgress) {
+        // For trending mode, hard cap with minimal rubber band
+        if (dragStartedModeRef.current === 'trending') {
+          newProgress = maxProgress + (newProgress - maxProgress) * 0.1;
+        } else {
+          newProgress = 1 + (newProgress - 1) * 0.3;
+        }
       }
 
-      setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
+      const clampMax = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS + 0.05 : 1.1;
+      setDragProgress(Math.max(-0.1, Math.min(clampMax, newProgress)));
     },
     [isDragging]
   );
@@ -551,10 +560,23 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const dragDelta = deltaY / maxDrag;
       let newProgress = dragStartProgress.current + dragDelta;
 
-      if (newProgress < 0) newProgress = newProgress * 0.3;
-      else if (newProgress > 1) newProgress = 1 + (newProgress - 1) * 0.3;
+      // Determine max progress based on mode - trending drawer has a fixed max height
+      const maxProgress = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS : 1;
 
-      setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
+      // Rubber banding only below 0, hard cap at max for trending
+      if (newProgress < 0) {
+        newProgress = newProgress * 0.3;
+      } else if (newProgress > maxProgress) {
+        // For trending mode, hard cap with minimal rubber band
+        if (dragStartedModeRef.current === 'trending') {
+          newProgress = maxProgress + (newProgress - maxProgress) * 0.1;
+        } else {
+          newProgress = 1 + (newProgress - 1) * 0.3;
+        }
+      }
+
+      const clampMax = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS + 0.05 : 1.1;
+      setDragProgress(Math.max(-0.1, Math.min(clampMax, newProgress)));
     },
     [isDragging]
   );
