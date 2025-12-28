@@ -194,9 +194,15 @@ const MapSection = ({
     if (selectedPlace) setSelectedPlace(null);
   };
 
-  // Mobile-friendly tap - disabled to prevent trending section jumping
+  // Ref to close drawer from map tap
+  const closeDrawerRef = useRef<(() => void) | null>(null);
+
+  // Mobile-friendly tap - closes trending drawer when open
   const handleMapClick = (coords: { lat: number; lng: number }) => {
-    // Do nothing on single tap - double tap will handle zoom
+    // Close trending drawer if open
+    if (isDrawerOpen) {
+      closeDrawerRef.current?.();
+    }
   };
 
   const handlePinClick = (place: Place) => {
@@ -349,6 +355,9 @@ const MapSection = ({
               }}
               registerReopenTrending={(reopenFn) => {
                 reopenTrendingRef.current = reopenFn;
+              }}
+              registerCloseDrawer={(closeFn) => {
+                closeDrawerRef.current = closeFn;
               }}
             />
           </div>
