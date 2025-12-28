@@ -23,6 +23,7 @@ import Achievements from './profile/Achievements';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import ShareProfileModal from './profile/ShareProfileModal';
+import { AvatarPreviewModal } from './profile/AvatarPreviewModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 const UserProfilePage = () => {
@@ -48,6 +49,7 @@ const UserProfilePage = () => {
   const [initialFolderId, setInitialFolderId] = useState<string | undefined>(undefined);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
 
   const badgesSheetRef = useRef<HTMLDivElement | null>(null);
   const dragStartYRef = useRef<number | null>(null);
@@ -273,14 +275,18 @@ const UserProfilePage = () => {
         <div className="flex items-start gap-3 mb-2">
           {/* Avatar on left */}
           <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-full">
+            <button 
+              onClick={() => !isOwnProfile && setIsAvatarPreviewOpen(true)}
+              className={`w-16 h-16 rounded-full ${!isOwnProfile ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+              disabled={isOwnProfile}
+            >
               <Avatar className="w-full h-full">
                 <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
                 <AvatarFallback className="text-sm font-semibold">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
-            </div>
+            </button>
           </div>
 
           {/* Middle: Username and Stats */}
@@ -531,6 +537,22 @@ const UserProfilePage = () => {
           </div>
         </div>
       )}
+
+      {/* Avatar Preview Modal */}
+      <AvatarPreviewModal
+        isOpen={isAvatarPreviewOpen}
+        onClose={() => setIsAvatarPreviewOpen(false)}
+        avatarUrl={profile.avatar_url}
+        username={displayUsername}
+        isFollowing={profile.is_following || false}
+        followRequestStatus={profile.follow_request_status}
+        onFollowToggle={handleFollowToggle}
+        onShare={() => {
+          setIsAvatarPreviewOpen(false);
+          setIsShareModalOpen(true);
+        }}
+        followLoading={followLoading}
+      />
     </div>;
 };
 export default UserProfilePage;
