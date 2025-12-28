@@ -362,20 +362,16 @@ export const PostActions = ({
 
         {/* Remove confirmation button */}
         {showRemoveConfirm && (
-          <div 
-            className={`absolute right-full mr-2 flex items-center z-50`}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleUnsaveLocation();
+              setShowRemoveConfirm(false);
+            }}
+            className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-destructive text-destructive-foreground px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap hover:bg-destructive/90 transition-colors z-50"
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleUnsaveLocation();
-                setShowRemoveConfirm(false);
-              }}
-              className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap hover:bg-destructive/90 transition-colors"
-            >
-              {t('remove', { ns: 'common', defaultValue: 'Remove' })}
-            </button>
-          </div>
+            {t('remove', { ns: 'common', defaultValue: 'Remove' })}
+          </button>
         )}
 
         {/* Category dropdown - position dynamically based on available space */}
