@@ -408,7 +408,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                     <div className="text-left">
                       <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
                       <div className="text-[9px] text-muted-foreground">
-                        {typeof spot.savesCount === 'number' && spot.savesCount > 0 ? `${spot.savesCount} saves` : ''}
+                        {typeof spot.savesCount === 'number' && spot.savesCount > 0
+                          ? t('savesCount', { ns: 'common', count: spot.savesCount })
+                          : ''}
                       </div>
                     </div>
                   </button>
