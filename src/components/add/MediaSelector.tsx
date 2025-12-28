@@ -4,10 +4,9 @@ import addPostButton from '@/assets/add-post-button.png';
 import listIcon from '@/assets/list-icon.png';
 import postIcon from '@/assets/post-icon.png';
 import { Button } from '@/components/ui/button';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import addPageHero from '@/assets/add-page-hero.png';
+import addPageHero from '@/assets/add-hero-cards.png';
 import { SocialImportTutorial } from './SocialImportTutorial';
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -30,29 +29,12 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   const handleClick = () => {
     fileInputRef.current?.click();
   };
-  const categories = ['restaurant', 'cafe', 'bar', 'hotel', 'entertainment', 'bakery', 'museum'];
   if (selectedFiles.length === 0) {
     return <div className="flex flex-col items-center justify-center bg-background p-6 -mt-[30px] relative overflow-hidden min-h-screen" data-photo-selection="true">
         <div className="text-center space-y-6 max-w-sm relative z-10">
-          {/* Floating Category Icons - Arranged in Circle */}
-          <div className="relative w-full h-64 flex items-center justify-center mb-4">
-            {categories.map((category, index) => {
-            // Position icons in a circle around the center (radius: 120px)
-            const angle = index * 360 / categories.length;
-            const radius = 120;
-            const radian = angle * Math.PI / 180;
-            const x = Math.cos(radian) * radius;
-            const y = Math.sin(radian) * radius;
-            return <div key={category} className="absolute opacity-70 transition-opacity hover:opacity-100" style={{
-              top: `calc(50% + ${y}px - 1.75rem)`,
-              left: `calc(50% + ${x}px - 1.75rem)`
-            }}>
-                  <CategoryIcon category={category} className="w-14 h-14 drop-shadow-lg" />
-                </div>;
-          })}
-            
-            {/* Center Hero Image */}
-            <div className="w-36 h-36 flex items-center justify-center relative z-10">
+          {/* Hero Image with 5 photo cards */}
+          <div className="relative w-full flex items-center justify-center mb-4">
+            <div className="w-72 h-48 flex items-center justify-center">
               <img src={addPageHero} alt="Share experience" className="w-full h-full object-contain" />
             </div>
           </div>
