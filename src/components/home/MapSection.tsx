@@ -283,6 +283,7 @@ const MapSection = ({
           fromMessages={fromMessages}
           onBackToMessages={onBackToMessages}
           hideOtherPins={!!sourcePostId || !!(selectedPlace as any)?.fromList || !!(initialSelectedPlace as any)?.fromList}
+          isDrawerOpen={isDrawerOpen}
         />
         )}
 

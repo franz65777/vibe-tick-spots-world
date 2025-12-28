@@ -39,6 +39,7 @@ interface LeafletMapSetupProps {
   onCitySelect?: (city: string, coords: { lat: number; lng: number }) => void;
   filtersVisible?: boolean;
   hideSharingControls?: boolean;
+  isDrawerOpen?: boolean;
   fromMessages?: boolean;
   onBackToMessages?: () => void;
   hideOtherPins?: boolean; // When true, only shows the selected pin
@@ -63,6 +64,7 @@ const LeafletMapSetup = ({
   onCitySelect,
   filtersVisible = true,
   hideSharingControls = false,
+  isDrawerOpen = false,
   fromMessages = false,
   onBackToMessages,
   hideOtherPins = false,
@@ -1017,8 +1019,8 @@ const LeafletMapSetup = ({
         }}
       />
 
-      {/* Location sharing controls - positioned at same height as filter dropdown, hidden when filter dropdown is open */}
-      {!hideSharingControls && (
+      {/* Location sharing controls - positioned at same height as filter dropdown, hidden when filter dropdown or drawer is open */}
+      {!hideSharingControls && !isDrawerOpen && (
         <SharingControls 
           userActiveShare={userActiveShare}
           fullScreen={fullScreen}
@@ -1191,8 +1193,8 @@ const SharingControls = ({
       className={`${fullScreen ? 'fixed' : 'absolute'} left-3 z-[1001] flex gap-1.5 transition-opacity duration-300 ${filtersVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       style={{ 
         bottom: fullScreen 
-          ? 'calc(env(safe-area-inset-bottom, 0px) + 4.5rem)'
-          : 'calc(8.5rem + env(safe-area-inset-bottom, 0px))'
+          ? 'calc(env(safe-area-inset-bottom, 0px) + 7rem)'
+          : 'calc(11rem + env(safe-area-inset-bottom, 0px))'
       }}
     >
       <button
