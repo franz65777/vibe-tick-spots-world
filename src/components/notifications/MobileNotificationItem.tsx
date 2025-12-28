@@ -82,6 +82,7 @@ interface MobileNotificationItemProps {
   onMarkAsRead: (id: string) => void;
   onAction: (notification: any) => void;
   onDelete?: (id: string) => Promise<any>;
+  onRefresh?: () => void | Promise<void>;
   openSwipeId?: string | null;
   onSwipeOpen?: (id: string | null) => void;
 }
@@ -91,6 +92,7 @@ const MobileNotificationItem = ({
   onMarkAsRead, 
   onAction,
   onDelete,
+  onRefresh,
   openSwipeId,
   onSwipeOpen
 }: MobileNotificationItemProps) => {
@@ -1120,6 +1122,10 @@ const MobileNotificationItem = ({
                               } else {
                                 await supabase.from('notifications').delete().eq('id', notification.id);
                               }
+
+                              // Refresh list so any new "follow" notification appears immediately
+                              await new Promise((r) => setTimeout(r, 200));
+                              await onRefresh?.();
 
                               setFollowRequestHandled(true);
                               setHidden(true);
