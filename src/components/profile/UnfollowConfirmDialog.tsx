@@ -27,55 +27,53 @@ export const UnfollowConfirmDialog: React.FC<UnfollowConfirmDialogProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[2100] flex items-end justify-center"
+      className="fixed inset-0 z-[2100] flex items-center justify-center px-6"
       onClick={onClose}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
-      {/* Dialog container */}
+      {/* Dialog */}
       <div 
-        className="relative z-10 w-full px-4 pb-4 flex flex-col gap-2"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+        className="relative z-10 w-full max-w-sm bg-background rounded-3xl overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Main dialog */}
-        <div className="bg-background rounded-2xl overflow-hidden">
-          {/* Avatar and message */}
-          <div className="flex flex-col items-center pt-6 pb-4 px-6">
-            <Avatar className="w-16 h-16 mb-4">
+        {/* Avatar and message */}
+        <div className="flex flex-col items-center pt-8 pb-6 px-6">
+          <div className="p-1 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 mb-4">
+            <Avatar className="w-20 h-20 border-2 border-background">
               <AvatarImage src={avatarUrl || undefined} alt={username} className="object-cover" />
-              <AvatarFallback className="text-lg font-semibold bg-muted">
+              <AvatarFallback className="text-xl font-semibold bg-muted">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
-            <p className="text-center text-foreground text-sm">
-              {t('userProfile.unfollowConfirmMessage', { 
-                ns: 'common',
-                username: username 
-              })}
-            </p>
           </div>
-          
-          {/* Divider */}
-          <div className="h-px bg-border" />
-          
+          <p className="text-center text-foreground text-base leading-relaxed">
+            {t('userProfile.unfollowConfirmMessage', { 
+              ns: 'common',
+              username: username 
+            })}
+          </p>
+        </div>
+        
+        {/* Buttons */}
+        <div className="px-6 pb-6 flex flex-col gap-3">
           {/* Unfollow button */}
           <button
             onClick={onConfirm}
-            className="w-full py-4 text-destructive font-medium text-base hover:bg-muted/50 transition-colors"
+            className="w-full py-3.5 bg-destructive/10 text-destructive font-semibold text-base rounded-2xl hover:bg-destructive/20 transition-colors"
           >
             {t('userProfile.unfollow', { ns: 'common' })}
           </button>
+          
+          {/* Cancel button */}
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 bg-muted text-foreground font-medium text-base rounded-2xl hover:bg-muted/80 transition-colors"
+          >
+            {t('userProfile.cancel', { ns: 'common' })}
+          </button>
         </div>
-        
-        {/* Cancel button */}
-        <button
-          onClick={onClose}
-          className="w-full py-4 bg-background rounded-2xl font-medium text-base text-foreground hover:bg-muted/50 transition-colors"
-        >
-          {t('common.cancel', { ns: 'common' })}
-        </button>
       </div>
     </div>
   );
