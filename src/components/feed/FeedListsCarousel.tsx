@@ -124,15 +124,22 @@ const FeedListsCarousel = memo(() => {
             });
           }
 
-          // Calculate visited count - match by google_place_id OR location id
-          const visitedCount = (locationsData || []).filter(loc => {
+          // Filter locations in user's city for accurate count
+          const locationsInCity = userCity && locationsData
+            ? locationsData.filter(loc => loc.city?.toLowerCase() === userCity.toLowerCase())
+            : locationsData || [];
+
+          // Calculate visited count - match by google_place_id OR location id (only for locations in city)
+          const visitedCount = locationsInCity.filter(loc => {
             if (userVisitedLocationIds.has(String(loc.id))) return true;
             if (loc.google_place_id && userVisitedPlaceIds.has(String(loc.google_place_id))) return true;
             return false;
           }).length;
 
-          // If no geolocation, show all public folders
-          if (!userCity || hasNearbyLocation) {
+          // If no geolocation, show all public folders with all locations
+          // If has geolocation, show only if there are locations in that city
+          if (!userCity) {
+            // No city filter - show all locations
             return {
               id: folder.id,
               name: folder.name,
@@ -140,6 +147,24 @@ const FeedListsCarousel = memo(() => {
               color: folder.color,
               is_private: folder.is_private,
               location_count: locationIds.length,
+              visited_count: (locationsData || []).filter(loc => {
+                if (userVisitedLocationIds.has(String(loc.id))) return true;
+                if (loc.google_place_id && userVisitedPlaceIds.has(String(loc.google_place_id))) return true;
+                return false;
+              }).length,
+              owner_username: folder.profiles?.username || 'user'
+            };
+          }
+          
+          // Has city filter - only show if folder has locations in that city
+          if (hasNearbyLocation && locationsInCity.length > 0) {
+            return {
+              id: folder.id,
+              name: folder.name,
+              cover_image_url: folder.cover_image_url,
+              color: folder.color,
+              is_private: folder.is_private,
+              location_count: locationsInCity.length,
               visited_count: visitedCount,
               owner_username: folder.profiles?.username || 'user'
             };
@@ -176,7 +201,7 @@ const FeedListsCarousel = memo(() => {
               // Dispatch event to open folder modal directly in FeedPage
               // This keeps the feed mounted and preserves scroll position
               window.dispatchEvent(new CustomEvent('feed:open-folder', { 
-                detail: { folderId: list.id } 
+                detail: { folderId: list.id, filterCity: geoLocation?.city } 
               }));
             }}
             className="shrink-0 w-40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"

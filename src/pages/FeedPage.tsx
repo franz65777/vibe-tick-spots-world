@@ -43,11 +43,13 @@ const FeedPage = memo(() => {
   
   // Folder modal state - managed within FeedPage to keep feed mounted
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  const [folderFilterCity, setFolderFilterCity] = useState<string | null>(null);
   
   // Listen for folder open events from FeedListsCarousel
   useEffect(() => {
-    const handleOpenFolder = (e: CustomEvent<{ folderId: string }>) => {
+    const handleOpenFolder = (e: CustomEvent<{ folderId: string; filterCity?: string }>) => {
       setOpenFolderId(e.detail.folderId);
+      setFolderFilterCity(e.detail.filterCity || null);
     };
     
     window.addEventListener('feed:open-folder', handleOpenFolder as any);
@@ -57,6 +59,7 @@ const FeedPage = memo(() => {
   // Handle folder close
   const handleFolderClose = useCallback(() => {
     setOpenFolderId(null);
+    setFolderFilterCity(null);
   }, []);
   
   // Handle location click from folder
@@ -778,6 +781,7 @@ const FeedPage = memo(() => {
               isOpen={true}
               onClose={handleFolderClose}
               onLocationClick={handleFolderLocationClick}
+              filterCity={folderFilterCity}
             />
           </div>
         )}

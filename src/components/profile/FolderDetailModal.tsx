@@ -23,6 +23,7 @@ interface FolderDetailModalProps {
   onClose: () => void;
   onSaveStatusChange?: () => void;
   onLocationClick?: (location: any) => void;
+  filterCity?: string | null;
 }
 
 const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: () => void }) => {
@@ -93,7 +94,7 @@ const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: 
   );
 };
 
-const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLocationClick }: FolderDetailModalProps) => {
+const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLocationClick, filterCity }: FolderDetailModalProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -229,10 +230,17 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
       let locationsData: any[] = [];
       if (folderLocs && folderLocs.length > 0) {
         const locationIds = folderLocs.map((fl: any) => fl.location_id);
-        const { data: locs, error: locationsError } = await supabase
+        let query = supabase
           .from('locations')
           .select('id, name, category, city, image_url, latitude, longitude, address, google_place_id')
           .in('id', locationIds);
+        
+        // Apply city filter if provided
+        if (filterCity) {
+          query = query.ilike('city', filterCity);
+        }
+        
+        const { data: locs, error: locationsError } = await query;
 
         if (!locationsError) {
           locationsData = locs || [];
@@ -308,7 +316,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
       console.error('Error fetching folder:', error);
       setLoading(false);
     }
-  }, [folderId, isOpen, user]);
+  }, [folderId, isOpen, user, filterCity]);
 
   useEffect(() => {
     if (isOpen && folderId) {
