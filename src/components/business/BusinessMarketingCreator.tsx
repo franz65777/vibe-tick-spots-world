@@ -126,7 +126,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       // Get business profile first to get location_id
       const { data: businessProfile } = await supabase
         .from('business_profiles')
-        .select('id')
+        .select('id, location_id')
         .eq('user_id', user.id)
         .single();
 
@@ -135,21 +135,28 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         return;
       }
 
-      // Get claimed location
-      const { data: locationClaim } = await supabase
-        .from('location_claims')
-        .select('location_id')
-        .eq('business_id', businessProfile.id)
-        .eq('verification_status', 'verified')
-        .limit(1)
-        .maybeSingle();
+      // Use business profile's location_id directly, or fallback to location_claims
+      let locationId = businessProfile.location_id;
+      
+      if (!locationId) {
+        // Fallback: Get claimed location
+        const { data: locationClaim } = await supabase
+          .from('location_claims')
+          .select('location_id')
+          .eq('business_id', businessProfile.id)
+          .eq('verification_status', 'verified')
+          .limit(1)
+          .maybeSingle();
+        
+        locationId = locationClaim?.location_id || null;
+      }
 
       // Insert marketing post
       const { error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          location_id: locationClaim?.location_id || null,
+          location_id: locationId,
           caption: `${title}\n\n${description}`,
           content_type: contentType,
           media_urls: mediaUrls,
@@ -160,12 +167,12 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       if (error) throw error;
 
       // Create marketing campaign entry for fireworks on map pins and location cards
-      if (locationClaim?.location_id && endDate) {
+      if (locationId && endDate) {
         const { error: campaignError } = await supabase
           .from('marketing_campaigns')
           .insert({
             business_user_id: user.id,
-            location_id: locationClaim.location_id,
+            location_id: locationId,
             campaign_type: contentType,
             title: title,
             description: description,
