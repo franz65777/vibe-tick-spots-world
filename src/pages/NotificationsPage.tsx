@@ -11,18 +11,16 @@ const NotificationsPage = () => {
   const { t } = useTranslation();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, refresh } = useNotifications();
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
-  const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
-
-  // Mark all as read when page loads and notifications are fetched
+  // Mark all as read when page loads and whenever there are unread notifications
+  // This ensures new notifications (e.g. after accepting a follow request) are also marked as read
   useEffect(() => {
-    if (!loading && !hasMarkedAsRead && notifications.length > 0 && unreadCount > 0) {
+    if (!loading && notifications.length > 0 && unreadCount > 0) {
       const timer = setTimeout(() => {
         markAllAsRead();
-        setHasMarkedAsRead(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [loading, notifications.length, unreadCount, hasMarkedAsRead, markAllAsRead]);
+  }, [loading, notifications.length, unreadCount, markAllAsRead]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead([notificationId]);
