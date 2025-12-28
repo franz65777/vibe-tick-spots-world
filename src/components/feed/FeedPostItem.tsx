@@ -61,6 +61,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
 
   const isReview = !!rating && rating > 0;
   const isReviewOnly = isReview && mediaUrls.length === 0;
+  const isPromotion = !!contentType; // discount, event, promotion, announcement
   
   // Get promotion type icon
   const getPromotionIcon = () => {
@@ -95,7 +96,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
     }
   };
 
-  const renderReviewCaption = () => {
+  // Render caption without username (for reviews and promotions)
+  const renderCaptionWithoutUsername = () => {
     if (!caption) return null;
 
     // Check if caption exceeds 2 lines (approximately 100 chars)
@@ -362,9 +364,9 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       )}
 
       {/* Post Actions */}
-      <div className={cn("post-compact-actions", isReviewOnly && !caption ? "space-y-0" : "space-y-1")}>
-        {/* Review-only caption (rating present, no media): show under header, above buttons, without username repetition */}
-        {isReviewOnly && caption && renderReviewCaption()}
+      <div className={cn("post-compact-actions", (isReviewOnly || isPromotion) && !caption ? "space-y-0" : "space-y-1")}>
+        {/* Caption without username for: review-only OR promotion posts - show above buttons */}
+        {(isReviewOnly || isPromotion) && caption && renderCaptionWithoutUsername()}
 
         <PostActions
           postId={postId}
@@ -419,8 +421,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           </div>
         )}
 
-        {/* Caption (regular posts, and reviews WITH media) */}
-        {caption && !isReviewOnly && renderCaption()}
+        {/* Caption with username (regular posts only, not reviews or promotions) */}
+        {caption && !isReviewOnly && !isPromotion && renderCaption()}
 
         {/* Timestamp - tighter spacing */}
         <p className="text-xs text-muted-foreground text-left mt-0">
