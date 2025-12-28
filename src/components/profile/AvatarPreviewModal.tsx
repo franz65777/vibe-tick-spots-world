@@ -45,20 +45,30 @@ export const AvatarPreviewModal: React.FC<AvatarPreviewModalProps> = ({
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
-      onClick={onClose}
-    >
-      {/* Blurred Background - using avatar as background */}
+    <>
+      {/* Hide bottom navigation when modal is open */}
+      <style>{`
+        [class*="bottom-navigation"],
+        [class*="NewBottomNavigation"],
+        [class*="BusinessBottomNavigation"],
+        nav[class*="fixed bottom"],
+        div[class*="fixed bottom-0"] {
+          display: none !important;
+        }
+      `}</style>
       <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-          backgroundColor: avatarUrl ? 'transparent' : 'hsl(var(--muted))'
-        }}
-      />
-      <div className="absolute inset-0 backdrop-blur-3xl bg-black/30" />
-      
+        className="fixed inset-0 z-[2000] flex flex-col items-center justify-center"
+        onClick={onClose}
+      >
+        {/* Blurred Background - using avatar as background */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
+            backgroundColor: avatarUrl ? 'transparent' : 'hsl(var(--muted))'
+          }}
+        />
+        <div className="absolute inset-0 backdrop-blur-3xl bg-black/30" />
       {/* Close button */}
       <button 
         onClick={onClose}
@@ -117,7 +127,8 @@ export const AvatarPreviewModal: React.FC<AvatarPreviewModalProps> = ({
             {t('userProfile.share', { ns: 'common', defaultValue: 'Condividi' })}
           </span>
         </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
