@@ -847,7 +847,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                         })
                       : t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })
                   }
-                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-background border border-input rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-9 pr-8 py-2.5 text-sm bg-white dark:bg-background border border-border/40 dark:border-input rounded-3xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground shadow-sm"
                   autoFocus
                   disabled={activeNearbyCategory !== null && isLoading}
                 />
@@ -872,9 +872,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </button>
             </div>
           ) : (
-            /* Trending mode: full-width search bar like the search page */
             <div
-              className="mx-4 mb-1 h-12 rounded-full backdrop-blur-md bg-white/80 dark:bg-background/30 border border-border/30 dark:border-border/10 flex items-center gap-3 px-4 cursor-text shadow-sm"
+              className="mx-4 mb-1 h-10 rounded-full backdrop-blur-md bg-white/80 dark:bg-background/30 border border-border/30 dark:border-border/10 flex items-center gap-3 px-4 cursor-text shadow-sm"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
