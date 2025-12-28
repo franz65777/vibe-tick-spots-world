@@ -470,6 +470,15 @@ export const useUserProfile = (userId?: string) => {
 
       if (error) throw error;
 
+      // Delete the "follow" notification for the user being unfollowed
+      // so they don't see an outdated "X started following you" notification
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId)
+        .eq('type', 'follow')
+        .filter('data->>user_id', 'eq', currentUser.id);
+
       setProfile(prev => prev ? {
         ...prev,
         is_following: false,

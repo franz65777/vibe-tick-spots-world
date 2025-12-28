@@ -63,26 +63,35 @@ export const useNotifications = () => {
 
     const pruneOrphaned = async (list: Notification[]) => {
       // Remove notifications that reference content that no longer exists (e.g. deleted post/comment)
+      // Also validate follow notifications to check if the user still follows
       const postIds = Array.from(
         new Set(list.map((n) => n.data?.post_id).filter(Boolean) as string[])
       );
       const commentIds = Array.from(
         new Set(list.map((n) => n.data?.comment_id).filter(Boolean) as string[])
       );
+      
+      // Get user IDs from follow notifications to validate they still follow
+      const followNotifications = list.filter(n => n.type === 'follow' && n.data?.user_id);
+      const followerUserIds = Array.from(
+        new Set(followNotifications.map(n => n.data?.user_id).filter(Boolean) as string[])
+      );
 
-      if (postIds.length === 0 && commentIds.length === 0) return list;
-
-      const [postsRes, commentsRes] = await Promise.all([
+      const [postsRes, commentsRes, followsRes] = await Promise.all([
         postIds.length
           ? supabase.from('posts').select('id').in('id', postIds)
           : Promise.resolve({ data: [] as any[], error: null as any }),
         commentIds.length
           ? supabase.from('comments').select('id').in('id', commentIds)
           : Promise.resolve({ data: [] as any[], error: null as any }),
+        followerUserIds.length
+          ? supabase.from('follows').select('follower_id').eq('following_id', user.id).in('follower_id', followerUserIds)
+          : Promise.resolve({ data: [] as any[], error: null as any }),
       ]);
 
       const existingPostIds = new Set((postsRes.data || []).map((p: any) => p.id));
       const existingCommentIds = new Set((commentsRes.data || []).map((c: any) => c.id));
+      const activeFollowerIds = new Set((followsRes.data || []).map((f: any) => f.follower_id));
 
       const invalidIds = list
         .filter((n) => {
@@ -90,6 +99,10 @@ export const useNotifications = () => {
           const cid = n.data?.comment_id as string | undefined;
           if (pid && !existingPostIds.has(pid)) return true;
           if (cid && !existingCommentIds.has(cid)) return true;
+          // Check if follow notification is from someone who no longer follows
+          if (n.type === 'follow' && n.data?.user_id) {
+            if (!activeFollowerIds.has(n.data.user_id)) return true;
+          }
           return false;
         })
         .map((n) => n.id);
@@ -285,6 +298,26 @@ export const useNotifications = () => {
             setNotifications(prev => 
               prev.filter(n => n.id !== payload.old.id)
             );
+          }
+        )
+        // Also listen for unfollows to remove stale follow notifications
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'follows',
+            filter: `following_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Follow deleted, removing related notification:', payload);
+            // Remove any 'follow' notification from the user who unfollowed
+            const unfollowerId = payload.old?.follower_id;
+            if (unfollowerId) {
+              setNotifications(prev => 
+                prev.filter(n => !(n.type === 'follow' && n.data?.user_id === unfollowerId))
+              );
+            }
           }
         );
 
