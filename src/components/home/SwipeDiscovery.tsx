@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import LocationDetailDrawer from './LocationDetailDrawer';
 import { ArrowLeft, MapPin, Search, UserPlus } from 'lucide-react';
 import discoverMascot from '@/assets/discover-mascot.png';
-import filterEveryoneIcon from '@/assets/icons/filter-everyone.png';
+import noUsersCharacter from '@/assets/no-users-character.png';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -567,7 +567,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
             <div className={`relative z-[90] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted overflow-hidden ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
-              <img src={filterEveryoneIcon} alt="All" className="w-8 h-8 object-contain" />
+              <img src={noUsersCharacter} alt="All" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
