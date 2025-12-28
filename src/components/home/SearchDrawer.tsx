@@ -874,7 +874,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           ) : (
             /* Trending mode: full-width search bar like the search page */
             <div
-              className="mx-4 mb-1 h-12 rounded-full backdrop-blur-md bg-background/30 border border-border/10 flex items-center gap-3 px-4 cursor-text"
+              className="mx-4 mb-1 h-12 rounded-full backdrop-blur-md bg-white/80 dark:bg-background/30 border border-border/30 dark:border-border/10 flex items-center gap-3 px-4 cursor-text shadow-sm"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
