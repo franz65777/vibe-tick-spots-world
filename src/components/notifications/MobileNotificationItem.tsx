@@ -792,6 +792,7 @@ const MobileNotificationItem = ({
           </span>
         );
       case 'friend_accepted':
+      case 'follow_accepted':
         return (
           <span className="text-foreground text-[13px] leading-tight">
             <span 
@@ -1083,6 +1084,34 @@ const MobileNotificationItem = ({
                               await supabase.from('follows').insert({
                                 follower_id: notification.data.user_id,
                                 following_id: user.id,
+                              });
+
+                              // Get current user's profile to include in the notification
+                              const { data: currentProfile } = await supabase
+                                .from('profiles')
+                                .select('username, avatar_url')
+                                .eq('id', user.id)
+                                .single();
+
+                              // Send notification to the requester that their request was accepted
+                              const expiresAt = new Date();
+                              expiresAt.setDate(expiresAt.getDate() + 30);
+                              
+                              await supabase.from('notifications').insert({
+                                user_id: notification.data.user_id,
+                                type: 'follow_accepted',
+                                title: t('followAcceptedTitle', { ns: 'notifications', defaultValue: 'Richiesta accettata' }),
+                                message: t('followAcceptedMessage', { 
+                                  ns: 'notifications', 
+                                  username: currentProfile?.username || 'User',
+                                  defaultValue: `{{username}} ha accettato la tua richiesta di seguirlo`
+                                }),
+                                data: {
+                                  user_id: user.id,
+                                  username: currentProfile?.username,
+                                  avatar_url: currentProfile?.avatar_url
+                                },
+                                expires_at: expiresAt.toISOString()
                               });
 
                               // Delete the notification so it disappears

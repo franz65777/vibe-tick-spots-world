@@ -809,7 +809,9 @@ const resources = {
       decline: 'Decline',
       requestAccepted: 'Request accepted',
       requestDeclined: 'Request declined',
-      acceptedYourRequest: 'accepted your request',
+      acceptedYourRequest: 'accepted your follow request',
+      followAcceptedTitle: 'Follow request accepted',
+      followAcceptedMessage: '{{username}} accepted your follow request',
     },
     messages: {
       messages: 'Messages',
@@ -2799,7 +2801,9 @@ const resources = {
       decline: 'Rifiuta',
       requestAccepted: 'Richiesta accettata',
       requestDeclined: 'Richiesta rifiutata',
-      acceptedYourRequest: 'ha accettato la tua richiesta',
+      acceptedYourRequest: 'ha accettato la tua richiesta di seguirlo',
+      followAcceptedTitle: 'Richiesta di follow accettata',
+      followAcceptedMessage: '{{username}} ha accettato la tua richiesta di seguirlo',
     },
     messages: {
       messages: 'Messaggi',
