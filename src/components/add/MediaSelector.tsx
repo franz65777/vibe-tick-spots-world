@@ -57,7 +57,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
                  size="lg"
                  className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
                >
-                 <img src={postIcon} alt="Post" className="w-6 h-6 mr-2" />
+                  <span className="mr-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 ring-1 ring-border/60">
+                    <img src={postIcon} alt="Post" className="h-5 w-5 object-contain" />
+                  </span>
                  <span className="whitespace-nowrap">
                    {t('createPost', { ns: 'add' })}
                  </span>
