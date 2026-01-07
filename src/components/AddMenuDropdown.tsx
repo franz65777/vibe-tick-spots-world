@@ -65,8 +65,8 @@ export const AddMenuDropdown = ({ isOpen, onClose, onSelectOption }: AddMenuDrop
             }}
           >
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              {'customIcon' in option && option.customIcon ? (
-                <img src={option.customIcon} alt="" className="w-6 h-6 object-contain" />
+            {'customIcon' in option && option.customIcon ? (
+                <img src={option.customIcon} alt="" className="w-7 h-7 object-contain" />
               ) : (
                 <option.icon className="w-5 h-5" />
               )}
