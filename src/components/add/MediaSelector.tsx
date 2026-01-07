@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Video } from 'lucide-react';
+import { X, Video, Camera } from 'lucide-react';
 import addPostButton from '@/assets/add-post-button.png';
 import listIcon from '@/assets/list-icon.png';
-import postIcon from '@/assets/camera-icon.png';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -58,7 +57,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
                  className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
                >
                   <span className="mr-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 ring-1 ring-border/60">
-                    <img src={postIcon} alt="Post" className="h-5 w-5 object-contain" />
+                    <Camera className="h-5 w-5" />
                   </span>
                  <span className="whitespace-nowrap">
                    {t('createPost', { ns: 'add' })}
