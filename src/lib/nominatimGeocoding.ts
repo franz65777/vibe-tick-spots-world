@@ -199,16 +199,19 @@ class NominatimGeocoding {
           for (const result of cityResults) {
             const cityName = result.address.city || result.address.town || result.address.village || result.display_name.split(',')[0].trim();
             const normalizedKey = cityName.toLowerCase().trim();
+
+            // If Nominatim returns a district/municipality name in `name`, ignore it for city searches.
+            const canonicalCity = cityName;
             
             if (!seenCities.has(normalizedKey)) {
               seenCities.add(normalizedKey);
               allResults.push({
                 lat: parseFloat(result.lat),
                 lng: parseFloat(result.lon),
-                city: cityName,
+                city: canonicalCity,
                 address: result.display_name,
                 displayName: result.display_name,
-                name: result.name || cityName,
+                name: canonicalCity,
                 type: result.type,
                 class: result.class,
               });
@@ -244,7 +247,7 @@ class NominatimGeocoding {
               if (result.class === 'place' && ['city', 'town', 'village'].includes(result.type || '')) {
                 const cityName = result.address.city || result.address.town || result.address.village || result.display_name.split(',')[0].trim();
                 const normalizedKey = cityName.toLowerCase().trim();
-                
+
                 if (!seenCities.has(normalizedKey)) {
                   seenCities.add(normalizedKey);
                   allResults.push({
@@ -253,7 +256,7 @@ class NominatimGeocoding {
                     city: cityName,
                     address: result.display_name,
                     displayName: result.display_name,
-                    name: result.name || cityName,
+                    name: cityName,
                     type: result.type,
                     class: result.class,
                   });

@@ -5,6 +5,7 @@ import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { mapNominatimTypeToCategory } from '@/utils/allowedCategories';
+import { extractParentCityFromAddress, normalizeCity } from '@/utils/cityNormalization';
 
 interface OpenStreetMapAutocompleteProps {
   onPlaceSelect: (place: {
@@ -118,23 +119,32 @@ const OpenStreetMapAutocomplete = ({
         const citySearchResults = await nominatimGeocoding.searchCities(searchQuery, 'en');
         
         for (const result of citySearchResults) {
-          const cityName = result.name || result.city || result.displayName.split(',')[0];
-          const normalizedCity = normalizeName(cityName);
-          
-          if (seenCityNames.has(normalizedCity)) continue;
-          seenCityNames.add(normalizedCity);
-          
+          // Always display the *parent city* (never a municipality/district name)
+          const rawCity = result.city || result.displayName.split(',')[0];
+
+          let resolvedCity = normalizeCity(rawCity || null);
+          if (!resolvedCity || resolvedCity === 'Unknown') {
+            const parent = extractParentCityFromAddress(result.displayName, rawCity);
+            resolvedCity = normalizeCity(parent || null);
+          }
+
+          if (!resolvedCity || resolvedCity === 'Unknown') continue;
+
+          const normalizedKey = normalizeName(resolvedCity);
+          if (seenCityNames.has(normalizedKey)) continue;
+          seenCityNames.add(normalizedKey);
+
           if (cities.length < 5) {
             const addressParts = result.displayName.split(',').map(p => p.trim());
             const country = addressParts[addressParts.length - 1] || '';
-            
+
             cities.push({
               id: `city-${cities.length}`,
-              name: cityName,
+              name: resolvedCity,
               address: country,
               lat: result.lat,
               lng: result.lng,
-              city: cityName,
+              city: resolvedCity,
               source: 'nominatim' as const,
               nominatimType: result.type,
               nominatimClass: result.class,

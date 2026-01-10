@@ -1,5 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/utils/cityNormalization';
+import {
+  normalizeCity,
+  extractParentCityFromAddress,
+  extractCityFromAddress,
+  extractCityFromName,
+} from '@/utils/cityNormalization';
 
 export interface UnifiedLocation {
   id: string;
@@ -90,6 +95,14 @@ export class UnifiedLocationService {
           seenPlaceIds.add(placeId);
 
           let cityValue = loc.city && loc.city.trim() !== '' ? normalizeCity(loc.city) : null;
+
+          if (!cityValue || cityValue === 'Unknown') {
+            // If loc.city is a municipality/district, try parent city from address first
+            const parentCity = extractParentCityFromAddress(loc.address, loc.city);
+            if (parentCity && parentCity !== 'Unknown') {
+              cityValue = parentCity;
+            }
+          }
 
           if (!cityValue || cityValue === 'Unknown') {
             const extractedFromAddress = extractCityFromAddress(loc.address);
@@ -274,6 +287,14 @@ export class UnifiedLocationService {
       let cityValue = location.city && location.city.trim() !== '' && location.city !== 'Unknown' && location.city !== 'Unknown City'
         ? normalizeCity(location.city)
         : null;
+
+      // If the stored value is a municipality/district, try to extract parent city from address
+      if ((!cityValue || cityValue === 'Unknown') && location.address) {
+        const parentCity = extractParentCityFromAddress(location.address, location.city);
+        if (parentCity && parentCity !== 'Unknown') {
+          cityValue = parentCity;
+        }
+      }
 
       if (!cityValue || cityValue === 'Unknown') {
         const extractedFromAddress = extractCityFromAddress(location.address);
