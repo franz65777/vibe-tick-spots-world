@@ -152,43 +152,61 @@ export const normalizeCity = (city: string | null | undefined): string => {
  * Extract city from a sub-city name by parsing the display/address format
  * E.g., "Surcin, Belgrade, Serbia" -> "Belgrade"
  */
-export const extractParentCityFromAddress = (address: string | null | undefined, subCityName: string | null | undefined): string | null => {
+export const extractParentCityFromAddress = (
+  address: string | null | undefined,
+  subCityName: string | null | undefined
+): string | null => {
   if (!address || address.trim() === '') return null;
 
   const parts = address.split(',').map(p => p.trim()).filter(Boolean);
   if (parts.length < 2) return null;
 
-  // Find the index of the sub-city name in the address parts
+  const firstPart = parts[0] || '';
+
+  // If we can’t match the sub-city name (e.g. input in Latin, address in Cyrillic),
+  // fall back to: if the first part looks like a sub-city area, the next part is usually the parent city.
+  const firstLooksSubCity = isSubCityName(firstPart) || isSubCityName((subCityName || '').trim());
+
+  // Find the index of the sub-city name in the address parts (best effort)
   const subCityLower = (subCityName || '').toLowerCase();
   let subCityIndex = -1;
-  
-  for (let i = 0; i < parts.length; i++) {
-    if (parts[i].toLowerCase().includes(subCityLower) || 
-        subCityLower.includes(parts[i].toLowerCase())) {
-      subCityIndex = i;
-      break;
+
+  if (subCityLower) {
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].toLowerCase().includes(subCityLower) || subCityLower.includes(parts[i].toLowerCase())) {
+        subCityIndex = i;
+        break;
+      }
     }
+  }
+
+  // If we couldn’t match but it looks like a sub-city, assume the parent city is the next part.
+  if (subCityIndex === -1 && firstLooksSubCity) {
+    subCityIndex = 0;
   }
 
   // Look for city in parts after the sub-city (usually the next part)
   for (let i = Math.max(1, subCityIndex + 1); i < parts.length - 1; i++) {
     const part = parts[i].trim();
-    
-    // Skip if it looks like a country or too short
+
     if (part.length <= 2) continue;
-    
+
     // Skip common country names
-    const countriesLower = ['serbia', 'italy', 'france', 'germany', 'spain', 'portugal', 
+    const countriesLower = [
+      'serbia', 'italy', 'france', 'germany', 'spain', 'portugal',
       'ireland', 'uk', 'united kingdom', 'usa', 'united states', 'croatia', 'bosnia',
       'montenegro', 'north macedonia', 'slovenia', 'hungary', 'romania', 'bulgaria',
-      'greece', 'austria', 'switzerland', 'poland', 'czech republic', 'slovakia'];
+      'greece', 'austria', 'switzerland', 'poland', 'czech republic', 'slovakia',
+      // Serbian (English translit + Cyrillic)
+      'srbija', 'србија'
+    ];
     if (countriesLower.includes(part.toLowerCase())) continue;
-    
+
     // Skip if it looks like another sub-city type
     if (isSubCityName(part)) continue;
-    
-    // This is likely the parent city
-    return normalizeCity(part);
+
+    const normalized = normalizeCity(part);
+    if (normalized !== 'Unknown') return normalized;
   }
 
   return null;

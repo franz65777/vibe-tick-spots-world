@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/utils/cityNormalization';
+import {
+  normalizeCity,
+  extractParentCityFromAddress,
+  extractCityFromName,
+} from '@/utils/cityNormalization';
 import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
 
@@ -53,7 +57,14 @@ export function useNormalizedCity(params: {
   };
   const [label, setLabel] = useState<string>(() => {
     const base = (city && city.trim()) || extractCityFromAddress(address) || extractCityFromName(name) || '';
-    const normalized = normalizeCity(base || null);
+    let normalized = normalizeCity(base || null);
+
+    // If base was a sub-city (municipality/district), try to pull the parent city from the address
+    if (normalized === 'Unknown' && address) {
+      const parent = extractParentCityFromAddress(address, base);
+      normalized = normalizeCity(parent || null);
+    }
+
     return normalized;
   });
   const [loading, setLoading] = useState(false);
@@ -67,7 +78,12 @@ export function useNormalizedCity(params: {
     let isMounted = true;
 
     const baseCity = (city && city.trim()) || extractCityFromAddress(address) || extractCityFromName(name) || '';
-    const normalized = normalizeCity(baseCity || null);
+    let normalized = normalizeCity(baseCity || null);
+
+    if (normalized === 'Unknown' && address) {
+      const parent = extractParentCityFromAddress(address, baseCity);
+      normalized = normalizeCity(parent || null);
+    }
 
     // Try to translate with static list first (fast path)
     const staticTranslation = translateCityName(normalized, i18n.language);
