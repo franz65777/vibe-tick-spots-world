@@ -28,6 +28,9 @@ const SUB_CITY_PATTERNS = [
   /\s+opstina$/i,
   /\s+općina$/i,
   /\s+opcina$/i,
+  // Serbian (Cyrillic)
+  /\s+општина$/i,
+  /^градска\s+општина\s+/i,
 ];
 
 /**
@@ -83,6 +86,7 @@ export const normalizeCity = (city: string | null | undefined): string => {
     'warszawa': 'Warsaw', 'warsaw': 'Warsaw',
     'kraków': 'Kraków', 'krakow': 'Kraków',
     'beograd': 'Belgrade', 'belgrade': 'Belgrade',
+    'београд': 'Belgrade',
     // Greece/Russia/China
     'athína': 'Athens', 'athina': 'Athens', 'athens': 'Athens',
     'москва': 'Moscow', 'moskva': 'Moscow', 'moscow': 'Moscow',
@@ -131,6 +135,16 @@ export const normalizeCity = (city: string | null | undefined): string => {
     return 'Unknown';
   }
   
+  // If input is all-lowercase (common when coming from APIs), title-case it for display.
+  // This keeps canonical casing like "Belgrade" and avoids showing "belgrade".
+  const isAllLower = normalized === normalized.toLowerCase() && /[a-z]/.test(normalized);
+  if (isAllLower) {
+    normalized = normalized
+      .split(/\s+/)
+      .map(w => (w ? w[0].toUpperCase() + w.slice(1) : w))
+      .join(' ');
+  }
+
   return normalized;
 };
 

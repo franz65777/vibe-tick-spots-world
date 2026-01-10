@@ -9,6 +9,7 @@ import LeafletMapSetup from '@/components/LeafletMapSetup';
 import { Place } from '@/types/place';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
 import { normalizeCity, extractParentCityFromAddress } from '@/utils/cityNormalization';
+import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import saveTagAll from '@/assets/save-tag-all.png';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
@@ -202,24 +203,38 @@ const UserPlacesPage = () => {
         }
         
         // Normalize city names for consistency - handle sub-city areas
-        finalLocations.forEach(loc => {
-          if (loc.city) {
-            let normalizedCityName = normalizeCity(loc.city);
-            
-            // If normalization returned Unknown (e.g., for "Surcin Urban Municipality"),
-            // try to extract parent city from address
-            if (normalizedCityName === 'Unknown' && loc.address) {
-              const parentCity = extractParentCityFromAddress(loc.address, loc.city);
-              if (parentCity && parentCity !== 'Unknown') {
-                normalizedCityName = parentCity;
-              }
-            }
-            
-            if (normalizedCityName && normalizedCityName !== 'Unknown') {
-              loc.city = normalizedCityName;
+        for (const loc of finalLocations) {
+          if (!loc.city) continue;
+
+          let normalizedCityName = normalizeCity(loc.city);
+
+          // If normalization returned Unknown (e.g., for "Surcin Urban Municipality"),
+          // try to extract parent city from address
+          if (normalizedCityName === 'Unknown' && loc.address) {
+            const parentCity = extractParentCityFromAddress(loc.address, loc.city);
+            if (parentCity && parentCity !== 'Unknown') {
+              normalizedCityName = parentCity;
             }
           }
-        });
+
+          // Last resort: reverse geocode coordinates to find the real parent city
+          // (prevents this problem globally even when DB has a municipality name and no address)
+          if (normalizedCityName === 'Unknown' && loc.coordinates) {
+            try {
+              const rg = await nominatimGeocoding.reverseGeocode(loc.coordinates.lat, loc.coordinates.lng, 'en');
+              const rgCity = normalizeCity(rg?.city || null);
+              if (rgCity && rgCity !== 'Unknown') {
+                normalizedCityName = rgCity;
+              }
+            } catch (e) {
+              console.warn('Reverse geocode city resolve failed:', e);
+            }
+          }
+
+          if (normalizedCityName && normalizedCityName !== 'Unknown') {
+            loc.city = normalizedCityName;
+          }
+        }
         
         setLocations(finalLocations);
 
