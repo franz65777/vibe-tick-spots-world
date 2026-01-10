@@ -37,8 +37,10 @@ interface SearchResult {
   isCity?: boolean;
 }
 
-// Types that represent cities/towns
-const CITY_TYPES = ['city', 'town', 'village', 'municipality', 'hamlet', 'suburb', 'quarter', 'neighbourhood'];
+// Types that represent actual cities (not suburbs/municipalities)
+const CITY_TYPES = ['city', 'town', 'village'];
+// Types that are sub-areas of cities (should show parent city)
+const SUB_CITY_TYPES = ['municipality', 'suburb', 'quarter', 'neighbourhood', 'borough', 'district'];
 const CITY_CLASSES = ['place', 'boundary'];
 
 const OpenStreetMapAutocomplete = ({
@@ -90,8 +92,12 @@ const OpenStreetMapAutocomplete = ({
 
   const isCityType = (type?: string, classType?: string): boolean => {
     if (!type && !classType) return false;
-    return CITY_TYPES.includes(type || '') || 
-           (CITY_CLASSES.includes(classType || '') && CITY_TYPES.includes(type || ''));
+    // Only true cities, not municipalities/suburbs
+    return CITY_TYPES.includes(type || '') && CITY_CLASSES.includes(classType || '');
+  };
+
+  const isSubCityType = (type?: string): boolean => {
+    return SUB_CITY_TYPES.includes(type || '');
   };
 
   const performSearch = async (searchQuery: string) => {
@@ -133,14 +139,15 @@ const OpenStreetMapAutocomplete = ({
         }
       }
 
-      // 2. Search OpenStreetMap Nominatim for both cities and places
+      // 2. Search OpenStreetMap Nominatim for both cities and places (force English)
       try {
-        const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery);
+        const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery, 'en');
         
         for (const result of nominatimResults) {
           const placeName = result.displayName.split(',')[0];
           const normalizedName = normalizeName(placeName);
           const isCity = isCityType(result.type, result.class);
+          const isSubCity = isSubCityType(result.type);
           
           if (isCity) {
             // For cities, use the city name for deduplication
@@ -166,8 +173,34 @@ const OpenStreetMapAutocomplete = ({
                 isCity: true,
               });
             }
+          } else if (isSubCity && result.city) {
+            // Municipality/suburb - show the parent city instead
+            const parentCity = result.city;
+            const parentCityNormalized = normalizeName(parentCity);
+            
+            if (!seenCityNames.has(parentCityNormalized)) {
+              seenCityNames.add(parentCityNormalized);
+              
+              if (cities.length < 5) {
+                const addressParts = result.displayName.split(',').map(p => p.trim());
+                const country = addressParts[addressParts.length - 1] || '';
+                
+                cities.push({
+                  id: `city-${cities.length}`,
+                  name: parentCity,
+                  address: country,
+                  lat: result.lat,
+                  lng: result.lng,
+                  city: parentCity,
+                  source: 'nominatim' as const,
+                  nominatimType: 'city',
+                  nominatimClass: 'place',
+                  isCity: true,
+                });
+              }
+            }
           } else {
-            // Regular location
+            // Regular location - use parent city if available
             if (seenNormalizedNames.has(normalizedName)) continue;
             seenNormalizedNames.add(normalizedName);
             
@@ -180,7 +213,7 @@ const OpenStreetMapAutocomplete = ({
                 address: result.displayName,
                 lat: result.lat,
                 lng: result.lng,
-                city: result.city,
+                city: result.city || '',
                 source: 'nominatim' as const,
                 nominatimType: result.type,
                 nominatimClass: result.class,
