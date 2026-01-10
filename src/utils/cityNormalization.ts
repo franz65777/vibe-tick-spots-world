@@ -1,4 +1,43 @@
 /**
+ * Patterns that indicate a sub-city area that should be mapped to parent city
+ * These are globally recognized administrative subdivisions
+ */
+const SUB_CITY_PATTERNS = [
+  /\s+urban\s+municipality$/i,
+  /\s+municipality$/i,
+  /\s+urban\s+district$/i,
+  /\s+district$/i,
+  /\s+borough$/i,
+  /\s+quarter$/i,
+  /\s+neighbourhood$/i,
+  /\s+neighborhood$/i,
+  /\s+suburb$/i,
+  /\s+commune$/i,
+  /\s+ward$/i,
+  /\s+precinct$/i,
+  /\s+arrondissement$/i,
+  /\s+stadtbezirk$/i,
+  /\s+quartier$/i,
+  /\s+circoscrizione$/i,
+  /\s+rione$/i,
+  /\s+barrio$/i,
+  /\s+bairro$/i,
+  /\s+dzielnica$/i,
+  /\s+raion$/i,
+  /\s+opština$/i,
+  /\s+opstina$/i,
+  /\s+općina$/i,
+  /\s+opcina$/i,
+];
+
+/**
+ * Check if a string looks like a sub-city administrative area
+ */
+const isSubCityName = (name: string): boolean => {
+  return SUB_CITY_PATTERNS.some(pattern => pattern.test(name));
+};
+
+/**
  * Normalize city names by removing postal codes, counties, and mapping neighborhoods
  */
 export const normalizeCity = (city: string | null | undefined): string => {
@@ -87,7 +126,58 @@ export const normalizeCity = (city: string | null | undefined): string => {
     return 'Dublin';
   }
   
+  // If it looks like a sub-city area, return Unknown so we can try to get parent city from address
+  if (isSubCityName(normalized)) {
+    return 'Unknown';
+  }
+  
   return normalized;
+};
+
+/**
+ * Extract city from a sub-city name by parsing the display/address format
+ * E.g., "Surcin, Belgrade, Serbia" -> "Belgrade"
+ */
+export const extractParentCityFromAddress = (address: string | null | undefined, subCityName: string | null | undefined): string | null => {
+  if (!address || address.trim() === '') return null;
+
+  const parts = address.split(',').map(p => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+
+  // Find the index of the sub-city name in the address parts
+  const subCityLower = (subCityName || '').toLowerCase();
+  let subCityIndex = -1;
+  
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].toLowerCase().includes(subCityLower) || 
+        subCityLower.includes(parts[i].toLowerCase())) {
+      subCityIndex = i;
+      break;
+    }
+  }
+
+  // Look for city in parts after the sub-city (usually the next part)
+  for (let i = Math.max(1, subCityIndex + 1); i < parts.length - 1; i++) {
+    const part = parts[i].trim();
+    
+    // Skip if it looks like a country or too short
+    if (part.length <= 2) continue;
+    
+    // Skip common country names
+    const countriesLower = ['serbia', 'italy', 'france', 'germany', 'spain', 'portugal', 
+      'ireland', 'uk', 'united kingdom', 'usa', 'united states', 'croatia', 'bosnia',
+      'montenegro', 'north macedonia', 'slovenia', 'hungary', 'romania', 'bulgaria',
+      'greece', 'austria', 'switzerland', 'poland', 'czech republic', 'slovakia'];
+    if (countriesLower.includes(part.toLowerCase())) continue;
+    
+    // Skip if it looks like another sub-city type
+    if (isSubCityName(part)) continue;
+    
+    // This is likely the parent city
+    return normalizeCity(part);
+  }
+
+  return null;
 };
 
 export const extractCityFromAddress = (address: string | null | undefined): string | null => {

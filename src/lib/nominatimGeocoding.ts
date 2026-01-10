@@ -170,46 +170,103 @@ class NominatimGeocoding {
 
   /**
    * Search specifically for cities worldwide (no location bias)
+   * Uses multiple strategies to ensure we find cities reliably
    */
   async searchCities(query: string, language?: string): Promise<GeocodeResult[]> {
     await this.rateLimit();
 
+    const allResults: GeocodeResult[] = [];
+    const seenCities = new Set<string>();
+
     try {
-      const params = new URLSearchParams({
+      // Strategy 1: Search with featuretype=city (most direct)
+      const cityParams = new URLSearchParams({
         q: query,
         format: 'json',
         addressdetails: '1',
-        limit: '20',
+        limit: '10',
         'accept-language': language || 'en',
-        featuretype: 'city', // Nominatim feature type filter for cities
+        featuretype: 'city',
       });
 
-      const response = await fetch(`${this.baseUrl}/search?${params}`, {
-        headers: {
-          'User-Agent': 'SpottApp/1.0',
-        },
-      });
+      try {
+        const cityResponse = await fetch(`${this.baseUrl}/search?${cityParams}`, {
+          headers: { 'User-Agent': 'SpottApp/1.0' },
+        });
 
-      if (!response.ok) {
-        throw new Error(`Nominatim error: ${response.status}`);
+        if (cityResponse.ok) {
+          const cityResults: NominatimResult[] = await cityResponse.json();
+          for (const result of cityResults) {
+            const cityName = result.address.city || result.address.town || result.address.village || result.display_name.split(',')[0].trim();
+            const normalizedKey = cityName.toLowerCase().trim();
+            
+            if (!seenCities.has(normalizedKey)) {
+              seenCities.add(normalizedKey);
+              allResults.push({
+                lat: parseFloat(result.lat),
+                lng: parseFloat(result.lon),
+                city: cityName,
+                address: result.display_name,
+                displayName: result.display_name,
+                name: result.name || cityName,
+                type: result.type,
+                class: result.class,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('City featuretype search failed:', e);
       }
 
-      const results: NominatimResult[] = await response.json();
-
-      return results.map(result => {
-        const city = result.address.city || result.address.town || result.address.village || result.display_name.split(',')[0].trim();
+      // Strategy 2: Search with place class filter (finds city/town/village types)
+      if (allResults.length < 5) {
+        await this.rateLimit();
         
-        return {
-          lat: parseFloat(result.lat),
-          lng: parseFloat(result.lon),
-          city,
-          address: result.display_name,
-          displayName: result.display_name,
-          name: result.name || city,
-          type: result.type,
-          class: result.class,
-        };
-      });
+        const placeParams = new URLSearchParams({
+          q: `${query} city`,
+          format: 'json',
+          addressdetails: '1',
+          limit: '15',
+          'accept-language': language || 'en',
+        });
+
+        try {
+          const placeResponse = await fetch(`${this.baseUrl}/search?${placeParams}`, {
+            headers: { 'User-Agent': 'SpottApp/1.0' },
+          });
+
+          if (placeResponse.ok) {
+            const placeResults: NominatimResult[] = await placeResponse.json();
+            
+            // Filter to only city/town/village types
+            for (const result of placeResults) {
+              if (result.class === 'place' && ['city', 'town', 'village'].includes(result.type || '')) {
+                const cityName = result.address.city || result.address.town || result.address.village || result.display_name.split(',')[0].trim();
+                const normalizedKey = cityName.toLowerCase().trim();
+                
+                if (!seenCities.has(normalizedKey)) {
+                  seenCities.add(normalizedKey);
+                  allResults.push({
+                    lat: parseFloat(result.lat),
+                    lng: parseFloat(result.lon),
+                    city: cityName,
+                    address: result.display_name,
+                    displayName: result.display_name,
+                    name: result.name || cityName,
+                    type: result.type,
+                    class: result.class,
+                  });
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Place class search failed:', e);
+        }
+      }
+
+      return allResults.slice(0, 10);
     } catch (error) {
       console.error('Nominatim city search error:', error);
       return [];

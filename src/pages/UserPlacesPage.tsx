@@ -8,7 +8,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import { Place } from '@/types/place';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
-import { normalizeCity } from '@/utils/cityNormalization';
+import { normalizeCity, extractParentCityFromAddress } from '@/utils/cityNormalization';
 import saveTagAll from '@/assets/save-tag-all.png';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
@@ -201,10 +201,20 @@ const UserPlacesPage = () => {
           finalLocations = allLocations.filter(loc => myIds.has(loc.id));
         }
         
-        // Normalize city names for consistency
+        // Normalize city names for consistency - handle sub-city areas
         finalLocations.forEach(loc => {
           if (loc.city) {
-            const normalizedCityName = normalizeCity(loc.city);
+            let normalizedCityName = normalizeCity(loc.city);
+            
+            // If normalization returned Unknown (e.g., for "Surcin Urban Municipality"),
+            // try to extract parent city from address
+            if (normalizedCityName === 'Unknown' && loc.address) {
+              const parentCity = extractParentCityFromAddress(loc.address, loc.city);
+              if (parentCity && parentCity !== 'Unknown') {
+                normalizedCityName = parentCity;
+              }
+            }
+            
             if (normalizedCityName && normalizedCityName !== 'Unknown') {
               loc.city = normalizedCityName;
             }
