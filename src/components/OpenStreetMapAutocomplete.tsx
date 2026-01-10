@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Loader2 } from 'lucide-react';
+import { Search, MapPin, Loader2, Building2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +14,8 @@ interface OpenStreetMapAutocompleteProps {
     city: string;
     nominatimType?: string;
     nominatimClass?: string;
-    category?: string; // Our mapped category
+    category?: string;
+    isCity?: boolean;
   }) => void;
   placeholder?: string;
   className?: string;
@@ -32,8 +33,13 @@ interface SearchResult {
   source: 'database' | 'nominatim';
   nominatimType?: string;
   nominatimClass?: string;
-  category?: string; // Existing category from DB or mapped from nominatim
+  category?: string;
+  isCity?: boolean;
 }
+
+// Types that represent cities/towns
+const CITY_TYPES = ['city', 'town', 'village', 'municipality', 'hamlet', 'suburb', 'quarter', 'neighbourhood'];
+const CITY_CLASSES = ['place', 'boundary'];
 
 const OpenStreetMapAutocomplete = ({
   onPlaceSelect,
@@ -44,7 +50,8 @@ const OpenStreetMapAutocomplete = ({
 }: OpenStreetMapAutocompleteProps) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [cityResults, setCityResults] = useState<SearchResult[]>([]);
+  const [locationResults, setLocationResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
@@ -52,12 +59,12 @@ const OpenStreetMapAutocomplete = ({
 
   useEffect(() => {
     if (query.length < 2) {
-      setResults([]);
+      setCityResults([]);
+      setLocationResults([]);
       setShowResults(false);
       return;
     }
 
-    // Debounce search
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
@@ -73,23 +80,30 @@ const OpenStreetMapAutocomplete = ({
     };
   }, [query]);
 
-  // Normalize name for deduplication
   const normalizeName = (name: string): string => {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s]/g, '') // Remove special chars
-      .replace(/\s+/g, ' '); // Normalize whitespace
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ');
+  };
+
+  const isCityType = (type?: string, classType?: string): boolean => {
+    if (!type && !classType) return false;
+    return CITY_TYPES.includes(type || '') || 
+           (CITY_CLASSES.includes(classType || '') && CITY_TYPES.includes(type || ''));
   };
 
   const performSearch = async (searchQuery: string) => {
     setLoading(true);
     
     try {
-      const combinedResults: SearchResult[] = [];
+      const cities: SearchResult[] = [];
+      const locations: SearchResult[] = [];
       const seenNormalizedNames = new Set<string>();
+      const seenCityNames = new Set<string>();
 
-      // 1. Search our database first (instant, no API cost)
+      // 1. Search our database first
       const { data: dbLocations } = await supabase
         .from('locations')
         .select('id, name, address, city, latitude, longitude, category')
@@ -100,16 +114,11 @@ const OpenStreetMapAutocomplete = ({
         for (const loc of dbLocations) {
           const normalizedName = normalizeName(loc.name);
           
-          // Skip if we've already seen this normalized name
-          if (seenNormalizedNames.has(normalizedName)) {
-            continue;
-          }
-          
+          if (seenNormalizedNames.has(normalizedName)) continue;
           seenNormalizedNames.add(normalizedName);
           
-          if (combinedResults.length < 5) {
-            const locWithCategory = loc as typeof loc & { category?: string };
-            combinedResults.push({
+          if (locations.length < 5) {
+            locations.push({
               id: loc.id,
               name: loc.name,
               address: loc.address || '',
@@ -117,54 +126,81 @@ const OpenStreetMapAutocomplete = ({
               lng: loc.longitude,
               city: loc.city || '',
               source: 'database' as const,
-              category: locWithCategory.category || undefined,
+              category: loc.category || undefined,
+              isCity: false,
             });
           }
         }
       }
 
-      // 2. If few results, search OpenStreetMap Nominatim (FREE)
-      if (combinedResults.length < 3) {
-        try {
-          const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery);
+      // 2. Search OpenStreetMap Nominatim for both cities and places
+      try {
+        const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery);
+        
+        for (const result of nominatimResults) {
+          const placeName = result.displayName.split(',')[0];
+          const normalizedName = normalizeName(placeName);
+          const isCity = isCityType(result.type, result.class);
           
-          for (const result of nominatimResults) {
-            const placeName = result.displayName.split(',')[0];
-            const normalizedName = normalizeName(placeName);
+          if (isCity) {
+            // For cities, use the city name for deduplication
+            const cityKey = normalizedName;
+            if (seenCityNames.has(cityKey)) continue;
+            seenCityNames.add(cityKey);
             
-            // Skip if we've already seen this normalized name
-            if (seenNormalizedNames.has(normalizedName)) {
-              continue;
+            if (cities.length < 5) {
+              // Get country/region for city display
+              const addressParts = result.displayName.split(',').map(p => p.trim());
+              const country = addressParts[addressParts.length - 1] || '';
+              
+              cities.push({
+                id: `city-${cities.length}`,
+                name: placeName,
+                address: country,
+                lat: result.lat,
+                lng: result.lng,
+                city: placeName,
+                source: 'nominatim' as const,
+                nominatimType: result.type,
+                nominatimClass: result.class,
+                isCity: true,
+              });
             }
-            
+          } else {
+            // Regular location
+            if (seenNormalizedNames.has(normalizedName)) continue;
             seenNormalizedNames.add(normalizedName);
             
-            // Map Nominatim type to our category
             const mappedCategory = mapNominatimTypeToCategory(result.type, result.class);
             
-            combinedResults.push({
-              id: `nominatim-${combinedResults.length}`,
-              name: placeName,
-              address: result.displayName,
-              lat: result.lat,
-              lng: result.lng,
-              city: result.city,
-              source: 'nominatim' as const,
-              nominatimType: result.type,
-              nominatimClass: result.class,
-              category: mappedCategory,
-            });
+            if (locations.length < 8) {
+              locations.push({
+                id: `nominatim-${locations.length}`,
+                name: placeName,
+                address: result.displayName,
+                lat: result.lat,
+                lng: result.lng,
+                city: result.city,
+                source: 'nominatim' as const,
+                nominatimType: result.type,
+                nominatimClass: result.class,
+                category: mappedCategory,
+                isCity: false,
+              });
+            }
           }
-        } catch (nominatimError) {
-          console.warn('Nominatim search failed:', nominatimError);
         }
+      } catch (nominatimError) {
+        console.warn('Nominatim search failed:', nominatimError);
       }
 
-      setResults(combinedResults);
+      setCityResults(cities);
+      setLocationResults(locations);
       setShowResults(true);
     } catch (error) {
       console.error('Search error:', error);
-      setResults([]);
+      setCityResults([]);
+      setLocationResults([]);
     } finally {
       setLoading(false);
     }
@@ -175,15 +211,18 @@ const OpenStreetMapAutocomplete = ({
       name: result.name,
       address: result.address,
       coordinates: { lat: result.lat, lng: result.lng },
-      city: result.city,
+      city: result.isCity ? result.name : result.city,
       nominatimType: result.nominatimType,
       nominatimClass: result.nominatimClass,
       category: result.category,
+      isCity: result.isCity,
     });
     
     setQuery(result.name);
     setShowResults(false);
   };
+
+  const hasResults = cityResults.length > 0 || locationResults.length > 0;
 
   return (
     <div className={`relative ${className}`}>
@@ -205,41 +244,74 @@ const OpenStreetMapAutocomplete = ({
       </div>
 
       {/* Results dropdown */}
-      {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg max-h-[200px] overflow-y-auto scrollbar-hide pb-safe">
-          {results.map((result) => {
-            // Format address: City, street, number (no name repetition)
-            const addressParts = result.address.split(',').map(p => p.trim());
-            const filteredParts = addressParts.filter(p => 
-              p.toLowerCase() !== result.name.toLowerCase()
-            );
-            const formattedAddress = result.city 
-              ? `${result.city}, ${filteredParts.slice(0, 2).join(', ')}`
-              : filteredParts.slice(0, 3).join(', ');
-            
-            return (
-              <button
-                key={result.id}
-                onClick={() => handleSelect(result)}
-                className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
-              >
-                <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground truncate">
-                    {result.name}
+      {showResults && hasResults && (
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg max-h-[300px] overflow-y-auto scrollbar-hide pb-safe">
+          {/* Cities section */}
+          {cityResults.length > 0 && (
+            <>
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                {t('cities', { ns: 'common', defaultValue: 'Città' })}
+              </div>
+              {cityResults.map((result) => (
+                <button
+                  key={result.id}
+                  onClick={() => handleSelect(result)}
+                  className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border"
+                >
+                  <Building2 className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground truncate">
+                      {result.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate">
+                      {result.address}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground truncate">
-                    {formattedAddress}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              ))}
+            </>
+          )}
+
+          {/* Locations section */}
+          {locationResults.length > 0 && (
+            <>
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                {t('locations', { ns: 'common', defaultValue: 'Posizioni' })}
+              </div>
+              {locationResults.map((result) => {
+                const addressParts = result.address.split(',').map(p => p.trim());
+                const filteredParts = addressParts.filter(p => 
+                  p.toLowerCase() !== result.name.toLowerCase()
+                );
+                const formattedAddress = result.city 
+                  ? `${result.city}, ${filteredParts.slice(0, 2).join(', ')}`
+                  : filteredParts.slice(0, 3).join(', ');
+                
+                return (
+                  <button
+                    key={result.id}
+                    onClick={() => handleSelect(result)}
+                    className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
+                  >
+                    <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground truncate">
+                        {result.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {formattedAddress}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
       )}
 
       {/* No results message */}
-      {showResults && !loading && query.length >= 2 && results.length === 0 && (
+      {showResults && !loading && query.length >= 2 && !hasResults && (
         <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg p-4 text-center text-muted-foreground text-sm">
           {t('noPlacesFound', { ns: 'add' })} "{query}"
         </div>
