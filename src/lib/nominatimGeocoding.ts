@@ -74,7 +74,8 @@ class NominatimGeocoding {
   async searchPlace(
     query: string, 
     language?: string,
-    userLocation?: { lat: number; lng: number }
+    userLocation?: { lat: number; lng: number },
+    options?: { skipViewbox?: boolean }
   ): Promise<GeocodeResult[]> {
     await this.rateLimit();
 
@@ -90,9 +91,9 @@ class NominatimGeocoding {
         'accept-language': language || 'en',
       });
 
-      // Add viewbox parameter if user location is provided (prioritizes nearby results)
+      // Add viewbox parameter if user location is provided AND not skipped
       // DO NOT use bounded=1 as it restricts results too much
-      if (userLocation) {
+      if (userLocation && !options?.skipViewbox) {
         // Create a bounding box around user location (~100km radius for bias, not restriction)
         const latDelta = 1.0; // ~100km
         const lngDelta = 1.0;
@@ -163,6 +164,54 @@ class NominatimGeocoding {
       return geocodeResults;
     } catch (error) {
       console.error('Nominatim search error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Search specifically for cities worldwide (no location bias)
+   */
+  async searchCities(query: string, language?: string): Promise<GeocodeResult[]> {
+    await this.rateLimit();
+
+    try {
+      const params = new URLSearchParams({
+        q: query,
+        format: 'json',
+        addressdetails: '1',
+        limit: '20',
+        'accept-language': language || 'en',
+        featuretype: 'city', // Nominatim feature type filter for cities
+      });
+
+      const response = await fetch(`${this.baseUrl}/search?${params}`, {
+        headers: {
+          'User-Agent': 'SpottApp/1.0',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Nominatim error: ${response.status}`);
+      }
+
+      const results: NominatimResult[] = await response.json();
+
+      return results.map(result => {
+        const city = result.address.city || result.address.town || result.address.village || result.display_name.split(',')[0].trim();
+        
+        return {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon),
+          city,
+          address: result.display_name,
+          displayName: result.display_name,
+          name: result.name || city,
+          type: result.type,
+          class: result.class,
+        };
+      });
+    } catch (error) {
+      console.error('Nominatim city search error:', error);
       return [];
     }
   }
