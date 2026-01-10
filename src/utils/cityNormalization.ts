@@ -37,7 +37,66 @@ const SUB_CITY_PATTERNS = [
  * Check if a string looks like a sub-city administrative area
  */
 const isSubCityName = (name: string): boolean => {
-  return SUB_CITY_PATTERNS.some(pattern => pattern.test(name));
+  return SUB_CITY_PATTERNS.some((pattern) => pattern.test(name));
+};
+
+/**
+ * Fold strings for robust comparisons across diacritics/case.
+ */
+const fold = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}+/gu, '')
+    .trim();
+
+/**
+ * Some cities have well-known municipalities/districts that often appear without the parent city
+ * in reverse-geocoded results. Map them to the canonical parent city.
+ */
+const SUBCITY_TO_PARENT_CITY: Record<string, string> = {
+  // Belgrade municipalities (Latin + Cyrillic)
+  [fold('Vracar')]: 'Belgrade',
+  [fold('Vračar')]: 'Belgrade',
+  [fold('Врачар')]: 'Belgrade',
+  [fold('Surcin')]: 'Belgrade',
+  [fold('Surčin')]: 'Belgrade',
+  [fold('Сурчин')]: 'Belgrade',
+  [fold('Zemun')]: 'Belgrade',
+  [fold('Земун')]: 'Belgrade',
+  [fold('Novi Beograd')]: 'Belgrade',
+  [fold('Нови Београд')]: 'Belgrade',
+  [fold('Palilula')]: 'Belgrade',
+  [fold('Палилула')]: 'Belgrade',
+  [fold('Stari Grad')]: 'Belgrade',
+  [fold('Стари Град')]: 'Belgrade',
+  [fold('Savski Venac')]: 'Belgrade',
+  [fold('Савски Венац')]: 'Belgrade',
+  [fold('Cukarica')]: 'Belgrade',
+  [fold('Čukarica')]: 'Belgrade',
+  [fold('Чукарица')]: 'Belgrade',
+  [fold('Zvezdara')]: 'Belgrade',
+  [fold('Звездара')]: 'Belgrade',
+  [fold('Vozdovac')]: 'Belgrade',
+  [fold('Voždovac')]: 'Belgrade',
+  [fold('Вождовац')]: 'Belgrade',
+  [fold('Rakovica')]: 'Belgrade',
+  [fold('Раковица')]: 'Belgrade',
+};
+
+const mapSubCityToParentCity = (value?: string | null): string | null => {
+  if (!value) return null;
+  // Strip common prefixes like "Urban Municipality" and Serbian "Градска општина"
+  const cleaned = value
+    .replace(/^\s*urban\s+municipality\s+/i, '')
+    .replace(/^\s*municipality\s+/i, '')
+    .replace(/^\s*градска\s+општина\s+/i, '')
+    .replace(/\s+urban\s+municipality$/i, '')
+    .replace(/\s+municipality$/i, '')
+    .trim();
+
+  const key = fold(cleaned);
+  return SUBCITY_TO_PARENT_CITY[key] ?? null;
 };
 
 /**
@@ -149,6 +208,30 @@ export const normalizeCity = (city: string | null | undefined): string => {
 };
 
 /**
+ * Resolve a reliable display city.
+ * - Normalizes casing/aliases
+ * - Collapses known municipalities/districts to their parent city
+ * - Falls back to parsing the address when needed
+ */
+export const resolveCityDisplay = (
+  city: string | null | undefined,
+  address?: string | null | undefined
+): string => {
+  const direct = normalizeCity(city);
+  if (direct !== 'Unknown') return direct;
+
+  // Map known municipalities (even if address doesn't include parent city)
+  const mapped = mapSubCityToParentCity(city);
+  if (mapped) return mapped;
+
+  // Try to infer parent city from address
+  const parent = extractParentCityFromAddress(address, city);
+  if (parent) return parent;
+
+  return 'Unknown';
+};
+
+/**
  * Extract city from a sub-city name by parsing the display/address format
  * E.g., "Surcin, Belgrade, Serbia" -> "Belgrade"
  */
@@ -158,7 +241,7 @@ export const extractParentCityFromAddress = (
 ): string | null => {
   if (!address || address.trim() === '') return null;
 
-  const parts = address.split(',').map(p => p.trim()).filter(Boolean);
+  const parts = address.split(',').map((p) => p.trim()).filter(Boolean);
   if (parts.length < 2) return null;
 
   const firstPart = parts[0] || '';
@@ -166,6 +249,10 @@ export const extractParentCityFromAddress = (
   // If we can’t match the sub-city name (e.g. input in Latin, address in Cyrillic),
   // fall back to: if the first part looks like a sub-city area, the next part is usually the parent city.
   const firstLooksSubCity = isSubCityName(firstPart) || isSubCityName((subCityName || '').trim());
+
+  // Extra safety: if the first part is a known municipality/district, return its parent city.
+  const mapped = mapSubCityToParentCity(firstPart) || mapSubCityToParentCity(subCityName);
+  if (mapped) return mapped;
 
   // Find the index of the sub-city name in the address parts (best effort)
   const subCityLower = (subCityName || '').toLowerCase();
@@ -198,12 +285,16 @@ export const extractParentCityFromAddress = (
       'montenegro', 'north macedonia', 'slovenia', 'hungary', 'romania', 'bulgaria',
       'greece', 'austria', 'switzerland', 'poland', 'czech republic', 'slovakia',
       // Serbian (English translit + Cyrillic)
-      'srbija', 'србија'
+      'srbija', 'србија',
     ];
     if (countriesLower.includes(part.toLowerCase())) continue;
 
     // Skip if it looks like another sub-city type
     if (isSubCityName(part)) continue;
+
+    // If this looks like a known municipality, map it
+    const mappedInner = mapSubCityToParentCity(part);
+    if (mappedInner) return mappedInner;
 
     const normalized = normalizeCity(part);
     if (normalized !== 'Unknown') return normalized;

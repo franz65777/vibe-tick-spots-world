@@ -14,6 +14,7 @@ import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/cat
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
 import { searchOverpass } from '@/lib/overpassGeocoding';
+import { resolveCityDisplay } from '@/utils/cityNormalization';
 import { searchNearbyByCategory, type NearbySearchResult, type NearbyPrompt as NearbyPromptType, promptToCategory } from '@/lib/nearbySearch';
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
@@ -272,7 +273,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           seenLocations.set(dedupeKey, {
             id: loc.id,
             name: loc.name,
-            city: loc.city || '',
+            city: resolveCityDisplay(loc.city, loc.address),
             address: loc.address || '',
             lat: loc.latitude!,
             lng: loc.longitude!,
@@ -296,7 +297,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const citiesFromLocations = new Map<string, { name: string; lat: number; lng: number }>();
       (locations || []).forEach((loc) => {
         if (loc.city && loc.latitude && loc.longitude) {
-          let cityLower = loc.city.toLowerCase().trim();
+          const resolved = resolveCityDisplay(loc.city, loc.address);
+          const cityLower = resolved.toLowerCase().trim();
           const cityEnglish = reverseTranslateCityName(cityLower).toLowerCase();
 
           if (cityLower.includes(queryLower) || cityEnglish.includes(queryLower) || cityEnglish.includes(queryEnglish)) {

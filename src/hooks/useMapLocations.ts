@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MapFilter } from '@/contexts/MapFilterContext';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
+import { resolveCityDisplay } from '@/utils/cityNormalization';
 
 interface MapLocation {
   id: string;
@@ -182,22 +183,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           }
           const dedupedShares = Array.from(uniqueSharesByUser.values());
 
-          finalLocations = dedupedShares.map(share => ({
-            id: share.location_id || `share-${share.id}`,
-            name: share.location?.name || 'Shared Location',
-            category: normalizeCategoryToBase(share.location?.category) || (share.location?.category || 'Unknown'),
-            address: share.location?.address,
-            city: share.location?.city,
-            google_place_id: (share.location as any)?.google_place_id || undefined,
-            coordinates: {
-              lat: Number(share.latitude) || 0,
-              lng: Number(share.longitude) || 0
-            },
-            user_id: share.user_id,
-            created_at: share.created_at,
-            isFollowing: true,
-            sharedByUser: profileMap.get(share.user_id)
-          })).filter(loc => {
+          finalLocations = dedupedShares.map(share => {
+            const resolvedCity = resolveCityDisplay(share.location?.city, share.location?.address);
+            return {
+              id: share.location_id || `share-${share.id}`,
+              name: share.location?.name || 'Shared Location',
+              category: normalizeCategoryToBase(share.location?.category) || (share.location?.category || 'Unknown'),
+              address: share.location?.address,
+              city: resolvedCity,
+              google_place_id: (share.location as any)?.google_place_id || undefined,
+              coordinates: {
+                lat: Number(share.latitude) || 0,
+                lng: Number(share.longitude) || 0
+              },
+              user_id: share.user_id,
+              created_at: share.created_at,
+              isFollowing: true,
+              sharedByUser: profileMap.get(share.user_id)
+            };
+          }).filter(loc => {
             if (!isCategoryAllowed(loc.category)) return false;
             return true;
           });
@@ -276,7 +280,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               if (locationMap.has(key)) return;
 
               usedCoords.add(coordKey);
-              locationMap.set(key, { ...loc, id: key });
+              locationMap.set(key, { ...loc, id: key, city: resolveCityDisplay(loc.city, loc.address) });
             };
 
             // 1) created locations
@@ -350,21 +354,22 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             // Use only the selected friend IDs - never include current user
             const followedUserIds = selectedFollowedUserIds;
 
-            const normalizedCityRaw = (currentCity || '').trim().toLowerCase();
-
             const normalizeCityKey = (s?: string | null) => {
-              const v = String(s ?? '').trim().toLowerCase();
+              // Use the same logic everywhere: municipality/district -> parent city, consistent casing.
+              const resolved = resolveCityDisplay(s, undefined);
+              const v = String(resolved ?? '').trim().toLowerCase();
               if (!v) return '';
               // drop trailing postal numbers like "dublin 2"
               return v.replace(/\s+\d+$/g, '').trim();
             };
 
-            const normalizedCity = normalizeCityKey(normalizedCityRaw);
+            const normalizedCity = normalizeCityKey(currentCity);
 
             // Symmetric match: "dublin" matches "dublin 2" and vice versa
-            const cityOk = (city?: string | null) => {
+            const cityOk = (city?: string | null, address?: string | null) => {
               if (!normalizedCity) return true;
-              const c = normalizeCityKey(city);
+              const resolved = resolveCityDisplay(city, address);
+              const c = normalizeCityKey(resolved);
               if (!c) return false;
               return c.includes(normalizedCity) || normalizedCity.includes(c);
             };
@@ -404,7 +409,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             const googlePlaceIdsInLocations = new Set<string>();
 
             const tryAdd = (loc: MapLocation) => {
-              if (!cityOk(loc.city)) return;
+              const resolvedCity = resolveCityDisplay(loc.city, loc.address);
+              if (!cityOk(resolvedCity, loc.address)) return;
               const lat = Number(loc.coordinates?.lat);
               const lng = Number(loc.coordinates?.lng);
               if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) return;
@@ -417,7 +423,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               if (locationMap.has(key)) return;
 
               usedCoords.add(coordKey);
-              locationMap.set(key, { ...loc, id: key });
+              locationMap.set(key, { ...loc, id: key, city: resolvedCity });
             };
 
             // 1) created locations
@@ -440,7 +446,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             // 2) internal saved locations
             (savedInternal || []).forEach((row: any) => {
               const loc = row.location;
-              if (!loc || !cityOk(loc.city)) return;
+              if (!loc) return;
+              const resolvedCity = resolveCityDisplay(loc.city, loc.address);
+              if (!cityOk(resolvedCity, loc.address)) return;
               const gp = loc.google_place_id;
               if (gp) {
                 if (googlePlaceIdsInLocations.has(gp)) return;
@@ -493,10 +501,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             .from('saved_places')
             .select('place_id, place_name, place_category, city, coordinates, user_id, created_at');
 
-          // City filter (saved_places has a city column)
-          if (!mapBounds && currentCity && currentCity.trim()) {
-            savedPlacesQuery = savedPlacesQuery.ilike('city', `%${currentCity}%`);
-          }
+          // NOTE: we don't DB-filter by city anymore because municipalities/districts (e.g., "Vračar")
+          // must still match their parent city ("Belgrade"). We'll filter client-side using resolveCityDisplay.
 
           const { data: savedPlaces } = await savedPlacesQuery.limit(1000);
 
@@ -596,9 +602,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .lte('latitude', mapBounds.north)
               .gte('longitude', mapBounds.west)
               .lte('longitude', mapBounds.east);
-          } else if (currentCity && currentCity.trim()) {
-            locationsQuery = locationsQuery.ilike('city', `%${currentCity}%`);
           }
+          // NOTE: we don't DB-filter by city anymore; we filter client-side using resolveCityDisplay
+          // so that districts/municipalities still show under their parent city.
 
           const { data: locations, error: locError } = await locationsQuery.limit(500);
 
@@ -657,24 +663,35 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           });
 
           // ---------------------- 3) Build final array ----------------------
+          const currentCityKey = (currentCity || '').trim();
+          const resolvedCurrentCity = currentCityKey ? resolveCityDisplay(currentCityKey) : '';
+          const currentCityLower = resolvedCurrentCity.toLowerCase();
+
           // From locations table - show ALL locations (not just those with saves)
           const fromLocations: MapLocation[] = (locations || [])
-            .map((loc: any) => ({
-              id: loc.id,
-              name: loc.name,
-              category: loc.category,
-              address: loc.address,
-              city: loc.city,
-              google_place_id: loc.google_place_id,
-              opening_hours_data: loc.opening_hours_data,
-              coordinates: {
-                lat: Number(loc.latitude) || 0,
-                lng: Number(loc.longitude) || 0,
-              },
-              user_id: loc.created_by,
-              created_at: loc.created_at,
-              recommendationScore: locationScores.get(loc.id) || 1,
-            }));
+            .map((loc: any) => {
+              const resolvedCity = resolveCityDisplay(loc.city, loc.address);
+              return {
+                id: loc.id,
+                name: loc.name,
+                category: loc.category,
+                address: loc.address,
+                city: resolvedCity,
+                google_place_id: loc.google_place_id,
+                opening_hours_data: loc.opening_hours_data,
+                coordinates: {
+                  lat: Number(loc.latitude) || 0,
+                  lng: Number(loc.longitude) || 0,
+                },
+                user_id: loc.created_by,
+                created_at: loc.created_at,
+                recommendationScore: locationScores.get(loc.id) || 1,
+              } as MapLocation;
+            })
+            .filter((l) => {
+              if (!currentCityLower) return true;
+              return (l.city || '').toLowerCase() === currentCityLower;
+            });
 
           // From saved_places that are NOT already in locations table AND not at same coordinates
           const fromSavedPlaces: MapLocation[] = [];
@@ -691,12 +708,15 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
             if (coordsFromLocations.has(coordKey)) return;
 
+            const resolvedCity = resolveCityDisplay(sp.city);
+            if (currentCityLower && resolvedCity.toLowerCase() !== currentCityLower) return;
+
             fromSavedPlaces.push({
               id: googlePlaceId,
               name: sp.place_name || 'Unknown',
               category: sp.place_category || 'restaurant',
               address: undefined,
-              city: sp.city || undefined,
+              city: resolvedCity,
               google_place_id: googlePlaceId,
               coordinates: { lat, lng },
               user_id: sp.user_id,
@@ -757,7 +777,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 return;
               }
             } else if (currentCity && currentCity.trim()) {
-              if (!loc.city || !loc.city.toLowerCase().includes(currentCity.toLowerCase())) {
+              const resolved = resolveCityDisplay(loc.city, loc.address);
+              const want = resolveCityDisplay(currentCity);
+              if (resolved.toLowerCase() !== want.toLowerCase()) {
                 return;
               }
             }
@@ -769,7 +791,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 name: loc.name,
                 category: normalizeCategoryToBase(loc.category) || (loc.category || 'Unknown'),
                 address: loc.address,
-                city: loc.city,
+                city: resolveCityDisplay(loc.city, loc.address),
                 google_place_id: loc.google_place_id,
                 coordinates: { lat, lng },
                 isSaved: true,
@@ -820,7 +842,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 return;
               }
             } else if (currentCity && currentCity.trim()) {
-              if (!sp.city || !sp.city.toLowerCase().includes(currentCity.toLowerCase())) {
+              const resolved = resolveCityDisplay(sp.city);
+              const want = resolveCityDisplay(currentCity);
+              if (resolved.toLowerCase() !== want.toLowerCase()) {
                 return;
               }
             }
@@ -832,7 +856,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 name: sp.place_name || 'Unknown',
                 category: normalizeCategoryToBase(sp.place_category) || (sp.place_category || 'Unknown'),
                 address: undefined,
-                city: sp.city || 'Unknown',
+                city: resolveCityDisplay(sp.city) || 'Unknown',
                 google_place_id: sp.place_id,
                 coordinates: { lat, lng },
                 isSaved: true,
