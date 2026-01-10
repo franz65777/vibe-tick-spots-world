@@ -16,8 +16,13 @@ interface NominatimResult {
     city?: string;
     town?: string;
     village?: string;
+    municipality?: string;
     suburb?: string;
     neighbourhood?: string;
+    quarter?: string;
+    borough?: string;
+    district?: string;
+    county?: string;
     state?: string;
     country?: string;
     road?: string;
@@ -117,6 +122,9 @@ class NominatimGeocoding {
         // Extract structured address components
         const streetName = result.address.road || result.address.street || result.address.pedestrian || '';
         const streetNumber = result.address.house_number || '';
+        
+        // Get the parent city - prioritize city > town > village
+        // This ensures suburbs/municipalities get their parent city
         const city = result.address.city || result.address.town || result.address.village || '';
         
         // Use the name field if available (POI name), otherwise extract from display_name

@@ -38,9 +38,13 @@ interface SearchResult {
 }
 
 // Types that represent actual cities (not suburbs/municipalities)
-const CITY_TYPES = ['city', 'town', 'village'];
-// Types that are sub-areas of cities (should show parent city)
-const SUB_CITY_TYPES = ['municipality', 'suburb', 'quarter', 'neighbourhood', 'borough', 'district'];
+const CITY_TYPES = ['city', 'town', 'village', 'hamlet'];
+// Types that are sub-areas of cities (should show parent city instead)
+const SUB_CITY_TYPES = [
+  'municipality', 'suburb', 'quarter', 'neighbourhood', 'borough', 'district',
+  'city_district', 'county', 'state_district', 'region', 'locality',
+  'isolated_dwelling', 'farm', 'allotments', 'administrative'
+];
 const CITY_CLASSES = ['place', 'boundary'];
 
 const OpenStreetMapAutocomplete = ({
@@ -173,30 +177,64 @@ const OpenStreetMapAutocomplete = ({
                 isCity: true,
               });
             }
-          } else if (isSubCity && result.city) {
-            // Municipality/suburb - show the parent city instead
+          } else if (isSubCity) {
+            // Municipality/suburb/district - try to find parent city from the result
+            // The parent city comes from the Nominatim address parsing
             const parentCity = result.city;
-            const parentCityNormalized = normalizeName(parentCity);
             
-            if (!seenCityNames.has(parentCityNormalized)) {
-              seenCityNames.add(parentCityNormalized);
+            if (parentCity) {
+              const parentCityNormalized = normalizeName(parentCity);
               
-              if (cities.length < 5) {
-                const addressParts = result.displayName.split(',').map(p => p.trim());
-                const country = addressParts[addressParts.length - 1] || '';
+              if (!seenCityNames.has(parentCityNormalized)) {
+                seenCityNames.add(parentCityNormalized);
                 
-                cities.push({
-                  id: `city-${cities.length}`,
-                  name: parentCity,
-                  address: country,
-                  lat: result.lat,
-                  lng: result.lng,
-                  city: parentCity,
-                  source: 'nominatim' as const,
-                  nominatimType: 'city',
-                  nominatimClass: 'place',
-                  isCity: true,
-                });
+                if (cities.length < 5) {
+                  const addressParts = result.displayName.split(',').map(p => p.trim());
+                  const country = addressParts[addressParts.length - 1] || '';
+                  
+                  cities.push({
+                    id: `city-${cities.length}`,
+                    name: parentCity,
+                    address: country,
+                    lat: result.lat,
+                    lng: result.lng,
+                    city: parentCity,
+                    source: 'nominatim' as const,
+                    nominatimType: 'city',
+                    nominatimClass: 'place',
+                    isCity: true,
+                  });
+                }
+              }
+            } else {
+              // No parent city found - try to extract from display_name
+              // For suburbs like "Surcin, Belgrade, Serbia" -> use Belgrade
+              const addressParts = result.displayName.split(',').map(p => p.trim());
+              if (addressParts.length >= 2) {
+                // Second part is often the parent city
+                const potentialCity = addressParts[1];
+                const potentialCityNormalized = normalizeName(potentialCity);
+                
+                if (!seenCityNames.has(potentialCityNormalized) && potentialCity.length > 2) {
+                  seenCityNames.add(potentialCityNormalized);
+                  
+                  if (cities.length < 5) {
+                    const country = addressParts[addressParts.length - 1] || '';
+                    
+                    cities.push({
+                      id: `city-${cities.length}`,
+                      name: potentialCity,
+                      address: country,
+                      lat: result.lat,
+                      lng: result.lng,
+                      city: potentialCity,
+                      source: 'nominatim' as const,
+                      nominatimType: 'city',
+                      nominatimClass: 'place',
+                      isCity: true,
+                    });
+                  }
+                }
               }
             }
           } else {
