@@ -113,7 +113,40 @@ const OpenStreetMapAutocomplete = ({
       const seenNormalizedNames = new Set<string>();
       const seenCityNames = new Set<string>();
 
-      // 1. Search our database first
+      // 1. Search specifically for cities worldwide (no location bias)
+      try {
+        const citySearchResults = await nominatimGeocoding.searchCities(searchQuery, 'en');
+        
+        for (const result of citySearchResults) {
+          const cityName = result.name || result.city || result.displayName.split(',')[0];
+          const normalizedCity = normalizeName(cityName);
+          
+          if (seenCityNames.has(normalizedCity)) continue;
+          seenCityNames.add(normalizedCity);
+          
+          if (cities.length < 5) {
+            const addressParts = result.displayName.split(',').map(p => p.trim());
+            const country = addressParts[addressParts.length - 1] || '';
+            
+            cities.push({
+              id: `city-${cities.length}`,
+              name: cityName,
+              address: country,
+              lat: result.lat,
+              lng: result.lng,
+              city: cityName,
+              source: 'nominatim' as const,
+              nominatimType: result.type,
+              nominatimClass: result.class,
+              isCity: true,
+            });
+          }
+        }
+      } catch (cityError) {
+        console.warn('City search failed:', cityError);
+      }
+
+      // 2. Search our database for locations
       const { data: dbLocations } = await supabase
         .from('locations')
         .select('id, name, address, city, latitude, longitude, category')
@@ -143,24 +176,20 @@ const OpenStreetMapAutocomplete = ({
         }
       }
 
-      // 2. Search OpenStreetMap Nominatim for both cities and places (force English)
+      // 3. Search OpenStreetMap Nominatim for places (skip viewbox for global search)
       try {
-        const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery, 'en');
+        const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery, 'en', undefined, { skipViewbox: true });
         
         for (const result of nominatimResults) {
           const placeName = result.displayName.split(',')[0];
           const normalizedName = normalizeName(placeName);
           const isCity = isCityType(result.type, result.class);
-          const isSubCity = isSubCityType(result.type);
           
+          // Skip cities - we already have them from the dedicated city search
           if (isCity) {
-            // For cities, use the city name for deduplication
             const cityKey = normalizedName;
-            if (seenCityNames.has(cityKey)) continue;
-            seenCityNames.add(cityKey);
-            
-            if (cities.length < 5) {
-              // Get country/region for city display
+            if (!seenCityNames.has(cityKey) && cities.length < 5) {
+              seenCityNames.add(cityKey);
               const addressParts = result.displayName.split(',').map(p => p.trim());
               const country = addressParts[addressParts.length - 1] || '';
               
@@ -177,88 +206,32 @@ const OpenStreetMapAutocomplete = ({
                 isCity: true,
               });
             }
-          } else if (isSubCity) {
-            // Municipality/suburb/district - try to find parent city from the result
-            // The parent city comes from the Nominatim address parsing
-            const parentCity = result.city;
-            
-            if (parentCity) {
-              const parentCityNormalized = normalizeName(parentCity);
-              
-              if (!seenCityNames.has(parentCityNormalized)) {
-                seenCityNames.add(parentCityNormalized);
-                
-                if (cities.length < 5) {
-                  const addressParts = result.displayName.split(',').map(p => p.trim());
-                  const country = addressParts[addressParts.length - 1] || '';
-                  
-                  cities.push({
-                    id: `city-${cities.length}`,
-                    name: parentCity,
-                    address: country,
-                    lat: result.lat,
-                    lng: result.lng,
-                    city: parentCity,
-                    source: 'nominatim' as const,
-                    nominatimType: 'city',
-                    nominatimClass: 'place',
-                    isCity: true,
-                  });
-                }
-              }
-            } else {
-              // No parent city found - try to extract from display_name
-              // For suburbs like "Surcin, Belgrade, Serbia" -> use Belgrade
-              const addressParts = result.displayName.split(',').map(p => p.trim());
-              if (addressParts.length >= 2) {
-                // Second part is often the parent city
-                const potentialCity = addressParts[1];
-                const potentialCityNormalized = normalizeName(potentialCity);
-                
-                if (!seenCityNames.has(potentialCityNormalized) && potentialCity.length > 2) {
-                  seenCityNames.add(potentialCityNormalized);
-                  
-                  if (cities.length < 5) {
-                    const country = addressParts[addressParts.length - 1] || '';
-                    
-                    cities.push({
-                      id: `city-${cities.length}`,
-                      name: potentialCity,
-                      address: country,
-                      lat: result.lat,
-                      lng: result.lng,
-                      city: potentialCity,
-                      source: 'nominatim' as const,
-                      nominatimType: 'city',
-                      nominatimClass: 'place',
-                      isCity: true,
-                    });
-                  }
-                }
-              }
-            }
-          } else {
-            // Regular location - use parent city if available
-            if (seenNormalizedNames.has(normalizedName)) continue;
-            seenNormalizedNames.add(normalizedName);
-            
-            const mappedCategory = mapNominatimTypeToCategory(result.type, result.class);
-            
-            if (locations.length < 8) {
-              locations.push({
-                id: `nominatim-${locations.length}`,
-                name: placeName,
-                address: result.displayName,
-                lat: result.lat,
-                lng: result.lng,
-                city: result.city || '',
-                source: 'nominatim' as const,
-                nominatimType: result.type,
-                nominatimClass: result.class,
-                category: mappedCategory,
-                isCity: false,
-              });
-            }
+            continue;
+          }
+          
+          // Skip sub-city types for locations
+          if (isSubCityType(result.type)) continue;
+          
+          // Regular location
+          if (seenNormalizedNames.has(normalizedName)) continue;
+          seenNormalizedNames.add(normalizedName);
+          
+          const mappedCategory = mapNominatimTypeToCategory(result.type, result.class);
+          
+          if (locations.length < 8) {
+            locations.push({
+              id: `nominatim-${locations.length}`,
+              name: placeName,
+              address: result.displayName,
+              lat: result.lat,
+              lng: result.lng,
+              city: result.city || '',
+              source: 'nominatim' as const,
+              nominatimType: result.type,
+              nominatimClass: result.class,
+              category: mappedCategory,
+              isCity: false,
+            });
           }
         }
       } catch (nominatimError) {
