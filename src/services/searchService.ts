@@ -92,7 +92,8 @@ class SearchService {
           .select('place_id, place_name')
           .eq('user_id', userId),
 
-        // Internal saved locations, joined with details to allow name/address matching
+        // Internal saved locations, joined with details to allow name/address matching.
+        // NOTE: This join can fail if the relationship isn't detected; we'll fall back to a simpler query.
         supabase
           .from('user_saved_locations')
           .select(`
@@ -106,6 +107,27 @@ class SearchService {
           `)
           .eq('user_id', userId)
       ]);
+
+      // Fallbacks: if either saved query errors, still exclude by at least IDs.
+      const savedPlacesData = savedPlacesResult.error
+        ? (await supabase.from('saved_places').select('place_id, place_name').eq('user_id', userId)).data
+        : savedPlacesResult.data;
+
+      const savedLocationsWithDetailsData = savedLocationsWithDetailsResult.error
+        ? (
+            await supabase
+              .from('user_saved_locations')
+              .select('location_id')
+              .eq('user_id', userId)
+          ).data
+        : savedLocationsWithDetailsResult.data;
+
+      if (savedPlacesResult.error) {
+        console.warn('⚠️ saved_places query failed, using fallback:', savedPlacesResult.error);
+      }
+      if (savedLocationsWithDetailsResult.error) {
+        console.warn('⚠️ user_saved_locations join query failed, using fallback:', savedLocationsWithDetailsResult.error);
+      }
 
       const { data: locations, error } = locationsResult;
 
@@ -140,16 +162,16 @@ class SearchService {
       };
 
       // From internal saved locations (plus details)
-      (savedLocationsWithDetailsResult.data || []).forEach((row: any) => {
+      (savedLocationsWithDetailsData || []).forEach((row: any) => {
         if (row?.location_id) savedIds.add(String(row.location_id));
-        const loc = row?.locations;
+        const loc = (row as any)?.locations;
         if (loc?.id) savedIds.add(String(loc.id));
         if (loc?.google_place_id) savedIds.add(String(loc.google_place_id));
         addSavedFingerprint(loc?.name, loc?.address);
       });
 
       // From saved_places
-      (savedPlacesResult.data || []).forEach((row: any) => {
+      (savedPlacesData || []).forEach((row: any) => {
         if (row?.place_id) savedIds.add(String(row.place_id));
         addSavedFingerprint(row?.place_name, null);
       });
