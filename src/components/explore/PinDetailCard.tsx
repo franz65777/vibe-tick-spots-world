@@ -883,7 +883,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Action Buttons - Always visible, sticky at bottom (prevents clipping) */}
-          <div className="sticky bottom-0 z-10 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-background/70 backdrop-blur-md border-t border-border/20">
+          <div className="sticky bottom-0 z-10 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
               {/* Share */}
               <button
