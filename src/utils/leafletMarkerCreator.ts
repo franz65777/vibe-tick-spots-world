@@ -1,11 +1,5 @@
 import L from 'leaflet';
-import hotel from '@/assets/category-hotel-upload.png';
-import cafe from '@/assets/category-cafe-upload.png';
-import bar from '@/assets/category-bar-upload.png';
-import restaurant from '@/assets/category-restaurant-upload.png';
-import entertainment from '@/assets/category-entertainment-upload.png';
-import bakery from '@/assets/category-bakery-upload.png';
-import museum from '@/assets/category-museum-upload.png';
+import { getCategoryImage } from '@/utils/categoryIcons';
 
 interface MarkerOptions {
   category: string;
@@ -19,45 +13,6 @@ interface MarkerOptions {
   sharedByUsers?: Array<{ id: string; avatar_url: string | null; username: string }>;
   onSharersClick?: () => void;
 }
-
-// Get category image path
-const getCategoryImage = (category: string): string => {
-  const categoryLower = category.toLowerCase();
-  
-  switch (categoryLower) {
-    case 'bakery':
-      return bakery;
-    case 'bar':
-    case 'bar & pub':
-    case 'nightlife':
-    case 'club':
-      return bar;
-    case 'museum':
-    case 'gallery':
-    case 'cultural':
-      return museum;
-    case 'hotel':
-    case 'accommodation':
-    case 'lodging':
-      return hotel;
-    case 'cafe':
-    case 'café':
-    case 'coffee':
-    case 'coffee shop':
-      return cafe;
-    case 'restaurant':
-    case 'food':
-    case 'dining':
-      return restaurant;
-    case 'entertainment':
-    case 'attraction':
-    case 'landmark':
-    case 'sightseeing':
-      return entertainment;
-    default:
-      return restaurant;
-  }
-};
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
   const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers } = options;
