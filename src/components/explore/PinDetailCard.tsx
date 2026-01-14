@@ -821,69 +821,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
           </div>
 
-          {/* Photo Gallery - Horizontal Scroll */}
-          <div className="px-4 pt-3 pb-1">
-            {photosLoading ? (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-40 h-48 bg-muted rounded-xl animate-pulse flex-shrink-0" />
-                ))}
-              </div>
-            ) : locationPhotos.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                {locationPhotos.map((photo, index) => (
-                  <div
-                    key={index}
-                    className="w-40 h-48 rounded-xl overflow-hidden flex-shrink-0 bg-muted"
-                  >
-                    <img
-                      src={photo}
-                      alt={`${place.name} photo ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : posts.length > 0 ? (
-              // Fallback to user posts if no Google photos
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                {posts.slice(0, 6).map((post, index) => (
-                  <button
-                    key={post.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onPostSelected) {
-                        onPostSelected(post.id);
-                      } else {
-                        setSelectedPostId(post.id);
-                      }
-                    }}
-                    className="w-40 h-48 rounded-xl overflow-hidden flex-shrink-0 bg-muted"
-                  >
-                    <img
-                      src={post.media_urls[0]}
-                      alt={`Post ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-32 bg-muted/50 rounded-xl">
-                <div className="text-center">
-                  <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons - Always visible, sticky at bottom (prevents clipping) */}
-          <div className="sticky bottom-0 z-10 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          {/* Action Buttons - Above photos, horizontal scroll */}
+          <div className="px-4 pt-2 pb-1">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
               {/* Share */}
               <button
@@ -963,6 +902,79 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 )}
               </button>
             </div>
+          </div>
+
+          {/* Photo Gallery - Horizontal Scroll (smaller when collapsed) */}
+          <div className="px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+            {photosLoading ? (
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className={cn(
+                    "bg-muted rounded-xl animate-pulse flex-shrink-0",
+                    isExpanded ? "w-40 h-48" : "w-32 h-36"
+                  )} />
+                ))}
+              </div>
+            ) : locationPhotos.length > 0 ? (
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                {locationPhotos.map((photo, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
+                      isExpanded ? "w-40 h-48" : "w-32 h-36"
+                    )}
+                  >
+                    <img
+                      src={photo}
+                      alt={`${place.name} photo ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : posts.length > 0 ? (
+              // Fallback to user posts if no Google photos
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                {posts.slice(0, 6).map((post, index) => (
+                  <button
+                    key={post.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onPostSelected) {
+                        onPostSelected(post.id);
+                      } else {
+                        setSelectedPostId(post.id);
+                      }
+                    }}
+                    className={cn(
+                      "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
+                      isExpanded ? "w-40 h-48" : "w-32 h-36"
+                    )}
+                  >
+                    <img
+                      src={post.media_urls[0]}
+                      alt={`Post ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className={cn(
+                "flex items-center justify-center bg-muted/50 rounded-xl",
+                isExpanded ? "h-32" : "h-24"
+              )}>
+                <div className="text-center">
+                  <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
 
