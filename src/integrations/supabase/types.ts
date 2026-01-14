@@ -1224,6 +1224,8 @@ export type Database = {
           opening_hours_data: Json | null
           opening_hours_fetched_at: string | null
           opening_hours_source: string | null
+          photos: Json | null
+          photos_fetched_at: string | null
           pioneer_user_id: string | null
           place_types: string[] | null
           updated_at: string | null
@@ -1247,6 +1249,8 @@ export type Database = {
           opening_hours_data?: Json | null
           opening_hours_fetched_at?: string | null
           opening_hours_source?: string | null
+          photos?: Json | null
+          photos_fetched_at?: string | null
           pioneer_user_id?: string | null
           place_types?: string[] | null
           updated_at?: string | null
@@ -1270,6 +1274,8 @@ export type Database = {
           opening_hours_data?: Json | null
           opening_hours_fetched_at?: string | null
           opening_hours_source?: string | null
+          photos?: Json | null
+          photos_fetched_at?: string | null
           pioneer_user_id?: string | null
           place_types?: string[] | null
           updated_at?: string | null
