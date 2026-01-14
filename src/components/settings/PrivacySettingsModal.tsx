@@ -115,7 +115,7 @@ const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({ open, onOpe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col">
-          <SheetHeader className="pt-12 p-4">
+          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10 bg-background">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onOpenChange(false)}
