@@ -12,30 +12,19 @@ interface MarkerOptions {
   sharedByUserAvatar?: string | null;
   sharedByUsers?: Array<{ id: string; avatar_url: string | null; username: string }>;
   onSharersClick?: () => void;
+  isSelected?: boolean;
 }
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers } = options;
+  const { category, isSaved, isRecommended, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers, isSelected = false } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
   
-  // Determine pin color based on state
-  let pinColor = '#EF4444'; // red for popular (default)
-  let ringColor = 'rgba(239, 68, 68, 0.3)';
-  
-  // Purple for shared locations
-  const hasSharedUsers = (sharedByUsers && sharedByUsers.length > 0) || sharedByUserAvatar;
-  if (hasSharedUsers) {
-    pinColor = '#9333EA'; // purple for shared
-    ringColor = 'rgba(147, 51, 234, 0.3)';
-  } else if (isSaved) {
-    pinColor = '#10B981'; // green for saved
-    ringColor = 'rgba(16, 185, 129, 0.3)';
-  } else if (isRecommended) {
-    pinColor = '#3B82F6'; // blue for following/recommended
-    ringColor = 'rgba(59, 130, 246, 0.3)';
-  }
+  // Sizes based on selected state - like Forêt app
+  const size = isSelected ? 56 : 40;
+  const iconSize = isSelected ? 28 : 20;
+  const borderWidth = isSelected ? 3 : 2;
   
   // User avatar overlay for shared locations - support multiple users
   let avatarOverlay = '';
@@ -46,16 +35,15 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     const avatarUrl = firstUser.avatar_url || '';
     
     avatarOverlay = `
-      <!-- User avatar badge -->
       <div class="location-sharers-badge" style="
         position: absolute;
-        top: -6px;
-        right: -6px;
-        width: 24px;
-        height: 24px;
+        top: -4px;
+        right: -4px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         overflow: hidden;
         background: white;
         z-index: 20;
@@ -64,47 +52,40 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         <img 
           src="${avatarUrl}" 
           alt="User"
-          style="
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          "
+          style="width: 100%; height: 100%; object-fit: cover;"
           onerror="this.parentElement.style.background='#9333EA'; this.style.display='none';"
         />
         ${hasMultiple ? `
           <div style="
             position: absolute;
-            bottom: -4px;
-            right: -4px;
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
+            bottom: -3px;
+            right: -3px;
+            background: #FF4757;
             color: white;
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
-            border: 2.5px solid white;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.1);
-            font-family: system-ui, -apple-system, sans-serif;
+            border: 2px solid white;
           ">+</div>
         ` : ''}
       </div>
     `;
   } else if (sharedByUserAvatar) {
     avatarOverlay = `
-      <!-- User avatar badge -->
       <div style="
         position: absolute;
-        top: -6px;
-        right: -6px;
-        width: 24px;
-        height: 24px;
+        top: -4px;
+        right: -4px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         overflow: hidden;
         background: white;
         z-index: 20;
@@ -112,138 +93,82 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         <img 
           src="${sharedByUserAvatar}" 
           alt="User"
-          style="
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          "
+          style="width: 100%; height: 100%; object-fit: cover;"
           onerror="this.parentElement.style.background='#9333EA'; this.style.display='none';"
         />
       </div>
     `;
   }
   
-  // Campaign sparkle effect - 5 sparkles max, closer to pin
+  // Campaign sparkle effect
   const campaignEffect = hasCampaign ? `
-    <!-- Animated sparkle effect for campaigns -->
-    <div class="campaign-sparkle" style="
-      position: absolute;
-      top: -4px;
-      left: -4px;
-      width: 44px;
-      height: 52px;
-      pointer-events: none;
-    ">
-      <!-- Top center -->
-      <div class="sparkle sparkle-1" style="
-        position: absolute;
-        top: -2px;
-        left: 18px;
-        width: 7px;
-        height: 7px;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out infinite;
-      "></div>
-      <!-- Top right -->
-      <div class="sparkle sparkle-2" style="
-        position: absolute;
-        top: 2px;
-        right: 4px;
-        width: 5px;
-        height: 5px;
-        background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.3s infinite;
-      "></div>
-      <!-- Top left -->
-      <div class="sparkle sparkle-3" style="
-        position: absolute;
-        top: 2px;
-        left: 4px;
-        width: 5px;
-        height: 5px;
-        background: linear-gradient(135deg, #4ECDC4, #44A08D);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.6s infinite;
-      "></div>
-      <!-- Side left -->
-      <div class="sparkle sparkle-4" style="
-        position: absolute;
-        top: 12px;
-        left: 0px;
-        width: 6px;
-        height: 6px;
-        background: linear-gradient(135deg, #A8E6CF, #FFD3B6);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.9s infinite;
-      "></div>
-      <!-- Side right -->
-      <div class="sparkle sparkle-5" style="
-        position: absolute;
-        top: 12px;
-        right: 0px;
-        width: 6px;
-        height: 6px;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 1.2s infinite;
-      "></div>
-    </div>
-    
-    <!-- Pulsing glow ring -->
     <div style="
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 36px;
-      height: 36px;
+      top: -3px;
+      right: -3px;
+      width: 12px;
+      height: 12px;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       animation: campaign-pulse 2s ease-in-out infinite;
     "></div>
   ` : '';
+
+  // Selected state pointer (small triangle at bottom pointing down)
+  const selectedPointer = isSelected ? `
+    <div style="
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 10px solid white;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
+    "></div>
+  ` : '';
   
-  // Create custom marker HTML with larger icon and subtle design
+  // Create simple circular marker like the reference image
   const markerHtml = `
-    <div class="custom-leaflet-marker" style="position: relative; width: 36px; height: 44px;">
+    <div class="custom-leaflet-marker ${isSelected ? 'selected' : ''}" style="
+      position: relative; 
+      width: ${size}px; 
+      height: ${size + (isSelected ? 10 : 0)}px;
+    ">
       ${avatarOverlay}
       ${campaignEffect}
       
-      <!-- Subtle shadow ring -->
+      <!-- Main circular pin -->
       <div style="
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        width: 20px;
-        height: 20px;
-        background: ${ringColor};
+        width: ${size}px;
+        height: ${size}px;
         border-radius: 50%;
-        filter: blur(4px);
-      "></div>
+        background: white;
+        border: ${borderWidth}px solid ${isSelected ? '#1a1a1a' : 'rgba(0,0,0,0.08)'};
+        box-shadow: ${isSelected 
+          ? '0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.1)' 
+          : '0 2px 8px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.08)'};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      ">
+        <img 
+          src="${categoryImg}" 
+          alt="${category}"
+          style="
+            width: ${iconSize}px;
+            height: ${iconSize}px;
+            object-fit: contain;
+          "
+        />
+      </div>
       
-      <!-- Main pin with minimal design -->
-      <svg width="36" height="44" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));">
-        <path d="M18 2C11.373 2 6 7.373 6 14c0 7.074 12 26 12 26s12-18.926 12-26C30 7.373 24.627 2 18 2z" 
-              fill="${pinColor}"
-              opacity="0.95"/>
-        <circle cx="18" cy="14" r="9" fill="white" opacity="0.98"/>
-      </svg>
-      
-      <!-- Larger category icon (perfectly fits inside the white circle) -->
-      <img 
-        src="${categoryImg}" 
-        alt="${category}"
-        style="
-          position: absolute;
-          top: 5px;
-          left: 9px;
-          width: 18px;
-          height: 18px;
-          object-fit: contain;
-          border-radius: 50%;
-        "
-      />
+      ${selectedPointer}
     </div>
     
     <style>
@@ -251,37 +176,18 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         cursor: pointer;
         transition: all 0.2s ease;
       }
-      .custom-leaflet-marker:hover {
-        transform: scale(1.1) translateY(-2px);
-      }
-      
-      @keyframes sparkle-float {
-        0%, 100% {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
-        25% {
-          transform: translateY(-8px) scale(1.2);
-          opacity: 0.8;
-        }
-        50% {
-          transform: translateY(-12px) scale(1);
-          opacity: 0.6;
-        }
-        75% {
-          transform: translateY(-6px) scale(1.1);
-          opacity: 0.9;
-        }
+      .custom-leaflet-marker:hover:not(.selected) {
+        transform: scale(1.1);
       }
       
       @keyframes campaign-pulse {
         0%, 100% {
           transform: scale(1);
-          opacity: 0.6;
+          opacity: 1;
         }
         50% {
-          transform: scale(1.3);
-          opacity: 0.3;
+          transform: scale(1.2);
+          opacity: 0.8;
         }
       }
     </style>
@@ -290,9 +196,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   return L.divIcon({
     html: markerHtml,
     className: 'custom-leaflet-icon',
-    iconSize: [36, 44],
-    iconAnchor: [18, 44],
-    popupAnchor: [0, -44],
+    iconSize: [size, size + (isSelected ? 10 : 0)],
+    iconAnchor: [size / 2, size + (isSelected ? 10 : 0)],
+    popupAnchor: [0, -(size + (isSelected ? 10 : 0))],
   });
 };
 
