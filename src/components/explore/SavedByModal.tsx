@@ -1,4 +1,4 @@
-import { X, Search, UserPlus, Check, Bookmark } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,8 +176,11 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-end">
-      <div className="bg-background w-full h-[80vh] rounded-t-xl shadow-xl">
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-end" onClick={onClose}>
+      <div 
+        className="bg-background w-full h-[80vh] rounded-t-xl shadow-xl pb-safe"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-4">
           <h2 className="text-lg font-semibold text-foreground">{t('savedBy', { ns: 'common' })}</h2>
           <button onClick={onClose} aria-label="Close">
@@ -197,7 +200,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           </div>
         </div>
 
-        <ScrollArea className="h-[calc(80vh-112px)] scrollbar-hide">
+        <ScrollArea className="h-[calc(80vh-180px)] scrollbar-hide">
           <div className="p-4 space-y-3">
             {loading ? (
               <div className="flex items-center justify-center py-10">
@@ -236,19 +239,12 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
                         size="sm"
                         variant={u.isFollowing ? 'outline' : 'default'}
                         onClick={() => toggleFollow(u.id, u.isFollowing)}
-                        className="flex items-center gap-2"
+                        className="rounded-full px-4"
                       >
-                        {u.isFollowing ? (
-                          <>
-                            <Check className="w-4 h-4" />
-                            {t('following', { ns: 'common', defaultValue: 'Following' })}
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-4 h-4" />
-                            {t('follow', { ns: 'common', defaultValue: 'Follow' })}
-                          </>
-                        )}
+                        {u.isFollowing
+                          ? t('following', { ns: 'common', defaultValue: 'Following' })
+                          : t('follow', { ns: 'common', defaultValue: 'Follow' })
+                        }
                       </Button>
                     )}
                   </div>
