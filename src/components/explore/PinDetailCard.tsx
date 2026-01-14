@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, BookmarkCheck, MessageSquare, ChevronLeft, Share2, Star, Bell, BellOff, Camera } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, Share2, Star, Check, Link2, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -30,14 +30,14 @@ import { PostDetailModalMobile } from './PostDetailModalMobile';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
-import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import { toast } from 'sonner';
-import { OpeningHoursDisplay } from './OpeningHoursDisplay';
+import { useOpeningHours } from '@/hooks/useOpeningHours';
 import { useSavedByUsers } from '@/hooks/useSavedByUsers';
+import { useLocationPhotos } from '@/hooks/useLocationPhotos';
 
 // Map tag values to imported icons
 const TAG_ICONS: Record<string, string> = {
@@ -188,6 +188,23 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     4
   );
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
+
+  // Fetch location photos
+  const { photos: locationPhotos, loading: photosLoading } = useLocationPhotos({
+    locationId: locationIdForEngagement,
+    googlePlaceId: googlePlaceIdForEngagement,
+    autoFetch: true,
+    maxPhotos: 6
+  });
+
+  // Opening hours
+  const { isOpen: isPlaceOpen, todayHours, loading: hoursLoading } = useOpeningHours({
+    coordinates: place.coordinates,
+    placeName: place.name,
+    locationId: place.id,
+    googlePlaceId: place.google_place_id || undefined,
+    cachedOpeningHours: place.opening_hours_data
+  });
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
@@ -513,6 +530,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     }
   };
 
+  // Format category for display
+  const formatCategory = (category: string) => {
+    if (!category) return '';
+    return category
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <>
       <Drawer 
@@ -544,9 +571,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             maxHeight: `${35 + (90 - 35) * sheetProgress}vh`,
           }}
         >
-          {/* Compact Draggable Header - Drag to expand/collapse (follows finger) */}
+          {/* Compact Draggable Header - No grey bar, still draggable */}
           <div 
-            className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+            className="bg-background px-4 pt-4 pb-2 cursor-grab active:cursor-grabbing select-none"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => {
               e.stopPropagation();
@@ -623,245 +650,192 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               setSheetProgress(isExpanded ? 1 : 0);
             }}
           >
-            {/* Handle indicator - larger touch target area */}
-            <div className="w-20 h-2 bg-muted-foreground/50 rounded-full mx-auto mb-3" />
-            <div className="flex items-center gap-3">
-              {(sourcePostId || onBack) && (
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onBack) {
-                      onBack();
-                    } else {
-                      navigate(-1); // Torna alla pagina di provenienza (feed, profilo, ecc.)
-                    }
-                  }}
-                  size="icon"
-                  variant="ghost"
-                  className="shrink-0 h-10 w-10 rounded-full animate-fade-in"
-                  aria-label="Torna indietro"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-              )}
-              <div className="shrink-0">
-                <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-base text-foreground truncate">{locationDetails?.name || place.name}</h3>
-                  {/* Rating Badge */}
-                  {!statsLoading && stats.averageRating && (
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {stats.averageRating && (
-                        <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
-                          {(() => {
-                            const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
-                            return <CategoryIcon className={cn("w-3 h-3", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
-                          })()}
-                          <span className={cn("text-xs font-semibold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
-                        </div>
+            {/* Header Row */}
+            <div className="flex items-start justify-between gap-3">
+              {/* Left side: Back button + Name + Category + Status */}
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                {(sourcePostId || onBack) && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onBack) {
+                        onBack();
+                      } else {
+                        navigate(-1);
+                      }
+                    }}
+                    size="icon"
+                    variant="ghost"
+                    className="shrink-0 h-10 w-10 rounded-full animate-fade-in mt-0.5"
+                    aria-label="Back"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                )}
+                <div className="flex-1 min-w-0">
+                  {/* Place Name */}
+                  <h3 className="font-bold text-xl text-foreground truncate leading-tight">
+                    {locationDetails?.name || place.name}
+                  </h3>
+                  {/* Category + Price Level Row */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <CategoryIcon category={place.category || 'place'} className="w-5 h-5" />
+                    <span className="text-sm text-muted-foreground">
+                      {formatCategory(place.category || 'place')}
+                    </span>
+                    {place.price_level && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground">
+                          {'$'.repeat(place.price_level)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {/* Open/Closed Status */}
+                  {!hoursLoading && isPlaceOpen !== null && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={cn(
+                        "text-sm font-semibold",
+                        isPlaceOpen ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                      )}>
+                        {isPlaceOpen ? t('openingHours.open') : t('openingHours.closed')}
+                      </span>
+                      {todayHours && (
+                        <span className="text-sm text-muted-foreground">{todayHours}</span>
                       )}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="w-3 h-3" />
-                  <span className="truncate">{detailedAddress}</span>
+              </div>
+
+              {/* Right side: "to try" and "been" buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* To Try Button */}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    {t('to_try', { ns: 'save_tags', defaultValue: 'to try' })}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSaved && currentSaveTag === 'to_try') {
+                        handleUnsave();
+                      } else {
+                        handleSaveWithTag('to_try');
+                      }
+                    }}
+                    disabled={loading}
+                    className={cn(
+                      "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all",
+                      isSaved && currentSaveTag === 'to_try'
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "bg-background border-border hover:border-primary/50"
+                    )}
+                  >
+                    <Bookmark className={cn(
+                      "w-5 h-5",
+                      isSaved && currentSaveTag === 'to_try' && "fill-current"
+                    )} />
+                  </button>
+                </div>
+
+                {/* Been Button */}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    {t('been', { ns: 'save_tags', defaultValue: 'been' })}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSaved && currentSaveTag === 'been') {
+                        handleUnsave();
+                      } else {
+                        handleSaveWithTag('been');
+                      }
+                    }}
+                    disabled={loading}
+                    className={cn(
+                      "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all",
+                      isSaved && currentSaveTag === 'been'
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "bg-background border-border hover:border-primary/50"
+                    )}
+                  >
+                    <Check className={cn(
+                      "w-5 h-5",
+                      isSaved && currentSaveTag === 'been' && "stroke-[3]"
+                    )} />
+                  </button>
                 </div>
               </div>
-              {/* Followed Users */}
-              {!engagementLoading && engagement && engagement.followedUsers.length > 0 && (
-                <div className="flex items-center -space-x-2 flex-shrink-0">
-                  {engagement.followedUsers.slice(0, 2).map((user) => (
-                    <Avatar key={user.id} className="w-8 h-8 border-2 border-background">
-                      <AvatarImage src={user.avatar_url} />
-                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                        {user.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {engagement.followedUsers.length > 2 && (
-                    <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                      <span className="text-xs font-medium">+{engagement.followedUsers.length - 2}</span>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Action Buttons - Always visible */}
-          <div 
-            className={`relative z-10 bg-background px-3 pb-4 transition-all duration-300 ${
-              showActionButtons || dropdownOpen ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
-            } ${dropdownOpen ? 'overflow-visible' : ''}`}
-          >
-            {!dropdownOpen ? (
-              <div className="flex items-center gap-1.5">
-                <div className="grid grid-cols-4 gap-1 flex-1">
-                  {/* Save Button - with sparkle effect during onboarding */}
-                  <div className="relative">
-                    {isOnboardingMapStep && !isSaved && !dropdownOpen && (
-                      <>
-                        {/* Sparkle effects - only when dropdown is closed */}
-                        <span className="absolute -top-2 -left-1 text-lg animate-bounce z-20" style={{ animationDelay: '0ms' }}>✨</span>
-                        <span className="absolute -top-1 -right-1 text-lg animate-bounce z-20" style={{ animationDelay: '200ms' }}>⭐</span>
-                        <span className="absolute -bottom-1 -left-2 text-sm animate-bounce z-20" style={{ animationDelay: '400ms' }}>✨</span>
-                        <span className="absolute -bottom-2 right-0 text-sm animate-bounce z-20" style={{ animationDelay: '300ms' }}>🌟</span>
-                      </>
-                    )}
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDropdownOpen(true);
-                      }}
-                      disabled={loading}
-                      variant="secondary"
-                      size="sm"
-                      className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden w-full"
-                    >
-                      <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                       {isSaved ? (
-                         <img src={TAG_ICONS[currentSaveTag] || saveTagBeen} alt="" className="h-5 w-5 object-contain" />
-                       ) : (
-                         <Bookmark className="h-5 w-5" />
-                       )}
-                      <span className="text-xs">
-                        {isSaved 
-                          ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
-                          : t('save', { ns: 'common', defaultValue: 'Save' })
-                        }
-                      </span>
-                    </Button>
+          {/* Photo Gallery - Horizontal Scroll */}
+          <div className="px-4 py-3">
+            {photosLoading ? (
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="w-40 h-48 bg-muted rounded-xl animate-pulse flex-shrink-0" />
+                ))}
+              </div>
+            ) : locationPhotos.length > 0 ? (
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                {locationPhotos.map((photo, index) => (
+                  <div
+                    key={index}
+                    className="w-40 h-48 rounded-xl overflow-hidden flex-shrink-0 bg-muted"
+                  >
+                    <img
+                      src={photo}
+                      alt={`${place.name} photo ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-
-                <Button
+                ))}
+              </div>
+            ) : posts.length > 0 ? (
+              // Fallback to user posts if no Google photos
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                {posts.slice(0, 6).map((post, index) => (
+                  <button
+                    key={post.id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setReviewOpen(true);
+                      if (onPostSelected) {
+                        onPostSelected(post.id);
+                      } else {
+                        setSelectedPostId(post.id);
+                      }
                     }}
-                    size="sm"
-                    variant="secondary"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
+                    className="w-40 h-48 rounded-xl overflow-hidden flex-shrink-0 bg-muted"
                   >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    <Star className="w-5 h-5" />
-                    <span className="text-xs">{t('review', { ns: 'explore', defaultValue: 'Review' })}</span>
-                  </Button>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDirections();
-                    }}
-                    size="sm"
-                    variant="secondary"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
-                  >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    <Navigation className="w-5 h-5" />
-                    <span className="text-xs">{t('directions', { ns: 'explore', defaultValue: 'Directions' })}</span>
-                  </Button>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShareOpen(true);
-                    }}
-                    size="sm"
-                    variant="secondary"
-                    className="relative flex-col h-auto py-3 gap-1 rounded-2xl overflow-hidden"
-                  >
-                    <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    <Share2 className="w-5 h-5" />
-                    <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
-                  </Button>
-                </div>
-
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
-                    if (isMuted) {
-                      unmuteLocation(place.id);
-                    } else {
-                      muteLocation(place.id);
-                    }
-                  }}
-                  disabled={isMuting}
-                  size="icon"
-                  variant="secondary"
-                  className={`h-10 w-10 rounded-full flex-shrink-0 ${
-                    mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
-                  }`}
-                >
-                  {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                </Button>
+                    <img
+                      src={post.media_urls[0]}
+                      alt={`Post ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
               </div>
             ) : (
-              <>
-                {/* Invisible click-away layer to close dropdown (no visual overlay) */}
-                <div 
-                  className="fixed inset-0 z-40"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDropdownOpen(false);
-                  }}
-                />
-                
-                {/* Dropdown positioned absolutely - opens upward when card is minimized */}
-                <div className="absolute left-4 bottom-full mb-2 w-auto z-50">
-                  <div className="w-56 bg-muted/10 backdrop-blur-md border border-border/10 rounded-2xl shadow-lg">
-                    {isSaved && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUnsave();
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent text-destructive transition-colors min-h-[44px]"
-                      >
-                        <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
-                        <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
-                      </button>
-                    )}
-                    {SAVE_TAG_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSaveWithTag(option.value);
-                          setDropdownOpen(false);
-                        }}
-                        className={`w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent transition-colors min-h-[44px] ${
-                          option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
-                        }`}
-                      >
-                        <img src={TAG_ICONS[option.value]} alt="" className="h-4 w-4 object-contain flex-shrink-0" />
-                        <span className="text-sm font-medium text-left flex-1">
-                          {t(option.value, { ns: 'save_tags', defaultValue: option.value })}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+              <div className="flex items-center justify-center h-32 bg-muted/50 rounded-xl">
+                <div className="text-center">
+                  <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
+                  </p>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
-          {/* Opening Hours and Saved By Users Row - Closer to action buttons */}
-          <div className="px-4 pt-1 pb-2">
-            <div className="flex items-center justify-between gap-4">
-              {/* Opening Hours */}
-              <OpeningHoursDisplay 
-                coordinates={place.coordinates} 
-                placeName={place.name}
-                locationId={place.id}
-                googlePlaceId={place.google_place_id || undefined}
-                cachedOpeningHours={place.opening_hours_data}
-                className="flex-1 min-w-0"
-              />
-              
+          {/* Saved By & Stats Row */}
+          <div className="px-4 pb-2">
+            <div className="flex items-center gap-3">
               {/* Saved By Users Avatars */}
               {!savedByLoading && savedByUsers.length > 0 && (
                 <button
@@ -869,23 +843,92 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     e.stopPropagation();
                     setSavedByOpen(true);
                   }}
-                  className="flex items-center -space-x-2 flex-shrink-0 hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 >
-                  {savedByUsers.slice(0, 2).map((savedUser) => (
-                    <Avatar key={savedUser.id} className="w-7 h-7 border-2 border-background">
-                      <AvatarImage src={savedUser.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                        {savedUser.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {savedByTotalCount > 2 && (
-                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                      <span className="text-[10px] font-medium text-muted-foreground">+{savedByTotalCount - 2}</span>
-                    </div>
-                  )}
+                  <div className="flex -space-x-2">
+                    {savedByUsers.slice(0, 2).map((savedUser) => (
+                      <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
+                        <AvatarImage src={savedUser.avatar_url || undefined} />
+                        <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                          {savedUser.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
+                  </span>
                 </button>
               )}
+
+              {/* Rating Badge */}
+              {!statsLoading && stats.averageRating && (
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-sm font-medium">{stats.averageRating.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="px-4 pb-3">
+            <p className="text-sm text-muted-foreground">{detailedAddress}</p>
+          </div>
+
+          {/* Bottom Action Buttons - Pill Style */}
+          <div className="px-4 pb-4">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {/* Share */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShareOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('share', { ns: 'common', defaultValue: 'share' })}</span>
+              </button>
+
+              {/* Directions */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDirections();
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Navigation className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('directions', { ns: 'explore', defaultValue: 'directions' })}</span>
+              </button>
+
+              {/* Review/Rate */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Star className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('review', { ns: 'explore', defaultValue: 'rate' })}</span>
+              </button>
+
+              {/* Website/Link placeholder */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Open website if available
+                  if (place.website) {
+                    window.open(place.website, '_blank');
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Link2 className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('site', { ns: 'common', defaultValue: 'site' })}</span>
+              </button>
             </div>
           </div>
 
@@ -893,249 +936,249 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           {isExpanded && (
             <>
               {/* Marketing Campaign - Expandable Section */}
-          {campaign && (
-            <div className="px-4 pb-2">
-              <button
-                onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
-                className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
-              >
-                <span className="text-sm font-medium truncate text-foreground">{campaign.title}</span>
-                <svg className={`w-4 h-4 text-primary transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              {isCampaignExpanded && (
-                <div className="pt-2">
-                  <MarketingCampaignBanner campaign={campaign} />
+              {campaign && (
+                <div className="px-4 pb-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
+                    className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
+                  >
+                    <span className="text-sm font-medium truncate text-foreground">{campaign.title}</span>
+                    <svg className={`w-4 h-4 text-primary transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  {isCampaignExpanded && (
+                    <div className="pt-2">
+                      <MarketingCampaignBanner campaign={campaign} />
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Featured in Lists Section */}
-          {!listsLoading && featuredLists.length > 0 && (
-            <div className="px-4 pb-2">
-              <div className="w-full">
-                <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide text-left">
-                  📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
-                </h4>
-                <div className="overflow-x-auto scrollbar-hide">
-                  <div className="flex gap-2">
-                    {featuredLists.map((list) => (
-                      <button
-                        key={list.list_id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (list.type === 'folder') {
-                            setSelectedFolderId(list.list_id);
-                            setFolderDetailOpen(true);
-                            setIsListOpen(true);
-                          } else {
-                            setSelectedTripId(list.list_id);
-                            setTripDetailOpen(true);
-                            setIsListOpen(true);
-                          }
-                        }}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
-                      >
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={list.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-foreground">
-                          {list.list_name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tabs and Content */}
-          <div className="flex-1 overflow-hidden flex flex-col mt-1">
-            {/* Tab Navigation with Horizontal Scroll */}
-            <div 
-              className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
-              onScroll={(e) => {
-                const scrollLeft = e.currentTarget.scrollLeft;
-                const width = e.currentTarget.offsetWidth;
-                if (scrollLeft < width / 2) {
-                  setActiveTab('posts');
-                } else {
-                  setActiveTab('reviews');
-                }
-              }}
-            >
-              <div className="flex gap-0 min-w-full">
-                <button
-                  onClick={() => setActiveTab('posts')}
-                  className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
-                    activeTab === 'posts'
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
-                  {activeTab === 'posts' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('reviews')}
-                  className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
-                    activeTab === 'reviews'
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
-                  {activeTab === 'reviews' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Tab Content */}
-            <div 
-              ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
-              onScroll={(e) => {
-                const currentScrollY = e.currentTarget.scrollTop;
-                
-                // Show buttons when scrolling up, hide when scrolling down
-                if (currentScrollY > lastScrollY && currentScrollY > 50) {
-                  // Scrolling down
-                  setShowActionButtons(false);
-                } else if (currentScrollY < lastScrollY) {
-                  // Scrolling up
-                  setShowActionButtons(true);
-                }
-                
-                // Show buttons if at the top
-                if (currentScrollY < 10) {
-                  setShowActionButtons(true);
-                }
-                
-                setLastScrollY(currentScrollY);
-              }}
-            >
-              {activeTab === 'posts' ? (
-                <div className="px-4 py-4">
-                  {postsLoading && posts.length === 0 ? (
-                    <div className="flex justify-center py-8">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : posts.length === 0 ? (
-                    <div className="py-8 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Camera className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
-                        {posts.map((post) => (
+              {/* Featured in Lists Section */}
+              {!listsLoading && featuredLists.length > 0 && (
+                <div className="px-4 pb-2">
+                  <div className="w-full">
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide text-left">
+                      📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
+                    </h4>
+                    <div className="overflow-x-auto scrollbar-hide">
+                      <div className="flex gap-2">
+                        {featuredLists.map((list) => (
                           <button
-                            key={post.id} 
+                            key={list.list_id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (onPostSelected) {
-                                onPostSelected(post.id);
+                              if (list.type === 'folder') {
+                                setSelectedFolderId(list.list_id);
+                                setFolderDetailOpen(true);
+                                setIsListOpen(true);
                               } else {
-                                setSelectedPostId(post.id);
+                                setSelectedTripId(list.list_id);
+                                setTripDetailOpen(true);
+                                setIsListOpen(true);
                               }
                             }}
-                            className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow will-change-transform"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
                           >
-                            <img 
-                              src={post.media_urls[0]} 
-                              alt="Post image" 
-                              className="absolute inset-0 w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            {/* User Avatar Overlay */}
-                            <div className="absolute top-2 left-2 pointer-events-none">
-                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                                <AvatarImage src={post.profiles?.avatar_url} />
-                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
-                            {/* Multiple images indicator */}
-                            {post.media_urls.length > 1 && (
-                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium pointer-events-none">
-                                +{post.media_urls.length - 1}
-                              </div>
-                            )}
-                            {/* Post Caption */}
-                            {post.caption && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5 pointer-events-none">
-                                <p className="text-xs text-white line-clamp-2 leading-relaxed">
-                                  {post.caption}
-                                </p>
-                              </div>
-                            )}
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={list.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-foreground">
+                              {list.list_name}
+                            </span>
                           </button>
                         ))}
                       </div>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="px-4 py-4">
-                  {reviewsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                  ) : reviews.length === 0 ? (
-                    <div className="py-8 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Star className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 pb-4">
-                      {reviews.map((review) => (
-                        <div key={review.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
-                          <Avatar className="w-10 h-10 shrink-0">
-                            <AvatarImage src={review.avatar_url || ''} />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {review.username?.[0]?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-semibold text-sm">{review.username}</p>
-                              <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                                <span className="text-sm font-medium">{review.rating}</span>
-                              </div>
-                            </div>
-                            {review.comment && (
-                              <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: currentLocale })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-          </>
+
+              {/* Tabs and Content */}
+              <div className="flex-1 overflow-hidden flex flex-col mt-1">
+                {/* Tab Navigation with Horizontal Scroll */}
+                <div 
+                  className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+                  onScroll={(e) => {
+                    const scrollLeft = e.currentTarget.scrollLeft;
+                    const width = e.currentTarget.offsetWidth;
+                    if (scrollLeft < width / 2) {
+                      setActiveTab('posts');
+                    } else {
+                      setActiveTab('reviews');
+                    }
+                  }}
+                >
+                  <div className="flex gap-0 min-w-full">
+                    <button
+                      onClick={() => setActiveTab('posts')}
+                      className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
+                        activeTab === 'posts'
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
+                      {activeTab === 'posts' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('reviews')}
+                      className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
+                        activeTab === 'reviews'
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+                      {activeTab === 'reviews' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
+                  onScroll={(e) => {
+                    const currentScrollY = e.currentTarget.scrollTop;
+                    
+                    // Show buttons when scrolling up, hide when scrolling down
+                    if (currentScrollY > lastScrollY && currentScrollY > 50) {
+                      // Scrolling down
+                      setShowActionButtons(false);
+                    } else if (currentScrollY < lastScrollY) {
+                      // Scrolling up
+                      setShowActionButtons(true);
+                    }
+                    
+                    // Show buttons if at the top
+                    if (currentScrollY < 10) {
+                      setShowActionButtons(true);
+                    }
+                    
+                    setLastScrollY(currentScrollY);
+                  }}
+                >
+                  {activeTab === 'posts' ? (
+                    <div className="px-4 py-4">
+                      {postsLoading && posts.length === 0 ? (
+                        <div className="flex justify-center py-8">
+                          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : posts.length === 0 ? (
+                        <div className="py-8 text-center">
+                          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Camera className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
+                            {posts.map((post) => (
+                              <button
+                                key={post.id} 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onPostSelected) {
+                                    onPostSelected(post.id);
+                                  } else {
+                                    setSelectedPostId(post.id);
+                                  }
+                                }}
+                                className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow will-change-transform"
+                              >
+                                <img 
+                                  src={post.media_urls[0]} 
+                                  alt="Post image" 
+                                  className="absolute inset-0 w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                                {/* User Avatar Overlay */}
+                                <div className="absolute top-2 left-2 pointer-events-none">
+                                  <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                                    <AvatarImage src={post.profiles?.avatar_url} />
+                                    <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                      {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                                {/* Multiple images indicator */}
+                                {post.media_urls.length > 1 && (
+                                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium pointer-events-none">
+                                    +{post.media_urls.length - 1}
+                                  </div>
+                                )}
+                                {/* Post Caption */}
+                                {post.caption && (
+                                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5 pointer-events-none">
+                                    <p className="text-xs text-white line-clamp-2 leading-relaxed">
+                                      {post.caption}
+                                    </p>
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-4">
+                      {reviewsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : reviews.length === 0 ? (
+                        <div className="py-8 text-center">
+                          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Star className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 pb-4">
+                          {reviews.map((review) => (
+                            <div key={review.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                              <Avatar className="w-10 h-10 shrink-0">
+                                <AvatarImage src={review.avatar_url || ''} />
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {review.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-semibold text-sm">{review.username}</p>
+                                  <div className="flex items-center gap-1">
+                                    <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                                    <span className="text-sm font-medium">{review.rating}</span>
+                                  </div>
+                                </div>
+                                {review.comment && (
+                                  <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: currentLocale })}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </DrawerContent>
       </Drawer>
