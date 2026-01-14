@@ -181,6 +181,17 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
       onClick={onClose}
       style={{ paddingBottom: 0 }}
     >
+      {/* Hide bottom navigation when modal is open */}
+      <style>{`
+        [class*="bottom-navigation"],
+        [class*="NewBottomNavigation"],
+        [class*="BusinessBottomNavigation"],
+        nav[class*="fixed bottom"],
+        div[class*="fixed bottom-0"] {
+          display: none !important;
+        }
+      `}</style>
+
       <div 
         className="bg-background w-full rounded-t-xl shadow-xl flex flex-col"
         style={{ height: '80vh', marginBottom: 0 }}
