@@ -68,7 +68,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   const [isFocused, setIsFocused] = useState(false);
   const { t } = useTranslation();
 
-  const categories: AllowedCategory[] = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'entertainment'];
+  const categories: AllowedCategory[] = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'entertainment', 'park', 'historical', 'nightclub'];
 
   // Fetch nearby suggestions when modal opens with coordinates (immediate load)
   useEffect(() => {

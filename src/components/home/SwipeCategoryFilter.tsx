@@ -11,7 +11,7 @@ interface SwipeCategoryFilterProps {
 const SwipeCategoryFilter: React.FC<SwipeCategoryFilterProps> = ({ selected, onSelect, counts }) => {
   return (
     <div className="px-4 py-2 bg-background/95">
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-5 gap-2">
         {allowedCategories.map((cat) => {
           const isSelected = selected === cat;
           const count = counts[cat] || 0;

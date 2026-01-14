@@ -44,6 +44,9 @@ const SaveLocationDrawer = ({ isOpen, onClose, onLocationSaved, initialCoordinat
     'hotel',
     'museum',
     'entertainment',
+    'park',
+    'historical',
+    'nightclub',
   ];
 
   // Search for places when query changes

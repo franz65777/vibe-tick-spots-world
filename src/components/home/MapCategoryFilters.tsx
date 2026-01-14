@@ -28,7 +28,10 @@ const categoryConfig = [
   { id: 'bakery' },
   { id: 'hotel' },
   { id: 'museum' },
-  { id: 'entertainment' }
+  { id: 'entertainment' },
+  { id: 'park' },
+  { id: 'historical' },
+  { id: 'nightclub' }
 ];
 
 interface MapCategoryFiltersProps {

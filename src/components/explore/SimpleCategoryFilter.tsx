@@ -12,7 +12,7 @@ const SimpleCategoryFilter = ({ selectedCategory, onCategorySelect }: SimpleCate
   const { t } = useTranslation('categories');
   
   return (
-    <div className="grid grid-cols-7 gap-2 px-[10px] py-2">
+    <div className="grid grid-cols-5 gap-2 px-[10px] py-2">
       {allowedCategories.map((category) => {
         const isSelected = selectedCategory === category;
         const categoryKey = category.toLowerCase();
