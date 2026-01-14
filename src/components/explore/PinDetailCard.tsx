@@ -198,13 +198,19 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   });
 
   // Opening hours
-  const { isOpen: isPlaceOpen, todayHours, loading: hoursLoading } = useOpeningHours({
+  const { isOpen: rawIsPlaceOpen, todayHours: rawTodayHours, loading: hoursLoading } = useOpeningHours({
     coordinates: place.coordinates,
     placeName: place.name,
     locationId: place.id,
     googlePlaceId: place.google_place_id || undefined,
     cachedOpeningHours: place.opening_hours_data
   });
+  
+  // For hotels without opening hours data, assume 24/7
+  const isHotel = place.category?.toLowerCase() === 'hotel' || 
+                  place.types?.some((t: string) => t.toLowerCase().includes('lodging') || t.toLowerCase().includes('hotel'));
+  const isPlaceOpen = (rawIsPlaceOpen === null && isHotel) ? true : rawIsPlaceOpen;
+  const todayHours = (rawTodayHours === null && isHotel && rawIsPlaceOpen === null) ? '24h' : rawTodayHours;
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
@@ -876,9 +882,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             )}
           </div>
 
-          {/* Action Buttons - Below photos, horizontal scroll when NOT expanded */}
-          {!isExpanded && (
-            <div className="px-4 pb-3">
+          {/* Action Buttons - Below photos, horizontal scroll when collapsed */}
+          {sheetProgress < 0.5 && (
+            <div className="px-4 pb-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
                 {/* Share */}
                 <button

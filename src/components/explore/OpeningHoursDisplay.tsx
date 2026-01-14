@@ -11,6 +11,8 @@ interface OpeningHoursDisplayProps {
   googlePlaceId?: string | null;
   cachedOpeningHours?: any;
   className?: string;
+  category?: string;
+  types?: string[];
 }
 
 // Map day index (0=Sunday) to translation key
@@ -82,13 +84,15 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
   locationId,
   googlePlaceId,
   cachedOpeningHours,
-  className
+  className,
+  category,
+  types
 }) => {
   const { t, i18n } = useTranslation();
   
   const {
-    isOpen,
-    todayHours,
+    isOpen: rawIsOpen,
+    todayHours: rawTodayHours,
     dayIndex,
     loading
   } = useOpeningHours({
@@ -98,6 +102,12 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     googlePlaceId: googlePlaceId || undefined,
     cachedOpeningHours
   });
+  
+  // For hotels without opening hours data, assume 24/7
+  const isHotel = category?.toLowerCase() === 'hotel' || 
+                  types?.some((t: string) => t.toLowerCase().includes('lodging') || t.toLowerCase().includes('hotel'));
+  const isOpen = (rawIsOpen === null && isHotel) ? true : rawIsOpen;
+  const todayHours = (rawTodayHours === null && isHotel && rawIsOpen === null) ? '24h' : rawTodayHours;
 
   // All hooks must be called before any conditional returns
   const textRef = useRef<HTMLSpanElement>(null);
