@@ -576,6 +576,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             className="bg-background px-4 pt-4 pb-2 cursor-grab active:cursor-grabbing select-none"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => {
+              // Allow clicks on interactive elements inside the header (save button, avatars, back button, etc.)
+              const targetEl = e.target as HTMLElement | null;
+              const isInteractive = !!targetEl?.closest(
+                'button, a, input, textarea, select, [role="button"], [data-no-drag="true"]'
+              );
+              if (isInteractive) return;
+
               e.stopPropagation();
               const target = e.currentTarget as HTMLElement;
               target.setPointerCapture(e.pointerId);
