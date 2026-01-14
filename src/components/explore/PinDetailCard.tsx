@@ -652,7 +652,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           >
             {/* Header Row */}
             <div className="flex items-start justify-between gap-3">
-              {/* Left side: Back button + Name + Category + Status */}
+              {/* Left side: Back button + Icon + Name/Address */}
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 {(sourcePostId || onBack) && (
                   <Button
@@ -672,26 +672,28 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
                 )}
+                {/* Category Icon */}
+                <div className="shrink-0 mt-1">
+                  <CategoryIcon category={place.category || 'place'} className="w-7 h-7" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  {/* Place Name */}
-                  <h3 className="font-bold text-xl text-foreground truncate leading-tight">
-                    {locationDetails?.name || place.name}
-                  </h3>
-                  {/* Category + Price Level Row */}
-                  <div className="flex items-center gap-2 mt-1">
-                    <CategoryIcon category={place.category || 'place'} className="w-5 h-5" />
-                    <span className="text-sm text-muted-foreground">
-                      {formatCategory(place.category || 'place')}
-                    </span>
-                    {place.price_level && (
-                      <>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-sm text-muted-foreground">
-                          {'$'.repeat(place.price_level)}
-                        </span>
-                      </>
+                  {/* Place Name + Rating */}
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-xl text-foreground truncate leading-tight">
+                      {locationDetails?.name || place.name}
+                    </h3>
+                    {/* Rating */}
+                    {!statsLoading && stats.averageRating && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-medium">{stats.averageRating.toFixed(1)}</span>
+                      </div>
                     )}
                   </div>
+                  {/* Address */}
+                  <p className="text-sm text-muted-foreground truncate mt-0.5">
+                    {detailedAddress}
+                  </p>
                   {/* Open/Closed Status */}
                   {!hoursLoading && isPlaceOpen !== null && (
                     <div className="flex items-center gap-2 mt-1">
@@ -706,68 +708,58 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       )}
                     </div>
                   )}
+                  {/* Saved By Users Avatars - Below opening hours */}
+                  {!savedByLoading && savedByUsers.length > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSavedByOpen(true);
+                      }}
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity mt-2"
+                    >
+                      <div className="flex -space-x-2">
+                        {savedByUsers.slice(0, 2).map((savedUser) => (
+                          <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
+                            <AvatarImage src={savedUser.avatar_url || undefined} />
+                            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                              {savedUser.username?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Right side: "to try" and "been" buttons */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* To Try Button */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    {t('to_try', { ns: 'save_tags', defaultValue: 'to try' })}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isSaved && currentSaveTag === 'to_try') {
-                        handleUnsave();
-                      } else {
-                        handleSaveWithTag('to_try');
-                      }
-                    }}
-                    disabled={loading}
-                    className={cn(
-                      "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all",
-                      isSaved && currentSaveTag === 'to_try'
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "bg-background border-border hover:border-primary/50"
-                    )}
-                  >
-                    <Bookmark className={cn(
-                      "w-5 h-5",
-                      isSaved && currentSaveTag === 'to_try' && "fill-current"
-                    )} />
-                  </button>
-                </div>
-
-                {/* Been Button */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    {t('been', { ns: 'save_tags', defaultValue: 'been' })}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isSaved && currentSaveTag === 'been') {
-                        handleUnsave();
-                      } else {
-                        handleSaveWithTag('been');
-                      }
-                    }}
-                    disabled={loading}
-                    className={cn(
-                      "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all",
-                      isSaved && currentSaveTag === 'been'
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "bg-background border-border hover:border-primary/50"
-                    )}
-                  >
-                    <Check className={cn(
-                      "w-5 h-5",
-                      isSaved && currentSaveTag === 'been' && "stroke-[3]"
-                    )} />
-                  </button>
-                </div>
+              {/* Right side: Save button only */}
+              <div className="flex items-start flex-shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isSaved) {
+                      handleUnsave();
+                    } else {
+                      handleSaveWithTag('to_try');
+                    }
+                  }}
+                  disabled={loading}
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                    isSaved
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted hover:bg-accent"
+                  )}
+                >
+                  {isSaved ? (
+                    <BookmarkCheck className="w-5 h-5" />
+                  ) : (
+                    <Bookmark className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -831,49 +823,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Saved By & Stats Row */}
-          <div className="px-4 pb-2">
-            <div className="flex items-center gap-3">
-              {/* Saved By Users Avatars */}
-              {!savedByLoading && savedByUsers.length > 0 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSavedByOpen(true);
-                  }}
-                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                >
-                  <div className="flex -space-x-2">
-                    {savedByUsers.slice(0, 2).map((savedUser) => (
-                      <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
-                        <AvatarImage src={savedUser.avatar_url || undefined} />
-                        <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-                          {savedUser.username?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
-                  </span>
-                </button>
-              )}
-
-              {/* Rating Badge */}
-              {!statsLoading && stats.averageRating && (
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm font-medium">{stats.averageRating.toFixed(1)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="px-4 pb-3">
-            <p className="text-sm text-muted-foreground">{detailedAddress}</p>
           </div>
 
           {/* Bottom Action Buttons - Pill Style */}
