@@ -652,7 +652,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           >
             {/* Header Row */}
             <div className="flex items-start justify-between gap-3">
-              {/* Left side: Back button + Icon + Name/Address */}
+              {/* Left side: Back button + Name/Address */}
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 {(sourcePostId || onBack) && (
                   <Button
@@ -672,10 +672,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
                 )}
-                {/* Category Icon */}
-                <div className="shrink-0 mt-1">
-                  <CategoryIcon category={place.category || 'place'} className="w-7 h-7" />
-                </div>
                 <div className="flex-1 min-w-0">
                   {/* Place Name + Rating */}
                   <div className="flex items-center gap-2">
@@ -694,72 +690,112 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   <p className="text-sm text-muted-foreground truncate mt-0.5">
                     {detailedAddress}
                   </p>
-                  {/* Open/Closed Status */}
-                  {!hoursLoading && isPlaceOpen !== null && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={cn(
-                        "text-sm font-semibold",
-                        isPlaceOpen ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
-                      )}>
-                        {isPlaceOpen ? t('openingHours.open') : t('openingHours.closed')}
-                      </span>
-                      {todayHours && (
-                        <span className="text-sm text-muted-foreground">{todayHours}</span>
-                      )}
-                    </div>
-                  )}
-                  {/* Saved By Users Avatars - Below opening hours */}
-                  {!savedByLoading && savedByUsers.length > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSavedByOpen(true);
-                      }}
-                      className="flex items-center gap-2 hover:opacity-80 transition-opacity mt-2"
-                    >
-                      <div className="flex -space-x-2">
-                        {savedByUsers.slice(0, 2).map((savedUser) => (
-                          <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
-                            <AvatarImage src={savedUser.avatar_url || undefined} />
-                            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-                              {savedUser.username?.[0]?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
+                  {/* Open/Closed Status + Saved By (same row) */}
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    {!hoursLoading && isPlaceOpen !== null && (
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "text-sm font-semibold",
+                          isPlaceOpen ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                        )}>
+                          {isPlaceOpen ? t('openingHours.open') : t('openingHours.closed')}
+                        </span>
+                        {todayHours && (
+                          <span className="text-sm text-muted-foreground">{todayHours}</span>
+                        )}
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
-                      </span>
-                    </button>
-                  )}
+                    )}
+                    {/* Saved By Users Avatars - Same row as opening hours */}
+                    {!savedByLoading && savedByUsers.length > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSavedByOpen(true);
+                        }}
+                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                      >
+                        <div className="flex -space-x-2">
+                          {savedByUsers.slice(0, 2).map((savedUser) => (
+                            <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
+                              <AvatarImage src={savedUser.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                                {savedUser.username?.[0]?.toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
+                        </span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Right side: Save button only */}
+              {/* Right side: Save button with tag icon */}
               <div className="flex items-start flex-shrink-0">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     if (isSaved) {
-                      handleUnsave();
+                      // Toggle dropdown to change tag or unsave
+                      setDropdownOpen(!dropdownOpen);
                     } else {
                       handleSaveWithTag('to_try');
                     }
                   }}
                   disabled={loading}
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-all relative",
                     isSaved
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted hover:bg-accent"
                   )}
                 >
                   {isSaved ? (
-                    <BookmarkCheck className="w-5 h-5" />
+                    <img 
+                      src={TAG_ICONS[currentSaveTag] || TAG_ICONS.been} 
+                      alt={currentSaveTag}
+                      className="w-6 h-6 object-contain"
+                    />
                   ) : (
                     <Bookmark className="w-5 h-5" />
                   )}
                 </button>
+                {/* Dropdown for changing save tag */}
+                {dropdownOpen && isSaved && (
+                  <div className="absolute right-4 top-16 bg-background border border-border rounded-xl shadow-lg p-2 z-50">
+                    {SAVE_TAG_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (currentSaveTag === option.value) {
+                            handleUnsave();
+                          } else {
+                            handleSaveWithTag(option.value as SaveTag);
+                          }
+                          setDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-accent transition-colors",
+                          currentSaveTag === option.value && "bg-accent"
+                        )}
+                      >
+                        <img 
+                          src={TAG_ICONS[option.value]} 
+                          alt={option.value}
+                          className="w-6 h-6 object-contain"
+                        />
+                        <span className="text-sm font-medium">{t(option.value, { ns: 'save_tags' })}</span>
+                        {currentSaveTag === option.value && (
+                          <span className="ml-auto text-xs text-muted-foreground">{t('tap_to_remove', { ns: 'common', defaultValue: 'tap to remove' })}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
