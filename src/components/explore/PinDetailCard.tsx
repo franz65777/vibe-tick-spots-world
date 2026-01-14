@@ -772,7 +772,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     {/* Backdrop to close dropdown when clicking outside */}
                     <div 
                       className="fixed inset-0 z-40" 
-                      onClick={(e) => {
+                      onPointerDown={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         setDropdownOpen(false);
                       }}

@@ -176,19 +176,24 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-end" onClick={onClose}>
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/50 flex items-end" 
+      onClick={onClose}
+      style={{ paddingBottom: 0 }}
+    >
       <div 
-        className="bg-background w-full h-[80vh] rounded-t-xl shadow-xl pb-safe"
+        className="bg-background w-full rounded-t-xl shadow-xl flex flex-col"
+        style={{ height: '80vh', marginBottom: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 flex-shrink-0">
           <h2 className="text-lg font-semibold text-foreground">{t('savedBy', { ns: 'common' })}</h2>
           <button onClick={onClose} aria-label="Close">
             <X className="w-6 h-6 text-muted-foreground" />
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="p-4 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -200,8 +205,8 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           </div>
         </div>
 
-        <ScrollArea className="h-[calc(80vh-180px)] scrollbar-hide">
-          <div className="p-4 space-y-3">
+        <ScrollArea className="flex-1 scrollbar-hide">
+          <div className="p-4 pb-8 space-y-3">
             {loading ? (
               <div className="flex items-center justify-center py-10">
                 <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
