@@ -177,6 +177,10 @@ const HomePage = memo(() => {
   
   // State for search drawer visibility (to hide header elements)
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
+  
+  // State for currently selected place on map (to show in header)
+  const [mapSelectedPlace, setMapSelectedPlace] = useState<Place | null>(null);
+  const closeSelectedPlaceRef = useRef<(() => void) | null>(null);
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
@@ -725,6 +729,8 @@ const HomePage = memo(() => {
                 onCenterStatusChange={handleCenterStatusChange}
                 onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
                 onSearchDrawerStateChange={setIsSearchDrawerOpen}
+                onSelectedPlaceChange={setMapSelectedPlace}
+                registerCloseSelectedPlace={(fn) => { closeSelectedPlaceRef.current = fn; }}
               />
             </Suspense>
           </div>
@@ -751,6 +757,11 @@ const HomePage = memo(() => {
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={handleCenterStatusChange}
               isSearchDrawerOpen={isSearchDrawerOpen}
+              selectedPlace={mapSelectedPlace}
+              onCloseSelectedPlace={() => {
+                closeSelectedPlaceRef.current?.();
+                setMapSelectedPlace(null);
+              }}
             />
           </div>
         )}
