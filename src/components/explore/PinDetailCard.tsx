@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, Share2, Star, Check, Link2, Camera } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, Share2, Star, Check, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -734,20 +734,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               </div>
 
               {/* Right side: Save button with tag icon */}
-              <div className="flex items-start flex-shrink-0">
+              <div className="flex items-start flex-shrink-0 relative">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isSaved) {
-                      // Toggle dropdown to change tag or unsave
-                      setDropdownOpen(!dropdownOpen);
-                    } else {
-                      handleSaveWithTag('to_try');
-                    }
+                    // Always open dropdown to select save type
+                    setDropdownOpen(!dropdownOpen);
                   }}
                   disabled={loading}
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-all relative",
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
                     isSaved
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted hover:bg-accent"
@@ -763,15 +759,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     <Bookmark className="w-5 h-5" />
                   )}
                 </button>
-                {/* Dropdown for changing save tag */}
-                {dropdownOpen && isSaved && (
-                  <div className="absolute right-4 top-16 bg-background border border-border rounded-xl shadow-lg p-2 z-50">
+                {/* Dropdown for selecting/changing save tag */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-12 bg-background border border-border rounded-xl shadow-lg p-2 z-50 min-w-[180px]">
                     {SAVE_TAG_OPTIONS.map((option) => (
                       <button
                         key={option.value}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (currentSaveTag === option.value) {
+                          if (isSaved && currentSaveTag === option.value) {
                             handleUnsave();
                           } else {
                             handleSaveWithTag(option.value as SaveTag);
@@ -780,7 +776,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                         }}
                         className={cn(
                           "flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-accent transition-colors",
-                          currentSaveTag === option.value && "bg-accent"
+                          isSaved && currentSaveTag === option.value && "bg-accent"
                         )}
                       >
                         <img 
@@ -789,7 +785,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                           className="w-6 h-6 object-contain"
                         />
                         <span className="text-sm font-medium">{t(option.value, { ns: 'save_tags' })}</span>
-                        {currentSaveTag === option.value && (
+                        {isSaved && currentSaveTag === option.value && (
                           <span className="ml-auto text-xs text-muted-foreground">{t('tap_to_remove', { ns: 'common', defaultValue: 'tap to remove' })}</span>
                         )}
                       </button>
@@ -900,20 +896,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 <span className="text-sm font-medium">{t('review', { ns: 'explore', defaultValue: 'rate' })}</span>
               </button>
 
-              {/* Website/Link placeholder */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Open website if available
-                  if (place.website) {
-                    window.open(place.website, '_blank');
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
-              >
-                <Link2 className="w-4 h-4" />
-                <span className="text-sm font-medium">{t('site', { ns: 'common', defaultValue: 'site' })}</span>
-              </button>
             </div>
           </div>
 
