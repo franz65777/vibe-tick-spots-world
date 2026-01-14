@@ -768,36 +768,46 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </button>
                 {/* Dropdown for selecting/changing save tag */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-12 bg-background border border-border rounded-xl shadow-lg p-2 z-50 min-w-[180px]">
-                    {SAVE_TAG_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isSaved && currentSaveTag === option.value) {
-                            handleUnsave();
-                          } else {
-                            handleSaveWithTag(option.value as SaveTag);
-                          }
-                          setDropdownOpen(false);
-                        }}
-                        className={cn(
-                          "flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-accent transition-colors",
-                          isSaved && currentSaveTag === option.value && "bg-accent"
-                        )}
-                      >
-                        <img 
-                          src={TAG_ICONS[option.value]} 
-                          alt={option.value}
-                          className="w-6 h-6 object-contain"
-                        />
-                        <span className="text-sm font-medium">{t(option.value, { ns: 'save_tags' })}</span>
-                        {isSaved && currentSaveTag === option.value && (
-                          <span className="ml-auto text-xs text-muted-foreground">{t('tap_to_remove', { ns: 'common', defaultValue: 'tap to remove' })}</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    {/* Backdrop to close dropdown when clicking outside */}
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDropdownOpen(false);
+                      }}
+                    />
+                    <div className="absolute right-0 top-12 bg-background border border-border rounded-xl shadow-lg p-2 z-50 min-w-[180px]">
+                      {SAVE_TAG_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isSaved && currentSaveTag === option.value) {
+                              handleUnsave();
+                            } else {
+                              handleSaveWithTag(option.value as SaveTag);
+                            }
+                            setDropdownOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-accent transition-colors",
+                            isSaved && currentSaveTag === option.value && "bg-accent"
+                          )}
+                        >
+                          <img 
+                            src={TAG_ICONS[option.value]} 
+                            alt={option.value}
+                            className="w-6 h-6 object-contain"
+                          />
+                          <span className="text-sm font-medium">{t(option.value, { ns: 'save_tags' })}</span>
+                          {isSaved && currentSaveTag === option.value && (
+                            <span className="ml-auto text-xs text-muted-foreground">{t('tap_to_remove', { ns: 'common', defaultValue: 'tap to remove' })}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
