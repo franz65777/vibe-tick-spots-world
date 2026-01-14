@@ -562,7 +562,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           showHandle={false}
           hideOverlay={true}
           className={cn(
-            "rounded-t-3xl",
+            "rounded-t-3xl bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10",
             onBack ? "z-[10020]" : "z-[2000]",
             dropdownOpen ? "overflow-visible" : "overflow-hidden",
             isUserDragging ? "transition-none" : "transition-[max-height] duration-300"
@@ -573,7 +573,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         >
           {/* Compact Draggable Header - No grey bar, still draggable */}
           <div 
-            className="bg-background px-4 pt-4 pb-2 cursor-grab active:cursor-grabbing select-none"
+            className="px-4 pt-4 pb-2 cursor-grab active:cursor-grabbing select-none"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => {
               // Allow clicks on interactive elements inside the header (save button, avatars, back button, etc.)
