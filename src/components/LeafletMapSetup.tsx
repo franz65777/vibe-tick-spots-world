@@ -553,6 +553,7 @@ const LeafletMapSetup = ({
             avatar_url: share.user.avatar_url
           }));
 
+          const isSelected = selectedPlace?.id === place.id;
           const icon = createLeafletCustomMarker({
             category: place.category || 'attraction',
             isSaved: place.isSaved,
@@ -562,6 +563,7 @@ const LeafletMapSetup = ({
             isDarkMode,
             hasCampaign,
             sharedByUsers: sharedByUsers.length > 0 ? sharedByUsers : undefined,
+            isSelected,
           });
 
         let marker = markersRef.current.get(place.id);
@@ -639,6 +641,7 @@ const LeafletMapSetup = ({
           isDarkMode,
           hasCampaign: false,
           sharedByUsers: undefined,
+          isSelected: true,
         });
         
         tempMarkerRef.current.setIcon(newIcon);
@@ -703,6 +706,7 @@ const LeafletMapSetup = ({
         isDarkMode,
         hasCampaign: false,
         sharedByUsers: undefined,
+        isSelected: true,
       });
 
       const tempMarker = L.marker([selectedPlace.coordinates.lat, selectedPlace.coordinates.lng], {
