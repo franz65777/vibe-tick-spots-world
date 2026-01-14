@@ -74,7 +74,10 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     bakery: 0,
     hotel: 0,
     museum: 0,
-    entertainment: 0
+    entertainment: 0,
+    park: 0,
+    historical: 0,
+    nightclub: 0
   });
   const [processedPlaceIds, setProcessedPlaceIds] = useState<Set<string>>(new Set());
   const [detailLocation, setDetailLocation] = useState<SwipeLocation | null>(null);
@@ -127,7 +130,10 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       bakery: 0,
       hotel: 0,
       museum: 0,
-      entertainment: 0
+      entertainment: 0,
+      park: 0,
+      historical: 0,
+      nightclub: 0
     };
     locations.forEach(loc => {
       const cat = loc.category as AllowedCategory;

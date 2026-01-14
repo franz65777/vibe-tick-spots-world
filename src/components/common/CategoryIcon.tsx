@@ -6,6 +6,9 @@ import restaurant from '@/assets/category-restaurant-3d-new.png';
 import entertainment from '@/assets/category-entertainment-3d-new.png';
 import bakery from '@/assets/category-bakery-3d-new.png';
 import museum from '@/assets/category-museum-3d-new.png';
+import park from '@/assets/category-park-3d-new.png';
+import historical from '@/assets/category-historical-3d-new.png';
+import nightclub from '@/assets/category-nightclub-3d-new.png';
 
 interface CategoryIconProps {
   category: string;
@@ -34,6 +37,12 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
         return { src: restaurant, scale: 1.26 };
       case 'entertainment':
         return { src: entertainment, scale: 0.75 };
+      case 'park':
+        return { src: park, scale: 0.85 };
+      case 'historical':
+        return { src: historical, scale: 0.85 };
+      case 'nightclub':
+        return { src: nightclub, scale: 0.75 };
       default:
         // Fallback to a neutral transparent icon (use restaurant as neutral) to avoid white backgrounds
         return { src: restaurant, scale: 1.1 };

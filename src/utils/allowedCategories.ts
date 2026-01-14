@@ -6,7 +6,10 @@ export const allowedCategories = [
   'bakery',
   'hotel',
   'museum',
-  'entertainment'
+  'entertainment',
+  'park',
+  'historical',
+  'nightclub'
 ] as const;
 
 export type AllowedCategory = typeof allowedCategories[number];
@@ -18,7 +21,10 @@ export const categoryDisplayNames: Record<AllowedCategory, string> = {
   bakery: 'Bakery',
   hotel: 'Hotel',
   museum: 'Museum',
-  entertainment: 'Fun'
+  entertainment: 'Fun',
+  park: 'Park',
+  historical: 'Historical',
+  nightclub: 'Nightclub'
 };
 
 export const isAllowedCategory = (category: string): category is AllowedCategory => {
@@ -30,7 +36,6 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
   if (!types || types.length === 0) return 'restaurant';
   
   // Priority order for categorization (most specific first)
-  // Check in order: bakery > bar/pub > cafe > museum > entertainment > hotel > restaurant
   const categoryMap: Record<string, AllowedCategory> = {
     // Bakery - highest priority (most specific)
     'bakery': 'bakery',
@@ -44,25 +49,46 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
     'cafe': 'cafe',
     'coffee_shop': 'cafe',
     
-    // Museum - cultural/art
+    // Museum - cultural/art (NOT historical)
     'museum': 'museum',
     'art_gallery': 'museum',
     'aquarium': 'museum',
     'zoo': 'museum',
     
-    // Entertainment - fun activities
+    // Nightclub - clubs and late-night venues
+    'nightclub': 'nightclub',
+    'night_club': 'nightclub',
+    
+    // Park - outdoor green spaces
+    'park': 'park',
+    'playground': 'park',
+    'garden': 'park',
+    'national_park': 'park',
+    
+    // Historical - landmarks, monuments, historical sites
+    'tourist_attraction': 'historical',
+    'landmark': 'historical',
+    'monument': 'historical',
+    'historical_place': 'historical',
+    'university': 'historical',
+    'church': 'historical',
+    'cathedral': 'historical',
+    'place_of_worship': 'historical',
+    'castle': 'historical',
+    'fort': 'historical',
+    'city_hall': 'historical',
+    'town_square': 'historical',
+    
+    // Entertainment - fun activities (excluding parks, nightclubs, historical)
     'movie_theater': 'entertainment',
     'amusement_park': 'entertainment',
     'bowling_alley': 'entertainment',
     'casino': 'entertainment',
     'stadium': 'entertainment',
-    'park': 'entertainment',
     'leisure': 'entertainment',
-    'playground': 'entertainment',
-    'nightclub': 'entertainment',
-    'night_club': 'entertainment',
     'music_venue': 'entertainment',
-    'tourist_attraction': 'entertainment',
+    'arcade': 'entertainment',
+    'theme_park': 'entertainment',
     
     // Hotel - accommodation
     'lodging': 'hotel',
@@ -93,7 +119,7 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
 export const isAllowedNominatimType = (type?: string, osmClass?: string): boolean => {
   if (!type && !osmClass) return false;
   
-  // Strict whitelist of allowed Nominatim types that match our 7 categories
+  // Strict whitelist of allowed Nominatim types that match our 10 categories
   const allowedTypes = [
     // Restaurant
     'restaurant', 'fast_food', 'food_court', 'biergarten',
@@ -106,11 +132,17 @@ export const isAllowedNominatimType = (type?: string, osmClass?: string): boolea
     // Hotel
     'hotel', 'motel', 'guest_house', 'hostel', 'chalet', 'apartment',
     // Museum
-    'museum', 'gallery', 'arts_centre', 'artwork', 'attraction',
+    'museum', 'gallery', 'arts_centre', 'artwork',
     // Entertainment
-    'cinema', 'theatre', 'nightclub', 'amusement_arcade', 'theme_park',
-    'zoo', 'aquarium', 'park', 'playground', 'sports_centre', 'stadium',
-    'music_venue', 'casino', 'leisure'
+    'cinema', 'theatre', 'amusement_arcade', 'theme_park',
+    'sports_centre', 'stadium', 'music_venue', 'casino', 'bowling_alley',
+    // Park
+    'park', 'playground', 'garden', 'nature_reserve',
+    // Historical
+    'attraction', 'monument', 'memorial', 'castle', 'ruins', 'archaeological_site',
+    'church', 'cathedral', 'place_of_worship', 'university', 'city_hall', 'town_hall',
+    // Nightclub
+    'nightclub', 'discotheque'
   ];
   
   // Strict blacklist - exclude these even if they appear in other checks
@@ -120,8 +152,8 @@ export const isAllowedNominatimType = (type?: string, osmClass?: string): boolea
     'bank', 'atm', 'bureau_de_change',
     'fuel', 'charging_station', 'parking', 'parking_space', 'parking_entrance',
     'shop', 'supermarket', 'mall', 'marketplace', 'convenience', 'clothes',
-    'school', 'university', 'college', 'library', 'kindergarten',
-    'place_of_worship', 'monastery', 'wayside_cross', 'church', 'mosque', 'temple',
+    'school', 'kindergarten',
+    'monastery', 'wayside_cross', 'mosque', 'temple',
     'airport', 'aerodrome', 'helipad', 'ferry_terminal', 'bus_station',
     'social_facility', 'community_centre', 'bicycle_parking'
   ];
@@ -181,13 +213,32 @@ export const mapNominatimTypeToCategory = (type?: string, osmClass?: string): Al
     'gallery': 'museum',
     'arts_centre': 'museum',
     
+    // Nightclub
+    'nightclub': 'nightclub',
+    'discotheque': 'nightclub',
+    
+    // Park
+    'park': 'park',
+    'playground': 'park',
+    'garden': 'park',
+    'nature_reserve': 'park',
+    
+    // Historical
+    'attraction': 'historical',
+    'monument': 'historical',
+    'memorial': 'historical',
+    'castle': 'historical',
+    'ruins': 'historical',
+    'archaeological_site': 'historical',
+    'church': 'historical',
+    'cathedral': 'historical',
+    'university': 'historical',
+    
     // Entertainment
     'cinema': 'entertainment',
     'theatre': 'entertainment',
-    'nightclub': 'entertainment',
-    'park': 'entertainment',
-    'zoo': 'entertainment',
-    'aquarium': 'entertainment',
+    'amusement_arcade': 'entertainment',
+    'theme_park': 'entertainment',
     
     // Restaurant (default for food)
     'restaurant': 'restaurant',

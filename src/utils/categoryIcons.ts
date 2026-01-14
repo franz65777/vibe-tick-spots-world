@@ -1,4 +1,4 @@
-import { Utensils, Building, Coffee, ShoppingBag, MapPin, Music, Camera, Dumbbell, GraduationCap, Heart } from 'lucide-react';
+import { Utensils, Building, Coffee, ShoppingBag, MapPin, Music, Camera, Dumbbell, GraduationCap, Heart, Trees, Landmark, Disc } from 'lucide-react';
 
 // Category image assets (3D variants for vibrant categories)
 import imgRestaurant from '@/assets/category-restaurant-3d-new.png';
@@ -8,6 +8,9 @@ import imgHotel from '@/assets/category-hotel-3d-new.png';
 import imgEntertainment from '@/assets/category-entertainment-3d-new.png';
 import imgMuseum from '@/assets/category-museum-3d-new.png';
 import imgBakery from '@/assets/category-bakery-3d-new.png';
+import imgPark from '@/assets/category-park-3d-new.png';
+import imgHistorical from '@/assets/category-historical-3d-new.png';
+import imgNightclub from '@/assets/category-nightclub-3d-new.png';
 
 export const getCategoryIcon = (category: string) => {
   const categoryLower = category?.toLowerCase?.() || '';
@@ -33,13 +36,21 @@ export const getCategoryIcon = (category: string) => {
       return ShoppingBag;
     case 'bar':
     case 'bar & pub':
-    case 'nightlife':
-    case 'club':
       return Music;
-    case 'attraction':
+    case 'nightclub':
+    case 'club':
+    case 'nightlife':
+      return Disc;
+    case 'park':
+    case 'garden':
+    case 'playground':
+      return Trees;
+    case 'historical':
     case 'landmark':
+    case 'monument':
+    case 'attraction':
     case 'sightseeing':
-      return Camera;
+      return Landmark;
     case 'gym':
     case 'fitness':
     case 'sports':
@@ -81,13 +92,21 @@ export const getCategoryColor = (category: string) => {
       return 'text-purple-500';
     case 'bar':
     case 'bar & pub':
-    case 'nightlife':
-    case 'club':
       return 'text-pink-500';
-    case 'attraction':
-    case 'landmark':
-    case 'sightseeing':
+    case 'nightclub':
+    case 'club':
+    case 'nightlife':
+      return 'text-violet-500';
+    case 'park':
+    case 'garden':
+    case 'playground':
       return 'text-green-500';
+    case 'historical':
+    case 'landmark':
+    case 'monument':
+    case 'attraction':
+    case 'sightseeing':
+      return 'text-amber-700';
     case 'gym':
     case 'fitness':
     case 'sports':
@@ -103,16 +122,19 @@ export const getCategoryColor = (category: string) => {
   }
 };
 
-// Normalize various labels to our 7 base categories
+// Normalize various labels to our 10 base categories
 function normalizeBaseCategory(category: string) {
   const c = (category || '').toLowerCase();
   if (['restaurant', 'food', 'dining'].includes(c)) return 'restaurant';
   if (['cafe', 'café', 'coffee', 'coffee shop'].includes(c)) return 'cafe';
-  if (['bar', 'bar & pub', 'pub', 'nightlife', 'club'].includes(c)) return 'bar';
+  if (['bar', 'bar & pub', 'pub'].includes(c)) return 'bar';
+  if (['nightclub', 'club', 'nightlife', 'disco'].includes(c)) return 'nightclub';
   if (['hotel', 'accommodation', 'lodging'].includes(c)) return 'hotel';
   if (['museum', 'gallery', 'cultural'].includes(c)) return 'museum';
   if (['entertainment', 'cinema', 'theatre', 'theater'].includes(c)) return 'entertainment';
   if (['bakery', 'patisserie', 'pastry'].includes(c)) return 'bakery';
+  if (['park', 'garden', 'playground', 'nature'].includes(c)) return 'park';
+  if (['historical', 'landmark', 'monument', 'attraction', 'sightseeing'].includes(c)) return 'historical';
   return 'restaurant';
 }
 
@@ -134,8 +156,13 @@ export const getCategoryImage = (category: string): string => {
       return imgMuseum;
     case 'bakery':
       return imgBakery;
+    case 'park':
+      return imgPark;
+    case 'historical':
+      return imgHistorical;
+    case 'nightclub':
+      return imgNightclub;
     default:
       return imgRestaurant;
   }
 };
-

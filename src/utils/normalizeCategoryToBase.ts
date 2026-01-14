@@ -8,11 +8,53 @@ export type BaseCategory =
   | 'hotel'
   | 'museum'
   | 'entertainment'
-  | 'bakery';
+  | 'bakery'
+  | 'park'
+  | 'historical'
+  | 'nightclub';
 
 export function normalizeCategoryToBase(category: unknown): BaseCategory | null {
   const c = String(category ?? '').trim().toLowerCase();
   if (!c) return null;
+
+  // nightclub - clubs and late-night dance venues
+  if (
+    c === 'nightclub' ||
+    c === 'night_club' ||
+    c === 'discotheque' ||
+    c === 'disco' ||
+    c.includes('nightclub')
+  )
+    return 'nightclub';
+
+  // park - outdoor green spaces
+  if (
+    c === 'park' ||
+    c === 'parks' ||
+    c === 'garden' ||
+    c === 'playground' ||
+    c === 'nature_reserve' ||
+    c === 'national_park' ||
+    c.includes('park')
+  )
+    return 'park';
+
+  // historical - landmarks, monuments, historical sites
+  if (
+    c === 'historical' ||
+    c === 'landmark' ||
+    c === 'monument' ||
+    c === 'memorial' ||
+    c === 'castle' ||
+    c === 'ruins' ||
+    c === 'archaeological_site' ||
+    c === 'tourist_attraction' ||
+    c === 'attraction' ||
+    c.includes('historical') ||
+    c.includes('landmark') ||
+    c.includes('monument')
+  )
+    return 'historical';
 
   // restaurant
   if (
@@ -38,15 +80,12 @@ export function normalizeCategoryToBase(category: unknown): BaseCategory | null 
   )
     return 'cafe';
 
-  // bar
+  // bar (excluding nightclub which is handled above)
   if (
     c === 'bar' ||
     c === 'bars' ||
     c === 'pub' ||
     c === 'bar & pub' ||
-    c === 'nightlife' ||
-    c === 'club' ||
-    c === 'nightclub' ||
     c.includes('bar') ||
     c.includes('pub')
   )
@@ -73,12 +112,14 @@ export function normalizeCategoryToBase(category: unknown): BaseCategory | null 
   )
     return 'museum';
 
-  // entertainment
+  // entertainment (excluding parks, nightclubs, historical which are handled above)
   if (
     c === 'entertainment' ||
     c === 'cinema' ||
     c === 'theatre' ||
     c === 'theater' ||
+    c === 'arcade' ||
+    c === 'bowling' ||
     c.includes('cinema') ||
     c.includes('theat')
   )
