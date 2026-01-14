@@ -401,7 +401,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     <>
       <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
         {/* Header with iOS safe area */}
-        <div className="bg-background sticky top-0 z-20 flex items-center px-4 py-3 pt-safe">
+        <div className="bg-background sticky top-0 z-20 flex items-center px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
           {(locationId || userId || showBackButton) && (
             <button
               onClick={onClose}
