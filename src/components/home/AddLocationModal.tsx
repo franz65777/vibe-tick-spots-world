@@ -18,13 +18,13 @@ const CATEGORY_OPTIONS = [
   { id: 'restaurant', label: 'Restaurant', icon: '🍽️' },
   { id: 'cafe', label: 'Café', icon: '☕' },
   { id: 'bar', label: 'Bar', icon: '🍺' },
-  { id: 'shopping', label: 'Shopping', icon: '🛍️' },
+  { id: 'bakery', label: 'Bakery', icon: '🥐' },
+  { id: 'hotel', label: 'Hotel', icon: '🏨' },
+  { id: 'museum', label: 'Museum', icon: '🏛️' },
   { id: 'entertainment', label: 'Entertainment', icon: '🎬' },
   { id: 'park', label: 'Park', icon: '🌳' },
-  { id: 'museum', label: 'Museum', icon: '🏛️' },
-  { id: 'hotel', label: 'Hotel', icon: '🏨' },
-  { id: 'gym', label: 'Gym', icon: '💪' },
-  { id: 'other', label: 'Other', icon: '📍' }
+  { id: 'historical', label: 'Historical', icon: '🏰' },
+  { id: 'nightclub', label: 'Nightclub', icon: '💃' },
 ];
 
 const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddLocationModalProps) => {

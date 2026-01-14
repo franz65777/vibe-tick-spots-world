@@ -121,7 +121,7 @@ const SaveLocationPage = () => {
       const existingByNameCity = existingLocationsCache.current.byNameCity;
       
       // Search for POIs by category types around user location using q= parameter
-      const searchTerms = ['restaurant', 'bar', 'cafe', 'pizza'];
+      const searchTerms = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'park', 'nightclub'];
       
       // Fetch POIs for each search term (parallel)
       const searchPromises = searchTerms.map(async (term) => {

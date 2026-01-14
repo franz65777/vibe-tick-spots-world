@@ -266,7 +266,7 @@ const FeedSuggestionsCarousel = memo(() => {
 
       // 4) Discover NEW (never-saved-on-app) places around the user via edge function
       // Dynamic radius: start small (500m), expand if not enough results
-      const fallbackDiscover = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'cinema'];
+      const fallbackDiscover = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'entertainment', 'park', 'historical', 'nightclub'];
       const categoryQueries = Array.from(new Set([...preferredDiscover, ...fallbackDiscover])).filter(Boolean).slice(0, 6);
 
       // Try with small radius first (500m for big cities)

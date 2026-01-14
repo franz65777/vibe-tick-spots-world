@@ -79,6 +79,9 @@ const nearbyPrompts: NearbyPromptItem[] = [
   { id: 'hotel', parentCategory: 'hotel', emoji: '🏨' },
   { id: 'museum', parentCategory: 'museum', emoji: '🏛️' },
   { id: 'entertainment', parentCategory: 'entertainment', emoji: '🎭' },
+  { id: 'park', parentCategory: 'park', emoji: '🌳' },
+  { id: 'historical', parentCategory: 'historical', emoji: '🏰' },
+  { id: 'nightclub', parentCategory: 'nightclub', emoji: '💃' },
 ];
 
 const popularCities = [

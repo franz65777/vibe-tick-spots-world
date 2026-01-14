@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Utensils, Coffee, Building, ShoppingBag, GraduationCap, Music, MapPin, TreePine, Dumbbell, Camera, X } from 'lucide-react';
+import { Utensils, Coffee, Building, GraduationCap, Music, MapPin, TreePine, Disc, Landmark, Croissant, Clapperboard, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type CategoryType = 'all' | 'restaurant' | 'bar' | 'cafe' | 'shop' | 'museum' | 'hotel' | 'park' | 'gym' | 'attraction';
+type CategoryType = 'all' | 'restaurant' | 'bar' | 'cafe' | 'bakery' | 'museum' | 'hotel' | 'park' | 'historical' | 'nightclub' | 'entertainment';
 
 interface EnhancedCategoryFilterProps {
   selectedCategories: CategoryType[];
@@ -16,12 +16,13 @@ const categories = [
   { id: 'restaurant' as CategoryType, label: 'Restaurant', icon: Utensils },
   { id: 'bar' as CategoryType, label: 'Bar', icon: Music },
   { id: 'cafe' as CategoryType, label: 'Café', icon: Coffee },
-  { id: 'shop' as CategoryType, label: 'Shop', icon: ShoppingBag },
+  { id: 'bakery' as CategoryType, label: 'Bakery', icon: Croissant },
   { id: 'hotel' as CategoryType, label: 'Hotel', icon: Building },
   { id: 'museum' as CategoryType, label: 'Museum', icon: GraduationCap },
+  { id: 'entertainment' as CategoryType, label: 'Fun', icon: Clapperboard },
   { id: 'park' as CategoryType, label: 'Park', icon: TreePine },
-  { id: 'gym' as CategoryType, label: 'Gym', icon: Dumbbell },
-  { id: 'attraction' as CategoryType, label: 'Attraction', icon: Camera },
+  { id: 'historical' as CategoryType, label: 'Historical', icon: Landmark },
+  { id: 'nightclub' as CategoryType, label: 'Nightclub', icon: Disc },
 ];
 
 const EnhancedCategoryFilter = ({ 
