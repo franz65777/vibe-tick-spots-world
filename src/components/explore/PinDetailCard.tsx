@@ -882,165 +882,88 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             )}
           </div>
 
-          {/* Action Buttons - Below photos, horizontal scroll when collapsed */}
-          {sheetProgress < 0.5 && (
-            <div className="px-4 pb-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                {/* Share */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShareOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    {t('share', { ns: 'common', defaultValue: 'Share' })}
-                  </span>
-                </button>
+          {/* Action Buttons - Always visible, sticky at bottom (prevents clipping) */}
+          <div className="sticky bottom-0 z-10 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-background/70 backdrop-blur-md border-t border-border/20">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+              {/* Share */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShareOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {t('share', { ns: 'common', defaultValue: 'Share' })}
+                </span>
+              </button>
 
-                {/* Directions */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDirections();
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  <Navigation className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    {t('directions', { ns: 'explore', defaultValue: 'Directions' })}
-                  </span>
-                </button>
+              {/* Directions */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDirections();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Navigation className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {t('directions', { ns: 'explore', defaultValue: 'Directions' })}
+                </span>
+              </button>
 
-                {/* Review/Rate */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReviewOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  <Star className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    {t('review', { ns: 'explore', defaultValue: 'Rate' })}
-                  </span>
-                </button>
+              {/* Review/Rate */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Star className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {t('review', { ns: 'explore', defaultValue: 'Rate' })}
+                </span>
+              </button>
 
-                {/* Mute */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const locationId = locationIdForEngagement;
-                    if (!locationId) return;
-                    const isMuted = mutedLocations?.some((m: any) => m.location_id === locationId);
-                    if (isMuted) {
-                      unmuteLocation(locationId);
-                    } else {
-                      muteLocation(locationId);
-                    }
-                  }}
-                  disabled={isMuting}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0",
-                    mutedLocations?.some((m: any) => m.location_id === locationIdForEngagement) && "text-primary border-primary/50"
-                  )}
-                >
-                  {mutedLocations?.some((m: any) => m.location_id === locationIdForEngagement) ? (
-                    <>
-                      <BellOff className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        {t('unmute', { ns: 'common', defaultValue: 'Unmute' })}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Bell className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        {t('mute', { ns: 'common', defaultValue: 'Mute' })}
-                      </span>
-                    </>
-                  )}
-                </button>
-              </div>
+              {/* Mute */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const locationId = locationIdForEngagement;
+                  if (!locationId) return;
+                  const isMuted = mutedLocations?.some((m: any) => m.location_id === locationId);
+                  if (isMuted) {
+                    unmuteLocation(locationId);
+                  } else {
+                    muteLocation(locationId);
+                  }
+                }}
+                disabled={isMuting}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0",
+                  mutedLocations?.some((m: any) => m.location_id === locationIdForEngagement) && "text-primary border-primary/50"
+                )}
+              >
+                {mutedLocations?.some((m: any) => m.location_id === locationIdForEngagement) ? (
+                  <>
+                    <BellOff className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      {t('unmute', { ns: 'common', defaultValue: 'Unmute' })}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Bell className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      {t('mute', { ns: 'common', defaultValue: 'Mute' })}
+                    </span>
+                  </>
+                )}
+              </button>
             </div>
-          )}
-
-          {/* Bottom Action Buttons - Only when expanded */}
-          {isExpanded && (
-            <div className="px-4 pb-4">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {/* Share */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShareOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="text-sm font-medium">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
-                </button>
-
-                {/* Directions */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDirections();
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  <Navigation className="w-4 h-4" />
-                  <span className="text-sm font-medium">{t('directions', { ns: 'explore', defaultValue: 'Directions' })}</span>
-                </button>
-
-                {/* Review/Rate */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReviewOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0"
-                >
-                  <Star className="w-4 h-4" />
-                  <span className="text-sm font-medium">{t('review', { ns: 'explore', defaultValue: 'Rate' })}</span>
-                </button>
-
-                {/* Mute */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const locationId = locationIdForEngagement;
-                    if (!locationId) return;
-                    const isMuted = mutedLocations?.some((m: any) => m.location_id === locationId);
-                    if (isMuted) {
-                      unmuteLocation(locationId);
-                    } else {
-                      muteLocation(locationId);
-                    }
-                  }}
-                  disabled={isMuting}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 border border-border rounded-full bg-background hover:bg-accent transition-colors flex-shrink-0",
-                    mutedLocations?.some((m: any) => m.location_id === locationIdForEngagement) && "text-primary border-primary"
-                  )}
-                >
-                  {mutedLocations?.some((m: any) => m.location_id === locationIdForEngagement) ? (
-                    <>
-                      <BellOff className="w-4 h-4" />
-                      <span className="text-sm font-medium">{t('unmute', { ns: 'common', defaultValue: 'Unmute' })}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Bell className="w-4 h-4" />
-                      <span className="text-sm font-medium">{t('mute', { ns: 'common', defaultValue: 'Mute' })}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
 
 
           {/* Expanded Content - Only visible when drawer is expanded */}
