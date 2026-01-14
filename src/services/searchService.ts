@@ -59,7 +59,12 @@ class SearchService {
       }
       
       // Fetch user's saved locations to exclude them from recommendations
-      const [locationsResult, savedPlacesResult, savedLocationsResult] = await Promise.all([
+      // IMPORTANT: We exclude by multiple identifiers because the same real-world place can exist as:
+      // - an internal location row (locations.id)
+      // - a Google Place-backed row (locations.google_place_id)
+      // - a saved_places row (saved_places.place_id)
+      // - a duplicate internal row with same name/address but different id
+      const [locationsResult, savedPlacesResult, savedLocationsWithDetailsResult] = await Promise.all([
         // Query to get locations with posts
         supabase
           .from('locations')
@@ -79,15 +84,26 @@ class SearchService {
             )
           `)
           .not('posts', 'is', null),
-        // Get saved places (external/google places)
+
+        // Saved places (external/google places)
+        // NOTE: place_id is the external identifier; place_name helps us match internal duplicates.
         supabase
           .from('saved_places')
-          .select('place_id')
+          .select('place_id, place_name')
           .eq('user_id', userId),
-        // Get user saved locations (internal)
+
+        // Internal saved locations, joined with details to allow name/address matching
         supabase
           .from('user_saved_locations')
-          .select('location_id')
+          .select(`
+            location_id,
+            locations:location_id (
+              id,
+              name,
+              address,
+              google_place_id
+            )
+          `)
           .eq('user_id', userId)
       ]);
 
@@ -103,27 +119,69 @@ class SearchService {
         return [];
       }
 
-      // Build a set of saved location IDs to exclude
-      const savedLocationIds = new Set<string>();
-      
-      // Add internal saved location IDs
-      savedLocationsResult.data?.forEach(item => {
-        if (item.location_id) savedLocationIds.add(item.location_id);
-      });
-      
-      // Add saved places IDs (these might be google_place_ids or location ids)
-      savedPlacesResult.data?.forEach(item => {
-        if (item.place_id) savedLocationIds.add(item.place_id);
+      // Build exclusion sets
+      const savedIds = new Set<string>();
+      const savedNameOnlyKeys = new Set<string>();
+      const savedNameAddressKeys = new Set<string>();
+      const savedNormalizedNames = new Set<string>();
+
+      const addSavedFingerprint = (name?: string | null, address?: string | null) => {
+        if (!name) return;
+        const normalizedName = this.normalizeLocationName(name);
+        if (!normalizedName) return;
+
+        savedNormalizedNames.add(normalizedName);
+        savedNameOnlyKeys.add(`name:${normalizedName}`);
+
+        const normalizedAddress = address ? this.normalizeAddress(address) : '';
+        if (normalizedAddress) {
+          savedNameAddressKeys.add(`nameaddr:${normalizedName}__${normalizedAddress}`);
+        }
+      };
+
+      // From internal saved locations (plus details)
+      (savedLocationsWithDetailsResult.data || []).forEach((row: any) => {
+        if (row?.location_id) savedIds.add(String(row.location_id));
+        const loc = row?.locations;
+        if (loc?.id) savedIds.add(String(loc.id));
+        if (loc?.google_place_id) savedIds.add(String(loc.google_place_id));
+        addSavedFingerprint(loc?.name, loc?.address);
       });
 
-      console.log(`📍 User has ${savedLocationIds.size} saved locations to exclude`);
+      // From saved_places
+      (savedPlacesResult.data || []).forEach((row: any) => {
+        if (row?.place_id) savedIds.add(String(row.place_id));
+        addSavedFingerprint(row?.place_name, null);
+      });
+
+      const savedNamesList = Array.from(savedNormalizedNames);
+
+      console.log(
+        `📍 Excluding saved: ids=${savedIds.size}, names=${savedNameOnlyKeys.size}, name+addr=${savedNameAddressKeys.size}`
+      );
 
       // Filter out already saved locations
-      const unsavedLocations = locations.filter(location => {
-        // Check if location ID is saved
-        if (savedLocationIds.has(location.id)) return false;
-        // Check if google_place_id is saved
-        if (location.google_place_id && savedLocationIds.has(location.google_place_id)) return false;
+      const unsavedLocations = locations.filter((location: any) => {
+        // 1) Direct ID / external ID match
+        if (savedIds.has(location.id)) return false;
+        if (location.google_place_id && savedIds.has(location.google_place_id)) return false;
+
+        const n = this.normalizeLocationName(location.name);
+        const a = location.address ? this.normalizeAddress(location.address) : '';
+
+        // 2) Name + address fingerprint match (best for internal duplicates)
+        if (n && a && savedNameAddressKeys.has(`nameaddr:${n}__${a}`)) return false;
+
+        // 3) Name-only fallback (for cases where saved record lacks address)
+        if (n && savedNameOnlyKeys.has(`name:${n}`)) return false;
+
+        // 4) Fuzzy name match fallback (handles slight naming differences like "Clayton Hotel" vs "Clayton Hotel Ballsbridge")
+        if (n && savedNamesList.length) {
+          for (const savedName of savedNamesList) {
+            if (this.calculateStringSimilarity(n, savedName) > 0.92) return false;
+          }
+        }
+
         return true;
       });
 
