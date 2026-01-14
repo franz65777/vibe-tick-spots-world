@@ -568,7 +568,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             isUserDragging ? "transition-none" : "transition-[max-height] duration-300"
           )}
           style={{
-            maxHeight: `${35 + (90 - 35) * sheetProgress}vh`,
+            // Give the collapsed state enough vertical room on mobile so the floating actions are never clipped.
+            maxHeight: `${42 + (90 - 42) * sheetProgress}vh`,
           }}
         >
           {/* Compact Draggable Header - No grey bar, still draggable */}
@@ -877,9 +878,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Floating actions when NOT expanded */}
               {!isExpanded && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0">
-                  <div className="pointer-events-auto px-4 pb-1">
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-full border border-border bg-background/80 backdrop-blur-md px-2 py-2 shadow-sm">
+                <div className="pointer-events-none absolute inset-x-0 bottom-3">
+                  <div className="pointer-events-auto px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide rounded-full border border-border bg-background/85 backdrop-blur-md px-2 py-2 shadow-sm">
                       {/* Share */}
                       <button
                         onClick={(e) => {
