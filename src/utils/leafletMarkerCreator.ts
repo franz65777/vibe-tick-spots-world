@@ -23,8 +23,24 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   
   // Sizes based on selected state - like Forêt app
   const size = isSelected ? 56 : 40;
-  const iconSize = isSelected ? 28 : 20;
+  const baseIconSize = isSelected ? 28 : 20;
   const borderWidth = isSelected ? 3 : 2;
+  
+  // Category-specific icon size multipliers (some icons have too much padding)
+  const categoryLower = category.toLowerCase();
+  let iconSizeMultiplier = 1;
+  if (categoryLower === 'restaurant' || categoryLower === 'food' || categoryLower === 'dining') {
+    iconSizeMultiplier = 1.4; // Restaurant icons need to be bigger
+  } else if (categoryLower === 'hotel' || categoryLower === 'accommodation' || categoryLower === 'lodging') {
+    iconSizeMultiplier = 1.15; // Hotel slightly bigger
+  }
+  const iconSize = Math.round(baseIconSize * iconSizeMultiplier);
+  
+  // Background color based on dark mode
+  const bgColor = isDarkMode ? '#2a2a2a' : 'white';
+  const borderColor = isSelected 
+    ? (isDarkMode ? '#ffffff' : '#1a1a1a') 
+    : (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)');
   
   // User avatar overlay for shared locations - support multiple users
   let avatarOverlay = '';
@@ -127,7 +143,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       height: 0;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
-      border-top: 10px solid white;
+      border-top: 10px solid ${bgColor};
       filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
     "></div>
   ` : '';
@@ -147,8 +163,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         width: ${size}px;
         height: ${size}px;
         border-radius: 50%;
-        background: white;
-        border: ${borderWidth}px solid ${isSelected ? '#1a1a1a' : 'rgba(0,0,0,0.08)'};
+        background: ${bgColor};
+        border: ${borderWidth}px solid ${borderColor};
         box-shadow: ${isSelected 
           ? '0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.1)' 
           : '0 2px 8px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.08)'};
