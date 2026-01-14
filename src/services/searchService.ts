@@ -58,25 +58,40 @@ class SearchService {
         return [];
       }
       
-      // Query to get locations with posts
-      const { data: locations, error } = await supabase
-        .from('locations')
-        .select(`
-          id,
-          name,
-          category,
-          address,
-          city,
-          latitude,
-          longitude,
-          google_place_id,
-          created_at,
-          posts!inner(
+      // Fetch user's saved locations to exclude them from recommendations
+      const [locationsResult, savedPlacesResult, savedLocationsResult] = await Promise.all([
+        // Query to get locations with posts
+        supabase
+          .from('locations')
+          .select(`
             id,
-            created_at
-          )
-        `)
-        .not('posts', 'is', null);
+            name,
+            category,
+            address,
+            city,
+            latitude,
+            longitude,
+            google_place_id,
+            created_at,
+            posts!inner(
+              id,
+              created_at
+            )
+          `)
+          .not('posts', 'is', null),
+        // Get saved places (external/google places)
+        supabase
+          .from('saved_places')
+          .select('place_id')
+          .eq('user_id', userId),
+        // Get user saved locations (internal)
+        supabase
+          .from('user_saved_locations')
+          .select('location_id')
+          .eq('user_id', userId)
+      ]);
+
+      const { data: locations, error } = locationsResult;
 
       if (error) {
         console.error('❌ Error fetching locations:', error);
@@ -88,13 +103,44 @@ class SearchService {
         return [];
       }
 
-      console.log('📍 Raw locations data before deduplication:', locations.length);
+      // Build a set of saved location IDs to exclude
+      const savedLocationIds = new Set<string>();
+      
+      // Add internal saved location IDs
+      savedLocationsResult.data?.forEach(item => {
+        if (item.location_id) savedLocationIds.add(item.location_id);
+      });
+      
+      // Add saved places IDs (these might be google_place_ids or location ids)
+      savedPlacesResult.data?.forEach(item => {
+        if (item.place_id) savedLocationIds.add(item.place_id);
+      });
+
+      console.log(`📍 User has ${savedLocationIds.size} saved locations to exclude`);
+
+      // Filter out already saved locations
+      const unsavedLocations = locations.filter(location => {
+        // Check if location ID is saved
+        if (savedLocationIds.has(location.id)) return false;
+        // Check if google_place_id is saved
+        if (location.google_place_id && savedLocationIds.has(location.google_place_id)) return false;
+        return true;
+      });
+
+      console.log(`📍 After excluding saved: ${unsavedLocations.length} locations (from ${locations.length})`);
+
+      if (unsavedLocations.length === 0) {
+        console.log('📍 All locations with posts are already saved by user');
+        return [];
+      }
+
+      console.log('📍 Raw locations data before deduplication:', unsavedLocations.length);
 
       // ADVANCED DEDUPLICATION STRATEGY
       const uniqueLocationGroups = new Map<string, any[]>();
       
       // Step 1: Group by google_place_id (most reliable identifier)
-      for (const location of locations) {
+      for (const location of unsavedLocations) {
         if (location.google_place_id) {
           const key = `google_${location.google_place_id}`;
           if (!uniqueLocationGroups.has(key)) {
@@ -105,7 +151,7 @@ class SearchService {
       }
       
       // Step 2: Group remaining locations by normalized name + address combination
-      const ungroupedLocations = locations.filter(loc => !loc.google_place_id);
+      const ungroupedLocations = unsavedLocations.filter(loc => !loc.google_place_id);
       
       for (const location of ungroupedLocations) {
         // Create a normalized key combining name and address
@@ -132,7 +178,7 @@ class SearchService {
         }
       }
       
-      console.log(`📍 After advanced deduplication: ${uniqueLocationGroups.size} unique location groups from ${locations.length} raw locations`);
+      console.log(`📍 After advanced deduplication: ${uniqueLocationGroups.size} unique location groups from ${unsavedLocations.length} raw locations`);
       
       const uniqueResults = new Map<string, LocationRecommendation>();
       
