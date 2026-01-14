@@ -38,6 +38,8 @@ interface MapSectionProps {
   onCenterStatusChange?: (isCentered: boolean) => void;
   onOpenSearchOverlay?: () => void;
   onSearchDrawerStateChange?: (isOpen: boolean) => void;
+  onSelectedPlaceChange?: (place: Place | null) => void;
+  registerCloseSelectedPlace?: (closeFn: () => void) => void;
 }
 
 const MapSection = ({ 
@@ -57,6 +59,8 @@ const MapSection = ({
   onCenterStatusChange,
   onOpenSearchOverlay,
   onSearchDrawerStateChange,
+  onSelectedPlaceChange,
+  registerCloseSelectedPlace,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
@@ -134,6 +138,19 @@ const MapSection = ({
       // Navigation back should happen when user explicitly closes the card
     }
   }, [initialSelectedPlace]);
+
+  // Notify parent when selectedPlace changes
+  useEffect(() => {
+    onSelectedPlaceChange?.(selectedPlace);
+  }, [selectedPlace, onSelectedPlaceChange]);
+
+  // Register close function for external use (e.g., Header X button)
+  useEffect(() => {
+    registerCloseSelectedPlace?.(() => {
+      setSelectedPlace(null);
+      setSourcePostId(undefined);
+    });
+  }, [registerCloseSelectedPlace]);
 
   // Convert locations to Place format for LeafletMapSetup with creator info
   const places: Place[] = locations.map(location => ({
@@ -298,8 +315,8 @@ const MapSection = ({
           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/60 to-transparent pointer-events-none z-[999]" />
         )}
 
-        {/* Map Category Filters - Below header - Hide when drawer is open */}
-        {!isListViewOpen && !isDrawerOpen && (
+        {/* Map Category Filters - Below header - Hide when drawer is open or place is selected */}
+        {!isListViewOpen && !isDrawerOpen && !selectedPlace && (
           <div className={cn(
             "z-[1100] w-full transition-opacity duration-300",
             isExpanded
@@ -313,8 +330,8 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Search Drawer - Bottom */}
-        {!isListViewOpen && (
+        {/* Search Drawer - Bottom - Hide when place is selected */}
+        {!isListViewOpen && !selectedPlace && (
           <div className={cn(
             "transition-opacity duration-300",
             filtersVisible ? "opacity-100" : "opacity-0 pointer-events-none"
