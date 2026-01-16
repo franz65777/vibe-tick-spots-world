@@ -175,14 +175,22 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   }, [isDrawerVisible, onDrawerStateChange]);
 
   useEffect(() => {
+    // Auto-select user's current city ONCE per session.
+    // SearchDrawer unmounts while a pin card is open; when it remounts (after closing the card)
+    // we must NOT recenter the map back to the user's location.
+    const sessionKey = 'spott:autoCitySelectedFromLocation';
+    if (sessionStorage.getItem(sessionKey) === 'true') return;
+
     if (!location || !location.city || location.city === 'Unknown City') return;
 
     const locationKey = `${location.latitude}-${location.longitude}-${location.city}`;
     if (processedLocationRef.current === locationKey) return;
 
     processedLocationRef.current = locationKey;
+    sessionStorage.setItem(sessionKey, 'true');
+
     onCitySelect(location.city, { lat: location.latitude, lng: location.longitude });
-  }, [location?.latitude, location?.longitude, location?.city]);
+  }, [location?.latitude, location?.longitude, location?.city, onCitySelect]);
 
   // Fetch trending cities when the drawer becomes visible
   useEffect(() => {
