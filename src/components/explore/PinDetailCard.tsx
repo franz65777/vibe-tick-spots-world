@@ -168,22 +168,6 @@ const CampaignExpandedDetails = ({ campaign }: { campaign: MarketingCampaign }) 
   return (
     <div className="px-4 pb-4 border-t border-border/30">
       <div className="pt-4">
-        {/* Icon + Title (no type label) */}
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-            <img 
-              src={getCampaignTypeIcon(campaign.campaign_type)} 
-              alt="" 
-              className="w-6 h-6 object-contain" 
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-base leading-tight text-foreground text-left">
-              {campaign.title}
-            </h4>
-          </div>
-        </div>
-        
         {/* Description */}
         <p className="text-foreground text-sm leading-relaxed text-left mb-2">
           {translatedDescription || campaign.description}
@@ -196,11 +180,11 @@ const CampaignExpandedDetails = ({ campaign }: { campaign: MarketingCampaign }) 
           className="text-xs text-primary hover:underline mb-3 flex items-center gap-1"
         >
           {isTranslating ? (
-            t('common.translating', { ns: 'common', defaultValue: 'Translating...' })
+            t('translating', { defaultValue: 'Translating...' })
           ) : translatedDescription ? (
-            t('common.showOriginal', { ns: 'common', defaultValue: 'Show original' })
+            t('showOriginal', { defaultValue: 'Show original' })
           ) : (
-            t('common.translate', { ns: 'common', defaultValue: 'Translate' })
+            t('translate', { defaultValue: 'Translate' })
           )}
         </button>
         
