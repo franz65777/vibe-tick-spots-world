@@ -79,6 +79,8 @@ const HomePage = memo(() => {
   const [isCenteredOnUser, setIsCenteredOnUser] = useState(false);
   const ignoreMoveEventRef = useRef(false);
   const reopenSearchDrawerRef = useRef<(() => void) | null>(null);
+  const pendingOpenSearchAfterPinCloseRef = useRef(false);
+  const pendingOpenSearchAttemptsRef = useRef(0);
 
   // Listen for full-screen modals (Post/Trip/List/etc.) via body data attribute
   useEffect(() => {
@@ -193,10 +195,40 @@ const HomePage = memo(() => {
   
   // State for search drawer visibility (to hide header elements)
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
-  
+
   // State for currently selected place on map (to show in header)
   const [mapSelectedPlace, setMapSelectedPlace] = useState<Place | null>(null);
   const closeSelectedPlaceRef = useRef<(() => void) | null>(null);
+
+  // If user taps the top search bar while a pin card is open, we must first close the card
+  // (which unmounts SearchDrawer), then open the drawer on the next render.
+  useEffect(() => {
+    if (!pendingOpenSearchAfterPinCloseRef.current) return;
+    if (mapSelectedPlace) return;
+
+    const tryOpen = () => {
+      const openDrawer = reopenSearchDrawerRef.current;
+      if (openDrawer) {
+        pendingOpenSearchAfterPinCloseRef.current = false;
+        pendingOpenSearchAttemptsRef.current = 0;
+        openDrawer();
+        return;
+      }
+
+      // Wait a couple frames for SearchDrawer to remount + register reopen fn
+      if (pendingOpenSearchAttemptsRef.current < 5) {
+        pendingOpenSearchAttemptsRef.current += 1;
+        requestAnimationFrame(tryOpen);
+        return;
+      }
+
+      pendingOpenSearchAfterPinCloseRef.current = false;
+      pendingOpenSearchAttemptsRef.current = 0;
+      setIsSearchOverlayOpen(true);
+    };
+
+    requestAnimationFrame(tryOpen);
+  }, [mapSelectedPlace]);
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
@@ -794,14 +826,11 @@ const HomePage = memo(() => {
               onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
               onCitySelect={handleCityChange}
               onOpenSearchOverlay={() => {
+                // Close the selected pin card first (SearchDrawer is unmounted while a pin is selected)
+                pendingOpenSearchAfterPinCloseRef.current = true;
+                pendingOpenSearchAttemptsRef.current = 0;
                 closeSelectedPlaceRef.current?.();
                 setMapSelectedPlace(null);
-                // Use the SearchDrawer's trending mode instead of UnifiedSearchOverlay
-                if (reopenSearchDrawerRef.current) {
-                  reopenSearchDrawerRef.current();
-                } else {
-                  setIsSearchOverlayOpen(true);
-                }
               }}
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={handleCenterStatusChange}
