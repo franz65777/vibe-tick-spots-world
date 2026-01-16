@@ -989,13 +989,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     key={index}
                     className={cn(
                       "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-[104px] h-[96px]" : "w-32 h-36"
+                      isExpanded ? "w-[140px] aspect-[4/3]" : "w-32 h-36"
                     )}
                   >
                     <img
                       src={photo}
                       alt={`${place.name} photo ${index + 1}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                       loading="lazy"
                     />
                   </div>
