@@ -1303,9 +1303,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               )}
 
               {/* Featured in Lists Section - Hides with photos on scroll */}
+                {/* Featured Lists Section */}
                 {!listsLoading && featuredLists.length > 0 && (
                 <div 
-                  className="px-4 pb-1 transition-[max-height,opacity] duration-200 ease-out"
+                  className="px-4 py-2 mt-2 transition-[max-height,opacity] duration-200 ease-out border-t border-border/30"
                   style={{
                     maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
                     opacity: Math.max(0, 1 - photoScrollProgress),
@@ -1313,11 +1314,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
                   }}
                 >
-                  <div className="overflow-x-auto scrollbar-hide">
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    {t('featuredInLists', { ns: 'common', defaultValue: 'Saved in' })}
+                  </p>
+                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
                     <div className="flex gap-2 items-center">
-                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
-                        📌
-                      </span>
                       {featuredLists.map((list) => (
                         <button
                           key={list.list_id}
@@ -1334,13 +1335,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                               setIsListOpen(true);
                             }
                           }}
-                          className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-muted/60 hover:bg-muted border border-border/40 transition-all whitespace-nowrap flex-shrink-0"
+                          className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-muted/40 hover:bg-muted border border-border/50 transition-all whitespace-nowrap flex-shrink-0"
                         >
-                          <Avatar className="h-5 w-5">
+                          <Avatar className="h-6 w-6 ring-2 ring-background">
                             <AvatarImage src={list.avatar_url || undefined} />
-                            <AvatarFallback className="text-[10px]">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="text-xs font-medium text-foreground/90">
+                          <span className="text-sm font-medium text-foreground">
                             {list.list_name}
                           </span>
                         </button>
@@ -1352,43 +1353,51 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Tabs and Content */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Tab Navigation - Minimal rounded design */}
-                <div className="flex-shrink-0 px-4 pt-0 pb-2">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setActiveTab('posts')}
-                      className={cn(
-                        "py-2 px-4 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
-                        activeTab === 'posts'
-                          ? 'bg-foreground text-background'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                      )}
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
-                      {posts.length > 0 && (
-                        <span className="text-xs opacity-70">
-                          {posts.length}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('reviews')}
-                      className={cn(
-                        "py-2 px-4 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
-                        activeTab === 'reviews'
-                          ? 'bg-foreground text-background'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                      )}
-                    >
-                      <Star className="w-3.5 h-3.5" />
-                      {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
-                      {reviews.length > 0 && (
-                        <span className="text-xs opacity-70">
-                          {reviews.length}
-                        </span>
-                      )}
-                    </button>
+                {/* Tab Navigation - Centered pill design */}
+                <div className="flex-shrink-0 px-4 pt-2 pb-2">
+                  <div className="flex justify-center">
+                    <div className="inline-flex p-1 bg-muted/60 rounded-full">
+                      <button
+                        onClick={() => setActiveTab('posts')}
+                        className={cn(
+                          "py-2 px-5 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
+                          activeTab === 'posts'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <Camera className="w-4 h-4" />
+                        {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
+                        {posts.length > 0 && (
+                          <span className={cn(
+                            "text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
+                            activeTab === 'posts' ? 'bg-primary/15 text-primary' : 'bg-muted-foreground/20'
+                          )}>
+                            {posts.length}
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('reviews')}
+                        className={cn(
+                          "py-2 px-5 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
+                          activeTab === 'reviews'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <Star className="w-4 h-4" />
+                        {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+                        {reviews.length > 0 && (
+                          <span className={cn(
+                            "text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
+                            activeTab === 'reviews' ? 'bg-primary/15 text-primary' : 'bg-muted-foreground/20'
+                          )}>
+                            {reviews.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
