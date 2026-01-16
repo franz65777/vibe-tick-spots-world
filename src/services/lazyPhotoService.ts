@@ -148,25 +148,38 @@ export async function getSeedingStats(): Promise<{
   }
 }
 
-/**
- * Triggers the seed-locations edge function
- */
-export async function runLocationSeeding(options?: {
-  cities?: string[];
-  maxLocations?: number;
-  dryRun?: boolean;
-}): Promise<{
+interface SeedingBatchResult {
   success: boolean;
-  message?: string;
-  estimatedTime?: string;
+  dryRun?: boolean;
   stats?: {
     citiesProcessed: number;
     locationsFound: number;
     locationsInserted: number;
-    locationsSkipped: number;
+    elapsedMs: number;
   };
+  batch?: {
+    start: number;
+    size: number;
+    citiesProcessed: string[];
+  };
+  next?: {
+    batchStart: number;
+    remaining: number;
+  } | null;
+  completed?: boolean;
+  totalCities?: number;
   error?: string;
-}> {
+}
+
+/**
+ * Triggers the seed-locations edge function for a batch of cities
+ */
+export async function runLocationSeeding(options?: {
+  cities?: string[];
+  batchStart?: number;
+  batchSize?: number;
+  dryRun?: boolean;
+}): Promise<SeedingBatchResult> {
   try {
     const { data, error } = await supabase.functions.invoke('seed-locations', {
       body: options || {},
@@ -179,9 +192,12 @@ export async function runLocationSeeding(options?: {
 
     return {
       success: data?.success || false,
-      message: data?.message,
-      estimatedTime: data?.estimatedTime,
+      dryRun: data?.dryRun,
       stats: data?.stats,
+      batch: data?.batch,
+      next: data?.next,
+      completed: data?.completed,
+      totalCities: data?.totalCities,
       error: data?.error,
     };
   } catch (error) {
@@ -191,4 +207,58 @@ export async function runLocationSeeding(options?: {
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+/**
+ * Runs seeding for all cities in batches
+ */
+export async function runFullSeeding(
+  onProgress?: (progress: { 
+    currentBatch: number; 
+    totalBatches: number; 
+    citiesProcessed: string[];
+    locationsInserted: number;
+  }) => void,
+  dryRun = false
+): Promise<{ success: boolean; totalInserted: number; error?: string }> {
+  const batchSize = 3;
+  let batchStart = 0;
+  let totalInserted = 0;
+  let batchNumber = 0;
+  
+  while (true) {
+    batchNumber++;
+    
+    const result = await runLocationSeeding({
+      batchStart,
+      batchSize,
+      dryRun,
+    });
+    
+    if (!result.success) {
+      return { success: false, totalInserted, error: result.error };
+    }
+    
+    totalInserted += result.stats?.locationsInserted || 0;
+    
+    if (onProgress && result.batch) {
+      onProgress({
+        currentBatch: batchNumber,
+        totalBatches: Math.ceil((result.totalCities || 36) / batchSize),
+        citiesProcessed: result.batch.citiesProcessed,
+        locationsInserted: totalInserted,
+      });
+    }
+    
+    if (result.completed || !result.next) {
+      break;
+    }
+    
+    batchStart = result.next.batchStart;
+    
+    // Small delay between batches
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  return { success: true, totalInserted };
 }

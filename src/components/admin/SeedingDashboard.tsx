@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye, RefreshCw, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { getSeedingStats, runLocationSeeding } from '@/services/lazyPhotoService';
+import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye, RefreshCw, CheckCircle2, AlertCircle, StopCircle } from 'lucide-react';
+import { getSeedingStats, runFullSeeding, runLocationSeeding } from '@/services/lazyPhotoService';
 import { toast } from 'sonner';
 
 interface SeedingStats {
@@ -18,19 +18,19 @@ interface SeedingStats {
 
 type SeedingStatus = 'idle' | 'starting' | 'running' | 'completed';
 
-const SEEDING_STORAGE_KEY = 'seeding_status';
-const SEEDING_DURATION_MS = 15 * 60 * 1000; // 15 minutes estimated
+const TOTAL_CITIES = 36;
+const BATCH_SIZE = 3;
 
 export const SeedingDashboard = () => {
   const [stats, setStats] = useState<SeedingStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [seedingStatus, setSeedingStatus] = useState<SeedingStatus>('idle');
   const [seedingProgress, setSeedingProgress] = useState(0);
-  const [seedingStartTime, setSeedingStartTime] = useState<number | null>(null);
-  const [estimatedTimeLeft, setEstimatedTimeLeft] = useState<string>('');
-  const [lastApiCallTime, setLastApiCallTime] = useState<number | null>(null);
-  const initialLocationCount = useRef<number>(0);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentBatch, setCurrentBatch] = useState(0);
+  const [totalBatches] = useState(Math.ceil(TOTAL_CITIES / BATCH_SIZE));
+  const [currentCities, setCurrentCities] = useState<string[]>([]);
+  const [totalInserted, setTotalInserted] = useState(0);
+  const abortRef = useRef(false);
 
   const fetchStats = async () => {
     const data = await getSeedingStats();
@@ -38,34 +38,6 @@ export const SeedingDashboard = () => {
     return data;
   };
 
-  // Check for existing seeding session on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(SEEDING_STORAGE_KEY);
-    if (stored) {
-      try {
-        const { startTime, initialCount } = JSON.parse(stored);
-        const elapsed = Date.now() - startTime;
-        
-        if (elapsed < SEEDING_DURATION_MS) {
-          setSeedingStartTime(startTime);
-          setSeedingStatus('running');
-          initialLocationCount.current = initialCount;
-          setLastApiCallTime(startTime);
-          
-          // Calculate initial time remaining
-          const remaining = Math.max(SEEDING_DURATION_MS - elapsed, 0);
-          const minutes = Math.ceil(remaining / 60000);
-          setEstimatedTimeLeft(minutes > 0 ? `~${minutes} min rimanenti` : 'Quasi fatto...');
-        } else {
-          localStorage.removeItem(SEEDING_STORAGE_KEY);
-        }
-      } catch {
-        localStorage.removeItem(SEEDING_STORAGE_KEY);
-      }
-    }
-  }, []);
-
-  // Initial load
   useEffect(() => {
     const loadInitial = async () => {
       setLoading(true);
@@ -75,113 +47,68 @@ export const SeedingDashboard = () => {
     loadInitial();
   }, []);
 
-  // Polling during seeding
-  useEffect(() => {
-    if (seedingStatus === 'running') {
-      pollIntervalRef.current = setInterval(async () => {
-        const newStats = await fetchStats();
-        
-        // Calculate progress based on new locations added
-        if (initialLocationCount.current > 0 && newStats) {
-          const newLocations = newStats.systemSeeded - initialLocationCount.current;
-          const targetLocations = 1500;
-          const progress = Math.min((newLocations / targetLocations) * 100, 100);
-          setSeedingProgress(progress);
-          
-          // Check if seeding seems complete (progress stalled or reached target)
-          if (progress >= 95 || (Date.now() - (seedingStartTime || 0)) > SEEDING_DURATION_MS) {
-            setSeedingStatus('completed');
-            setSeedingProgress(100);
-            localStorage.removeItem(SEEDING_STORAGE_KEY);
-            toast.success('Seeding completato!', {
-              description: `${newLocations} nuove location aggiunte`,
-            });
-          }
-        }
-        
-        // Update time estimate
-        if (seedingStartTime) {
-          const elapsed = Date.now() - seedingStartTime;
-          const remaining = Math.max(SEEDING_DURATION_MS - elapsed, 0);
-          const minutes = Math.ceil(remaining / 60000);
-          setEstimatedTimeLeft(minutes > 0 ? `~${minutes} min rimanenti` : 'Quasi fatto...');
-        }
-      }, 10000); // Poll every 10 seconds
-
-      return () => {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-        }
-      };
-    }
-  }, [seedingStatus, seedingStartTime]);
-
   const handleRunSeed = async (dryRun: boolean) => {
-    // Prevent duplicate clicks
     if (seedingStatus === 'starting' || seedingStatus === 'running') {
-      toast.info('Seeding già in corso', {
-        description: 'Attendi il completamento prima di avviarne un altro.',
-      });
+      toast.info('Seeding già in corso');
       return;
     }
 
-    // Show immediate feedback
     setSeedingStatus('starting');
-    
-    toast.loading('Avvio seeding...', {
+    abortRef.current = false;
+    setTotalInserted(0);
+    setCurrentBatch(0);
+    setSeedingProgress(0);
+
+    toast.loading(dryRun ? 'Avvio test...' : 'Avvio seeding...', {
       id: 'seeding-start',
-      description: 'Connessione al server in corso...',
     });
 
     try {
-      const result = await runLocationSeeding({
-        maxLocations: 1500,
-        dryRun,
+      setSeedingStatus('running');
+      toast.dismiss('seeding-start');
+      
+      toast.success(dryRun ? '🧪 Test avviato' : '🚀 Seeding avviato!', {
+        description: `Processamento di ${TOTAL_CITIES} città in ${totalBatches} batch`,
       });
 
+      const result = await runFullSeeding(
+        (progress) => {
+          if (abortRef.current) return;
+          
+          setCurrentBatch(progress.currentBatch);
+          setCurrentCities(progress.citiesProcessed);
+          setTotalInserted(progress.locationsInserted);
+          setSeedingProgress((progress.currentBatch / progress.totalBatches) * 100);
+        },
+        dryRun
+      );
+
       if (result.success) {
-        toast.dismiss('seeding-start');
+        setSeedingStatus('completed');
+        setSeedingProgress(100);
+        await fetchStats();
         
-        if (dryRun) {
-          setSeedingStatus('idle');
-          toast.success('🧪 Test avviato in background', {
-            description: 'Controlla i log della edge function per il progresso. Nessuna modifica al database.',
-            duration: 5000,
-          });
-        } else {
-          // Save seeding state
-          const startTime = Date.now();
-          initialLocationCount.current = stats?.systemSeeded || 0;
-          localStorage.setItem(SEEDING_STORAGE_KEY, JSON.stringify({
-            startTime,
-            initialCount: initialLocationCount.current,
-          }));
-          
-          setSeedingStartTime(startTime);
-          setSeedingStatus('running');
-          setSeedingProgress(0);
-          setEstimatedTimeLeft('~15 min rimanenti');
-          setLastApiCallTime(startTime);
-          
-          toast.success('🚀 Seeding avviato con successo!', {
-            description: 'Il processo sta girando in background. Questa pagina monitora il progresso automaticamente.',
-            duration: 6000,
-          });
-        }
-      } else {
-        toast.dismiss('seeding-start');
-        setSeedingStatus('idle');
-        toast.error(`Errore: ${result.error}`, {
+        toast.success('✅ Seeding completato!', {
+          description: `${result.totalInserted} location inserite`,
           duration: 5000,
+        });
+      } else {
+        setSeedingStatus('idle');
+        toast.error('Errore durante il seeding', {
+          description: result.error,
         });
       }
     } catch (error) {
-      toast.dismiss('seeding-start');
       setSeedingStatus('idle');
-      toast.error('Errore durante l\'avvio del seeding', {
-        description: String(error),
-      });
+      toast.dismiss('seeding-start');
+      toast.error('Errore durante il seeding');
     }
+  };
+
+  const handleStop = () => {
+    abortRef.current = true;
+    setSeedingStatus('idle');
+    toast.info('Seeding interrotto');
   };
 
   const handleRefresh = async () => {
@@ -209,21 +136,6 @@ export const SeedingDashboard = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6) : [];
 
-  const getStatusInfo = () => {
-    switch (seedingStatus) {
-      case 'starting':
-        return { color: 'bg-amber-500/10 border-amber-500/20', icon: Loader2, iconColor: 'text-amber-500', animate: true };
-      case 'running':
-        return { color: 'bg-primary/10 border-primary/20', icon: Loader2, iconColor: 'text-primary', animate: true };
-      case 'completed':
-        return { color: 'bg-green-500/10 border-green-500/20', icon: CheckCircle2, iconColor: 'text-green-500', animate: false };
-      default:
-        return null;
-    }
-  };
-
-  const statusInfo = getStatusInfo();
-
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-4">
@@ -240,7 +152,7 @@ export const SeedingDashboard = () => {
           </CardTitle>
           <Button
             onClick={handleRefresh}
-            disabled={loading}
+            disabled={loading || seedingStatus === 'running'}
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0"
@@ -258,7 +170,7 @@ export const SeedingDashboard = () => {
               <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Avvio in corso...</p>
-                <p className="text-xs text-muted-foreground">Connessione al server e inizializzazione</p>
+                <p className="text-xs text-muted-foreground">Connessione al server</p>
               </div>
             </div>
           </div>
@@ -270,20 +182,36 @@ export const SeedingDashboard = () => {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
               </div>
               <div className="flex-1">
                 <p className="font-medium text-sm">🌍 Seeding in esecuzione</p>
-                <p className="text-xs text-muted-foreground">{estimatedTimeLeft}</p>
+                <p className="text-xs text-muted-foreground">
+                  Batch {currentBatch}/{totalBatches} • {totalInserted} location inserite
+                </p>
               </div>
               <Badge variant="secondary" className="text-xs font-mono">
                 {Math.round(seedingProgress)}%
               </Badge>
             </div>
             <Progress value={seedingProgress} className="h-2" />
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-              <span>Il processo gira in background sui server. Puoi chiudere questa pagina, il seeding continuerà. Torna qui per monitorare il progresso.</span>
+            {currentCities.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {currentCities.map(city => (
+                  <Badge key={city} variant="outline" className="text-xs">
+                    {city}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span>Non chiudere questa pagina durante il seeding.</span>
+              </div>
+              <Button size="sm" variant="ghost" onClick={handleStop} className="text-xs h-7">
+                <StopCircle className="w-3 h-3 mr-1" />
+                Stop
+              </Button>
             </div>
           </div>
         )}
@@ -295,7 +223,7 @@ export const SeedingDashboard = () => {
               <CheckCircle2 className="w-5 h-5 text-green-500" />
               <div className="flex-1">
                 <p className="font-medium text-sm text-green-700 dark:text-green-400">✅ Seeding completato!</p>
-                <p className="text-xs text-muted-foreground">Le nuove location sono state aggiunte con successo.</p>
+                <p className="text-xs text-muted-foreground">{totalInserted} location aggiunte</p>
               </div>
               <Button 
                 size="sm" 
@@ -309,7 +237,7 @@ export const SeedingDashboard = () => {
           </div>
         )}
 
-        {/* Stats Grid - Compact 2x2 */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-muted/50 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
@@ -341,7 +269,7 @@ export const SeedingDashboard = () => {
           </div>
         </div>
 
-        {/* Enrichment Progress - Compact */}
+        {/* Enrichment Progress */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">Arricchimento Foto</span>
@@ -350,7 +278,7 @@ export const SeedingDashboard = () => {
           <Progress value={enrichmentPercent} className="h-1.5" />
         </div>
 
-        {/* Top Cities - Compact */}
+        {/* Top Cities */}
         {topCities.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {topCities.map(([city, count]) => (
@@ -376,7 +304,7 @@ export const SeedingDashboard = () => {
               </>
             ) : seedingStatus === 'running' ? (
               <>
-                <Clock className="w-4 h-4 mr-2" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 In corso...
               </>
             ) : (
@@ -399,7 +327,7 @@ export const SeedingDashboard = () => {
         </div>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Popola ~1500 location in 35+ città con OpenStreetMap (gratuito). Le foto Google vengono caricate solo quando un utente visualizza la location.
+          Popola location in {TOTAL_CITIES} città con OpenStreetMap. Processa {BATCH_SIZE} città alla volta per evitare timeout. Le foto vengono caricate solo quando un utente visualizza la location.
         </p>
       </CardContent>
     </Card>
