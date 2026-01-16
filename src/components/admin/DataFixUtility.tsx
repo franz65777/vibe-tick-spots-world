@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { MapPin, Tag, Loader2 } from 'lucide-react';
 import { AddressEnrichmentUtility } from './AddressEnrichmentUtility';
 import { LocationDataFix } from './LocationDataFix';
+import { SeedingDashboard } from './SeedingDashboard';
 
 const DataFixUtility = () => {
   const [isFixingCities, setIsFixingCities] = useState(false);
@@ -84,6 +85,9 @@ const DataFixUtility = () => {
   };
   return (
     <div className="space-y-4">
+      {/* Location Seeding Dashboard */}
+      <SeedingDashboard />
+      
       {/* Location Data Fix Utility */}
       <LocationDataFix />
       
