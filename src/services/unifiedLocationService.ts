@@ -26,6 +26,8 @@ export interface UnifiedLocation {
   savedCount?: number;
   postsCount?: number;
   saveTag?: string;
+  image_url?: string;
+  photos?: unknown;
 }
 
 const locationCache = new Map<string, { data: UnifiedLocation[]; timestamp: number }>();
@@ -58,7 +60,9 @@ export class UnifiedLocationService {
               address,
               google_place_id,
               latitude,
-              longitude
+              longitude,
+              image_url,
+              photos
             )
           `)
           .eq('user_id', userId)
@@ -138,7 +142,9 @@ export class UnifiedLocationService {
               lng: loc.longitude
             },
             savedAt: item.created_at,
-            source: 'locations'
+            source: 'locations',
+            image_url: loc.image_url,
+            photos: loc.photos
           });
 
           if (hasMissingCity && loc.latitude && loc.longitude) {

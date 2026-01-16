@@ -36,6 +36,30 @@ import { getCategoryIcon } from '@/utils/categoryIcons';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
 
+// Helper to extract the first photo URL from the locations.photos JSONB column
+const extractFirstPhotoUrl = (photos: unknown): string | null => {
+  if (!photos) return null;
+  const arr = Array.isArray(photos) ? photos : null;
+  if (!arr) return null;
+  for (const item of arr) {
+    if (typeof item === 'string' && item.trim()) return item;
+    if (item && typeof item === 'object') {
+      const anyItem = item as any;
+      const url = anyItem.url || anyItem.photo_url || anyItem.src;
+      if (typeof url === 'string' && url.trim()) return url;
+    }
+  }
+  return null;
+};
+
+// Determine which thumbnail to show: 1) business photo  2) Google photo  3) category icon
+const getLocationThumbnail = (location: any): string | null => {
+  if (location.image_url) return location.image_url;
+  const googlePhoto = extractFirstPhotoUrl(location.photos);
+  if (googlePhoto) return googlePhoto;
+  return null;
+};
+
 interface SavedLocationsListProps {
   isOpen: boolean;
   onClose: () => void;
@@ -686,9 +710,20 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
                     <div className="rounded-2xl shadow-sm border border-border hover:shadow-md transition-all duration-200 bg-card dark:bg-muted/30 dark:border-border/60 dark:backdrop-blur-sm">
                       <div className="p-3 cursor-pointer" onClick={() => handlePlaceClick(p)}>
                         <div className="flex items-center gap-3">
-                          <div className="shrink-0 bg-muted rounded-xl p-1.5">
-                            <CategoryIcon category={p.category} className="w-8 h-8" />
-                          </div>
+                          {(() => {
+                            const thumbUrl = getLocationThumbnail(p);
+                            return thumbUrl ? (
+                              <img 
+                                src={thumbUrl} 
+                                alt={p.name}
+                                className="w-10 h-10 rounded-lg object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="shrink-0 bg-muted rounded-xl p-1.5">
+                                <CategoryIcon category={p.category} className="w-8 h-8" />
+                              </div>
+                            );
+                          })()}
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
