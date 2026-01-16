@@ -201,21 +201,26 @@ const LeafletMapSetup = ({
       spiderfyDistanceMultiplier: 1.5,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
-        const clusterSize = count > 50 ? 60 : count > 20 ? 55 : 50;
+        const clusterSize = count > 50 ? 70 : count > 20 ? 62 : 54;
 
         return L.divIcon({
           html: `<div style="
             width: ${clusterSize}px;
             height: ${clusterSize}px;
-            background: #4A90D9;
+            background: linear-gradient(145deg, #6BA3E8 0%, #4A8FD9 50%, #3A7BC8 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 700;
-            font-size: ${count > 99 ? '14px' : '16px'};
-            box-shadow: 0 2px 8px rgba(74, 144, 217, 0.4);
+            font-weight: 600;
+            font-size: ${count > 99 ? '16px' : '18px'};
+            letter-spacing: -0.5px;
+            box-shadow: 
+              0 4px 12px rgba(74, 143, 217, 0.35),
+              0 2px 4px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
           ">${count}</div>`,
           className: 'custom-cluster-icon',
           iconSize: L.point(clusterSize, clusterSize),
@@ -504,22 +509,24 @@ const LeafletMapSetup = ({
   };
 
   // Helper to check if two pins are too close at current zoom
+  // Increased distances to prevent label overlap
   const arePinsTooClose = (
     lat1: number, lng1: number, 
     lat2: number, lng2: number, 
     zoom: number
   ): boolean => {
-    // Minimum distance in degrees based on zoom (smaller at higher zooms)
-    const minDistance = zoom >= 16 ? 0.0003 : 
-                        zoom >= 15 ? 0.0006 :
-                        zoom >= 14 ? 0.001 :
-                        zoom >= 13 ? 0.002 :
-                        zoom >= 12 ? 0.004 :
-                        0.008;
+    // Minimum distance in degrees based on zoom (accounts for pin + label width)
+    const minDistance = zoom >= 17 ? 0.0004 : 
+                        zoom >= 16 ? 0.0008 :
+                        zoom >= 15 ? 0.0015 :
+                        zoom >= 14 ? 0.003 :
+                        zoom >= 13 ? 0.005 :
+                        0.01;
     
     const latDiff = Math.abs(lat1 - lat2);
     const lngDiff = Math.abs(lng1 - lng2);
-    return latDiff < minDistance && lngDiff < minDistance;
+    // Use larger distance for longitude since labels extend to the right
+    return latDiff < minDistance && lngDiff < (minDistance * 2.5);
   };
 
   // Places markers with campaign detection and smart visibility
