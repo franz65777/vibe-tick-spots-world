@@ -148,19 +148,21 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
     "></div>
   ` : '';
-  // Truncate name for display (max ~20 chars)
-  const displayName = name ? (name.length > 18 ? name.substring(0, 18) + '...' : name) : '';
+  // Truncate name for display - allow 2 lines max
+  const displayName = name || '';
   const textColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+  const labelBg = isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.85)';
   
-  // Calculate total width for label positioning
-  const labelOffset = size / 2 + 4;
+  // Calculate label positioning - below the pin
+  const labelTopOffset = size + (isSelected ? 10 : 0) + 2;
   
-  // Create simple circular marker with name label like the reference image
+  // Create simple circular marker with name label BELOW like the reference image
   const markerHtml = `
     <div class="custom-leaflet-marker ${isSelected ? 'selected' : ''}" style="
       position: relative; 
-      width: ${size}px; 
-      height: ${size + (isSelected ? 10 : 0)}px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       ${isSelected ? 'filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));' : ''}
     ">
       ${avatarOverlay}
@@ -179,6 +181,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
         transition: all 0.2s ease;
         ${isSelected ? 'transform: scale(1.05);' : ''}
       ">
@@ -195,28 +198,28 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       
       ${selectedPointer}
       
-      <!-- Name label -->
+      <!-- Name label below -->
       ${displayName ? `
         <div style="
-          position: absolute;
-          left: ${labelOffset}px;
-          top: 50%;
-          transform: translateY(-50%);
-          white-space: nowrap;
+          margin-top: ${isSelected ? 12 : 4}px;
+          max-width: 90px;
+          text-align: center;
           pointer-events: none;
-          display: flex;
-          align-items: center;
         ">
           <span style="
             font-size: ${isSelected ? '11px' : '10px'};
             font-weight: ${isSelected ? '600' : '500'};
             color: ${textColor};
-            text-shadow: 
-              -1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'},
-              1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'},
-              -1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'},
-              1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'};
-            letter-spacing: -0.01em;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: ${labelBg};
+            padding: 2px 6px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
           ">${displayName}</span>
         </div>
       ` : ''}
@@ -247,16 +250,16 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     </style>
   `;
   
-  // Calculate icon size including label width
-  const estimatedLabelWidth = displayName ? displayName.length * 6 + 10 : 0;
-  const totalWidth = size + estimatedLabelWidth;
+  // Calculate total height including label
+  const labelHeight = displayName ? 30 : 0;
+  const totalHeight = size + (isSelected ? 10 : 0) + labelHeight;
   
   return L.divIcon({
     html: markerHtml,
     className: 'custom-leaflet-icon',
-    iconSize: [totalWidth, size + (isSelected ? 10 : 0)],
-    iconAnchor: [size / 2, size + (isSelected ? 10 : 0)],
-    popupAnchor: [0, -(size + (isSelected ? 10 : 0))],
+    iconSize: [90, totalHeight],
+    iconAnchor: [45, size / 2],
+    popupAnchor: [0, -size / 2],
   });
 };
 

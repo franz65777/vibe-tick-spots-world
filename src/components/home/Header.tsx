@@ -54,10 +54,10 @@ const Header = ({
           {/* Location search bar - clickable to open search */}
           <button 
             onClick={onOpenSearchOverlay}
-            className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-foreground/90 dark:bg-background/90 backdrop-blur-md border border-border/10 transition-all duration-200 active:scale-[0.98]"
+            className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-black dark:bg-white/90 backdrop-blur-md border border-border/10 transition-all duration-200 active:scale-[0.98]"
           >
             <span className="text-lg leading-none">📌</span>
-            <span className="text-base font-medium text-background dark:text-foreground truncate">
+            <span className="text-base font-medium text-white dark:text-gray-900 truncate">
               {selectedPlace.name}
             </span>
           </button>
@@ -65,7 +65,7 @@ const Header = ({
           {/* Close button */}
           <button 
             onClick={onCloseSelectedPlace}
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-foreground/80 dark:bg-background/80 backdrop-blur-md border border-border/30 rounded-full text-background dark:text-foreground hover:bg-foreground/90 dark:hover:bg-background/90 transition-all duration-200 active:scale-95"
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-black/80 dark:bg-white/80 backdrop-blur-md border border-border/30 rounded-full text-white dark:text-gray-900 hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 active:scale-95"
             aria-label="Close location"
           >
             <X className="w-5 h-5" />
