@@ -5,13 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Multiple Lingva instances for fallback reliability
-const LINGVA_INSTANCES = [
-  "https://lingva.ml",
-  "https://lingva.pussthecat.org",
-  "https://translate.plausibility.cloud",
-];
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,31 +23,28 @@ serve(async (req) => {
       );
     }
 
-    // Try each instance until one works
-    let translatedText = null;
-    let lastError = null;
-
-    for (const instance of LINGVA_INSTANCES) {
-      try {
-        const url = `${instance}/api/v1/auto/${targetLanguage}/${encodeURIComponent(text)}`;
-        console.log(`Trying instance: ${instance}`);
-        
-        const response = await fetch(url);
-        
-        if (response.ok) {
-          const data = await response.json();
-          translatedText = data.translation;
-          console.log(`Translation successful from ${instance}`);
-          break;
-        }
-      } catch (error) {
-        lastError = error;
-        console.log(`Instance ${instance} failed, trying next...`);
-      }
+    // MyMemory API - free translation service (5000 chars/day anonymous, 50000 with email)
+    // Using English as source since campaign descriptions are typically in English
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLanguage}`;
+    
+    console.log(`Calling MyMemory API for translation to ${targetLanguage}`);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`MyMemory API error: ${response.status}`);
     }
-
+    
+    const data = await response.json();
+    
+    if (data.responseStatus !== 200) {
+      throw new Error(data.responseDetails || "Translation failed");
+    }
+    
+    const translatedText = data.responseData?.translatedText;
+    
     if (!translatedText) {
-      throw lastError || new Error("All translation instances failed");
+      throw new Error("No translation received");
     }
 
     console.log(`Translation successful, result length: ${translatedText.length}`);
