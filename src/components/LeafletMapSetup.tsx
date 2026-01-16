@@ -186,27 +186,45 @@ const LeafletMapSetup = ({
     const markerClusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      spiderfyOnMaxZoom: true,
+      spiderfyOnMaxZoom: false,
       removeOutsideVisibleBounds: true,
-      maxClusterRadius: 80, // Larger radius = more aggressive clustering when zoomed out
-      disableClusteringAtZoom: 16, // At zoom 16+, show all individual pins
+      maxClusterRadius: (zoom: number) => {
+        // Only cluster when significantly zoomed out (zoom < 13)
+        // At zoom 13+, reduce clustering dramatically to show individual pins
+        if (zoom < 10) return 120; // Very zoomed out - aggressive clustering
+        if (zoom < 12) return 80;  // Moderately zoomed out
+        if (zoom < 13) return 40;  // Starting to show more pins
+        if (zoom < 14) return 20;  // Even more pins visible
+        return 10; // Minimal clustering - show almost all pins
+      },
+      disableClusteringAtZoom: 15, // At zoom 15+, show ALL individual pins
       spiderfyDistanceMultiplier: 1.5,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
-        let size = 'small';
-        let clusterSize = 40;
+        let clusterSize = 50;
         
-        if (count > 100) {
-          size = 'large';
+        if (count > 50) {
           clusterSize = 60;
-        } else if (count > 30) {
-          size = 'medium';
-          clusterSize = 50;
+        } else if (count > 20) {
+          clusterSize = 55;
         }
         
+        // Blue circle cluster like reference image
         return L.divIcon({
-          html: `<div class="cluster-inner ${size}">${count}</div>`,
-          className: `custom-cluster-icon ${size}`,
+          html: `<div style="
+            width: ${clusterSize}px;
+            height: ${clusterSize}px;
+            background: #4A90D9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: ${count > 99 ? '14px' : '16px'};
+            box-shadow: 0 2px 8px rgba(74, 144, 217, 0.4);
+          ">${count}</div>`,
+          className: 'custom-cluster-icon',
           iconSize: L.point(clusterSize, clusterSize),
         });
       },
