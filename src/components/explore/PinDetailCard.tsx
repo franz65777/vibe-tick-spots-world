@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useFeaturedInLists } from '@/hooks/useFeaturedInLists';
 import TripDetailModal from '../profile/TripDetailModal';
 import FolderDetailModal from '../profile/FolderDetailModal';
-import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import { useMarketingCampaign, MarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { formatDistanceToNow, Locale } from 'date-fns';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
@@ -92,15 +92,32 @@ const localeMap: Record<string, Locale> = {
   'zh-CN': zhCN,
 };
 
-// Campaign Time Remaining Component with localized text
-const CampaignTimeRemaining = ({ endDate }: { endDate: string }) => {
+// Campaign Expanded Details Component with translate button
+const CampaignExpandedDetails = ({ campaign }: { campaign: MarketingCampaign }) => {
   const { t, i18n } = useTranslation();
-  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
+  const handleTranslate = async () => {
+    if (translatedDescription) {
+      setTranslatedDescription(null);
+      return;
+    }
+    setIsTranslating(true);
+    // Simple simulation - in production, use a translation API
+    setTimeout(() => {
+      setTranslatedDescription(campaign.description);
+      setIsTranslating(false);
+    }, 500);
+  };
+
+  // Time remaining calculation
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
-      const end = new Date(endDate);
+      const end = new Date(campaign.end_date);
       const diffMs = end.getTime() - now.getTime();
 
       if (diffMs <= 0) {
@@ -111,7 +128,6 @@ const CampaignTimeRemaining = ({ endDate }: { endDate: string }) => {
       const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
-      // Localized time units
       const daysLabel = t('time.days', { ns: 'common', defaultValue: 'd' });
       const hoursLabel = t('time.hours', { ns: 'common', defaultValue: 'h' });
       const minutesLabel = t('time.minutes', { ns: 'common', defaultValue: 'm' });
@@ -131,16 +147,56 @@ const CampaignTimeRemaining = ({ endDate }: { endDate: string }) => {
 
     updateTime();
     const interval = setInterval(updateTime, 60000);
-
     return () => clearInterval(interval);
-  }, [endDate, i18n.language, t]);
+  }, [campaign.end_date, i18n.language, t]);
 
   return (
-    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-      <Calendar className="w-4 h-4" />
-      <span>
-        {t('marketingCampaign.endsIn', { ns: 'common', defaultValue: 'Ends in' })} {timeLeft}
-      </span>
+    <div className="px-4 pb-4 border-t border-border/30">
+      <div className="pt-4">
+        {/* Icon + Title (no type label) */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+            <img 
+              src={getCampaignTypeIcon(campaign.campaign_type)} 
+              alt="" 
+              className="w-6 h-6 object-contain" 
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-base leading-tight text-foreground text-left">
+              {campaign.title}
+            </h4>
+          </div>
+        </div>
+        
+        {/* Description */}
+        <p className="text-foreground text-sm leading-relaxed text-left mb-2">
+          {translatedDescription || campaign.description}
+        </p>
+        
+        {/* Translate button */}
+        <button
+          onClick={handleTranslate}
+          disabled={isTranslating}
+          className="text-xs text-primary hover:underline mb-3 flex items-center gap-1"
+        >
+          {isTranslating ? (
+            t('common.translating', { ns: 'common', defaultValue: 'Translating...' })
+          ) : translatedDescription ? (
+            t('common.showOriginal', { ns: 'common', defaultValue: 'Show original' })
+          ) : (
+            t('common.translate', { ns: 'common', defaultValue: 'Translate' })
+          )}
+        </button>
+        
+        {/* Time remaining - fully localized */}
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Calendar className="w-4 h-4" />
+          <span>
+            {t('marketingCampaign.endsIn', { ns: 'common', defaultValue: 'Ends in' })} {timeLeft}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1192,36 +1248,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     
                     {/* Expanded Campaign Details - Full details shown directly */}
                     {isCampaignExpanded && (
-                      <div className="px-4 pb-4 border-t border-border/30">
-                        <div className="pt-4">
-                          {/* Campaign Type + Title */}
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                              <img 
-                                src={getCampaignTypeIcon(campaign.campaign_type)} 
-                                alt="" 
-                                className="w-6 h-6 object-contain" 
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs font-medium text-muted-foreground">
-                                {t(`marketingCampaign.${campaign.campaign_type}`, { ns: 'common', defaultValue: campaign.campaign_type })}
-                              </span>
-                              <h4 className="font-bold text-base leading-tight text-foreground text-left mt-0.5">
-                                {campaign.title}
-                              </h4>
-                            </div>
-                          </div>
-                          
-                          {/* Description */}
-                          <p className="text-foreground text-sm leading-relaxed text-left mb-3">
-                            {campaign.description}
-                          </p>
-                          
-                          {/* Time remaining */}
-                          <CampaignTimeRemaining endDate={campaign.end_date} />
-                        </div>
-                      </div>
+                      <CampaignExpandedDetails campaign={campaign} />
                     )}
                   </div>
                 </div>
