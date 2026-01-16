@@ -1162,6 +1162,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       return;
                     }
 
+                    // When at the very top and photos are hidden, allow restoring them on continued scroll-up attempts
+                    // This is handled by touch events below
+
                     // Normal scrolling once photos are fully hidden
                     if (y > lastScrollY && y > 50) {
                       setShowActionButtons(false);
@@ -1174,6 +1177,30 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     }
 
                     setLastScrollY(y);
+                  }}
+                  onTouchStart={(e) => {
+                    // Track touch start for restoring photos when pulling down at top
+                    const el = scrollContainerRef.current;
+                    if (el && el.scrollTop === 0 && photoScrollProgress > 0) {
+                      touchStartY.current = e.touches[0].clientY;
+                    }
+                  }}
+                  onTouchMove={(e) => {
+                    // If user is pulling down while at top of list and photos are hidden, restore them
+                    const el = scrollContainerRef.current;
+                    if (el && el.scrollTop === 0 && photoScrollProgress > 0 && touchStartY.current !== null) {
+                      const deltaY = e.touches[0].clientY - touchStartY.current;
+                      if (deltaY > 0) {
+                        // Pulling down - restore photos proportionally
+                        const restorePx = deltaY;
+                        const next = Math.max(0, photoScrollProgress - restorePx / photoCollapsePx);
+                        setPhotoScrollProgress(next);
+                        e.preventDefault(); // Prevent overscroll bounce
+                      }
+                    }
+                  }}
+                  onTouchEnd={() => {
+                    touchStartY.current = null;
                   }}
                 >
                   {activeTab === 'posts' ? (
