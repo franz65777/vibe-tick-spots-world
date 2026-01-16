@@ -780,23 +780,25 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
         <div 
-          className="w-full relative bg-black dark:bg-white/95 backdrop-blur-md border border-white/10 dark:border-black/10 rounded-full shadow-lg"
-          style={{ touchAction: 'none' }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
+          className="w-full relative bg-black dark:bg-white/95 backdrop-blur-md border border-white/10 dark:border-black/10 rounded-full shadow-lg cursor-pointer"
+          onClick={handleSearchBarClick}
         >
-          <div className="relative flex items-center h-12">
-            {/* Left area - pin + city name - opens search page */}
-            <div
-              className="h-full pl-4 flex items-center cursor-pointer flex-1"
-              onClick={handleSearchBarClick}
-            >
+          {/* Invisible drag handle area at top */}
+          <div
+            className="absolute inset-x-0 top-0 h-full"
+            style={{ touchAction: 'none' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+          />
+          <div className="relative flex items-center h-12 pointer-events-none">
+            {/* Left area - pin + city name */}
+            <div className="h-full pl-4 flex items-center flex-1">
               <span className="text-lg leading-none">📌</span>
               <span className="ml-3 text-base font-medium text-white dark:text-gray-900 leading-none">
                 {currentCity || t('searchCities', { ns: 'home' })}
@@ -810,7 +812,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 handleCurrentLocation(e);
               }}
               disabled={geoLoading}
-              className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50"
+              className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50 pointer-events-auto"
               aria-label={t('currentLocation', { ns: 'common' })}
             >
               <Navigation2
