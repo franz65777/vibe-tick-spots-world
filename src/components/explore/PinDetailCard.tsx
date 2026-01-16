@@ -107,11 +107,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [isListOpen, setIsListOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [photoScrollProgress, setPhotoScrollProgress] = useState(0); // 0=fully visible, 1=fully hidden
+  const [photoCollapsePx, setPhotoCollapsePx] = useState(140); // how many px of scroll are consumed to fully hide photos
   const [sheetProgress, setSheetProgress] = useState(0); // 0=collapsed, 1=expanded
   const [isUserDragging, setIsUserDragging] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const photoSectionRef = useRef<HTMLDivElement>(null);
-  
   // Touch/drag gesture tracking for swipe to expand/collapse
   const touchStartY = useRef<number | null>(null);
   const touchStartTime = useRef<number>(0);
@@ -124,7 +124,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     if (isUserDragging) return;
     setSheetProgress(isExpanded ? 1 : 0);
   }, [isExpanded, isUserDragging]);
-  
+
+
   // Check if onboarding is active on map-guide step
   const [isOnboardingMapStep, setIsOnboardingMapStep] = useState(false);
   
@@ -204,6 +205,29 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     autoFetch: true,
     maxPhotos: 6
   });
+
+
+  // Measure the photo row height so the scroll-to-hide always collapses fully
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const measure = () => {
+      const el = photoSectionRef.current;
+      if (!el) return;
+      const h = el.scrollHeight;
+      if (h && Number.isFinite(h)) {
+        setPhotoCollapsePx(Math.max(80, Math.round(h)));
+      }
+    };
+
+    const raf = requestAnimationFrame(measure);
+    const t = window.setTimeout(measure, 250);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [isExpanded, photosLoading, locationPhotos.length, posts.length]);
 
   // Opening hours
   const { isOpen: rawIsPlaceOpen, todayHours: rawTodayHours, loading: hoursLoading } = useOpeningHours({
@@ -938,27 +962,24 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
           </div>
 
-          {/* Photo Gallery - Scroll-based scale/fade when expanded */}
+          {/* Photo Gallery - Scroll-based collapse when expanded */}
           <div 
             ref={photoSectionRef}
             className={cn(
-              "px-4 pt-2 origin-top",
+              "px-4 pt-2 overflow-hidden transition-[max-height,opacity,margin] duration-200 ease-out",
               !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
             )}
             style={isExpanded ? {
-              // Scale down and fade out as user scrolls
-              transform: `scaleY(${Math.max(0, 1 - photoScrollProgress)})`,
+              maxHeight: `${Math.max(0, photoCollapsePx * (1 - photoScrollProgress))}px`,
               opacity: Math.max(0, 1 - photoScrollProgress),
-              height: photoScrollProgress >= 1 ? 0 : 'auto',
               marginBottom: `${Math.max(0, 8 * (1 - photoScrollProgress))}px`,
-              pointerEvents: photoScrollProgress > 0.9 ? 'none' : 'auto',
-              transformOrigin: 'top center',
+              pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
             } : undefined}
           >
             {photosLoading ? (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-24 h-20 bg-muted rounded-xl animate-pulse flex-shrink-0" />
+                  <div key={i} className="w-[104px] h-24 bg-muted rounded-xl animate-pulse flex-shrink-0" />
                 ))}
               </div>
             ) : locationPhotos.length > 0 ? (
@@ -968,7 +989,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     key={index}
                     className={cn(
                       "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-24 h-20" : "w-32 h-36"
+                      isExpanded ? "w-[104px] h-24" : "w-32 h-36"
                     )}
                   >
                     <img
@@ -996,7 +1017,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     }}
                     className={cn(
                       "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-24 h-20" : "w-32 h-36"
+                      isExpanded ? "w-[104px] h-24" : "w-32 h-36"
                     )}
                   >
                     <img
@@ -1125,36 +1146,34 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 {/* Tab Content */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 overflow-y-auto"
-                  style={{
-                    // As photos collapse, give that height back to the scroll area.
-                    // Base offset (with photos visible) ~280px; photos contribute ~144px.
-                    maxHeight: `calc(90vh - ${280 - 144 * photoScrollProgress}px)`,
-                  }}
+                  className="flex-1 min-h-0 overflow-y-auto"
                   onScroll={(e) => {
-                    const currentScrollY = e.currentTarget.scrollTop;
-                    
-                    // Update photo parallax progress based on scroll
-                    // Photos fully hide after scrolling 120px
-                    const photoHideThreshold = 120;
-                    const progress = Math.min(1, currentScrollY / photoHideThreshold);
-                    setPhotoScrollProgress(progress);
-                    
-                    // Show buttons when scrolling up, hide when scrolling down
-                    if (currentScrollY > lastScrollY && currentScrollY > 50) {
-                      // Scrolling down
+                    const el = e.currentTarget;
+                    const y = el.scrollTop;
+
+                    // First consume scroll to hide photos; only then allow the list to scroll.
+                    if (y > 0 && photoScrollProgress < 1) {
+                      const consumedPx = y + photoScrollProgress * photoCollapsePx;
+                      const next = Math.min(1, consumedPx / photoCollapsePx);
+                      setPhotoScrollProgress(next);
+                      el.scrollTop = 0;
+                      setLastScrollY(0);
+                      setShowActionButtons(true);
+                      return;
+                    }
+
+                    // Normal scrolling once photos are fully hidden
+                    if (y > lastScrollY && y > 50) {
                       setShowActionButtons(false);
-                    } else if (currentScrollY < lastScrollY) {
-                      // Scrolling up
+                    } else if (y < lastScrollY) {
                       setShowActionButtons(true);
                     }
-                    
-                    // Show buttons if at the top
-                    if (currentScrollY < 10) {
+
+                    if (y < 10) {
                       setShowActionButtons(true);
                     }
-                    
-                    setLastScrollY(currentScrollY);
+
+                    setLastScrollY(y);
                   }}
                 >
                   {activeTab === 'posts' ? (
