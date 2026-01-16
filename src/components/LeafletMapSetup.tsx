@@ -182,25 +182,27 @@ const LeafletMapSetup = ({
     tile.addTo(map);
     tileLayerRef.current = tile;
 
-    // Initialize marker cluster group - only for very zoomed out views
+    // Initialize marker cluster group
+    // - Zoomed out: show bubbles (clusters)
+    // - Zoomed in: show individual pins (we also do our own "safe spacing" limiting)
     const markerClusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
       spiderfyOnMaxZoom: false,
       removeOutsideVisibleBounds: true,
-      // Only cluster when VERY zoomed out (zoom < 11)
+      // Only cluster when significantly zoomed out (zoom < 13)
       maxClusterRadius: (zoom: number) => {
-        if (zoom < 10) return 100; // Very zoomed out - show clusters
-        if (zoom < 11) return 60;  // Transitioning
-        return 0; // No clustering - we handle visibility ourselves
+        if (zoom < 10) return 220;
+        if (zoom < 12) return 180;
+        if (zoom < 13) return 140;
+        return 0; // no clustering when zoomed in
       },
-      disableClusteringAtZoom: 11, // At zoom 11+, we manage pin visibility
+      disableClusteringAtZoom: 13,
       spiderfyDistanceMultiplier: 1.5,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
         const clusterSize = count > 50 ? 60 : count > 20 ? 55 : 50;
-        
-        // Blue circle cluster like reference image
+
         return L.divIcon({
           html: `<div style="
             width: ${clusterSize}px;
@@ -479,15 +481,14 @@ const LeafletMapSetup = ({
   }, [location?.latitude, location?.longitude]);
 
   // Helper function to calculate pin limit based on zoom
+  // (Used only when zoomed in enough to show individual pins)
   const getPinLimitForZoom = (zoom: number): number => {
     if (zoom >= 17) return Infinity; // Show all pins
-    if (zoom >= 16) return 150;
-    if (zoom >= 15) return 80;
-    if (zoom >= 14) return 40;
-    if (zoom >= 13) return 25;
-    if (zoom >= 12) return 15;
-    if (zoom >= 11) return 8;
-    return 5; // Very zoomed out
+    if (zoom >= 16) return 70;
+    if (zoom >= 15) return 35;
+    if (zoom >= 14) return 20;
+    if (zoom >= 13) return 12;
+    return 0;
   };
 
   // Helper to calculate popularity score for a place
@@ -555,30 +556,46 @@ const LeafletMapSetup = ({
       bounds.contains([p.coordinates.lat, p.coordinates.lng])
     );
 
-    // Smart visibility: limit pins and avoid overlaps
-    const pinLimit = getPinLimitForZoom(zoom);
+    // Smart visibility:
+    // - When zoomed out: let clustering handle it (pins effectively hidden into bubbles)
+    // - When zoomed in: limit pins + avoid overlaps; reveal more as you zoom
     const visiblePlaces: Place[] = [];
-    const visibleCoords: Array<{lat: number; lng: number}> = [];
+    const visibleCoords: Array<{ lat: number; lng: number }> = [];
 
-    for (const place of placesToConsider) {
-      if (visiblePlaces.length >= pinLimit) break;
-      if (!place.coordinates?.lat || !place.coordinates?.lng) continue;
+    if (zoom < 13) {
+      // Zoomed out: show only the most popular markers and allow clustering to aggregate.
+      // Keep labels off at this zoom to avoid clutter.
+      const maxMarkersForClusters = 250;
+      visiblePlaces.push(...placesToConsider.slice(0, maxMarkersForClusters));
+    } else {
+      const pinLimit = getPinLimitForZoom(zoom);
 
-      // Always show selected place
-      if (selectedPlace?.id === place.id) {
-        visiblePlaces.push(place);
-        visibleCoords.push({ lat: place.coordinates.lat, lng: place.coordinates.lng });
-        continue;
-      }
+      for (const place of placesToConsider) {
+        if (visiblePlaces.length >= pinLimit) break;
+        if (!place.coordinates?.lat || !place.coordinates?.lng) continue;
 
-      // Check if too close to already visible pins
-      const tooClose = visibleCoords.some(coord => 
-        arePinsTooClose(place.coordinates!.lat, place.coordinates!.lng, coord.lat, coord.lng, zoom)
-      );
+        // Always show selected place
+        if (selectedPlace?.id === place.id) {
+          visiblePlaces.push(place);
+          visibleCoords.push({ lat: place.coordinates.lat, lng: place.coordinates.lng });
+          continue;
+        }
 
-      if (!tooClose) {
-        visiblePlaces.push(place);
-        visibleCoords.push({ lat: place.coordinates.lat, lng: place.coordinates.lng });
+        // Check if too close to already visible pins
+        const tooClose = visibleCoords.some((coord) =>
+          arePinsTooClose(
+            place.coordinates!.lat,
+            place.coordinates!.lng,
+            coord.lat,
+            coord.lng,
+            zoom
+          )
+        );
+
+        if (!tooClose) {
+          visiblePlaces.push(place);
+          visibleCoords.push({ lat: place.coordinates.lat, lng: place.coordinates.lng });
+        }
       }
     }
 
@@ -649,10 +666,12 @@ const LeafletMapSetup = ({
           }));
 
           const isSelected = selectedPlace?.id === place.id;
-          const icon = createLeafletCustomMarker({
-            category: place.category || 'attraction',
-            name: place.name,
-            isSaved: place.isSaved,
+           const shouldShowLabel = zoom >= 14 || isSelected;
+
+           const icon = createLeafletCustomMarker({
+             category: place.category || 'attraction',
+             name: shouldShowLabel ? place.name : undefined,
+             isSaved: place.isSaved,
             isRecommended: place.isRecommended,
             recommendationScore: place.recommendationScore,
             friendAvatars: [],
