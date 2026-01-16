@@ -143,7 +143,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               expires_at,
               user_id,
               created_at,
-              location:locations(name, category, city, address)
+              location:locations(name, category, city, address, opening_hours_data)
             `)
             .gt('expires_at', new Date().toISOString());
           
