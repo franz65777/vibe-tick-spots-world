@@ -762,46 +762,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   <p className="text-sm text-muted-foreground truncate mt-0.5">
                     {detailedAddress}
                   </p>
-                  {/* Open/Closed Status + Saved By (same row) */}
-                  <div className="flex items-center gap-3 mt-1 flex-wrap">
-                    {!hoursLoading && isPlaceOpen !== null && (
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "text-sm font-semibold",
-                          isPlaceOpen ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
-                        )}>
-                          {isPlaceOpen ? t('openingHours.open') : t('openingHours.closed')}
-                        </span>
-                        {todayHours && (
-                          <span className="text-sm text-muted-foreground">{todayHours}</span>
-                        )}
-                      </div>
-                    )}
-                    {/* Saved By Users Avatars - Same row as opening hours */}
-                    {!savedByLoading && savedByUsers.length > 0 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSavedByOpen(true);
-                        }}
-                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                      >
-                        <div className="flex -space-x-2">
-                          {savedByUsers.slice(0, 2).map((savedUser) => (
-                            <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
-                              <AvatarImage src={savedUser.avatar_url || undefined} />
-                              <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-                                {savedUser.username?.[0]?.toUpperCase() || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
-                        </span>
-                      </button>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -876,6 +836,47 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   </>
                 )}
               </div>
+            </div>
+            
+            {/* Open/Closed Status + Saved By - aligned left, below header */}
+            <div className="flex items-center gap-3 mt-1 flex-wrap px-4">
+              {!hoursLoading && isPlaceOpen !== null && (
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-sm font-semibold",
+                    isPlaceOpen ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                  )}>
+                    {isPlaceOpen ? t('openingHours.open') : t('openingHours.closed')}
+                  </span>
+                  {todayHours && (
+                    <span className="text-sm text-muted-foreground">{todayHours}</span>
+                  )}
+                </div>
+              )}
+              {/* Saved By Users Avatars - Same row as opening hours */}
+              {!savedByLoading && savedByUsers.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSavedByOpen(true);
+                  }}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex -space-x-2">
+                    {savedByUsers.slice(0, 2).map((savedUser) => (
+                      <Avatar key={savedUser.id} className="w-6 h-6 border-2 border-background">
+                        <AvatarImage src={savedUser.avatar_url || undefined} />
+                        <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                          {savedUser.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {savedByTotalCount} {t('saves', { ns: 'common', defaultValue: 'saves' })}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
