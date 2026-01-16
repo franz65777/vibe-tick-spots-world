@@ -61,8 +61,15 @@ const Header = ({
     return null;
   }
 
-  // Show location-focused header when a place is selected
+  // Hide header completely when a place with back button is selected (from posts, folders, etc.)
+  // Show location-focused header only when a regular pin is selected (no sourcePostId)
   if (selectedPlace) {
+    // If place has sourcePostId, it means there's a back button in PinDetailCard - hide header completely
+    const hasBackButton = !!(selectedPlace as any).sourcePostId;
+    if (hasBackButton) {
+      return null;
+    }
+    
     return (
       <header className="sticky top-0 z-40">
         <div className="flex items-center justify-between pl-3 pr-2 py-2 gap-2">
