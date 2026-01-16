@@ -39,6 +39,12 @@ import { useOpeningHours } from '@/hooks/useOpeningHours';
 import { useSavedByUsers } from '@/hooks/useSavedByUsers';
 import { useLocationPhotos } from '@/hooks/useLocationPhotos';
 
+// Helper to check if a string is a valid UUID
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
 // Map tag values to imported icons
 const TAG_ICONS: Record<string, string> = {
   been: saveTagBeen,
@@ -383,43 +389,68 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         types: place.types || []
       };
 
-      // If this is a temporary location (from SaveLocationPage), create it first
-      if (place.isTemporary) {
+      // Check if this is a temporary/external location that needs to be created first
+      // This includes isTemporary flag OR external IDs (photon-, nominatim-, overpass-, ChIJ, etc.)
+      const needsCreation = place.isTemporary || 
+        (typeof place.id === 'string' && (
+          place.id.startsWith('photon-') ||
+          place.id.startsWith('nominatim-') ||
+          place.id.startsWith('overpass-') ||
+          place.id.startsWith('ChIJ') ||
+          !isValidUUID(place.id)
+        ));
+
+      if (needsCreation) {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (!currentUser) {
           toast.error(t('auth_required'));
           return;
         }
 
-        const { data: newLocation, error: createError } = await supabase
+        // First check if location already exists by coordinates
+        const { data: existingLocation } = await supabase
           .from('locations')
-          .insert({
-            name: place.name,
-            address: place.address,
-            latitude: place.coordinates?.lat,
-            longitude: place.coordinates?.lng,
-            category: place.category || 'restaurant',
-            city: place.city,
-            created_by: currentUser.id,
-            pioneer_user_id: currentUser.id,
-          })
-          .select()
-          .single();
+          .select('id')
+          .eq('name', place.name)
+          .gte('latitude', (place.coordinates?.lat || 0) - 0.0001)
+          .lte('latitude', (place.coordinates?.lat || 0) + 0.0001)
+          .gte('longitude', (place.coordinates?.lng || 0) - 0.0001)
+          .lte('longitude', (place.coordinates?.lng || 0) + 0.0001)
+          .maybeSingle();
 
-        if (createError || !newLocation) {
-          console.error('Error creating location:', createError);
-          toast.error(t('save_failed'));
-          return;
+        if (existingLocation) {
+          locationId = existingLocation.id;
+        } else {
+          const { data: newLocation, error: createError } = await supabase
+            .from('locations')
+            .insert({
+              name: place.name,
+              address: place.address,
+              latitude: place.coordinates?.lat,
+              longitude: place.coordinates?.lng,
+              category: place.category || 'restaurant',
+              city: place.city,
+              created_by: currentUser.id,
+              pioneer_user_id: currentUser.id,
+            })
+            .select()
+            .single();
+
+          if (createError || !newLocation) {
+            console.error('Error creating location:', createError);
+            toast.error(t('save_failed'));
+            return;
+          }
+
+          locationId = newLocation.id;
+          locationData = {
+            ...locationData,
+            google_place_id: newLocation.google_place_id,
+          };
+          
+          // Update the place object with real ID
+          place.id = newLocation.id;
         }
-
-        locationId = newLocation.id;
-        locationData = {
-          ...locationData,
-          google_place_id: newLocation.google_place_id,
-        };
-        
-        // Update the place object with real ID
-        place.id = newLocation.id;
         place.isTemporary = false;
       }
 
