@@ -242,7 +242,46 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const isHotel = place.category?.toLowerCase() === 'hotel' || 
                   place.types?.some((t: string) => t.toLowerCase().includes('lodging') || t.toLowerCase().includes('hotel'));
   const isPlaceOpen = (rawIsPlaceOpen === null && isHotel) ? true : rawIsPlaceOpen;
-  const todayHours = (rawTodayHours === null && isHotel && rawIsPlaceOpen === null) ? '24h' : rawTodayHours;
+  const rawTodayHoursValue = (rawTodayHours === null && isHotel && rawIsPlaceOpen === null) ? '24h' : rawTodayHours;
+  
+  // Format hours for locale (convert 12h to 24h for non-English)
+  const formatHoursForLocale = (hours: string | null): string | null => {
+    if (!hours) return null;
+    
+    // Handle 24h indicator
+    const lower = hours.toLowerCase().trim();
+    if (lower.includes('24 hours') || lower.includes('24h') || lower === '00:00 – 24:00') {
+      return '24h';
+    }
+    
+    const lang = (i18n.language || 'en').toLowerCase();
+    const uses12HourClock = lang.startsWith('en');
+    
+    if (uses12HourClock) return hours;
+    
+    // Convert 12h to 24h for non-English locales
+    let result = hours.replace(
+      /(\d{1,2}(?::\d{2})?)\s*[–-]\s*(\d{1,2}(?::\d{2})?)\s*(AM|PM)\b/gi,
+      (_m, start, end, period) => {
+        const hasPeriodInStart = /(am|pm)/i.test(String(start));
+        const startWithPeriod = hasPeriodInStart ? String(start) : `${String(start)} ${String(period)}`;
+        return `${startWithPeriod} – ${String(end)} ${String(period)}`;
+      }
+    );
+    
+    result = result.replace(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\b/gi, (_match, h, m, period) => {
+      let hour = parseInt(h, 10);
+      const minutes = m || '00';
+      const upper = (period as string).toUpperCase();
+      if (upper === 'PM' && hour < 12) hour += 12;
+      if (upper === 'AM' && hour === 12) hour = 0;
+      return `${hour.toString().padStart(2, '0')}:${minutes}`;
+    });
+    
+    return result;
+  };
+  
+  const todayHours = formatHoursForLocale(rawTodayHoursValue);
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
