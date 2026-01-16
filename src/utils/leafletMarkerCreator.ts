@@ -117,25 +117,25 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     `;
   }
   
-  // Campaign effect - small fire/flame badge at bottom-right corner
+  // Campaign effect - small category badge at bottom-right corner
   const campaignEffect = hasCampaign ? `
-    <div class="campaign-flame-badge" style="
+    <div class="campaign-badge" style="
       position: absolute;
-      bottom: -4px;
-      right: -4px;
-      width: 18px;
-      height: 18px;
+      bottom: -6px;
+      right: -6px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       background: linear-gradient(145deg, #FF6B35, #FF4500);
-      border: 2px solid white;
-      box-shadow: 0 2px 6px rgba(255,69,0,0.5);
+      border: 2.5px solid white;
+      box-shadow: 0 2px 8px rgba(255,69,0,0.6);
       display: flex;
       align-items: center;
       justify-content: center;
       animation: campaign-flame-pulse 1.5s ease-in-out infinite;
-      z-index: 25;
+      z-index: 100;
     ">
-      <span style="font-size: 10px; line-height: 1;">🔥</span>
+      <img src="${categoryImg}" alt="" style="width: 14px; height: 14px; object-fit: contain; filter: brightness(0) invert(1);" />
     </div>
   ` : '';
 
