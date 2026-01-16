@@ -107,7 +107,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [isListOpen, setIsListOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [photoScrollProgress, setPhotoScrollProgress] = useState(0); // 0=fully visible, 1=fully hidden
-  const [photoCollapsePx, setPhotoCollapsePx] = useState(140); // how many px of scroll are consumed to fully hide photos
+  const [photoCollapsePx, setPhotoCollapsePx] = useState(120); // how many px of scroll are consumed to fully hide photos (96px photo + padding)
   const [sheetProgress, setSheetProgress] = useState(0); // 0=collapsed, 1=expanded
   const [isUserDragging, setIsUserDragging] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -979,7 +979,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             {photosLoading ? (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-[104px] h-24 bg-muted rounded-xl animate-pulse flex-shrink-0" />
+                  <div key={i} className="w-[104px] h-[96px] bg-muted rounded-xl animate-pulse flex-shrink-0" />
                 ))}
               </div>
             ) : locationPhotos.length > 0 ? (
@@ -989,7 +989,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     key={index}
                     className={cn(
                       "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-[104px] h-24" : "w-32 h-36"
+                      isExpanded ? "w-[104px] h-[96px]" : "w-32 h-36"
                     )}
                   >
                     <img
@@ -1162,9 +1162,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       return;
                     }
 
-                    // When at the very top and photos are hidden, allow restoring them on continued scroll-up attempts
-                    // This is handled by touch events below
-
                     // Normal scrolling once photos are fully hidden
                     if (y > lastScrollY && y > 50) {
                       setShowActionButtons(false);
@@ -1178,10 +1175,20 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
                     setLastScrollY(y);
                   }}
+                  onWheel={(e) => {
+                    // Desktop: when at top and scrolling up, restore photos
+                    const el = scrollContainerRef.current;
+                    if (el && el.scrollTop === 0 && photoScrollProgress > 0 && e.deltaY < 0) {
+                      const restorePx = Math.abs(e.deltaY);
+                      const next = Math.max(0, photoScrollProgress - restorePx / photoCollapsePx);
+                      setPhotoScrollProgress(next);
+                      e.preventDefault();
+                    }
+                  }}
                   onTouchStart={(e) => {
                     // Track touch start for restoring photos when pulling down at top
                     const el = scrollContainerRef.current;
-                    if (el && el.scrollTop === 0 && photoScrollProgress > 0) {
+                    if (el && el.scrollTop === 0) {
                       touchStartY.current = e.touches[0].clientY;
                     }
                   }}
