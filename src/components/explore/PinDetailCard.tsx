@@ -1303,7 +1303,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               )}
 
               {/* Featured in Lists Section - Hides with photos on scroll */}
-              {!listsLoading && featuredLists.length > 0 && (
+                {!listsLoading && featuredLists.length > 0 && (
                 <div 
                   className="px-4 pb-1 transition-[max-height,opacity] duration-200 ease-out"
                   style={{
@@ -1313,42 +1313,40 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
                   }}
                 >
-                  <section className="w-full rounded-2xl border border-border/60 bg-card/70 backdrop-blur-md shadow-sm px-3 py-1.5">
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide text-left">
-                      📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
-                    </h4>
-                    <div className="overflow-x-auto scrollbar-hide -mx-3 px-3">
-                      <div className="flex gap-2">
-                        {featuredLists.map((list) => (
-                          <button
-                            key={list.list_id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              document.body.setAttribute('data-modal-open', 'true');
-                              if (list.type === 'folder') {
-                                setSelectedFolderId(list.list_id);
-                                setFolderDetailOpen(true);
-                                setIsListOpen(true);
-                              } else {
-                                setSelectedTripId(list.list_id);
-                                setTripDetailOpen(true);
-                                setIsListOpen(true);
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-background/80 hover:bg-accent border border-border/70 shadow-sm hover:shadow-md transition-all whitespace-nowrap flex-shrink-0"
-                          >
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={list.avatar_url || undefined} />
-                              <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium text-foreground">
-                              {list.list_name}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div className="flex gap-2 items-center">
+                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
+                        📌
+                      </span>
+                      {featuredLists.map((list) => (
+                        <button
+                          key={list.list_id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            document.body.setAttribute('data-modal-open', 'true');
+                            if (list.type === 'folder') {
+                              setSelectedFolderId(list.list_id);
+                              setFolderDetailOpen(true);
+                              setIsListOpen(true);
+                            } else {
+                              setSelectedTripId(list.list_id);
+                              setTripDetailOpen(true);
+                              setIsListOpen(true);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-muted/60 hover:bg-muted border border-border/40 transition-all whitespace-nowrap flex-shrink-0"
+                        >
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={list.avatar_url || undefined} />
+                            <AvatarFallback className="text-[10px]">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-medium text-foreground/90">
+                            {list.list_name}
+                          </span>
+                        </button>
+                      ))}
                     </div>
-                  </section>
+                  </div>
                 </div>
               )}
 
