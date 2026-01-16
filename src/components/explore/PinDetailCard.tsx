@@ -1177,12 +1177,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Photo Gallery - Scroll-based collapse when expanded */}
+          {(locationPhotos.length > 0 || posts.length > 0 || photosLoading) && (
           <div 
             ref={photoSectionRef}
             className={cn(
-              "px-4 pt-1 transition-[max-height,opacity,margin] duration-200 ease-out",
-              !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
-              isExpanded && "pb-1"
+              "px-4 transition-[max-height,opacity,padding] duration-200 ease-out",
+              !isExpanded && "pt-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
+              isExpanded && photoScrollProgress < 1 && "pt-1 pb-1",
+              isExpanded && photoScrollProgress >= 1 && "pt-0 pb-0"
             )}
             style={isExpanded ? {
               maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
@@ -1244,20 +1246,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   </button>
                 ))}
               </div>
-            ) : (
-              <div className={cn(
-                "flex items-center justify-center bg-muted/50 rounded-xl",
-                isExpanded ? "h-20" : "h-24"
-              )}>
-                <div className="text-center">
-                  <Camera className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">
-                    {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
-                  </p>
-                </div>
-              </div>
-            )}
+            ) : null}
           </div>
+          )}
 
 
           {/* Expanded Content - Only visible when drawer is expanded */}
