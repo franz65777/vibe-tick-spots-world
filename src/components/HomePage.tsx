@@ -331,16 +331,23 @@ const HomePage = memo(() => {
     handleNavState();
   }, [location.state, location.pathname, navigate]);
 
-  // Get user's current location on component mount and when tab becomes visible
+  // Get user's current location on component mount
+  // Only update mapCenter on initial mount, not on visibility changes
+  const hasInitializedLocation = useRef(false);
+  
   useEffect(() => {
-    const getCurrentLocation = () => {
+    const getCurrentLocation = (updateMapCenter: boolean) => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
-            setMapCenter(location);
+            // Only update mapCenter on initial load, not on visibility changes
+            if (updateMapCenter && !hasInitializedLocation.current) {
+              hasInitializedLocation.current = true;
+              setMapCenter(location);
+            }
           },
           (error) => {
             console.warn('Error getting user location:', error);
@@ -357,12 +364,12 @@ const HomePage = memo(() => {
       }
     };
 
-    getCurrentLocation();
+    getCurrentLocation(true);
 
-    // Also get location when page becomes visible (tab switching)
+    // Also get location when page becomes visible (tab switching) - but don't recenter map
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        getCurrentLocation();
+        getCurrentLocation(false);
       }
     };
 
