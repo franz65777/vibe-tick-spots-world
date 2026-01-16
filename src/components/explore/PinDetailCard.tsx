@@ -966,21 +966,21 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           <div 
             ref={photoSectionRef}
             className={cn(
-              "px-4 pt-2 overflow-hidden transition-[max-height,opacity,margin] duration-200 ease-out",
+              "px-4 pt-2 transition-[max-height,opacity,margin] duration-200 ease-out",
               !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
-              isExpanded && "pb-4"
+              isExpanded && "pb-2"
             )}
             style={isExpanded ? {
               maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
               opacity: Math.max(0, 1 - photoScrollProgress),
-              marginBottom: `${Math.max(0, 12 * (1 - photoScrollProgress))}px`,
+              overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
               pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
             } : undefined}
           >
             {photosLoading ? (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-[104px] h-[96px] bg-muted rounded-xl animate-pulse flex-shrink-0" />
+                  <div key={i} className="w-[140px] h-[105px] bg-muted rounded-xl animate-pulse flex-shrink-0" />
                 ))}
               </div>
             ) : locationPhotos.length > 0 ? (
@@ -989,8 +989,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   <div
                     key={index}
                     className={cn(
-                      "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-[140px] aspect-[4/3]" : "w-32 h-36"
+                      "rounded-xl flex-shrink-0 bg-muted transition-all duration-300",
+                      isExpanded ? "w-[140px] h-[105px]" : "w-32 h-36"
                     )}
                   >
                     <img
@@ -1069,7 +1069,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Featured in Lists Section */}
               {!listsLoading && featuredLists.length > 0 && (
-                <div className="px-4 pb-3">
+                <div className="px-4 pb-2">
                   <section className="w-full rounded-2xl border border-border/60 bg-card/70 backdrop-blur-md shadow-sm px-3 py-2">
                     <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide text-left">
                       📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
