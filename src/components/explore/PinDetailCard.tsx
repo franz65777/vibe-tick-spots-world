@@ -104,11 +104,26 @@ const CampaignExpandedDetails = ({ campaign }: { campaign: MarketingCampaign }) 
       return;
     }
     setIsTranslating(true);
-    // Simple simulation - in production, use a translation API
-    setTimeout(() => {
-      setTranslatedDescription(campaign.description);
+    
+    try {
+      const response = await supabase.functions.invoke('translate-text', {
+        body: {
+          text: campaign.description,
+          targetLanguage: i18n.language
+        }
+      });
+      
+      if (response.error) {
+        console.error('Translation error:', response.error);
+        return;
+      }
+      
+      setTranslatedDescription(response.data?.translatedText || campaign.description);
+    } catch (error) {
+      console.error('Translation failed:', error);
+    } finally {
       setIsTranslating(false);
-    }, 500);
+    }
   };
 
   // Time remaining calculation
