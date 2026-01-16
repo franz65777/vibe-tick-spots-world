@@ -103,11 +103,14 @@ export const OpeningHoursDisplay: React.FC<OpeningHoursDisplayProps> = ({
     cachedOpeningHours
   });
   
-  // For hotels without opening hours data, assume 24/7
+  // For hotels and parks without opening hours data, assume 24/7
   const isHotel = category?.toLowerCase() === 'hotel' || 
                   types?.some((t: string) => t.toLowerCase().includes('lodging') || t.toLowerCase().includes('hotel'));
-  const isOpen = (rawIsOpen === null && isHotel) ? true : rawIsOpen;
-  const todayHours = (rawTodayHours === null && isHotel && rawIsOpen === null) ? '24h' : rawTodayHours;
+  const isPark = category?.toLowerCase() === 'park' || 
+                 types?.some((t: string) => t.toLowerCase().includes('park'));
+  const assumeOpen24h = isHotel || isPark;
+  const isOpen = (rawIsOpen === null && assumeOpen24h) ? true : rawIsOpen;
+  const todayHours = (rawTodayHours === null && assumeOpen24h && rawIsOpen === null) ? '24h' : rawTodayHours;
 
   // All hooks must be called before any conditional returns
   const textRef = useRef<HTMLSpanElement>(null);

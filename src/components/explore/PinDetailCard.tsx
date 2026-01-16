@@ -878,7 +878,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
             
             {/* Open/Closed Status + Saved By - aligned left, below header */}
-            <div className="flex items-center gap-3 mt-1 flex-wrap px-4">
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
               {!hoursLoading && isPlaceOpen !== null && (
                 <div className="flex items-center gap-2">
                   <span className={cn(
