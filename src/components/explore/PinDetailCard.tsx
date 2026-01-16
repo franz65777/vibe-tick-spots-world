@@ -1302,11 +1302,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               )}
 
-              {/* Featured in Lists Section - Hides with photos on scroll */}
-                {/* Featured Lists Section */}
+              {/* Featured Lists Section */}
                 {!listsLoading && featuredLists.length > 0 && (
                 <div 
-                  className="px-4 py-2 mt-2 transition-[max-height,opacity] duration-200 ease-out border-t border-border/30"
+                  className={cn(
+                    "px-4 py-2 transition-[max-height,opacity] duration-200 ease-out",
+                    (locationPhotos.length > 0 || campaign) && "border-t border-border/30"
+                  )}
                   style={{
                     maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
                     opacity: Math.max(0, 1 - photoScrollProgress),
