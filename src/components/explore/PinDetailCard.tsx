@@ -995,7 +995,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     <img
                       src={photo}
                       alt={`${place.name} photo ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       loading="lazy"
                     />
                   </div>
@@ -1068,12 +1068,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Featured in Lists Section */}
               {!listsLoading && featuredLists.length > 0 && (
-                <div className="px-4 pb-2">
-                  <div className="w-full">
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide text-left">
+                <div className="px-4 pb-3">
+                  <section className="w-full rounded-2xl border border-border/60 bg-card/70 backdrop-blur-md shadow-sm px-3 py-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide text-left">
                       📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
                     </h4>
-                    <div className="overflow-x-auto scrollbar-hide">
+                    <div className="overflow-x-auto scrollbar-hide -mx-3 px-3">
                       <div className="flex gap-2">
                         {featuredLists.map((list) => (
                           <button
@@ -1090,20 +1090,20 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                                 setIsListOpen(true);
                               }
                             }}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-background/80 hover:bg-accent border border-border/70 shadow-sm hover:shadow-md transition-all whitespace-nowrap flex-shrink-0"
                           >
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={list.avatar_url || undefined} />
                               <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <span className="text-foreground">
+                            <span className="text-sm font-medium text-foreground">
                               {list.list_name}
                             </span>
                           </button>
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </section>
                 </div>
               )}
 
