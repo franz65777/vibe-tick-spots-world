@@ -15,6 +15,9 @@ import { rewardsTranslations } from './i18n-rewards';
 const resources = {
   en: {
     common: {
+      translate: 'Translate',
+      showOriginal: 'Show original',
+      translating: 'Translating...',
       clearAll: 'Clear All',
       clearHistory: 'Clear History',
       thisCity: 'this city',
@@ -1073,6 +1076,9 @@ const resources = {
   },
   es: {
     common: {
+      translate: 'Traducir',
+      showOriginal: 'Mostrar original',
+      translating: 'Traduciendo...',
       clearAll: 'Borrar Todo',
       clearHistory: 'Borrar historial',
       thisCity: 'esta ciudad',
@@ -2069,6 +2075,9 @@ const resources = {
 
   it: {
     common: {
+      translate: 'Traduci',
+      showOriginal: 'Mostra originale',
+      translating: 'Traduzione in corso...',
       clearAll: 'Cancella Tutto',
       clearHistory: 'Svuota cronologia',
       thisCity: 'questa città',
@@ -3092,6 +3101,9 @@ const resources = {
 
   fr: {
     common: {
+      translate: 'Traduire',
+      showOriginal: 'Afficher l\'original',
+      translating: 'Traduction en cours...',
       clearAll: 'Tout effacer',
       clearHistory: 'Effacer l\'historique',
       thisCity: 'cette ville',
@@ -3960,6 +3972,9 @@ const resources = {
 
   de: {
     common: {
+      translate: 'Übersetzen',
+      showOriginal: 'Original anzeigen',
+      translating: 'Übersetze...',
       clearAll: 'Alles löschen',
       clearHistory: 'Verlauf löschen',
       thisCity: 'diese Stadt',
@@ -4747,6 +4762,9 @@ const resources = {
 
   pt: {
     common: {
+      translate: 'Traduzir',
+      showOriginal: 'Mostrar original',
+      translating: 'Traduzindo...',
       clearAll: 'Limpar tudo',
       clearHistory: 'Limpar histórico',
       thisCity: 'esta cidade',
@@ -5562,6 +5580,9 @@ const resources = {
 
   'zh-CN': {
     common: {
+      translate: '翻译',
+      showOriginal: '显示原文',
+      translating: '翻译中...',
       clearAll: '全部清除',
       clearHistory: '清除历史',
       thisCity: '这个城市',
@@ -6243,6 +6264,9 @@ const resources = {
 
   ja: {
     common: {
+      translate: '翻訳',
+      showOriginal: '原文を表示',
+      translating: '翻訳中...',
       clearAll: 'すべてクリア',
       clearHistory: '履歴を消去',
       thisCity: 'この都市',
@@ -6926,6 +6950,9 @@ const resources = {
 
   ko: {
     common: {
+      translate: '번역',
+      showOriginal: '원본 보기',
+      translating: '번역 중...',
       clearAll: '모두 지우기',
       clearHistory: '기록 지우기',
       thisCity: '이 도시',
@@ -7616,6 +7643,9 @@ const resources = {
 
   ar: {
     common: {
+      translate: 'ترجمة',
+      showOriginal: 'إظهار الأصلي',
+      translating: 'جارٍ الترجمة...',
       clearAll: 'مسح الكل',
       clearHistory: 'مسح السجل',
       thisCity: 'هذه المدينة',
@@ -8306,6 +8336,9 @@ const resources = {
 
   hi: {
     common: {
+      translate: 'अनुवाद करें',
+      showOriginal: 'मूल दिखाएं',
+      translating: 'अनुवाद हो रहा है...',
       clearAll: 'सभी साफ़ करें',
       clearHistory: 'इतिहास साफ़ करें',
       thisCity: 'यह शहर',
@@ -8984,6 +9017,9 @@ const resources = {
 
   ru: {
     common: {
+      translate: 'Перевести',
+      showOriginal: 'Показать оригинал',
+      translating: 'Перевод...',
       clearAll: 'Очистить всё',
       clearHistory: 'Очистить историю',
       thisCity: 'этот город',
