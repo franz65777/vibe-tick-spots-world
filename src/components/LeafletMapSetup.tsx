@@ -182,32 +182,23 @@ const LeafletMapSetup = ({
     tile.addTo(map);
     tileLayerRef.current = tile;
 
-    // Initialize marker cluster group with custom icon
+    // Initialize marker cluster group - only for very zoomed out views
     const markerClusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
       spiderfyOnMaxZoom: false,
       removeOutsideVisibleBounds: true,
+      // Only cluster when VERY zoomed out (zoom < 11)
       maxClusterRadius: (zoom: number) => {
-        // Only cluster when significantly zoomed out (zoom < 13)
-        // At zoom 13+, reduce clustering dramatically to show individual pins
-        if (zoom < 10) return 120; // Very zoomed out - aggressive clustering
-        if (zoom < 12) return 80;  // Moderately zoomed out
-        if (zoom < 13) return 40;  // Starting to show more pins
-        if (zoom < 14) return 20;  // Even more pins visible
-        return 10; // Minimal clustering - show almost all pins
+        if (zoom < 10) return 100; // Very zoomed out - show clusters
+        if (zoom < 11) return 60;  // Transitioning
+        return 0; // No clustering - we handle visibility ourselves
       },
-      disableClusteringAtZoom: 15, // At zoom 15+, show ALL individual pins
+      disableClusteringAtZoom: 11, // At zoom 11+, we manage pin visibility
       spiderfyDistanceMultiplier: 1.5,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
-        let clusterSize = 50;
-        
-        if (count > 50) {
-          clusterSize = 60;
-        } else if (count > 20) {
-          clusterSize = 55;
-        }
+        const clusterSize = count > 50 ? 60 : count > 20 ? 55 : 50;
         
         // Blue circle cluster like reference image
         return L.divIcon({
@@ -487,16 +478,59 @@ const LeafletMapSetup = ({
     };
   }, [location?.latitude, location?.longitude]);
 
-  // Places markers with campaign detection
+  // Helper function to calculate pin limit based on zoom
+  const getPinLimitForZoom = (zoom: number): number => {
+    if (zoom >= 17) return Infinity; // Show all pins
+    if (zoom >= 16) return 150;
+    if (zoom >= 15) return 80;
+    if (zoom >= 14) return 40;
+    if (zoom >= 13) return 25;
+    if (zoom >= 12) return 15;
+    if (zoom >= 11) return 8;
+    return 5; // Very zoomed out
+  };
+
+  // Helper to calculate popularity score for a place
+  const getPopularityScore = (place: Place): number => {
+    let score = 0;
+    // Higher score = more popular
+    if (place.isRecommended) score += 50;
+    if (place.recommendationScore) score += place.recommendationScore * 10;
+    if (place.isSaved) score += 20;
+    // Add some randomness based on id to spread pins out
+    score += (place.id?.charCodeAt(0) || 0) % 10;
+    return score;
+  };
+
+  // Helper to check if two pins are too close at current zoom
+  const arePinsTooClose = (
+    lat1: number, lng1: number, 
+    lat2: number, lng2: number, 
+    zoom: number
+  ): boolean => {
+    // Minimum distance in degrees based on zoom (smaller at higher zooms)
+    const minDistance = zoom >= 16 ? 0.0003 : 
+                        zoom >= 15 ? 0.0006 :
+                        zoom >= 14 ? 0.001 :
+                        zoom >= 13 ? 0.002 :
+                        zoom >= 12 ? 0.004 :
+                        0.008;
+    
+    const latDiff = Math.abs(lat1 - lat2);
+    const lngDiff = Math.abs(lng1 - lng2);
+    return latDiff < minDistance && lngDiff < minDistance;
+  };
+
+  // Places markers with campaign detection and smart visibility
   useEffect(() => {
     const map = mapRef.current;
     const clusterGroup = markerClusterGroupRef.current;
     if (!map || !clusterGroup) return;
 
-    // Don't render pins when zoomed out (city labels mode) to prevent flickering
     const zoom = map.getZoom();
+    
+    // Don't render pins when very zoomed out (city labels mode)
     if (zoom < 9) {
-      // Clear all markers when zoomed out
       markersRef.current.forEach((marker) => {
         clusterGroup.removeLayer(marker);
       });
@@ -505,17 +539,58 @@ const LeafletMapSetup = ({
     }
 
     // When hideOtherPins is true and we have a selectedPlace, only show that pin
-    const placesToRender = hideOtherPins && selectedPlace 
+    let placesToConsider = hideOtherPins && selectedPlace 
       ? places.filter(p => p.id === selectedPlace.id)
-      : places;
+      : [...places];
 
-    // Remove markers that are not in placesToRender
+    // Sort by popularity (most popular first)
+    placesToConsider.sort((a, b) => getPopularityScore(b) - getPopularityScore(a));
+
+    // Get visible bounds
+    const bounds = map.getBounds();
+    
+    // Filter to only places in current view
+    placesToConsider = placesToConsider.filter(p => 
+      p.coordinates?.lat && p.coordinates?.lng &&
+      bounds.contains([p.coordinates.lat, p.coordinates.lng])
+    );
+
+    // Smart visibility: limit pins and avoid overlaps
+    const pinLimit = getPinLimitForZoom(zoom);
+    const visiblePlaces: Place[] = [];
+    const visibleCoords: Array<{lat: number; lng: number}> = [];
+
+    for (const place of placesToConsider) {
+      if (visiblePlaces.length >= pinLimit) break;
+      if (!place.coordinates?.lat || !place.coordinates?.lng) continue;
+
+      // Always show selected place
+      if (selectedPlace?.id === place.id) {
+        visiblePlaces.push(place);
+        visibleCoords.push({ lat: place.coordinates.lat, lng: place.coordinates.lng });
+        continue;
+      }
+
+      // Check if too close to already visible pins
+      const tooClose = visibleCoords.some(coord => 
+        arePinsTooClose(place.coordinates!.lat, place.coordinates!.lng, coord.lat, coord.lng, zoom)
+      );
+
+      if (!tooClose) {
+        visiblePlaces.push(place);
+        visibleCoords.push({ lat: place.coordinates.lat, lng: place.coordinates.lng });
+      }
+    }
+
+    // Remove markers that are not in visiblePlaces
     markersRef.current.forEach((marker, id) => {
-      if (!placesToRender.find((p) => p.id === id)) {
+      if (!visiblePlaces.find((p) => p.id === id)) {
         clusterGroup.removeLayer(marker);
         markersRef.current.delete(id);
       }
     });
+
+    const placesToRender = visiblePlaces;
 
     // Fetch active campaigns for locations to render
     const fetchCampaigns = async () => {
@@ -630,7 +705,7 @@ const LeafletMapSetup = ({
     };
 
     fetchCampaigns();
-  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id]);
+  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id, currentZoom]);
 
   // Keep selected marker visible outside clusters
   const selectedMarkerRef = useRef<L.Marker | null>(null);
