@@ -202,7 +202,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         ">
           <span style="
             font-size: ${isSelected ? '11px' : '10px'};
-            font-weight: ${isSelected ? '600' : '500'};
+            font-weight: 700;
             color: ${textColor};
             line-height: 1.25;
             display: -webkit-box;
