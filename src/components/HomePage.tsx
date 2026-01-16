@@ -726,8 +726,8 @@ const HomePage = memo(() => {
                   if (returnTo) {
                     // If we have returnToState with a folderId, navigate to the folder page
                     if (returnToState?.folderId) {
-                      navigate(`/folder/${returnToState.folderId}`, { 
-                        state: { 
+                      navigate(`/folder/${returnToState.folderId}`, {
+                        state: {
                           from: returnToState.from,
                           scrollY: returnToState.scrollY
                         },
@@ -763,6 +763,10 @@ const HomePage = memo(() => {
                 onSearchDrawerStateChange={setIsSearchDrawerOpen}
                 onSelectedPlaceChange={setMapSelectedPlace}
                 registerCloseSelectedPlace={(fn) => { closeSelectedPlaceRef.current = fn; }}
+                onMapCenterChange={(center) => {
+                  // Persist the *actual* map view position so closing cards never snaps back.
+                  setMapCenter(center);
+                }}
               />
             </Suspense>
           </div>

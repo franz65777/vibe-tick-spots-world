@@ -40,6 +40,7 @@ interface MapSectionProps {
   onSearchDrawerStateChange?: (isOpen: boolean) => void;
   onSelectedPlaceChange?: (place: Place | null) => void;
   registerCloseSelectedPlace?: (closeFn: () => void) => void;
+  onMapCenterChange?: (center: { lat: number; lng: number }) => void;
 }
 
 const MapSection = ({ 
@@ -61,6 +62,7 @@ const MapSection = ({
   onSearchDrawerStateChange,
   onSelectedPlaceChange,
   registerCloseSelectedPlace,
+  onMapCenterChange,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
@@ -243,6 +245,10 @@ const MapSection = ({
   };
 
   const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
+    // Keep parent in sync with the real Leaflet view so a remount won't "snap back".
+    // Note: this does NOT trigger a recenter because LeafletMapSetup only recenters on recenterToken.
+    onMapCenterChange?.(center);
+
     // Update map bounds for dynamic loading - filters stay visible always
     setMapBounds({
       north: bounds.getNorth(),
