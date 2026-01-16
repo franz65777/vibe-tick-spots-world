@@ -102,7 +102,7 @@ const Header = ({
   return (
     <>
       <header className="sticky top-0 z-40">
-        <div className="flex items-center justify-between pl-[10px] pr-2 py-2 gap-2">
+        <div className="flex items-center justify-between pl-[10px] pr-2 py-2 gap-2 bg-black/40 backdrop-blur-md rounded-b-2xl mx-1">
           {/* Left: Filter Dropdown */}
           <div className="flex-shrink-0">
             <MapFilterDropdown />
