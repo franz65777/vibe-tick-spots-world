@@ -19,18 +19,44 @@ interface TripDetailModalProps {
   onClose: () => void;
 }
 
+// Helper to extract the first photo URL from the locations.photos JSONB column
+const extractFirstPhotoUrl = (photos: unknown): string | null => {
+  if (!photos) return null;
+  const arr = Array.isArray(photos) ? photos : null;
+  if (!arr) return null;
+  for (const item of arr) {
+    if (typeof item === 'string' && item.trim()) return item;
+    if (item && typeof item === 'object') {
+      const anyItem = item as any;
+      const url = anyItem.url || anyItem.photo_url || anyItem.src;
+      if (typeof url === 'string' && url.trim()) return url;
+    }
+  }
+  return null;
+};
+
+// Determine which thumbnail to show: 1) business photo  2) Google photo  3) category icon
+const getLocationThumbnail = (location: any): string | null => {
+  if (location.image_url) return location.image_url;
+  const googlePhoto = extractFirstPhotoUrl(location.photos);
+  if (googlePhoto) return googlePhoto;
+  return null;
+};
+
 const LocationCardWithStats = ({ location, notes, onClick }: { location: any; notes?: string; onClick: () => void }) => {
   const { stats } = useLocationStats(location.id, location.google_place_id);
   const { savers } = useLocationSavers(location.id, 3);
+
+  const thumbUrl = getLocationThumbnail(location);
 
   return (
     <button
       onClick={onClick}
       className="w-full flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
     >
-      {location.image_url ? (
+      {thumbUrl ? (
         <img 
-          src={location.image_url} 
+          src={thumbUrl} 
           alt={location.name}
           className="w-16 h-16 rounded-lg object-cover"
         />
@@ -121,7 +147,8 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
                 name,
                 category,
                 city,
-                image_url
+                image_url,
+                photos
               )
             )
           `)
