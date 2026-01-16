@@ -807,7 +807,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           <div className="relative flex items-center h-12 pointer-events-none">
             {/* Left area - pin + city name */}
             <div className="h-full pl-4 flex items-center flex-1">
-              <span className="text-lg leading-none">📌</span>
+              <span className="text-lg leading-none">🔎</span>
               <span className="ml-3 text-base font-medium text-white dark:text-gray-900 leading-none">
                 {currentCity || t('searchCities', { ns: 'home' })}
               </span>
