@@ -87,6 +87,7 @@ const LeafletMapSetup = ({
   const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userActiveShare, setUserActiveShare] = useState<any>(null);
+  const [campaignLocationIds, setCampaignLocationIds] = useState<Set<string>>(new Set());
   const [selectedSharersLocation, setSelectedSharersLocation] = useState<{ 
     name: string; 
     sharers: Array<{ id: string; username: string; avatar_url: string | null }> 
@@ -127,6 +128,30 @@ const LeafletMapSetup = ({
       onSharingStateChangeRef.current?.(false);
     }
   }, [user, shares]);
+
+  // Pre-fetch campaign locations for prioritization in sorting
+  useEffect(() => {
+    const fetchCampaignLocations = async () => {
+      const locationIds = places.map(p => p.id).filter(Boolean);
+      if (locationIds.length === 0) return;
+      
+      try {
+        const { data: campaigns } = await supabase
+          .from('marketing_campaigns')
+          .select('location_id')
+          .in('location_id', locationIds)
+          .eq('is_active', true)
+          .gt('end_date', new Date().toISOString());
+        
+        const ids = new Set(campaigns?.map(c => c.location_id) || []);
+        setCampaignLocationIds(ids);
+      } catch (error) {
+        console.warn('Failed to fetch campaign locations:', error);
+      }
+    };
+    
+    fetchCampaignLocations();
+  }, [places]);
 
   // Sharing controls always at same height as expand button
   const baseControlPosition = fullScreen 
@@ -550,8 +575,15 @@ const LeafletMapSetup = ({
       ? places.filter(p => p.id === selectedPlace.id)
       : [...places];
 
-    // Sort by popularity (most popular first)
-    placesToConsider.sort((a, b) => getPopularityScore(b) - getPopularityScore(a));
+    // Sort by priority: 1) campaign locations, 2) popularity score
+    placesToConsider.sort((a, b) => {
+      const aHasCampaign = campaignLocationIds.has(a.id) ? 1 : 0;
+      const bHasCampaign = campaignLocationIds.has(b.id) ? 1 : 0;
+      // Campaign locations first
+      if (bHasCampaign !== aHasCampaign) return bHasCampaign - aHasCampaign;
+      // Then by popularity
+      return getPopularityScore(b) - getPopularityScore(a);
+    });
 
     // Get visible bounds
     const bounds = map.getBounds();
@@ -730,7 +762,7 @@ const LeafletMapSetup = ({
     };
 
     fetchCampaigns();
-  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id, currentZoom]);
+  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id, currentZoom, campaignLocationIds]);
 
   // Keep selected marker visible outside clusters
   const selectedMarkerRef = useRef<L.Marker | null>(null);
