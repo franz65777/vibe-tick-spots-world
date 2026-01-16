@@ -938,28 +938,27 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
           </div>
 
-          {/* Photo Gallery - Scroll-based parallax hide when expanded */}
+          {/* Photo Gallery - Scroll-based scale/fade when expanded */}
           <div 
             ref={photoSectionRef}
             className={cn(
-              "px-4 pt-2 overflow-hidden transition-[max-height,opacity,margin] duration-150",
+              "px-4 pt-2 origin-top",
               !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
             )}
             style={isExpanded ? {
-              // 144px is the "fully visible" height for the small photo row
-              maxHeight: `${Math.max(0, 144 * (1 - photoScrollProgress))}px`,
-              opacity: Math.max(0, 1 - photoScrollProgress * 1.35),
+              // Scale down and fade out as user scrolls
+              transform: `scaleY(${Math.max(0, 1 - photoScrollProgress)})`,
+              opacity: Math.max(0, 1 - photoScrollProgress),
+              height: photoScrollProgress >= 1 ? 0 : 'auto',
               marginBottom: `${Math.max(0, 8 * (1 - photoScrollProgress))}px`,
-              pointerEvents: photoScrollProgress > 0.98 ? 'none' : 'auto',
+              pointerEvents: photoScrollProgress > 0.9 ? 'none' : 'auto',
+              transformOrigin: 'top center',
             } : undefined}
           >
             {photosLoading ? (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className={cn(
-                    "bg-muted rounded-xl animate-pulse flex-shrink-0",
-                    isExpanded ? "w-28 h-32" : "w-32 h-36"
-                  )} />
+                  <div key={i} className="w-24 h-20 bg-muted rounded-xl animate-pulse flex-shrink-0" />
                 ))}
               </div>
             ) : locationPhotos.length > 0 ? (
@@ -969,7 +968,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     key={index}
                     className={cn(
                       "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-28 h-32" : "w-32 h-36"
+                      isExpanded ? "w-24 h-20" : "w-32 h-36"
                     )}
                   >
                     <img
@@ -997,7 +996,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     }}
                     className={cn(
                       "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-28 h-32" : "w-32 h-36"
+                      isExpanded ? "w-24 h-20" : "w-32 h-36"
                     )}
                   >
                     <img
@@ -1012,11 +1011,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             ) : (
               <div className={cn(
                 "flex items-center justify-center bg-muted/50 rounded-xl",
-                isExpanded ? "h-24" : "h-24"
+                isExpanded ? "h-20" : "h-24"
               )}>
                 <div className="text-center">
-                  <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
+                  <Camera className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">
                     {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
                   </p>
                 </div>
