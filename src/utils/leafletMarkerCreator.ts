@@ -117,71 +117,121 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     `;
   }
   
-  // Campaign firework sparkle effect - much more visible
+  // Campaign firework sparkle effect - surrounding the circle, visible when zoomed out
+  const sparkleSize = isSelected ? 10 : 8;
+  const glowSize = isSelected ? 8 : 6;
+  const containerSize = size + 24; // Extend beyond the pin
+  const offset = (containerSize - size) / 2;
+  
   const campaignEffect = hasCampaign ? `
     <div class="campaign-fireworks" style="
       position: absolute;
-      top: -8px;
-      right: -8px;
-      width: 24px;
-      height: 24px;
+      top: -${offset}px;
+      left: -${offset}px;
+      width: ${containerSize}px;
+      height: ${containerSize}px;
       pointer-events: none;
-      z-index: 30;
+      z-index: -1;
     ">
-      <div class="sparkle sparkle-1" style="
+      <!-- Top sparkle -->
+      <div class="sparkle" style="
         position: absolute;
-        top: 4px;
-        left: 10px;
-        width: 6px;
-        height: 6px;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: ${sparkleSize}px;
+        height: ${sparkleSize}px;
         border-radius: 50%;
         background: linear-gradient(135deg, #FFD700, #FFA500);
-        box-shadow: 0 0 6px 2px rgba(255,165,0,0.6);
-        animation: sparkle-burst 1.5s ease-in-out infinite;
+        box-shadow: 0 0 ${glowSize}px 3px rgba(255,165,0,0.7);
+        animation: sparkle-orbit 2s ease-in-out infinite;
       "></div>
-      <div class="sparkle sparkle-2" style="
+      <!-- Top-right sparkle -->
+      <div class="sparkle" style="
         position: absolute;
-        top: 10px;
-        right: 2px;
-        width: 5px;
-        height: 5px;
+        top: 15%;
+        right: 10%;
+        width: ${sparkleSize - 1}px;
+        height: ${sparkleSize - 1}px;
         border-radius: 50%;
         background: linear-gradient(135deg, #FF4757, #FF6B81);
-        box-shadow: 0 0 4px 1px rgba(255,71,87,0.5);
-        animation: sparkle-burst 1.5s ease-in-out 0.2s infinite;
+        box-shadow: 0 0 ${glowSize}px 2px rgba(255,71,87,0.6);
+        animation: sparkle-orbit 2s ease-in-out 0.25s infinite;
       "></div>
-      <div class="sparkle sparkle-3" style="
+      <!-- Right sparkle -->
+      <div class="sparkle" style="
         position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 4px;
-        height: 4px;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        width: ${sparkleSize}px;
+        height: ${sparkleSize}px;
         border-radius: 50%;
         background: linear-gradient(135deg, #2ED573, #7BED9F);
-        box-shadow: 0 0 4px 1px rgba(46,213,115,0.5);
-        animation: sparkle-burst 1.5s ease-in-out 0.4s infinite;
+        box-shadow: 0 0 ${glowSize}px 3px rgba(46,213,115,0.7);
+        animation: sparkle-orbit 2s ease-in-out 0.5s infinite;
       "></div>
-      <div class="sparkle sparkle-4" style="
+      <!-- Bottom-right sparkle -->
+      <div class="sparkle" style="
         position: absolute;
-        top: 14px;
-        left: 4px;
-        width: 4px;
-        height: 4px;
+        bottom: 15%;
+        right: 10%;
+        width: ${sparkleSize - 2}px;
+        height: ${sparkleSize - 2}px;
         border-radius: 50%;
         background: linear-gradient(135deg, #1E90FF, #70A1FF);
-        box-shadow: 0 0 4px 1px rgba(30,144,255,0.5);
-        animation: sparkle-burst 1.5s ease-in-out 0.6s infinite;
+        box-shadow: 0 0 ${glowSize}px 2px rgba(30,144,255,0.6);
+        animation: sparkle-orbit 2s ease-in-out 0.75s infinite;
       "></div>
-      <div class="sparkle sparkle-5" style="
+      <!-- Bottom sparkle -->
+      <div class="sparkle" style="
         position: absolute;
-        top: 8px;
-        left: 0;
-        width: 3px;
-        height: 3px;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: ${sparkleSize - 1}px;
+        height: ${sparkleSize - 1}px;
         border-radius: 50%;
         background: linear-gradient(135deg, #FF6B81, #FFA502);
-        box-shadow: 0 0 3px 1px rgba(255,107,129,0.4);
-        animation: sparkle-burst 1.5s ease-in-out 0.8s infinite;
+        box-shadow: 0 0 ${glowSize}px 2px rgba(255,107,129,0.6);
+        animation: sparkle-orbit 2s ease-in-out 1s infinite;
+      "></div>
+      <!-- Bottom-left sparkle -->
+      <div class="sparkle" style="
+        position: absolute;
+        bottom: 15%;
+        left: 10%;
+        width: ${sparkleSize - 2}px;
+        height: ${sparkleSize - 2}px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #A855F7, #C084FC);
+        box-shadow: 0 0 ${glowSize}px 2px rgba(168,85,247,0.6);
+        animation: sparkle-orbit 2s ease-in-out 1.25s infinite;
+      "></div>
+      <!-- Left sparkle -->
+      <div class="sparkle" style="
+        position: absolute;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+        width: ${sparkleSize}px;
+        height: ${sparkleSize}px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #F472B6, #EC4899);
+        box-shadow: 0 0 ${glowSize}px 3px rgba(244,114,182,0.7);
+        animation: sparkle-orbit 2s ease-in-out 1.5s infinite;
+      "></div>
+      <!-- Top-left sparkle -->
+      <div class="sparkle" style="
+        position: absolute;
+        top: 15%;
+        left: 10%;
+        width: ${sparkleSize - 1}px;
+        height: ${sparkleSize - 1}px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #34D399, #10B981);
+        box-shadow: 0 0 ${glowSize}px 2px rgba(52,211,153,0.6);
+        animation: sparkle-orbit 2s ease-in-out 1.75s infinite;
       "></div>
     </div>
   ` : '';
@@ -296,21 +346,13 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         }
       }
       
-      @keyframes sparkle-burst {
+      @keyframes sparkle-orbit {
         0%, 100% {
-          transform: scale(0.8) translateY(0);
-          opacity: 0.6;
-        }
-        25% {
-          transform: scale(1.3) translateY(-3px);
-          opacity: 1;
+          transform: scale(1);
+          opacity: 0.7;
         }
         50% {
-          transform: scale(1) translateY(-1px);
-          opacity: 0.9;
-        }
-        75% {
-          transform: scale(1.2) translateY(-2px);
+          transform: scale(1.4);
           opacity: 1;
         }
       }
