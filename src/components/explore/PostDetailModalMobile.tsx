@@ -399,7 +399,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   return (
     <>
-      <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
+      <div ref={scrollContainerRef} className="fixed inset-0 z-[20000] bg-background overflow-y-auto scrollbar-hide">
         {/* Header with iOS safe area */}
         <div 
           className="bg-background sticky top-0 z-50 flex items-center px-4 py-3"
