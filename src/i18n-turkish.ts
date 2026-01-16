@@ -1,6 +1,9 @@
 export const turkishTranslations = {
   tr: {
     common: {
+      translate: 'Çevir',
+      showOriginal: 'Orijinali göster',
+      translating: 'Çevriliyor...',
       clearAll: 'Tümünü Temizle',
       clearHistory: 'Geçmişi Temizle',
       thisCity: 'bu şehir',
