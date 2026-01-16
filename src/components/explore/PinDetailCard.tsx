@@ -996,7 +996,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     <img
                       src={photo}
                       alt={`${place.name} photo ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-xl"
                       loading="lazy"
                     />
                   </div>

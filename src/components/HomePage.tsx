@@ -506,6 +506,8 @@ const HomePage = memo(() => {
   };
 
   const handleCloseSelectedPlace = () => {
+    // Only clear selectedPlace, don't recenter the map
+    // The map will stay at its current position
     setSelectedPlace(null);
   };
 
