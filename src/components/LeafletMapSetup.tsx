@@ -342,14 +342,17 @@ const LeafletMapSetup = ({
     tileLayerRef.current = tile;
   }, [isDarkMode]);
 
-  // Update map center when it changes (for selected place from cards)
+  // Update map center ONLY when explicitly requested (recenterToken changes).
+  // This prevents "snap back" to the last stored mapCenter when UI state changes (e.g., closing PinDetailCard)
+  // while the user has manually panned the map.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || preventCenterUpdate) return;
-    
+    if (typeof recenterToken !== 'number') return;
+
     console.log('🗺️ Centering map to:', mapCenter, 'token:', recenterToken);
     map.setView([mapCenter.lat, mapCenter.lng], 15, { animate: true });
-  }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate, recenterToken]);
+  }, [recenterToken, preventCenterUpdate]);
 
   // Center map when a place is selected from navigation (e.g., from feed)
   useEffect(() => {
