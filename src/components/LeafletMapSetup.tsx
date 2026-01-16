@@ -658,19 +658,26 @@ const LeafletMapSetup = ({
       try {
         const { data: campaigns } = await supabase
           .from('marketing_campaigns')
-          .select('location_id')
+          .select('location_id, campaign_type')
           .in('location_id', locationIds)
           .eq('is_active', true)
           .gt('end_date', new Date().toISOString());
 
-        const campaignLocationIds = new Set(campaigns?.map(c => c.location_id) || []);
+        // Create a map of location_id -> campaign_type
+        const campaignMap = new Map<string, string>();
+        campaigns?.forEach(c => {
+          if (c.location_id) {
+            campaignMap.set(c.location_id, c.campaign_type);
+          }
+        });
 
         // Add / update markers
         const usedFallbackShareIds = new Set<string>();
         placesToRender.forEach((place) => {
           if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
-          const hasCampaign = campaignLocationIds.has(place.id);
+          const hasCampaign = campaignMap.has(place.id);
+          const campaignType = campaignMap.get(place.id);
 
           // Find all users sharing location at this place (only active shares, excluding current user)
           // Each share should only appear on ONE pin (exact match preferred, then closest)
@@ -715,6 +722,7 @@ const LeafletMapSetup = ({
             friendAvatars: [],
             isDarkMode,
             hasCampaign,
+            campaignType,
             sharedByUsers: sharedByUsers.length > 0 ? sharedByUsers : undefined,
             isSelected,
           });
