@@ -380,31 +380,6 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Controls - List View Toggle - Hide when drawer is open */}
-        {!isListViewOpen && !isDrawerOpen && (
-        <div 
-          className={cn(
-            "right-3 z-[1001] flex flex-row gap-2 transition-all duration-300",
-            isExpanded ? 'fixed' : 'absolute',
-            filtersVisible && !isFriendsDropdownOpen && !isFilterExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
-          )} 
-          style={{
-            bottom: isExpanded 
-              ? 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' 
-              : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))'
-          }}>
-          {/* List View Toggle */}
-          <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
-            <SheetTrigger asChild>
-              <button
-                className="rounded-full bg-background/20 backdrop-blur-md border border-border/5 shadow-lg hover:bg-background/30 hover:scale-105 w-9 h-11 transition-all flex items-center justify-center"
-              >
-                <List className="w-4 h-4 text-foreground" />
-              </button>
-            </SheetTrigger>
-          </Sheet>
-        </div>
-        )}
 
         {/* Location List Sheet - Always rendered */}
         <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
