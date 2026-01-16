@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye } from 'lucide-react';
+import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye, RefreshCw, CheckCircle2, Clock } from 'lucide-react';
 import { getSeedingStats, runLocationSeeding } from '@/services/lazyPhotoService';
 import { toast } from 'sonner';
 
@@ -16,29 +16,98 @@ interface SeedingStats {
   cityCounts: Record<string, number>;
 }
 
+type SeedingStatus = 'idle' | 'running' | 'completed';
+
+const SEEDING_STORAGE_KEY = 'seeding_status';
+const SEEDING_DURATION_MS = 15 * 60 * 1000; // 15 minutes estimated
+
 export const SeedingDashboard = () => {
   const [stats, setStats] = useState<SeedingStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [isDryRun, setIsDryRun] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [seedingStatus, setSeedingStatus] = useState<SeedingStatus>('idle');
+  const [seedingProgress, setSeedingProgress] = useState(0);
+  const [seedingStartTime, setSeedingStartTime] = useState<number | null>(null);
+  const [estimatedTimeLeft, setEstimatedTimeLeft] = useState<string>('');
+  const initialLocationCount = useRef<number>(0);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchStats = async () => {
-    setLoading(true);
     const data = await getSeedingStats();
     setStats(data);
-    setLoading(false);
+    return data;
   };
 
+  // Check for existing seeding session on mount
   useEffect(() => {
-    fetchStats();
+    const stored = localStorage.getItem(SEEDING_STORAGE_KEY);
+    if (stored) {
+      const { startTime, initialCount } = JSON.parse(stored);
+      const elapsed = Date.now() - startTime;
+      
+      if (elapsed < SEEDING_DURATION_MS) {
+        setSeedingStartTime(startTime);
+        setSeedingStatus('running');
+        initialLocationCount.current = initialCount;
+      } else {
+        localStorage.removeItem(SEEDING_STORAGE_KEY);
+      }
+    }
   }, []);
 
-  const handleRunSeed = async (dryRun: boolean) => {
-    if (dryRun) {
-      setIsDryRun(true);
-    } else {
-      setIsSeeding(true);
+  // Initial load
+  useEffect(() => {
+    const loadInitial = async () => {
+      setLoading(true);
+      await fetchStats();
+      setLoading(false);
+    };
+    loadInitial();
+  }, []);
+
+  // Polling during seeding
+  useEffect(() => {
+    if (seedingStatus === 'running') {
+      pollIntervalRef.current = setInterval(async () => {
+        const newStats = await fetchStats();
+        
+        // Calculate progress based on new locations added
+        if (initialLocationCount.current > 0 && newStats) {
+          const newLocations = newStats.systemSeeded - initialLocationCount.current;
+          const targetLocations = 1500;
+          const progress = Math.min((newLocations / targetLocations) * 100, 100);
+          setSeedingProgress(progress);
+          
+          // Check if seeding seems complete (progress stalled or reached target)
+          if (progress >= 95 || (Date.now() - (seedingStartTime || 0)) > SEEDING_DURATION_MS) {
+            setSeedingStatus('completed');
+            setSeedingProgress(100);
+            localStorage.removeItem(SEEDING_STORAGE_KEY);
+            toast.success('Seeding completato!', {
+              description: `${newLocations} nuove location aggiunte`,
+            });
+          }
+        }
+        
+        // Update time estimate
+        if (seedingStartTime) {
+          const elapsed = Date.now() - seedingStartTime;
+          const remaining = Math.max(SEEDING_DURATION_MS - elapsed, 0);
+          const minutes = Math.ceil(remaining / 60000);
+          setEstimatedTimeLeft(minutes > 0 ? `~${minutes} min rimanenti` : 'Quasi fatto...');
+        }
+      }, 10000); // Poll every 10 seconds
+
+      return () => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+        }
+      };
     }
+  }, [seedingStatus, seedingStartTime]);
+
+  const handleRunSeed = async (dryRun: boolean) => {
+    setIsStarting(true);
 
     try {
       const result = await runLocationSeeding({
@@ -48,12 +117,25 @@ export const SeedingDashboard = () => {
 
       if (result.success) {
         if (dryRun) {
-          toast.success(`Test avviato in background. Controlla i log per il progresso.`, {
-            duration: 5000,
+          toast.success('Test avviato in background', {
+            description: 'Controlla i log per il progresso.',
           });
         } else {
-          toast.success(`Seeding avviato in background! Tempo stimato: ${result.estimatedTime || '~15 minuti'}. Aggiorna le stats tra qualche minuto.`, {
-            duration: 8000,
+          // Save seeding state
+          const startTime = Date.now();
+          initialLocationCount.current = stats?.systemSeeded || 0;
+          localStorage.setItem(SEEDING_STORAGE_KEY, JSON.stringify({
+            startTime,
+            initialCount: initialLocationCount.current,
+          }));
+          
+          setSeedingStartTime(startTime);
+          setSeedingStatus('running');
+          setSeedingProgress(0);
+          setEstimatedTimeLeft('~15 min rimanenti');
+          
+          toast.success('Seeding avviato!', {
+            description: 'La barra di progresso si aggiornerà automaticamente.',
           });
         }
       } else {
@@ -62,15 +144,17 @@ export const SeedingDashboard = () => {
     } catch (error) {
       toast.error('Errore durante l\'avvio del seeding');
     } finally {
-      // Reset after a short delay since it runs in background
-      setTimeout(() => {
-        setIsSeeding(false);
-        setIsDryRun(false);
-      }, 2000);
+      setIsStarting(false);
     }
   };
 
-  if (loading) {
+  const handleRefresh = async () => {
+    setLoading(true);
+    await fetchStats();
+    setLoading(false);
+  };
+
+  if (loading && !stats) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
@@ -86,120 +170,162 @@ export const SeedingDashboard = () => {
   const topCities = stats ? 
     Object.entries(stats.cityCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 8) : [];
+      .slice(0, 6) : [];
 
   return (
-    <Card>
-      <CardHeader className="border-b-0">
-        <CardTitle className="flex items-center gap-2">
-          <Globe className="w-5 h-5" />
-          Location Seeding Dashboard
-        </CardTitle>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Globe className="w-5 h-5 text-primary" />
+            Location Seeding
+          </CardTitle>
+          <Button
+            onClick={handleRefresh}
+            disabled={loading}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-muted/50 rounded-xl p-4 text-center">
-            <MapPin className="w-5 h-5 mx-auto mb-2 text-primary" />
-            <div className="text-2xl font-bold">{stats?.totalLocations.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Totale Location</div>
+      
+      <CardContent className="space-y-5">
+        {/* Seeding Status Banner */}
+        {seedingStatus === 'running' && (
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Seeding in corso...</p>
+                <p className="text-xs text-muted-foreground">{estimatedTimeLeft}</p>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {Math.round(seedingProgress)}%
+              </Badge>
+            </div>
+            <Progress value={seedingProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              Aggiunta automatica location da OpenStreetMap. Non chiudere la pagina.
+            </p>
           </div>
-          <div className="bg-muted/50 rounded-xl p-4 text-center">
-            <Sparkles className="w-5 h-5 mx-auto mb-2 text-amber-500" />
-            <div className="text-2xl font-bold">{stats?.systemSeeded.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Auto-Generate</div>
-          </div>
-          <div className="bg-muted/50 rounded-xl p-4 text-center">
-            <Users className="w-5 h-5 mx-auto mb-2 text-green-500" />
-            <div className="text-2xl font-bold">{stats?.userCreated.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Create da Utenti</div>
-          </div>
-          <div className="bg-muted/50 rounded-xl p-4 text-center">
-            <Eye className="w-5 h-5 mx-auto mb-2 text-blue-500" />
-            <div className="text-2xl font-bold">{stats?.needsEnrichment.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Da Arricchire</div>
-          </div>
-        </div>
-
-        {/* Enrichment Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Progresso Arricchimento (Foto Google)</span>
-            <span className="font-medium">{enrichmentPercent}%</span>
-          </div>
-          <Progress value={enrichmentPercent} className="h-2" />
-          <p className="text-xs text-muted-foreground">
-            {stats?.enrichedLocations.toLocaleString()} / {stats?.totalLocations.toLocaleString()} location con foto
-          </p>
-        </div>
-
-        {/* Top Cities */}
-        {topCities.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Città con più location seeded</h4>
-            <div className="flex flex-wrap gap-2">
-              {topCities.map(([city, count]) => (
-                <Badge key={city} variant="secondary" className="text-xs">
-                  {city}: {count}
-                </Badge>
-              ))}
+        )}
+        
+        {seedingStatus === 'completed' && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <div className="flex-1">
+                <p className="font-medium text-sm text-green-700 dark:text-green-400">Seeding completato!</p>
+                <p className="text-xs text-muted-foreground">Le nuove location sono state aggiunte con successo.</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="text-xs"
+                onClick={() => setSeedingStatus('idle')}
+              >
+                Chiudi
+              </Button>
             </div>
           </div>
         )}
 
+        {/* Stats Grid - Compact 2x2 */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-muted/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <MapPin className="w-4 h-4 text-primary" />
+              <span className="text-xs text-muted-foreground">Totale</span>
+            </div>
+            <div className="text-xl font-bold">{stats?.totalLocations.toLocaleString()}</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span className="text-xs text-muted-foreground">Auto-Seed</span>
+            </div>
+            <div className="text-xl font-bold">{stats?.systemSeeded.toLocaleString()}</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="w-4 h-4 text-green-500" />
+              <span className="text-xs text-muted-foreground">Da Utenti</span>
+            </div>
+            <div className="text-xl font-bold">{stats?.userCreated.toLocaleString()}</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Eye className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-muted-foreground">Da Arricchire</span>
+            </div>
+            <div className="text-xl font-bold">{stats?.needsEnrichment.toLocaleString()}</div>
+          </div>
+        </div>
+
+        {/* Enrichment Progress - Compact */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">Arricchimento Foto</span>
+            <span className="text-xs font-medium">{enrichmentPercent}%</span>
+          </div>
+          <Progress value={enrichmentPercent} className="h-1.5" />
+        </div>
+
+        {/* Top Cities - Compact */}
+        {topCities.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {topCities.map(([city, count]) => (
+              <Badge key={city} variant="outline" className="text-xs font-normal">
+                {city} ({count})
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {/* Actions */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button
-            onClick={() => handleRunSeed(true)}
-            disabled={isDryRun || isSeeding}
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-          >
-            {isDryRun ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analisi...
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4 mr-2" />
-                Dry Run (Test)
-              </>
-            )}
-          </Button>
+        <div className="flex gap-2 pt-1">
           <Button
             onClick={() => handleRunSeed(false)}
-            disabled={isSeeding || isDryRun}
+            disabled={isStarting || seedingStatus === 'running'}
             size="sm"
-            className="rounded-full"
+            className="flex-1 rounded-full"
           >
-            {isSeeding ? (
+            {isStarting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Seeding in corso...
+                Avvio...
+              </>
+            ) : seedingStatus === 'running' ? (
+              <>
+                <Clock className="w-4 h-4 mr-2" />
+                In corso...
               </>
             ) : (
               <>
                 <Play className="w-4 h-4 mr-2" />
-                Esegui Seeding (~1500 location)
+                Avvia Seeding
               </>
             )}
           </Button>
           <Button
-            onClick={fetchStats}
-            disabled={loading}
-            variant="ghost"
+            onClick={() => handleRunSeed(true)}
+            disabled={isStarting || seedingStatus === 'running'}
+            variant="outline"
             size="sm"
             className="rounded-full"
           >
-            Aggiorna Stats
+            <Eye className="w-4 h-4" />
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Il seeding popola automaticamente ~1500 location in 35+ città usando OpenStreetMap (gratuito).
-          Le foto vengono caricate da Google solo quando un utente visualizza la location (lazy-loading).
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Popola ~1500 location in 35+ città con OpenStreetMap (gratuito). Le foto Google vengono caricate solo quando un utente visualizza la location.
         </p>
       </CardContent>
     </Card>
