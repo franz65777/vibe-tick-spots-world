@@ -942,13 +942,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           <div 
             ref={photoSectionRef}
             className={cn(
-              "px-4 pt-2 overflow-hidden transition-all duration-200",
+              "px-4 pt-2 overflow-hidden transition-[max-height,opacity,margin] duration-150",
               !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
             )}
             style={isExpanded ? {
+              // 144px is the "fully visible" height for the small photo row
               maxHeight: `${Math.max(0, 144 * (1 - photoScrollProgress))}px`,
-              opacity: Math.max(0, 1 - photoScrollProgress * 1.5),
-              marginBottom: photoScrollProgress > 0.9 ? 0 : 8,
+              opacity: Math.max(0, 1 - photoScrollProgress * 1.35),
+              marginBottom: `${Math.max(0, 8 * (1 - photoScrollProgress))}px`,
+              pointerEvents: photoScrollProgress > 0.98 ? 'none' : 'auto',
             } : undefined}
           >
             {photosLoading ? (
@@ -1124,7 +1126,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 {/* Tab Content */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
+                  className="flex-1 overflow-y-auto"
+                  style={{
+                    // As photos collapse, give that height back to the scroll area.
+                    // Base offset (with photos visible) ~280px; photos contribute ~144px.
+                    maxHeight: `calc(90vh - ${280 - 144 * photoScrollProgress}px)`,
+                  }}
                   onScroll={(e) => {
                     const currentScrollY = e.currentTarget.scrollTop;
                     
