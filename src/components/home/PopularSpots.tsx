@@ -21,7 +21,10 @@ interface PopularSpot {
   address?: string;
   google_place_id?: string;
   savesCount: number;
-  coverImage?: string;
+  // 1) Business photo (from our DB)
+  image_url?: string | null;
+  // 2) Google photo (stored on the location record)
+  google_photo_url?: string | null;
   coordinates: {
     lat: number;
     lng: number;
@@ -94,6 +97,36 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     { value: 'new', label: getFilterLabel('new'), icon: newIcon },
   ];
 
+  const getSpotThumbUrl = (spot: PopularSpot): string | null => {
+    // 1) Business photo
+    if (spot.image_url) return spot.image_url;
+    // 2) Google photo
+    if (spot.google_photo_url) return spot.google_photo_url;
+    return null;
+  };
+
+  const extractFirstPhotoUrl = (photos: unknown): string | null => {
+    if (!photos) return null;
+
+    // Common shapes we might store:
+    // - string[] of URLs
+    // - { url: string }[]
+    // - { photo_url: string }[]
+    const arr = Array.isArray(photos) ? photos : null;
+    if (!arr) return null;
+
+    for (const item of arr) {
+      if (typeof item === 'string' && item.trim()) return item;
+      if (item && typeof item === 'object') {
+        const anyItem = item as any;
+        const url = anyItem.url || anyItem.photo_url || anyItem.src;
+        if (typeof url === 'string' && url.trim()) return url;
+      }
+    }
+
+    return null;
+  };
+
   const fetchPopularSpots = async () => {
     if (!currentCity || currentCity === 'Unknown City') {
       setPopularSpots([]);
@@ -140,7 +173,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
         const { data: currentCityLocations } = await supabase
           .from('locations')
-          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude, image_url, photos')
           .in('id', campaignLocationIds)
           .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`);
 
@@ -154,6 +187,8 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             address: location.address,
             google_place_id: location.google_place_id,
             savesCount: 0,
+            image_url: (location as any).image_url ?? null,
+            google_photo_url: extractFirstPhotoUrl((location as any).photos),
             coordinates: {
               lat: parseFloat(location.latitude?.toString() || '0'),
               lng: parseFloat(location.longitude?.toString() || '0'),
@@ -212,7 +247,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         // Trending filter: include both locations table AND saved_places (Google)
         const locationsResult = await supabase
           .from('locations')
-          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude, image_url, photos')
           .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
           .limit(200);
 
@@ -268,6 +303,8 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 address: location.address,
                 google_place_id: location.google_place_id,
                 savesCount,
+                image_url: (location as any).image_url ?? null,
+                google_photo_url: extractFirstPhotoUrl((location as any).photos),
                 coordinates: {
                   lat: parseFloat(location.latitude?.toString() || '0'),
                   lng: parseFloat(location.longitude?.toString() || '0'),
@@ -295,6 +332,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               address: undefined,
               google_place_id: placeId,
               savesCount,
+              // We don't currently store photos for pure Google-only saves here
+              image_url: null,
+              google_photo_url: null,
               coordinates: { lat, lng },
             });
           }
@@ -394,27 +434,39 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                     </div>
                   </button>
                 ))
-              : popularSpots.map((spot) => (
-                  <button
-                    key={spot.id}
-                    type="button"
-                    onClick={() => handleSpotClick(spot)}
-                    className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
-                    aria-label={`Apri ${spot.name}`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <CategoryIcon category={spot.category} className="w-4 h-4" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
-                      <div className="text-[9px] text-muted-foreground">
-                        {typeof spot.savesCount === 'number' && spot.savesCount > 0
-                          ? t('savesCount', { ns: 'common', count: spot.savesCount })
-                          : ''}
+              : popularSpots.map((spot) => {
+                  const thumbUrl = getSpotThumbUrl(spot);
+                  return (
+                    <button
+                      key={spot.id}
+                      type="button"
+                      onClick={() => handleSpotClick(spot)}
+                      className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
+                      aria-label={`Apri ${spot.name}`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {thumbUrl ? (
+                          <img
+                            src={thumbUrl}
+                            alt={spot.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <CategoryIcon category={spot.category} className="w-4 h-4" />
+                        )}
                       </div>
-                    </div>
-                  </button>
-                ))}
+                      <div className="text-left">
+                        <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
+                        <div className="text-[9px] text-muted-foreground">
+                          {typeof spot.savesCount === 'number' && spot.savesCount > 0
+                            ? t('savesCount', { ns: 'common', count: spot.savesCount })
+                            : ''}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                }))
           </div>
         </div>
       )}
