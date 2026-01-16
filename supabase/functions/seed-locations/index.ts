@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -84,11 +83,19 @@ interface OverpassElement {
   };
 }
 
-async function queryOverpass(city: typeof TARGET_CITIES[0], category: typeof CATEGORIES[0]): Promise<OverpassElement[]> {
+// Utility to sleep
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Query Overpass with retry logic
+async function queryOverpassWithRetry(
+  city: typeof TARGET_CITIES[0], 
+  category: typeof CATEGORIES[0],
+  maxRetries = 3
+): Promise<OverpassElement[]> {
   const radiusMeters = 5000; // 5km radius from city center
   
   const query = `
-    [out:json][timeout:30];
+    [out:json][timeout:60];
     (
       node["amenity"="${category.amenity}"]["name"](around:${radiusMeters},${city.lat},${city.lng});
       way["amenity"="${category.amenity}"]["name"](around:${radiusMeters},${city.lat},${city.lng});
@@ -96,24 +103,47 @@ async function queryOverpass(city: typeof TARGET_CITIES[0], category: typeof CAT
     out center ${category.limit};
   `;
 
-  try {
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-    });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      console.error(`Overpass API error for ${city.name}/${category.name}: ${response.status}`);
-      return [];
+      if (response.status === 429 || response.status === 504 || response.status === 503) {
+        // Rate limited or server overloaded - wait and retry
+        const waitTime = Math.min(5000 * attempt, 15000);
+        console.log(`Rate limited for ${city.name}/${category.name}, waiting ${waitTime}ms (attempt ${attempt})`);
+        await sleep(waitTime);
+        continue;
+      }
+
+      if (!response.ok) {
+        console.error(`Overpass API error for ${city.name}/${category.name}: ${response.status}`);
+        return [];
+      }
+
+      const data = await response.json();
+      return data.elements || [];
+    } catch (error) {
+      if (attempt < maxRetries) {
+        const waitTime = Math.min(3000 * attempt, 10000);
+        console.log(`Error for ${city.name}/${category.name}, retrying in ${waitTime}ms (attempt ${attempt})`);
+        await sleep(waitTime);
+      } else {
+        console.error(`Failed after ${maxRetries} attempts for ${city.name}/${category.name}:`, error);
+        return [];
+      }
     }
-
-    const data = await response.json();
-    return data.elements || [];
-  } catch (error) {
-    console.error(`Failed to query Overpass for ${city.name}/${category.name}:`, error);
-    return [];
   }
+  return [];
 }
 
 function buildAddress(tags: OverpassElement['tags']): string | null {
@@ -137,7 +167,134 @@ function buildAddress(tags: OverpassElement['tags']): string | null {
   return parts.length > 0 ? parts.join(', ') : null;
 }
 
-serve(async (req) => {
+// Background seeding task
+async function performSeeding(
+  targetCities: typeof TARGET_CITIES,
+  maxLocationsTotal: number,
+  dryRun: boolean,
+  supabaseUrl: string,
+  supabaseServiceKey: string
+) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  console.log(`Background seeding started: ${targetCities.length} cities, max ${maxLocationsTotal} locations, dryRun: ${dryRun}`);
+
+  const stats = {
+    citiesProcessed: 0,
+    locationsFound: 0,
+    locationsInserted: 0,
+    locationsSkipped: 0,
+    errors: [] as string[],
+  };
+
+  const locationsPerCity = Math.ceil(maxLocationsTotal / targetCities.length);
+  const locationsToInsert: Array<{
+    name: string;
+    category: string;
+    latitude: number;
+    longitude: number;
+    city: string;
+    country: string;
+    address: string | null;
+    osm_id: string;
+    is_system_seeded: boolean;
+    needs_enrichment: boolean;
+    created_at: string;
+  }> = [];
+
+  // Process each city sequentially with delays
+  for (const city of targetCities) {
+    if (locationsToInsert.length >= maxLocationsTotal) break;
+
+    console.log(`Processing ${city.name}, ${city.country}...`);
+    let cityLocations = 0;
+
+    for (const category of CATEGORIES) {
+      if (cityLocations >= locationsPerCity) break;
+
+      // Wait 3 seconds between Overpass queries to avoid rate limits
+      await sleep(3000);
+
+      const elements = await queryOverpassWithRetry(city, category);
+      console.log(`  ${category.name}: found ${elements.length} POIs`);
+
+      for (const element of elements) {
+        if (cityLocations >= locationsPerCity || locationsToInsert.length >= maxLocationsTotal) break;
+
+        const lat = element.lat ?? element.center?.lat;
+        const lon = element.lon ?? element.center?.lon;
+        const name = element.tags?.['name:en'] || element.tags?.name;
+
+        if (!lat || !lon || !name) continue;
+
+        const osmId = `${element.type}/${element.id}`;
+        
+        locationsToInsert.push({
+          name,
+          category: category.name,
+          latitude: lat,
+          longitude: lon,
+          city: city.name,
+          country: city.country,
+          address: buildAddress(element.tags),
+          osm_id: osmId,
+          is_system_seeded: true,
+          needs_enrichment: true,
+          created_at: new Date().toISOString(),
+        });
+
+        cityLocations++;
+        stats.locationsFound++;
+      }
+    }
+
+    stats.citiesProcessed++;
+    console.log(`  City total: ${cityLocations} locations`);
+    
+    // Wait between cities to avoid overwhelming Overpass
+    await sleep(2000);
+  }
+
+  console.log(`Total locations to insert: ${locationsToInsert.length}`);
+
+  if (dryRun) {
+    console.log(`Dry run complete. Would insert ${locationsToInsert.length} locations.`);
+    return;
+  }
+
+  // Insert in batches, skipping duplicates
+  const batchSize = 100;
+  for (let i = 0; i < locationsToInsert.length; i += batchSize) {
+    const batch = locationsToInsert.slice(i, i + batchSize);
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .upsert(batch, {
+        onConflict: 'osm_id',
+        ignoreDuplicates: true,
+      })
+      .select('id');
+
+    if (error) {
+      console.error(`Batch insert error:`, error);
+      stats.errors.push(`Batch ${i / batchSize}: ${error.message}`);
+    } else {
+      stats.locationsInserted += data?.length || 0;
+    }
+  }
+
+  stats.locationsSkipped = stats.locationsFound - stats.locationsInserted;
+
+  console.log(`Seeding complete:`, JSON.stringify(stats));
+}
+
+// Handle shutdown to log progress
+addEventListener('beforeunload', (ev: Event) => {
+  const detail = (ev as CustomEvent).detail;
+  console.log('Function shutdown due to:', detail?.reason || 'unknown');
+});
+
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -145,7 +302,6 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse optional parameters
     let targetCities = TARGET_CITIES;
@@ -171,123 +327,18 @@ serve(async (req) => {
 
     console.log(`Starting seed-locations: ${targetCities.length} cities, max ${maxLocationsTotal} locations, dryRun: ${dryRun}`);
 
-    const stats = {
-      citiesProcessed: 0,
-      locationsFound: 0,
-      locationsInserted: 0,
-      locationsSkipped: 0,
-      errors: [] as string[],
-    };
+    // Use background task so we don't timeout
+    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(
+      performSeeding(targetCities, maxLocationsTotal, dryRun, supabaseUrl, supabaseServiceKey)
+    );
 
-    const locationsPerCity = Math.ceil(maxLocationsTotal / targetCities.length);
-    const locationsToInsert: Array<{
-      name: string;
-      category: string;
-      latitude: number;
-      longitude: number;
-      city: string;
-      country: string;
-      address: string | null;
-      osm_id: string;
-      is_system_seeded: boolean;
-      needs_enrichment: boolean;
-      created_at: string;
-    }> = [];
-
-    // Process each city
-    for (const city of targetCities) {
-      if (locationsToInsert.length >= maxLocationsTotal) break;
-
-      console.log(`Processing ${city.name}, ${city.country}...`);
-      let cityLocations = 0;
-
-      for (const category of CATEGORIES) {
-        if (cityLocations >= locationsPerCity) break;
-
-        // Rate limit: wait 1 second between Overpass queries
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const elements = await queryOverpass(city, category);
-        console.log(`  ${category.name}: found ${elements.length} POIs`);
-
-        for (const element of elements) {
-          if (cityLocations >= locationsPerCity || locationsToInsert.length >= maxLocationsTotal) break;
-
-          const lat = element.lat ?? element.center?.lat;
-          const lon = element.lon ?? element.center?.lon;
-          const name = element.tags?.['name:en'] || element.tags?.name;
-
-          if (!lat || !lon || !name) continue;
-
-          const osmId = `${element.type}/${element.id}`;
-          
-          locationsToInsert.push({
-            name,
-            category: category.name,
-            latitude: lat,
-            longitude: lon,
-            city: city.name,
-            country: city.country,
-            address: buildAddress(element.tags),
-            osm_id: osmId,
-            is_system_seeded: true,
-            needs_enrichment: true,
-            created_at: new Date().toISOString(),
-          });
-
-          cityLocations++;
-          stats.locationsFound++;
-        }
-      }
-
-      stats.citiesProcessed++;
-      console.log(`  City total: ${cityLocations} locations`);
-    }
-
-    console.log(`Total locations to insert: ${locationsToInsert.length}`);
-
-    if (dryRun) {
-      return new Response(JSON.stringify({
-        success: true,
-        dryRun: true,
-        stats: {
-          ...stats,
-          wouldInsert: locationsToInsert.length,
-        },
-        sampleLocations: locationsToInsert.slice(0, 10),
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Insert in batches, skipping duplicates
-    const batchSize = 100;
-    for (let i = 0; i < locationsToInsert.length; i += batchSize) {
-      const batch = locationsToInsert.slice(i, i + batchSize);
-      
-      const { data, error } = await supabase
-        .from('locations')
-        .upsert(batch, {
-          onConflict: 'osm_id',
-          ignoreDuplicates: true,
-        })
-        .select('id');
-
-      if (error) {
-        console.error(`Batch insert error:`, error);
-        stats.errors.push(`Batch ${i / batchSize}: ${error.message}`);
-      } else {
-        stats.locationsInserted += data?.length || 0;
-      }
-    }
-
-    stats.locationsSkipped = stats.locationsFound - stats.locationsInserted;
-
-    console.log(`Seeding complete:`, stats);
-
+    // Return immediately with status
     return new Response(JSON.stringify({
       success: true,
-      stats,
+      message: `Seeding started in background for ${targetCities.length} cities. Check logs for progress.`,
+      estimatedTime: `${Math.ceil(targetCities.length * 8 * 3 / 60)} minutes`, // ~3s per category, 8 categories per city
+      dryRun,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
