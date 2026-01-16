@@ -117,122 +117,51 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     `;
   }
   
-  // Campaign firework sparkle effect - surrounding the circle, visible when zoomed out
-  const sparkleSize = isSelected ? 10 : 8;
-  const glowSize = isSelected ? 8 : 6;
-  const containerSize = size + 24; // Extend beyond the pin
-  const offset = (containerSize - size) / 2;
+  // Campaign effect - elegant pulsing golden ring with subtle sparkles
+  const ringSize = size + 12;
+  const ringOffset = (ringSize - size) / 2;
   
   const campaignEffect = hasCampaign ? `
-    <div class="campaign-fireworks" style="
+    <div class="campaign-ring" style="
       position: absolute;
-      top: -${offset}px;
-      left: -${offset}px;
-      width: ${containerSize}px;
-      height: ${containerSize}px;
+      top: -${ringOffset}px;
+      left: -${ringOffset}px;
+      width: ${ringSize}px;
+      height: ${ringSize}px;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      background: linear-gradient(135deg, rgba(255,215,0,0.4), rgba(255,165,0,0.6), rgba(255,215,0,0.4)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      box-shadow: 
+        0 0 8px 2px rgba(255,165,0,0.5),
+        0 0 16px 4px rgba(255,215,0,0.3),
+        inset 0 0 8px 2px rgba(255,200,50,0.2);
+      animation: campaign-ring-pulse 2s ease-in-out infinite;
       pointer-events: none;
       z-index: -1;
+    "></div>
+    <!-- Single subtle star sparkle at top -->
+    <div style="
+      position: absolute;
+      top: -${ringOffset + 4}px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      pointer-events: none;
+      z-index: 10;
     ">
-      <!-- Top sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: ${sparkleSize}px;
-        height: ${sparkleSize}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        box-shadow: 0 0 ${glowSize}px 3px rgba(255,165,0,0.7);
-        animation: sparkle-orbit 2s ease-in-out infinite;
-      "></div>
-      <!-- Top-right sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        top: 15%;
-        right: 10%;
-        width: ${sparkleSize - 1}px;
-        height: ${sparkleSize - 1}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #FF4757, #FF6B81);
-        box-shadow: 0 0 ${glowSize}px 2px rgba(255,71,87,0.6);
-        animation: sparkle-orbit 2s ease-in-out 0.25s infinite;
-      "></div>
-      <!-- Right sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-        width: ${sparkleSize}px;
-        height: ${sparkleSize}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #2ED573, #7BED9F);
-        box-shadow: 0 0 ${glowSize}px 3px rgba(46,213,115,0.7);
-        animation: sparkle-orbit 2s ease-in-out 0.5s infinite;
-      "></div>
-      <!-- Bottom-right sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        bottom: 15%;
-        right: 10%;
-        width: ${sparkleSize - 2}px;
-        height: ${sparkleSize - 2}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #1E90FF, #70A1FF);
-        box-shadow: 0 0 ${glowSize}px 2px rgba(30,144,255,0.6);
-        animation: sparkle-orbit 2s ease-in-out 0.75s infinite;
-      "></div>
-      <!-- Bottom sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: ${sparkleSize - 1}px;
-        height: ${sparkleSize - 1}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #FF6B81, #FFA502);
-        box-shadow: 0 0 ${glowSize}px 2px rgba(255,107,129,0.6);
-        animation: sparkle-orbit 2s ease-in-out 1s infinite;
-      "></div>
-      <!-- Bottom-left sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        bottom: 15%;
-        left: 10%;
-        width: ${sparkleSize - 2}px;
-        height: ${sparkleSize - 2}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #A855F7, #C084FC);
-        box-shadow: 0 0 ${glowSize}px 2px rgba(168,85,247,0.6);
-        animation: sparkle-orbit 2s ease-in-out 1.25s infinite;
-      "></div>
-      <!-- Left sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        top: 50%;
-        left: 0;
-        transform: translateY(-50%);
-        width: ${sparkleSize}px;
-        height: ${sparkleSize}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #F472B6, #EC4899);
-        box-shadow: 0 0 ${glowSize}px 3px rgba(244,114,182,0.7);
-        animation: sparkle-orbit 2s ease-in-out 1.5s infinite;
-      "></div>
-      <!-- Top-left sparkle -->
-      <div class="sparkle" style="
-        position: absolute;
-        top: 15%;
-        left: 10%;
-        width: ${sparkleSize - 1}px;
-        height: ${sparkleSize - 1}px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #34D399, #10B981);
-        box-shadow: 0 0 ${glowSize}px 2px rgba(52,211,153,0.6);
-        animation: sparkle-orbit 2s ease-in-out 1.75s infinite;
-      "></div>
+      <svg viewBox="0 0 24 24" fill="none" style="width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(255,200,0,0.8));">
+        <path d="M12 2L13.5 9L20 12L13.5 15L12 22L10.5 15L4 12L10.5 9L12 2Z" fill="url(#starGradient)"/>
+        <defs>
+          <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFD700"/>
+            <stop offset="100%" style="stop-color:#FFA500"/>
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
   ` : '';
 
@@ -346,14 +275,20 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         }
       }
       
-      @keyframes sparkle-orbit {
+      @keyframes campaign-ring-pulse {
         0%, 100% {
           transform: scale(1);
-          opacity: 0.7;
+          opacity: 0.85;
+          box-shadow: 
+            0 0 8px 2px rgba(255,165,0,0.5),
+            0 0 16px 4px rgba(255,215,0,0.3);
         }
         50% {
-          transform: scale(1.4);
+          transform: scale(1.08);
           opacity: 1;
+          box-shadow: 
+            0 0 12px 4px rgba(255,165,0,0.7),
+            0 0 24px 8px rgba(255,215,0,0.4);
         }
       }
     </style>

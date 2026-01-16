@@ -60,6 +60,54 @@ const SPOTS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 // Bump this when fetch logic changes to avoid serving stale cached results
 const SPOTS_CACHE_VERSION = 2;
 
+// Component for spot thumbnail with fallback handling
+const SpotThumbnailButton = ({ 
+  spot, 
+  getSpotThumbUrl, 
+  onClick, 
+  t 
+}: { 
+  spot: PopularSpot; 
+  getSpotThumbUrl: (spot: PopularSpot) => string | null;
+  onClick: () => void;
+  t: (key: string, options?: any) => string;
+}) => {
+  const [imgError, setImgError] = React.useState(false);
+  const thumbUrl = getSpotThumbUrl(spot);
+  const showImage = thumbUrl && !imgError;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
+      aria-label={`Apri ${spot.name}`}
+    >
+      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {showImage ? (
+          <img
+            src={thumbUrl}
+            alt={spot.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <CategoryIcon category={spot.category} className="w-4 h-4" />
+        )}
+      </div>
+      <div className="text-left">
+        <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
+        <div className="text-[9px] text-muted-foreground">
+          {typeof spot.savesCount === 'number' && spot.savesCount > 0
+            ? t('savesCount', { ns: 'common', count: spot.savesCount })
+            : ''}
+        </div>
+      </div>
+    </button>
+  );
+};
+
 const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSpotSelect, onCitySelect }: PopularSpotsProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -100,8 +148,12 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const getSpotThumbUrl = (spot: PopularSpot): string | null => {
     // 1) Business photo
     if (spot.image_url) return spot.image_url;
-    // 2) Google photo
+    // 2) Google photo from locations table
     if (spot.google_photo_url) return spot.google_photo_url;
+    // 3) Try storage URL for Google place ID (photos might have been fetched previously)
+    if (spot.google_place_id) {
+      return `https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/location-photos/${spot.google_place_id}/photo-0.jpg`;
+    }
     return null;
   };
 
@@ -434,39 +486,15 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                     </div>
                   </button>
                 ))
-              : popularSpots.map((spot) => {
-                  const thumbUrl = getSpotThumbUrl(spot);
-                  return (
-                    <button
-                      key={spot.id}
-                      type="button"
-                      onClick={() => handleSpotClick(spot)}
-                      className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
-                      aria-label={`Apri ${spot.name}`}
-                    >
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {thumbUrl ? (
-                          <img
-                            src={thumbUrl}
-                            alt={spot.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <CategoryIcon category={spot.category} className="w-4 h-4" />
-                        )}
-                      </div>
-                      <div className="text-left">
-                        <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
-                        <div className="text-[9px] text-muted-foreground">
-                          {typeof spot.savesCount === 'number' && spot.savesCount > 0
-                            ? t('savesCount', { ns: 'common', count: spot.savesCount })
-                            : ''}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+              : popularSpots.map((spot) => (
+                  <SpotThumbnailButton
+                    key={spot.id}
+                    spot={spot}
+                    getSpotThumbUrl={getSpotThumbUrl}
+                    onClick={() => handleSpotClick(spot)}
+                    t={t}
+                  />
+                ))}
           </div>
         </div>
       )}
