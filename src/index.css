@@ -61,6 +61,15 @@
     }
   }
   
+  @keyframes marquee-slow {
+    0%, 10% {
+      transform: translateX(0);
+    }
+    90%, 100% {
+      transform: translateX(-50%);
+    }
+  }
+  
   @keyframes marquee-bounce {
     0% {
       transform: translateX(0);
@@ -85,6 +94,12 @@
     animation: marquee-bounce 4s ease-in-out;
     will-change: transform;
   }
+  
+  .animate-marquee-slow {
+    animation: marquee-slow 8s linear infinite;
+    will-change: transform;
+  }
+  
   
   /* Glass morphism effect for cards */
   .glass-card {

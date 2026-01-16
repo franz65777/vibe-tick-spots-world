@@ -92,6 +92,44 @@ const localeMap: Record<string, Locale> = {
   'zh-CN': zhCN,
 };
 
+// Marquee Text Component for long titles
+const MarqueeText = ({ text, className }: { text: string; className?: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (containerRef.current && textRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const textWidth = textRef.current.scrollWidth;
+        setShouldAnimate(textWidth > containerWidth);
+      }
+    };
+    
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [text]);
+
+  if (!shouldAnimate) {
+    return (
+      <div ref={containerRef} className={cn("overflow-hidden", className)}>
+        <span ref={textRef} className="whitespace-nowrap">{text}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className={cn("overflow-hidden", className)}>
+      <div className="inline-flex animate-marquee-slow">
+        <span ref={textRef} className="whitespace-nowrap pr-8">{text}</span>
+        <span className="whitespace-nowrap pr-8">{text}</span>
+      </div>
+    </div>
+  );
+};
+
 // Campaign Expanded Details Component with translate button
 const CampaignExpandedDetails = ({ campaign }: { campaign: MarketingCampaign }) => {
   const { t, i18n } = useTranslation();
@@ -1234,13 +1272,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
                       className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/60 transition-colors"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                         <img 
                           src={getCampaignTypeIcon(campaign.campaign_type)} 
                           alt="" 
                           className="w-6 h-6 object-contain flex-shrink-0" 
                         />
-                        <span className="text-sm font-semibold truncate text-foreground">{campaign.title}</span>
+                        <MarqueeText 
+                          text={campaign.title}
+                          className="flex-1 text-sm font-semibold text-foreground"
+                        />
                       </div>
                       <ChevronDown className={`w-5 h-5 text-primary flex-shrink-0 transition-transform duration-200 ${isCampaignExpanded ? 'rotate-180' : ''}`} />
                     </button>
@@ -1297,35 +1338,51 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Tabs and Content */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Tab Navigation - Clean design like reference */}
-                <div className="flex-shrink-0 px-4 border-b border-border/30">
-                  <div className="flex">
+                {/* Tab Navigation - Modern pill design */}
+                <div className="flex-shrink-0 px-4 py-3">
+                  <div className="flex p-1 bg-muted/60 rounded-2xl backdrop-blur-sm">
                     <button
                       onClick={() => setActiveTab('posts')}
                       className={cn(
-                        "flex-1 py-3 text-base font-medium transition-colors relative",
+                        "flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2",
                         activeTab === 'posts'
-                          ? 'text-primary'
+                          ? 'bg-background text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
+                      <Camera className="w-4 h-4" />
                       {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
-                      {activeTab === 'posts' && (
-                        <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full" />
+                      {posts.length > 0 && (
+                        <span className={cn(
+                          "text-xs px-1.5 py-0.5 rounded-full min-w-[20px]",
+                          activeTab === 'posts'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted-foreground/20 text-muted-foreground'
+                        )}>
+                          {posts.length}
+                        </span>
                       )}
                     </button>
                     <button
                       onClick={() => setActiveTab('reviews')}
                       className={cn(
-                        "flex-1 py-3 text-base font-medium transition-colors relative",
+                        "flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2",
                         activeTab === 'reviews'
-                          ? 'text-primary'
+                          ? 'bg-background text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
+                      <Star className="w-4 h-4" />
                       {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
-                      {activeTab === 'reviews' && (
-                        <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full" />
+                      {reviews.length > 0 && (
+                        <span className={cn(
+                          "text-xs px-1.5 py-0.5 rounded-full min-w-[20px]",
+                          activeTab === 'reviews'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted-foreground/20 text-muted-foreground'
+                        )}>
+                          {reviews.length}
+                        </span>
                       )}
                     </button>
                   </div>
