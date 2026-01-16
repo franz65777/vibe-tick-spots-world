@@ -117,51 +117,25 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     `;
   }
   
-  // Campaign effect - elegant pulsing golden ring with subtle sparkles
-  const ringSize = size + 12;
-  const ringOffset = (ringSize - size) / 2;
-  
+  // Campaign effect - small fire/flame badge at bottom-right corner
   const campaignEffect = hasCampaign ? `
-    <div class="campaign-ring" style="
+    <div class="campaign-flame-badge" style="
       position: absolute;
-      top: -${ringOffset}px;
-      left: -${ringOffset}px;
-      width: ${ringSize}px;
-      height: ${ringSize}px;
+      bottom: -4px;
+      right: -4px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      border: 2.5px solid transparent;
-      background: linear-gradient(135deg, rgba(255,215,0,0.4), rgba(255,165,0,0.6), rgba(255,215,0,0.4)) border-box;
-      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      box-shadow: 
-        0 0 8px 2px rgba(255,165,0,0.5),
-        0 0 16px 4px rgba(255,215,0,0.3),
-        inset 0 0 8px 2px rgba(255,200,50,0.2);
-      animation: campaign-ring-pulse 2s ease-in-out infinite;
-      pointer-events: none;
-      z-index: -1;
-    "></div>
-    <!-- Single subtle star sparkle at top -->
-    <div style="
-      position: absolute;
-      top: -${ringOffset + 4}px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 8px;
-      height: 8px;
-      pointer-events: none;
-      z-index: 10;
+      background: linear-gradient(145deg, #FF6B35, #FF4500);
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(255,69,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: campaign-flame-pulse 1.5s ease-in-out infinite;
+      z-index: 25;
     ">
-      <svg viewBox="0 0 24 24" fill="none" style="width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(255,200,0,0.8));">
-        <path d="M12 2L13.5 9L20 12L13.5 15L12 22L10.5 15L4 12L10.5 9L12 2Z" fill="url(#starGradient)"/>
-        <defs>
-          <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#FFD700"/>
-            <stop offset="100%" style="stop-color:#FFA500"/>
-          </linearGradient>
-        </defs>
-      </svg>
+      <span style="font-size: 10px; line-height: 1;">🔥</span>
     </div>
   ` : '';
 
@@ -275,20 +249,14 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         }
       }
       
-      @keyframes campaign-ring-pulse {
+      @keyframes campaign-flame-pulse {
         0%, 100% {
           transform: scale(1);
-          opacity: 0.85;
-          box-shadow: 
-            0 0 8px 2px rgba(255,165,0,0.5),
-            0 0 16px 4px rgba(255,215,0,0.3);
+          box-shadow: 0 2px 6px rgba(255,69,0,0.5);
         }
         50% {
-          transform: scale(1.08);
-          opacity: 1;
-          box-shadow: 
-            0 0 12px 4px rgba(255,165,0,0.7),
-            0 0 24px 8px rgba(255,215,0,0.4);
+          transform: scale(1.15);
+          box-shadow: 0 3px 10px rgba(255,69,0,0.7);
         }
       }
     </style>
