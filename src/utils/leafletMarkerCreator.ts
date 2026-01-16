@@ -117,20 +117,73 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     `;
   }
   
-  // Campaign sparkle effect
+  // Campaign firework sparkle effect - much more visible
   const campaignEffect = hasCampaign ? `
-    <div style="
+    <div class="campaign-fireworks" style="
       position: absolute;
-      top: -3px;
-      right: -3px;
-      width: 12px;
-      height: 12px;
-      background: linear-gradient(135deg, #FFD700, #FFA500);
-      border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      animation: campaign-pulse 2s ease-in-out infinite;
-    "></div>
+      top: -8px;
+      right: -8px;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 30;
+    ">
+      <div class="sparkle sparkle-1" style="
+        position: absolute;
+        top: 4px;
+        left: 10px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        box-shadow: 0 0 6px 2px rgba(255,165,0,0.6);
+        animation: sparkle-burst 1.5s ease-in-out infinite;
+      "></div>
+      <div class="sparkle sparkle-2" style="
+        position: absolute;
+        top: 10px;
+        right: 2px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FF4757, #FF6B81);
+        box-shadow: 0 0 4px 1px rgba(255,71,87,0.5);
+        animation: sparkle-burst 1.5s ease-in-out 0.2s infinite;
+      "></div>
+      <div class="sparkle sparkle-3" style="
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2ED573, #7BED9F);
+        box-shadow: 0 0 4px 1px rgba(46,213,115,0.5);
+        animation: sparkle-burst 1.5s ease-in-out 0.4s infinite;
+      "></div>
+      <div class="sparkle sparkle-4" style="
+        position: absolute;
+        top: 14px;
+        left: 4px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1E90FF, #70A1FF);
+        box-shadow: 0 0 4px 1px rgba(30,144,255,0.5);
+        animation: sparkle-burst 1.5s ease-in-out 0.6s infinite;
+      "></div>
+      <div class="sparkle sparkle-5" style="
+        position: absolute;
+        top: 8px;
+        left: 0;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FF6B81, #FFA502);
+        box-shadow: 0 0 3px 1px rgba(255,107,129,0.4);
+        animation: sparkle-burst 1.5s ease-in-out 0.8s infinite;
+      "></div>
+    </div>
   ` : '';
 
   // Selected state pointer (small triangle at bottom pointing down)
@@ -240,6 +293,25 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         50% {
           transform: scale(1.2);
           opacity: 0.8;
+        }
+      }
+      
+      @keyframes sparkle-burst {
+        0%, 100% {
+          transform: scale(0.8) translateY(0);
+          opacity: 0.6;
+        }
+        25% {
+          transform: scale(1.3) translateY(-3px);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1) translateY(-1px);
+          opacity: 0.9;
+        }
+        75% {
+          transform: scale(1.2) translateY(-2px);
+          opacity: 1;
         }
       }
     </style>

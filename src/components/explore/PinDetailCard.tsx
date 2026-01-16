@@ -238,11 +238,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     cachedOpeningHours: place.opening_hours_data
   });
   
-  // For hotels without opening hours data, assume 24/7
+  // For hotels and parks without opening hours data, assume 24/7
   const isHotel = place.category?.toLowerCase() === 'hotel' || 
                   place.types?.some((t: string) => t.toLowerCase().includes('lodging') || t.toLowerCase().includes('hotel'));
-  const isPlaceOpen = (rawIsPlaceOpen === null && isHotel) ? true : rawIsPlaceOpen;
-  const rawTodayHoursValue = (rawTodayHours === null && isHotel && rawIsPlaceOpen === null) ? '24h' : rawTodayHours;
+  const isPark = place.category?.toLowerCase() === 'park' || 
+                 place.types?.some((t: string) => t.toLowerCase().includes('park'));
+  const assumeOpen24h = isHotel || isPark;
+  const isPlaceOpen = (rawIsPlaceOpen === null && assumeOpen24h) ? true : rawIsPlaceOpen;
+  const rawTodayHoursValue = (rawTodayHours === null && assumeOpen24h && rawIsPlaceOpen === null) ? '24h' : rawTodayHours;
   
   // Format hours for locale (convert 12h to 24h for non-English)
   const formatHoursForLocale = (hours: string | null): string | null => {
