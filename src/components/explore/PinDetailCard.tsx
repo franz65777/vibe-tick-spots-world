@@ -1353,51 +1353,49 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Tabs and Content */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Tab Navigation - Centered pill design */}
-                <div className="flex-shrink-0 px-4 pt-2 pb-2">
-                  <div className="flex justify-center">
-                    <div className="inline-flex p-1 bg-muted/60 rounded-full">
-                      <button
-                        onClick={() => setActiveTab('posts')}
-                        className={cn(
-                          "py-2 px-5 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
-                          activeTab === 'posts'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        <Camera className="w-4 h-4" />
-                        {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
-                        {posts.length > 0 && (
-                          <span className={cn(
-                            "text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
-                            activeTab === 'posts' ? 'bg-primary/15 text-primary' : 'bg-muted-foreground/20'
-                          )}>
-                            {posts.length}
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('reviews')}
-                        className={cn(
-                          "py-2 px-5 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
-                          activeTab === 'reviews'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        <Star className="w-4 h-4" />
-                        {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
-                        {reviews.length > 0 && (
-                          <span className={cn(
-                            "text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
-                            activeTab === 'reviews' ? 'bg-primary/15 text-primary' : 'bg-muted-foreground/20'
-                          )}>
-                            {reviews.length}
-                          </span>
-                        )}
-                      </button>
-                    </div>
+                {/* Tab Navigation - Minimal underline design */}
+                <div className="flex-shrink-0 border-b border-border/50">
+                  <div className="flex">
+                    <button
+                      onClick={() => setActiveTab('posts')}
+                      className={cn(
+                        "flex-1 py-3 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 relative",
+                        activeTab === 'posts'
+                          ? 'text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Camera className="w-4 h-4" />
+                      {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
+                      {posts.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {posts.length}
+                        </span>
+                      )}
+                      {activeTab === 'posts' && (
+                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-foreground rounded-full" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('reviews')}
+                      className={cn(
+                        "flex-1 py-3 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 relative",
+                        activeTab === 'reviews'
+                          ? 'text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Star className="w-4 h-4" />
+                      {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+                      {reviews.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {reviews.length}
+                        </span>
+                      )}
+                      {activeTab === 'reviews' && (
+                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-foreground rounded-full" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
