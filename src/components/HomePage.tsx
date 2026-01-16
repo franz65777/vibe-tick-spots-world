@@ -332,10 +332,21 @@ const HomePage = memo(() => {
   }, [location.state, location.pathname, navigate]);
 
   // Get user's current location on component mount
-  // Only update mapCenter on initial mount, not on visibility changes
+  // Only update mapCenter on initial mount when no saved center exists
   const hasInitializedLocation = useRef(false);
   
   useEffect(() => {
+    // If we already have a persisted map center, do not recenter to the user's location on mount.
+    // This prevents "snap back to my position" when HomePage remounts after closing cards.
+    try {
+      const saved = localStorage.getItem('lastMapCenter');
+      if (saved) {
+        hasInitializedLocation.current = true;
+      }
+    } catch {
+      // ignore
+    }
+
     const getCurrentLocation = (updateMapCenter: boolean) => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -343,7 +354,7 @@ const HomePage = memo(() => {
             const { latitude, longitude } = position.coords;
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
-            // Only update mapCenter on initial load, not on visibility changes
+            // Only update mapCenter on initial load when we don't already have a saved center
             if (updateMapCenter && !hasInitializedLocation.current) {
               hasInitializedLocation.current = true;
               setMapCenter(location);
@@ -477,11 +488,8 @@ const HomePage = memo(() => {
       const newCenter = cityCoordinates[cityKey];
       setMapCenter(newCenter);
       console.log('🗺️ Map center updated from predefined list:', newCenter);
-    } else if (userLocation) {
-      // Last resort: use user's current location
-      setMapCenter(userLocation);
-      console.log('🗺️ Map center fallback to user location:', userLocation);
     }
+    // If city is unknown, keep the current map center (do not snap back to user location)
   };
 
   // Handle location selection from unified search (city search bar)
