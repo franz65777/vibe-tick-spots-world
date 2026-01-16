@@ -403,7 +403,7 @@ const MapSection = ({
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
             <SheetTrigger asChild>
               <button
-                className="rounded-[16px] bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-10 h-12 transition-all flex items-center justify-center"
+                className="rounded-full bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
               >
                 <List className="w-5 h-5 text-foreground" />
               </button>
