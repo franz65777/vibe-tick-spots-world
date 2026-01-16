@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, Share2, Star, Check, Camera, BellOff, Bell } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -38,6 +38,31 @@ import { toast } from 'sonner';
 import { useOpeningHours } from '@/hooks/useOpeningHours';
 import { useSavedByUsers } from '@/hooks/useSavedByUsers';
 import { useLocationPhotos } from '@/hooks/useLocationPhotos';
+
+// Campaign type icons
+import trendingIcon from '@/assets/foam-finger.png';
+import discountIcon from '@/assets/discount-icon.png';
+import eventIcon from '@/assets/event-icon.png';
+import promotionIcon from '@/assets/filter-promotion.png';
+import newIcon from '@/assets/new-icon.png';
+
+// Get campaign icon based on campaign type
+const getCampaignTypeIcon = (campaignType?: string): string => {
+  switch (campaignType?.toLowerCase()) {
+    case 'discount':
+      return discountIcon;
+    case 'event':
+      return eventIcon;
+    case 'promotion':
+      return promotionIcon;
+    case 'new':
+    case 'news':
+      return newIcon;
+    case 'trending':
+    default:
+      return trendingIcon;
+  }
+};
 
 // Helper to check if a string is a valid UUID
 const isValidUUID = (id: string): boolean => {
@@ -1094,19 +1119,33 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             <>
               {/* Marketing Campaign - Expandable Section */}
               {campaign && (
-                <div className="px-4 pb-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
-                    className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
-                  >
-                    <span className="text-sm font-medium truncate text-foreground">{campaign.title}</span>
-                    <svg className={`w-4 h-4 text-primary transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-                  </button>
-                  {isCampaignExpanded && (
-                    <div className="pt-2">
-                      <MarketingCampaignBanner campaign={campaign} />
-                    </div>
-                  )}
+                <div className="px-4 pb-3">
+                  <div className="rounded-2xl bg-muted/40 border border-border/30 overflow-hidden">
+                    {/* Campaign Toggle Header */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img 
+                          src={getCampaignTypeIcon(campaign.campaign_type)} 
+                          alt="" 
+                          className="w-6 h-6 object-contain flex-shrink-0" 
+                        />
+                        <span className="text-sm font-semibold truncate text-foreground">{campaign.title}</span>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-primary flex-shrink-0 transition-transform duration-200 ${isCampaignExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {/* Expanded Campaign Details */}
+                    {isCampaignExpanded && (
+                      <div className="px-4 pb-4 border-t border-border/30">
+                        <div className="pt-4">
+                          <MarketingCampaignBanner campaign={campaign} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

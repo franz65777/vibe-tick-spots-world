@@ -1,47 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Calendar, Sparkles, Tag, Megaphone, Star } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
 import { MarketingCampaign } from '@/hooks/useMarketingCampaign';
+
+// Campaign type icons
+import trendingIcon from '@/assets/foam-finger.png';
+import discountIcon from '@/assets/discount-icon.png';
+import eventIcon from '@/assets/event-icon.png';
+import promotionIcon from '@/assets/filter-promotion.png';
+import newIcon from '@/assets/new-icon.png';
 
 interface MarketingCampaignBannerProps {
   campaign: MarketingCampaign;
 }
 
+// Get campaign icon based on campaign type
+const getCampaignTypeIcon = (campaignType?: string): string => {
+  switch (campaignType?.toLowerCase()) {
+    case 'discount':
+      return discountIcon;
+    case 'event':
+      return eventIcon;
+    case 'promotion':
+      return promotionIcon;
+    case 'new':
+    case 'news':
+      return newIcon;
+    case 'trending':
+    default:
+      return trendingIcon;
+  }
+};
+
+// Get campaign type label
+const getCampaignTypeLabel = (campaignType: string, t: (key: string, options?: any) => string): string => {
+  switch (campaignType?.toLowerCase()) {
+    case 'discount':
+      return t('marketingCampaign.discount', { ns: 'common', defaultValue: 'Discount' });
+    case 'event':
+      return t('marketingCampaign.event', { ns: 'common', defaultValue: 'Event' });
+    case 'promotion':
+      return t('marketingCampaign.promotion', { ns: 'common', defaultValue: 'Promotion' });
+    case 'new':
+    case 'news':
+      return t('marketingCampaign.news', { ns: 'common', defaultValue: 'New' });
+    case 'trending':
+    default:
+      return t('marketingCampaign.trending', { ns: 'common', defaultValue: 'Trending' });
+  }
+};
+
 const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => {
   const { t, i18n } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>('');
-
-  const getCampaignIcon = () => {
-    switch (campaign.campaign_type) {
-      case 'event':
-        return <Sparkles className="w-3.5 h-3.5" />;
-      case 'discount':
-        return <Tag className="w-3.5 h-3.5" />;
-      case 'promotion':
-        return <Megaphone className="w-3.5 h-3.5" />;
-      case 'news':
-        return <Star className="w-3.5 h-3.5" />;
-      default:
-        return <Megaphone className="w-3.5 h-3.5" />;
-    }
-  };
-
-  const getCampaignColor = () => {
-    switch (campaign.campaign_type) {
-      case 'event':
-        return 'bg-purple-50/80 dark:bg-purple-950/30 border-purple-200/50 dark:border-purple-800/30';
-      case 'discount':
-        return 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30';
-      case 'promotion':
-        return 'bg-orange-50/80 dark:bg-orange-950/30 border-orange-200/50 dark:border-orange-800/30';
-      case 'news':
-        return 'bg-blue-50/80 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/30';
-      default:
-        return 'bg-muted/80 border-border/50';
-    }
-  };
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -82,44 +94,52 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
   return (
     <div className="w-full">
       <div 
-        className={`${getCampaignColor()} border rounded-xl p-4 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md`}
+        className="bg-background/80 border border-border/40 rounded-2xl overflow-hidden shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2 flex-1">
-            <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 text-primary">
-              {getCampaignIcon()}
+        <div className="flex items-start justify-between gap-3 p-4">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Campaign Type Icon */}
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+              <img 
+                src={getCampaignTypeIcon(campaign.campaign_type)} 
+                alt="" 
+                className="w-6 h-6 object-contain" 
+              />
             </div>
+            
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Badge variant="secondary" className="text-xs font-medium">
-                  {t(`marketingCampaign.${campaign.campaign_type}`, { ns: 'common', defaultValue: campaign.campaign_type })}
-                </Badge>
-              </div>
-              <h4 className="font-semibold text-sm leading-tight mb-1 text-foreground text-left">
+              {/* Campaign Type Label */}
+              <span className="text-xs font-medium text-muted-foreground">
+                {getCampaignTypeLabel(campaign.campaign_type, t)}
+              </span>
+              
+              {/* Campaign Title */}
+              <h4 className="font-bold text-base leading-tight text-foreground text-left mt-0.5">
                 {campaign.title}
               </h4>
-              {!isExpanded && (
-                <p className="text-muted-foreground text-xs text-left line-clamp-1">
-                  {campaign.description}
-                </p>
-              )}
             </div>
           </div>
-          <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-muted/50 rounded-full hover:bg-muted transition-colors">
-            {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          
+          <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors mt-1">
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
           </button>
         </div>
 
         {/* Expanded Content */}
         {isExpanded && (
-          <div className="mt-3 pt-3 border-t border-border/50">
-            <p className="text-foreground text-xs mb-3 leading-relaxed text-left">
+          <div className="px-4 pb-4 border-t border-border/30">
+            <p className="text-foreground text-sm leading-relaxed text-left pt-4 pb-3">
               {campaign.description}
             </p>
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Calendar className="w-3.5 h-3.5" />
+            
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Calendar className="w-4 h-4" />
               <span>
                 {t('marketingCampaign.endsIn', { ns: 'common', defaultValue: 'Ends in' })} {timeLeft}
               </span>
