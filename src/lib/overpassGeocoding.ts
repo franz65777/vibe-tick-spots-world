@@ -52,7 +52,9 @@ function mapOsmTagToCategory(tags: Record<string, string>): AllowedCategory {
   if (amenity === 'bakery') return 'bakery';
   if (tourism === 'hotel' || tourism === 'hostel' || tourism === 'guest_house' || tourism === 'motel') return 'hotel';
   if (tourism === 'museum' || amenity === 'arts_centre') return 'museum';
-  if (amenity === 'nightclub' || amenity === 'theatre' || amenity === 'cinema' || leisure === 'park') return 'entertainment';
+  // Parks - must come before entertainment
+  if (leisure === 'park' || leisure === 'playground' || leisure === 'garden' || leisure === 'nature_reserve') return 'park';
+  if (amenity === 'nightclub' || amenity === 'theatre' || amenity === 'cinema') return 'entertainment';
   
   return 'restaurant'; // Default fallback
 }
