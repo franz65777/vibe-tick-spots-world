@@ -58,6 +58,7 @@ const HomePage = memo(() => {
   });
   const [recenterToken, setRecenterToken] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -77,6 +78,20 @@ const HomePage = memo(() => {
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [isCenteredOnUser, setIsCenteredOnUser] = useState(false);
   const ignoreMoveEventRef = useRef(false);
+
+  // Listen for full-screen modals (Post/Trip/List/etc.) via body data attribute
+  useEffect(() => {
+    const checkModalOpen = () => {
+      setIsAnyModalOpen(document.body.hasAttribute('data-modal-open'));
+    };
+
+    checkModalOpen();
+
+    const observer = new MutationObserver(checkModalOpen);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-modal-open'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Listen for map movement to reset centered state
   useEffect(() => {
@@ -741,13 +756,15 @@ const HomePage = memo(() => {
         {/* Fixed Header - ~60px - on top of map */}
         {!isCreateStoryModalOpen && !showOnboarding && (
           <div className="relative z-20 pointer-events-none [&>*]:pointer-events-auto">
-            {/* Top fade gradient overlay - fixed at absolute top, no safe area */}
-            <div 
-              className="pointer-events-none fixed inset-x-0 top-0 h-24 z-10"
-              style={{ 
-                background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 30%, hsl(var(--background) / 0.4) 60%, hsl(var(--background) / 0.1) 80%, transparent 100%)' 
-              }}
-            />
+            {/* Top fade gradient overlay - hide when a full-screen modal is open */}
+            {!isAnyModalOpen && (
+              <div 
+                className="pointer-events-none fixed inset-x-0 top-0 h-24 z-10"
+                style={{ 
+                  background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 30%, hsl(var(--background) / 0.4) 60%, hsl(var(--background) / 0.1) 80%, transparent 100%)' 
+                }}
+              />
+            )}
             <Header
               searchQuery={searchQuery}
               currentCity={currentCity}
