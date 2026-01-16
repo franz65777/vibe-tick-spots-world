@@ -1294,9 +1294,17 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               )}
 
-              {/* Featured in Lists Section */}
+              {/* Featured in Lists Section - Hides with photos on scroll */}
               {!listsLoading && featuredLists.length > 0 && (
-                <div className="px-4 pb-2">
+                <div 
+                  className="px-4 pb-2 transition-[max-height,opacity,margin] duration-200 ease-out"
+                  style={{
+                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
+                    opacity: Math.max(0, 1 - photoScrollProgress),
+                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
+                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                  }}
+                >
                   <section className="w-full rounded-2xl border border-border/60 bg-card/70 backdrop-blur-md shadow-sm px-3 py-2">
                     <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide text-left">
                       📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
