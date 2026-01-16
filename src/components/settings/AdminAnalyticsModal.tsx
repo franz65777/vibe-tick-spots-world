@@ -9,20 +9,18 @@ import { Calendar, Users, TrendingUp, Activity, MapPin, Zap } from 'lucide-react
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DataFixUtility from '@/components/admin/DataFixUtility';
 import { useRetentionAnalytics } from '@/hooks/useRetentionAnalytics';
-
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
-
 interface AdminAnalyticsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({ open, onOpenChange }) => {
+export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
+  open,
+  onOpenChange
+}) => {
   const [dateRange, setDateRange] = useState('30');
-
   const endDate = new Date().toISOString().split('T')[0];
   const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
   const {
     day1Retention,
     day7Retention,
@@ -31,27 +29,19 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({ open, 
     featureUsage,
     dau,
     mau,
-    loading,
+    loading
   } = useRetentionAnalytics(startDate, endDate);
-
-  const dauMauRatio = mau > 0 ? ((dau / mau) * 100).toFixed(1) : '0';
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+  const dauMauRatio = mau > 0 ? (dau / mau * 100).toFixed(1) : '0';
+  return <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[100dvh] overflow-y-auto scrollbar-hide rounded-t-none p-0">
         <SheetHeader className="pt-[env(safe-area-inset-top)] px-6 pb-4 sticky top-0 bg-background z-10 border-b">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="shrink-0"
-            >
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex-1">
               <h2 className="text-2xl font-bold">Admin Analytics</h2>
-              <p className="text-sm text-muted-foreground">Monitor user engagement and retention metrics</p>
+              
             </div>
             <Select value={dateRange} onValueChange={setDateRange}>
               <SelectTrigger className="w-40">
@@ -133,11 +123,16 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({ open, 
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={[
-                      { name: 'Day 1', value: day1Retention },
-                      { name: 'Day 7', value: day7Retention },
-                      { name: 'Day 30', value: day30Retention },
-                    ]}>
+                    <BarChart data={[{
+                    name: 'Day 1',
+                    value: day1Retention
+                  }, {
+                    name: 'Day 7',
+                    value: day7Retention
+                  }, {
+                    name: 'Day 30',
+                    value: day30Retention
+                  }]}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
@@ -158,18 +153,8 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({ open, 
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie
-                        data={featureUsage}
-                        dataKey="usage_count"
-                        nameKey="feature"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label
-                      >
-                        {featureUsage.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
+                      <Pie data={featureUsage} dataKey="usage_count" nameKey="feature" cx="50%" cy="50%" outerRadius={100} label>
+                        {featureUsage.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
                       <Legend />
@@ -201,6 +186,5 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({ open, 
           </Tabs>
         </div>
       </SheetContent>
-    </Sheet>
-  );
+    </Sheet>;
 };
