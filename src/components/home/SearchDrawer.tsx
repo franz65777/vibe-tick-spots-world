@@ -918,7 +918,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             </div>
           ) : (
             <div
-              className="mx-4 mb-1 h-10 rounded-full backdrop-blur-md bg-foreground/90 dark:bg-background/90 border border-border/10 flex items-center gap-3 px-4 cursor-text shadow-sm"
+              className="mx-4 mb-1 h-10 rounded-full backdrop-blur-md bg-black dark:bg-white/90 border border-border/10 flex items-center gap-3 px-4 cursor-text shadow-sm"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
@@ -928,8 +928,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               tabIndex={0}
               aria-label={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
             >
-              <span className="text-background dark:text-muted-foreground">🔍</span>
-              <span className="flex-1 text-sm text-background/70 dark:text-muted-foreground truncate">
+              <span className="text-white/70 dark:text-muted-foreground">🔍</span>
+              <span className="flex-1 text-sm text-white/70 dark:text-muted-foreground truncate">
                 {t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
               </span>
             </div>

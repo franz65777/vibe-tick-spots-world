@@ -188,7 +188,9 @@ const LeafletMapSetup = ({
       zoomToBoundsOnClick: true,
       spiderfyOnMaxZoom: true,
       removeOutsideVisibleBounds: true,
-      maxClusterRadius: 50,
+      maxClusterRadius: 80, // Larger radius = more aggressive clustering when zoomed out
+      disableClusteringAtZoom: 16, // At zoom 16+, show all individual pins
+      spiderfyDistanceMultiplier: 1.5,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
         let size = 'small';
