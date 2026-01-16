@@ -201,26 +201,22 @@ const LeafletMapSetup = ({
       spiderfyDistanceMultiplier: 1.5,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
-        const clusterSize = count > 50 ? 70 : count > 20 ? 62 : 54;
+        const clusterSize = count > 50 ? 48 : count > 20 ? 44 : 40;
 
         return L.divIcon({
           html: `<div style="
             width: ${clusterSize}px;
             height: ${clusterSize}px;
-            background: linear-gradient(145deg, #6BA3E8 0%, #4A8FD9 50%, #3A7BC8 100%);
+            background: #5B9BD5;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: 600;
-            font-size: ${count > 99 ? '16px' : '18px'};
-            letter-spacing: -0.5px;
-            box-shadow: 
-              0 4px 12px rgba(74, 143, 217, 0.35),
-              0 2px 4px rgba(0, 0, 0, 0.1),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-size: ${count > 99 ? '13px' : '15px'};
+            box-shadow: 0 2px 8px rgba(91, 155, 213, 0.4);
+            border: 2.5px solid white;
           ">${count}</div>`,
           className: 'custom-cluster-icon',
           iconSize: L.point(clusterSize, clusterSize),
