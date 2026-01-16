@@ -23,10 +23,28 @@ interface HomeMapContainerProps {
   onSearchDrawerStateChange?: (isOpen: boolean) => void;
   onSelectedPlaceChange?: (place: Place | null) => void;
   registerCloseSelectedPlace?: (closeFn: () => void) => void;
+  onMapCenterChange?: (center: { lat: number; lng: number }) => void;
 }
 
 const HomeMapContainer = memo((props: HomeMapContainerProps) => {
-  const { isExpanded, isSearchOverlayOpen, onCitySelect, fromMessages, returnToUserId, onBackToMessages, searchQuery, onSearchChange, isCenteredOnUser, onCenterStatusChange, onOpenSearchOverlay, onSearchDrawerStateChange, onSelectedPlaceChange, registerCloseSelectedPlace, ...mapProps } = props;
+  const {
+    isExpanded,
+    isSearchOverlayOpen,
+    onCitySelect,
+    fromMessages,
+    returnToUserId,
+    onBackToMessages,
+    searchQuery,
+    onSearchChange,
+    isCenteredOnUser,
+    onCenterStatusChange,
+    onOpenSearchOverlay,
+    onSearchDrawerStateChange,
+    onSelectedPlaceChange,
+    registerCloseSelectedPlace,
+    onMapCenterChange,
+    ...mapProps
+  } = props;
   
   return (
     <div className={isExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "w-full h-full"}>
@@ -49,6 +67,7 @@ const HomeMapContainer = memo((props: HomeMapContainerProps) => {
         onSearchDrawerStateChange={onSearchDrawerStateChange}
         onSelectedPlaceChange={onSelectedPlaceChange}
         registerCloseSelectedPlace={registerCloseSelectedPlace}
+        onMapCenterChange={onMapCenterChange}
       />
     </div>
   );
