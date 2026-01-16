@@ -78,6 +78,7 @@ const HomePage = memo(() => {
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [isCenteredOnUser, setIsCenteredOnUser] = useState(false);
   const ignoreMoveEventRef = useRef(false);
+  const reopenSearchDrawerRef = useRef<(() => void) | null>(null);
 
   // Listen for full-screen modals (Post/Trip/List/etc.) via body data attribute
   useEffect(() => {
@@ -767,6 +768,7 @@ const HomePage = memo(() => {
                   // Persist the *actual* map view position so closing cards never snaps back.
                   setMapCenter(center);
                 }}
+                registerReopenSearchDrawer={(fn) => { reopenSearchDrawerRef.current = fn; }}
               />
             </Suspense>
           </div>
@@ -794,7 +796,12 @@ const HomePage = memo(() => {
               onOpenSearchOverlay={() => {
                 closeSelectedPlaceRef.current?.();
                 setMapSelectedPlace(null);
-                setIsSearchOverlayOpen(true);
+                // Use the SearchDrawer's trending mode instead of UnifiedSearchOverlay
+                if (reopenSearchDrawerRef.current) {
+                  reopenSearchDrawerRef.current();
+                } else {
+                  setIsSearchOverlayOpen(true);
+                }
               }}
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={handleCenterStatusChange}

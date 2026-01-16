@@ -41,6 +41,7 @@ interface MapSectionProps {
   onSelectedPlaceChange?: (place: Place | null) => void;
   registerCloseSelectedPlace?: (closeFn: () => void) => void;
   onMapCenterChange?: (center: { lat: number; lng: number }) => void;
+  registerReopenSearchDrawer?: (reopenFn: () => void) => void;
 }
 
 const MapSection = ({ 
@@ -63,6 +64,7 @@ const MapSection = ({
   onSelectedPlaceChange,
   registerCloseSelectedPlace,
   onMapCenterChange,
+  registerReopenSearchDrawer,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
@@ -86,6 +88,14 @@ const MapSection = ({
     setCurrentCity(currentCity);
   }, [currentCity, setCurrentCity]);
 
+  // Register the reopen search drawer function for parent to use
+  useEffect(() => {
+    if (registerReopenSearchDrawer && reopenTrendingRef.current) {
+      registerReopenSearchDrawer(() => {
+        reopenTrendingRef.current?.();
+      });
+    }
+  }, [registerReopenSearchDrawer, reopenTrendingRef.current]);
   // Map bounds state for dynamic loading
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
 
