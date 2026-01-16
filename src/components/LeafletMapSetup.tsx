@@ -556,6 +556,7 @@ const LeafletMapSetup = ({
           const isSelected = selectedPlace?.id === place.id;
           const icon = createLeafletCustomMarker({
             category: place.category || 'attraction',
+            name: place.name,
             isSaved: place.isSaved,
             isRecommended: place.isRecommended,
             recommendationScore: place.recommendationScore,
@@ -634,6 +635,7 @@ const LeafletMapSetup = ({
         // Update the temp marker icon to show it's saved
         const newIcon = createLeafletCustomMarker({
           category: selectedPlace.category || 'attraction',
+          name: selectedPlace.name,
           isSaved: true,
           isRecommended: false,
           recommendationScore: 0,
@@ -699,6 +701,7 @@ const LeafletMapSetup = ({
       
       const icon = createLeafletCustomMarker({
         category: selectedPlace.category || 'attraction',
+        name: selectedPlace.name,
         isSaved: selectedPlace.isSaved || false,
         isRecommended: selectedPlace.isRecommended || false,
         recommendationScore: selectedPlace.recommendationScore || 0,

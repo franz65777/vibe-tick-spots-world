@@ -3,6 +3,7 @@ import { getCategoryImage } from '@/utils/categoryIcons';
 
 interface MarkerOptions {
   category: string;
+  name?: string;
   isSaved?: boolean;
   isRecommended?: boolean;
   recommendationScore?: number;
@@ -16,7 +17,7 @@ interface MarkerOptions {
 }
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, isSaved, isRecommended, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers, isSelected = false } = options;
+  const { category, name, isSaved, isRecommended, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers, isSelected = false } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
@@ -147,13 +148,20 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
     "></div>
   ` : '';
+  // Truncate name for display (max ~20 chars)
+  const displayName = name ? (name.length > 18 ? name.substring(0, 18) + '...' : name) : '';
+  const textColor = isDarkMode ? '#e2e8f0' : '#1f2937';
   
-  // Create simple circular marker like the reference image
+  // Calculate total width for label positioning
+  const labelOffset = size / 2 + 4;
+  
+  // Create simple circular marker with name label like the reference image
   const markerHtml = `
     <div class="custom-leaflet-marker ${isSelected ? 'selected' : ''}" style="
       position: relative; 
       width: ${size}px; 
       height: ${size + (isSelected ? 10 : 0)}px;
+      ${isSelected ? 'filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));' : ''}
     ">
       ${avatarOverlay}
       ${campaignEffect}
@@ -166,12 +174,13 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         background: ${bgColor};
         border: ${borderWidth}px solid ${borderColor};
         box-shadow: ${isSelected 
-          ? '0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.1)' 
+          ? '0 8px 24px rgba(0,0,0,0.35), 0 4px 8px rgba(0,0,0,0.2)' 
           : '0 2px 8px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.08)'};
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
+        ${isSelected ? 'transform: scale(1.05);' : ''}
       ">
         <img 
           src="${categoryImg}" 
@@ -185,6 +194,32 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       </div>
       
       ${selectedPointer}
+      
+      <!-- Name label -->
+      ${displayName ? `
+        <div style="
+          position: absolute;
+          left: ${labelOffset}px;
+          top: 50%;
+          transform: translateY(-50%);
+          white-space: nowrap;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+        ">
+          <span style="
+            font-size: ${isSelected ? '11px' : '10px'};
+            font-weight: ${isSelected ? '600' : '500'};
+            color: ${textColor};
+            text-shadow: 
+              -1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'},
+              1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'},
+              -1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'},
+              1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)'};
+            letter-spacing: -0.01em;
+          ">${displayName}</span>
+        </div>
+      ` : ''}
     </div>
     
     <style>
@@ -194,6 +229,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       }
       .custom-leaflet-marker:hover:not(.selected) {
         transform: scale(1.1);
+      }
+      .custom-leaflet-marker.selected {
+        z-index: 1000 !important;
       }
       
       @keyframes campaign-pulse {
@@ -209,10 +247,14 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     </style>
   `;
   
+  // Calculate icon size including label width
+  const estimatedLabelWidth = displayName ? displayName.length * 6 + 10 : 0;
+  const totalWidth = size + estimatedLabelWidth;
+  
   return L.divIcon({
     html: markerHtml,
     className: 'custom-leaflet-icon',
-    iconSize: [size, size + (isSelected ? 10 : 0)],
+    iconSize: [totalWidth, size + (isSelected ? 10 : 0)],
     iconAnchor: [size / 2, size + (isSelected ? 10 : 0)],
     popupAnchor: [0, -(size + (isSelected ? 10 : 0))],
   });
