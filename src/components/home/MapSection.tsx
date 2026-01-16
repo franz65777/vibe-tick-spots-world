@@ -90,12 +90,14 @@ const MapSection = ({
 
   // Register the reopen search drawer function for parent to use
   useEffect(() => {
-    if (registerReopenSearchDrawer && reopenTrendingRef.current) {
-      registerReopenSearchDrawer(() => {
-        reopenTrendingRef.current?.();
-      });
-    }
-  }, [registerReopenSearchDrawer, reopenTrendingRef.current]);
+    if (!registerReopenSearchDrawer) return;
+
+    // Always register a stable wrapper; the underlying ref may be set later by SearchDrawer.
+    registerReopenSearchDrawer(() => {
+      reopenTrendingRef.current?.();
+    });
+  }, [registerReopenSearchDrawer]);
+
   // Map bounds state for dynamic loading
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
 
