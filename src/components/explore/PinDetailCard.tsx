@@ -1347,7 +1347,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               {/* Tabs and Content */}
               <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Tab Navigation - Modern pill design */}
-                <div className="flex-shrink-0 px-4 py-3">
+                <div className="flex-shrink-0 px-4 pt-1 pb-2">
                   <div className="flex p-1 bg-muted/60 rounded-2xl backdrop-blur-sm">
                     <button
                       onClick={() => setActiveTab('posts')}
