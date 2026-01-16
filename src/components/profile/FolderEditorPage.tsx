@@ -9,6 +9,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 
+// Helper to extract the first photo URL from the locations.photos JSONB column
+const extractFirstPhotoUrl = (photos: unknown): string | null => {
+  if (!photos) return null;
+  const arr = Array.isArray(photos) ? photos : null;
+  if (!arr) return null;
+  for (const item of arr) {
+    if (typeof item === 'string' && item.trim()) return item;
+    if (item && typeof item === 'object') {
+      const anyItem = item as any;
+      const url = anyItem.url || anyItem.photo_url || anyItem.src;
+      if (typeof url === 'string' && url.trim()) return url;
+    }
+  }
+  return null;
+};
+
+// Determine which thumbnail to show: 1) business photo  2) Google photo  3) category icon
+const getLocationThumbnail = (location: any): string | null => {
+  if (location.image_url) return location.image_url;
+  const googlePhoto = extractFirstPhotoUrl(location.photos);
+  if (googlePhoto) return googlePhoto;
+  return null;
+};
+
 interface FolderEditorPageProps {
   isOpen: boolean;
   onClose: () => void;
@@ -421,9 +445,20 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
                           isSelected ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-accent/40'
                         }`}
                       >
-                        <div className="shrink-0 bg-muted rounded-xl p-1.5">
-                          <CategoryIcon category={place.category} className="w-7 h-7" />
-                        </div>
+                        {(() => {
+                          const thumbUrl = getLocationThumbnail(place);
+                          return thumbUrl ? (
+                            <img 
+                              src={thumbUrl} 
+                              alt={place.name}
+                              className="w-9 h-9 rounded-lg object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="shrink-0 bg-muted rounded-xl p-1.5">
+                              <CategoryIcon category={place.category} className="w-7 h-7" />
+                            </div>
+                          );
+                        })()}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{place.name}</p>
                           {place.city && (
