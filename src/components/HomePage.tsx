@@ -753,7 +753,11 @@ const HomePage = memo(() => {
               onSearchKeyPress={() => {}}
               onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
               onCitySelect={handleCityChange}
-              onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
+              onOpenSearchOverlay={() => {
+                closeSelectedPlaceRef.current?.();
+                setMapSelectedPlace(null);
+                setIsSearchOverlayOpen(true);
+              }}
               isCenteredOnUser={isCenteredOnUser}
               onCenterStatusChange={handleCenterStatusChange}
               isSearchDrawerOpen={isSearchDrawerOpen}

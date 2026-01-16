@@ -779,26 +779,22 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     >
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
-        <div className="w-full relative bg-black dark:bg-white/95 backdrop-blur-md border border-white/10 dark:border-black/10 rounded-full shadow-lg">
-          {/* Drag handle inside search bar at top - for opening trending */}
-          <div
-            className="absolute top-1 left-1/2 -translate-x-1/2 z-10 px-4 py-1 cursor-grab active:cursor-grabbing"
-            style={{ touchAction: 'none' }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchEnd}
-          >
-            <div className="w-8 h-1 bg-white/30 dark:bg-black/30 rounded-full" />
-          </div>
+        <div 
+          className="w-full relative bg-black dark:bg-white/95 backdrop-blur-md border border-white/10 dark:border-black/10 rounded-full shadow-lg"
+          style={{ touchAction: 'none' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
           <div className="relative flex items-center h-12">
             {/* Left area - pin + city name - opens search page */}
             <div
-              className="h-full pl-4 flex items-center cursor-pointer"
+              className="h-full pl-4 flex items-center cursor-pointer flex-1"
               onClick={handleSearchBarClick}
             >
               <span className="text-lg leading-none">📌</span>
@@ -807,22 +803,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               </span>
             </div>
 
-            {/* Right area - tap opens trending */}
-            <div
-              className="flex-1 h-full cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDrawerMode('trending');
-              }}
-            />
-
             {/* Repositioning button */}
             <button
               onClick={(e) => {
+                e.stopPropagation();
                 handleCurrentLocation(e);
               }}
               disabled={geoLoading}
-              className="p-2 mr-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50"
+              className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50"
               aria-label={t('currentLocation', { ns: 'common' })}
             >
               <Navigation2
@@ -831,20 +819,6 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                   isCenteredOnUser ? 'text-blue-400 fill-blue-400' : 'text-blue-400'
                 )}
               />
-            </button>
-
-            {/* List view button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setDrawerMode('trending');
-              }}
-              className="p-2 mr-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors"
-              aria-label="List view"
-            >
-              <svg className="w-5 h-5 text-white/80 dark:text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-              </svg>
             </button>
           </div>
         </div>
