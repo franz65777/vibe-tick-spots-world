@@ -1217,13 +1217,16 @@ export type Database = {
           google_place_id: string | null
           id: string
           image_url: string | null
+          is_system_seeded: boolean | null
           latitude: number | null
           longitude: number | null
           metadata: Json | null
           name: string
+          needs_enrichment: boolean | null
           opening_hours_data: Json | null
           opening_hours_fetched_at: string | null
           opening_hours_source: string | null
+          osm_id: string | null
           photos: Json | null
           photos_fetched_at: string | null
           pioneer_user_id: string | null
@@ -1242,13 +1245,16 @@ export type Database = {
           google_place_id?: string | null
           id?: string
           image_url?: string | null
+          is_system_seeded?: boolean | null
           latitude?: number | null
           longitude?: number | null
           metadata?: Json | null
           name: string
+          needs_enrichment?: boolean | null
           opening_hours_data?: Json | null
           opening_hours_fetched_at?: string | null
           opening_hours_source?: string | null
+          osm_id?: string | null
           photos?: Json | null
           photos_fetched_at?: string | null
           pioneer_user_id?: string | null
@@ -1267,13 +1273,16 @@ export type Database = {
           google_place_id?: string | null
           id?: string
           image_url?: string | null
+          is_system_seeded?: boolean | null
           latitude?: number | null
           longitude?: number | null
           metadata?: Json | null
           name?: string
+          needs_enrichment?: boolean | null
           opening_hours_data?: Json | null
           opening_hours_fetched_at?: string | null
           opening_hours_source?: string | null
+          osm_id?: string | null
           photos?: Json | null
           photos_fetched_at?: string | null
           pioneer_user_id?: string | null

@@ -64,6 +64,9 @@ verify_jwt = false
 [functions.translate-text]
 verify_jwt = false
 
+[functions.seed-locations]
+verify_jwt = false
+
 [db]
 # Port to use for the local database URL.
 port = 54322
