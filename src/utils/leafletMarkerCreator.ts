@@ -1,6 +1,30 @@
 import L from 'leaflet';
 import { getCategoryImage } from '@/utils/categoryIcons';
 
+// Import campaign type icons
+import trendingIcon from '@/assets/foam-finger.png';
+import discountIcon from '@/assets/discount-icon.png';
+import eventIcon from '@/assets/event-icon.png';
+import promotionIcon from '@/assets/filter-promotion.png';
+import newIcon from '@/assets/new-icon.png';
+
+// Get campaign icon based on campaign type
+const getCampaignIcon = (campaignType?: string): string => {
+  switch (campaignType?.toLowerCase()) {
+    case 'discount':
+      return discountIcon;
+    case 'event':
+      return eventIcon;
+    case 'promotion':
+      return promotionIcon;
+    case 'new':
+      return newIcon;
+    case 'trending':
+    default:
+      return trendingIcon;
+  }
+};
+
 interface MarkerOptions {
   category: string;
   name?: string;
@@ -10,6 +34,7 @@ interface MarkerOptions {
   friendAvatars?: string[];
   isDarkMode?: boolean;
   hasCampaign?: boolean;
+  campaignType?: string;
   sharedByUserAvatar?: string | null;
   sharedByUsers?: Array<{ id: string; avatar_url: string | null; username: string }>;
   onSharersClick?: () => void;
@@ -17,10 +42,13 @@ interface MarkerOptions {
 }
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, name, isSaved, isRecommended, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers, isSelected = false } = options;
+  const { category, name, isSaved, isRecommended, isDarkMode, hasCampaign, campaignType, sharedByUserAvatar, sharedByUsers, isSelected = false } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
+  
+  // Get campaign icon based on type
+  const campaignIcon = getCampaignIcon(campaignType);
   
   // Sizes based on selected state - like Forêt app
   const size = isSelected ? 56 : 40;
@@ -117,7 +145,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     `;
   }
   
-  // Campaign effect - small category badge at bottom-right corner
+  // Campaign effect - small campaign type badge at bottom-right corner
   const campaignEffect = hasCampaign ? `
     <div class="campaign-badge" style="
       position: absolute;
@@ -126,16 +154,16 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      background: linear-gradient(145deg, #FF6B35, #FF4500);
-      border: 2.5px solid white;
-      box-shadow: 0 2px 8px rgba(255,69,0,0.6);
+      background: white;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
       display: flex;
       align-items: center;
       justify-content: center;
       animation: campaign-flame-pulse 1.5s ease-in-out infinite;
       z-index: 100;
     ">
-      <img src="${categoryImg}" alt="" style="width: 14px; height: 14px; object-fit: contain; filter: brightness(0) invert(1);" />
+      <img src="${campaignIcon}" alt="" style="width: 16px; height: 16px; object-fit: contain;" />
     </div>
   ` : '';
 
