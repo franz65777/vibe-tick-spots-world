@@ -466,7 +466,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                       </div>
                     </button>
                   );
-                }))
+                })}
           </div>
         </div>
       )}
