@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Multiple Lingva instances for fallback reliability
+const LINGVA_INSTANCES = [
+  "https://lingva.ml",
+  "https://lingva.pussthecat.org",
+  "https://translate.plausibility.cloud",
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,65 +30,31 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    // Try each instance until one works
+    let translatedText = null;
+    let lastError = null;
+
+    for (const instance of LINGVA_INSTANCES) {
+      try {
+        const url = `${instance}/api/v1/auto/${targetLanguage}/${encodeURIComponent(text)}`;
+        console.log(`Trying instance: ${instance}`);
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const data = await response.json();
+          translatedText = data.translation;
+          console.log(`Translation successful from ${instance}`);
+          break;
+        }
+      } catch (error) {
+        lastError = error;
+        console.log(`Instance ${instance} failed, trying next...`);
+      }
     }
-
-    // Language code to full name mapping
-    const languageNames: Record<string, string> = {
-      en: "English",
-      it: "Italian",
-      es: "Spanish",
-      fr: "French",
-      de: "German",
-      pt: "Portuguese",
-      nl: "Dutch",
-      ru: "Russian",
-      "zh-CN": "Chinese (Simplified)",
-      ja: "Japanese",
-      ko: "Korean",
-      ar: "Arabic",
-      hi: "Hindi",
-    };
-
-    const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
-
-    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are a translator. Translate the following text to ${targetLanguageName}. Only respond with the translated text, nothing else. Do not add quotes or explanations.`
-          },
-          {
-            role: "user",
-            content: text
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Translation API error:", errorText);
-      throw new Error(`Translation API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const translatedText = data.choices?.[0]?.message?.content?.trim();
 
     if (!translatedText) {
-      throw new Error("No translation received");
+      throw lastError || new Error("All translation instances failed");
     }
 
     console.log(`Translation successful, result length: ${translatedText.length}`);
