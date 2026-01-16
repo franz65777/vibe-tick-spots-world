@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -40,9 +40,24 @@ const Header = ({
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Hide header content when search drawer is open
-  if (isSearchDrawerOpen) {
+  // Listen for modal open/close via data attribute
+  useEffect(() => {
+    const checkModalOpen = () => {
+      setIsModalOpen(document.body.hasAttribute('data-modal-open'));
+    };
+    
+    checkModalOpen();
+    
+    const observer = new MutationObserver(checkModalOpen);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-modal-open'] });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  // Hide header content when search drawer is open or modal is open
+  if (isSearchDrawerOpen || isModalOpen) {
     return null;
   }
 

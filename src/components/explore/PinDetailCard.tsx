@@ -967,12 +967,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             ref={photoSectionRef}
             className={cn(
               "px-4 pt-2 overflow-hidden transition-[max-height,opacity,margin] duration-200 ease-out",
-              !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+              !isExpanded && "pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
+              isExpanded && "pb-4"
             )}
             style={isExpanded ? {
-              maxHeight: `${Math.max(0, photoCollapsePx * (1 - photoScrollProgress))}px`,
+              maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
               opacity: Math.max(0, 1 - photoScrollProgress),
-              marginBottom: `${Math.max(0, 8 * (1 - photoScrollProgress))}px`,
+              marginBottom: `${Math.max(0, 12 * (1 - photoScrollProgress))}px`,
               pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
             } : undefined}
           >
@@ -1080,6 +1081,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                             key={list.list_id}
                             onClick={(e) => {
                               e.stopPropagation();
+                              document.body.setAttribute('data-modal-open', 'true');
                               if (list.type === 'folder') {
                                 setSelectedFolderId(list.list_id);
                                 setFolderDetailOpen(true);
@@ -1233,6 +1235,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                                 key={post.id} 
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  document.body.setAttribute('data-modal-open', 'true');
                                   if (onPostSelected) {
                                     onPostSelected(post.id);
                                   } else {
@@ -1358,7 +1361,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           postId={selectedPostId}
           locationId={place.id}
           isOpen={true}
-          onClose={() => setSelectedPostId(null)}
+          onClose={() => {
+            setSelectedPostId(null);
+            document.body.removeAttribute('data-modal-open');
+          }}
         />
       )}
 
@@ -1377,6 +1383,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             setSelectedTripId(null);
             setTripDetailOpen(false);
             setIsListOpen(false);
+            document.body.removeAttribute('data-modal-open');
           }}
         />
       )}
@@ -1389,6 +1396,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             setSelectedFolderId(null);
             setFolderDetailOpen(false);
             setIsListOpen(false);
+            document.body.removeAttribute('data-modal-open');
           }}
           onLocationClick={(locationData) => {
             // Close the folder modal and navigate to home with the selected location
