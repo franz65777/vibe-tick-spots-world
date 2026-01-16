@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, Share2, Star, Check, Camera, BellOff, Bell } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, Share2, Star, Check, Camera, BellOff, Bell, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -106,6 +106,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isPhotosCollapsed, setIsPhotosCollapsed] = useState(false); // Photos collapsed state (when fully expanded)
   const [sheetProgress, setSheetProgress] = useState(0); // 0=collapsed, 1=expanded
   const [isUserDragging, setIsUserDragging] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -935,76 +936,107 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             </div>
           </div>
 
-          {/* Photo Gallery - Horizontal Scroll (smaller when collapsed) */}
-          <div className="px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-            {photosLoading ? (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className={cn(
-                    "bg-muted rounded-xl animate-pulse flex-shrink-0",
-                    isExpanded ? "w-40 h-48" : "w-32 h-36"
-                  )} />
-                ))}
-              </div>
-            ) : locationPhotos.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                {locationPhotos.map((photo, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-40 h-48" : "w-32 h-36"
-                    )}
-                  >
-                    <img
-                      src={photo}
-                      alt={`${place.name} photo ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+          {/* Photo Gallery - Collapsible when expanded */}
+          <div className={cn(
+            "px-4 pt-2 transition-all duration-300",
+            isExpanded && isPhotosCollapsed ? "pb-1" : "pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+          )}>
+            {/* Toggle button for photos - only show when expanded and there are photos */}
+            {isExpanded && (locationPhotos.length > 0 || posts.length > 0) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPhotosCollapsed(!isPhotosCollapsed);
+                }}
+                className="flex items-center gap-2 mb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {isPhotosCollapsed ? (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>{t('showPhotos', { ns: 'explore', defaultValue: 'Show photos' })}</span>
+                  </>
+                ) : (
+                  <>
+                    <Minus className="w-4 h-4" />
+                    <span>{t('hidePhotos', { ns: 'explore', defaultValue: 'Hide photos' })}</span>
+                  </>
+                )}
+              </button>
+            )}
+            
+            {/* Photo content - hidden when collapsed in expanded mode */}
+            {!(isExpanded && isPhotosCollapsed) && (
+              <>
+                {photosLoading ? (
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className={cn(
+                        "bg-muted rounded-xl animate-pulse flex-shrink-0",
+                        isExpanded ? "w-28 h-32" : "w-32 h-36"
+                      )} />
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : posts.length > 0 ? (
-              // Fallback to user posts if no Google photos
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                {posts.slice(0, 6).map((post, index) => (
-                  <button
-                    key={post.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onPostSelected) {
-                        onPostSelected(post.id);
-                      } else {
-                        setSelectedPostId(post.id);
-                      }
-                    }}
-                    className={cn(
-                      "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
-                      isExpanded ? "w-40 h-48" : "w-32 h-36"
-                    )}
-                  >
-                    <img
-                      src={post.media_urls[0]}
-                      alt={`Post ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className={cn(
-                "flex items-center justify-center bg-muted/50 rounded-xl",
-                isExpanded ? "h-32" : "h-24"
-              )}>
-                <div className="text-center">
-                  <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
-                  </p>
-                </div>
-              </div>
+                ) : locationPhotos.length > 0 ? (
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                    {locationPhotos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
+                          isExpanded ? "w-28 h-32" : "w-32 h-36"
+                        )}
+                      >
+                        <img
+                          src={photo}
+                          alt={`${place.name} photo ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : posts.length > 0 ? (
+                  // Fallback to user posts if no Google photos
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                    {posts.slice(0, 6).map((post, index) => (
+                      <button
+                        key={post.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onPostSelected) {
+                            onPostSelected(post.id);
+                          } else {
+                            setSelectedPostId(post.id);
+                          }
+                        }}
+                        className={cn(
+                          "rounded-xl overflow-hidden flex-shrink-0 bg-muted transition-all duration-300",
+                          isExpanded ? "w-28 h-32" : "w-32 h-36"
+                        )}
+                      >
+                        <img
+                          src={post.media_urls[0]}
+                          alt={`Post ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={cn(
+                    "flex items-center justify-center bg-muted/50 rounded-xl",
+                    isExpanded ? "h-24" : "h-24"
+                  )}>
+                    <div className="text-center">
+                      <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {t('noPhotos', { ns: 'explore', defaultValue: 'No photos yet' })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
