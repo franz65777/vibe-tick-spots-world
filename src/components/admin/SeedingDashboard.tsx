@@ -59,16 +59,17 @@ export const SeedingDashboard = () => {
     setCurrentBatch(0);
     setSeedingProgress(0);
 
-    toast.loading(dryRun ? 'Avvio test...' : 'Avvio seeding...', {
-      id: 'seeding-start',
+    // Use a regular toast with short duration instead of loading toast
+    const toastId = toast.info(dryRun ? 'Avvio test...' : 'Avvio seeding...', {
+      duration: 2000,
     });
 
     try {
       setSeedingStatus('running');
-      toast.dismiss('seeding-start');
       
       toast.success(dryRun ? '🧪 Test avviato' : '🚀 Seeding avviato!', {
         description: `Processamento di ${TOTAL_CITIES} città in ${totalBatches} batch`,
+        duration: 3000,
       });
 
       const result = await runFullSeeding(
@@ -96,12 +97,12 @@ export const SeedingDashboard = () => {
         setSeedingStatus('idle');
         toast.error('Errore durante il seeding', {
           description: result.error,
+          duration: 5000,
         });
       }
     } catch (error) {
       setSeedingStatus('idle');
-      toast.dismiss('seeding-start');
-      toast.error('Errore durante il seeding');
+      toast.error('Errore durante il seeding', { duration: 5000 });
     }
   };
 
