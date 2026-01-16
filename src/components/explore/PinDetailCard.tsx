@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -90,6 +90,59 @@ const localeMap: Record<string, Locale> = {
   hi,
   ru,
   'zh-CN': zhCN,
+};
+
+// Campaign Time Remaining Component with localized text
+const CampaignTimeRemaining = ({ endDate }: { endDate: string }) => {
+  const { t, i18n } = useTranslation();
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const end = new Date(endDate);
+      const diffMs = end.getTime() - now.getTime();
+
+      if (diffMs <= 0) {
+        return t('marketingCampaign.expired', { ns: 'common', defaultValue: 'Expired' });
+      }
+
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      // Localized time units
+      const daysLabel = t('time.days', { ns: 'common', defaultValue: 'd' });
+      const hoursLabel = t('time.hours', { ns: 'common', defaultValue: 'h' });
+      const minutesLabel = t('time.minutes', { ns: 'common', defaultValue: 'm' });
+
+      if (days > 0) {
+        return `${days}${daysLabel} ${hours}${hoursLabel}`;
+      }
+      if (hours > 0) {
+        return `${hours}${hoursLabel} ${minutes}${minutesLabel}`;
+      }
+      return `${minutes}${minutesLabel}`;
+    };
+
+    const updateTime = () => {
+      setTimeLeft(calculateTimeLeft());
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+
+    return () => clearInterval(interval);
+  }, [endDate, i18n.language, t]);
+
+  return (
+    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+      <Calendar className="w-4 h-4" />
+      <span>
+        {t('marketingCampaign.endsIn', { ns: 'common', defaultValue: 'Ends in' })} {timeLeft}
+      </span>
+    </div>
+  );
 };
 
 interface PinDetailCardProps {
@@ -1137,11 +1190,36 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       <ChevronDown className={`w-5 h-5 text-primary flex-shrink-0 transition-transform duration-200 ${isCampaignExpanded ? 'rotate-180' : ''}`} />
                     </button>
                     
-                    {/* Expanded Campaign Details */}
+                    {/* Expanded Campaign Details - Full details shown directly */}
                     {isCampaignExpanded && (
                       <div className="px-4 pb-4 border-t border-border/30">
                         <div className="pt-4">
-                          <MarketingCampaignBanner campaign={campaign} />
+                          {/* Campaign Type + Title */}
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                              <img 
+                                src={getCampaignTypeIcon(campaign.campaign_type)} 
+                                alt="" 
+                                className="w-6 h-6 object-contain" 
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {t(`marketingCampaign.${campaign.campaign_type}`, { ns: 'common', defaultValue: campaign.campaign_type })}
+                              </span>
+                              <h4 className="font-bold text-base leading-tight text-foreground text-left mt-0.5">
+                                {campaign.title}
+                              </h4>
+                            </div>
+                          </div>
+                          
+                          {/* Description */}
+                          <p className="text-foreground text-sm leading-relaxed text-left mb-3">
+                            {campaign.description}
+                          </p>
+                          
+                          {/* Time remaining */}
+                          <CampaignTimeRemaining endDate={campaign.end_date} />
                         </div>
                       </div>
                     )}
