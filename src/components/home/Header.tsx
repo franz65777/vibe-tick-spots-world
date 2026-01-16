@@ -51,18 +51,21 @@ const Header = ({
     return (
       <header className="sticky top-0 z-40">
         <div className="flex items-center justify-between pl-3 pr-2 py-2 gap-2">
-          {/* Location search bar style display with location name */}
-          <div className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-background/20 backdrop-blur-md border border-border/5">
+          {/* Location search bar - clickable to open search */}
+          <button 
+            onClick={onOpenSearchOverlay}
+            className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-foreground/90 dark:bg-background/90 backdrop-blur-md border border-border/10 transition-all duration-200 active:scale-[0.98]"
+          >
             <span className="text-lg leading-none">📌</span>
-            <span className="text-base font-medium text-foreground truncate">
+            <span className="text-base font-medium text-background dark:text-foreground truncate">
               {selectedPlace.name}
             </span>
-          </div>
+          </button>
 
           {/* Close button */}
           <button 
             onClick={onCloseSelectedPlace}
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 rounded-full text-foreground hover:bg-white/90 dark:hover:bg-black/60 transition-all duration-200 active:scale-95"
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-foreground/80 dark:bg-background/80 backdrop-blur-md border border-border/30 rounded-full text-background dark:text-foreground hover:bg-foreground/90 dark:hover:bg-background/90 transition-all duration-200 active:scale-95"
             aria-label="Close location"
           >
             <X className="w-5 h-5" />
