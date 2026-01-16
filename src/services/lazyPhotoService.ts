@@ -157,6 +157,8 @@ export async function runLocationSeeding(options?: {
   dryRun?: boolean;
 }): Promise<{
   success: boolean;
+  message?: string;
+  estimatedTime?: string;
   stats?: {
     citiesProcessed: number;
     locationsFound: number;
@@ -177,6 +179,8 @@ export async function runLocationSeeding(options?: {
 
     return {
       success: data?.success || false,
+      message: data?.message,
+      estimatedTime: data?.estimatedTime,
       stats: data?.stats,
       error: data?.error,
     };

@@ -48,19 +48,25 @@ export const SeedingDashboard = () => {
 
       if (result.success) {
         if (dryRun) {
-          toast.success(`Dry run completato: ${result.stats?.locationsFound || 0} location trovate`);
+          toast.success(`Test avviato in background. Controlla i log per il progresso.`, {
+            duration: 5000,
+          });
         } else {
-          toast.success(`Seeding completato: ${result.stats?.locationsInserted || 0} location inserite`);
-          await fetchStats();
+          toast.success(`Seeding avviato in background! Tempo stimato: ${result.estimatedTime || '~15 minuti'}. Aggiorna le stats tra qualche minuto.`, {
+            duration: 8000,
+          });
         }
       } else {
         toast.error(`Errore: ${result.error}`);
       }
     } catch (error) {
-      toast.error('Errore durante il seeding');
+      toast.error('Errore durante l\'avvio del seeding');
     } finally {
-      setIsSeeding(false);
-      setIsDryRun(false);
+      // Reset after a short delay since it runs in background
+      setTimeout(() => {
+        setIsSeeding(false);
+        setIsDryRun(false);
+      }, 2000);
     }
   };
 
