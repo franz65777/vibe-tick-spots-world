@@ -1352,27 +1352,22 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               {/* Tabs and Content */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Tab Navigation - Modern pill design */}
-                <div className="flex-shrink-0 px-4 pt-0 pb-1.5">
-                  <div className="flex p-1 bg-muted/60 rounded-2xl backdrop-blur-sm">
+                {/* Tab Navigation - Minimal rounded design */}
+                <div className="flex-shrink-0 px-4 pt-0 pb-2">
+                  <div className="flex gap-2">
                     <button
                       onClick={() => setActiveTab('posts')}
                       className={cn(
-                        "flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2",
+                        "py-2 px-4 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
                         activeTab === 'posts'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       )}
                     >
-                      <Camera className="w-4 h-4" />
+                      <Camera className="w-3.5 h-3.5" />
                       {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
                       {posts.length > 0 && (
-                        <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded-full min-w-[20px]",
-                          activeTab === 'posts'
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-muted-foreground/20 text-muted-foreground'
-                        )}>
+                        <span className="text-xs opacity-70">
                           {posts.length}
                         </span>
                       )}
@@ -1380,21 +1375,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     <button
                       onClick={() => setActiveTab('reviews')}
                       className={cn(
-                        "flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2",
+                        "py-2 px-4 text-sm font-medium rounded-full transition-all duration-200 flex items-center gap-2",
                         activeTab === 'reviews'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       )}
                     >
-                      <Star className="w-4 h-4" />
+                      <Star className="w-3.5 h-3.5" />
                       {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
                       {reviews.length > 0 && (
-                        <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded-full min-w-[20px]",
-                          activeTab === 'reviews'
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-muted-foreground/20 text-muted-foreground'
-                        )}>
+                        <span className="text-xs opacity-70">
                           {reviews.length}
                         </span>
                       )}
