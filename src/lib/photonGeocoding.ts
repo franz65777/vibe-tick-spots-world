@@ -101,9 +101,14 @@ function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory |
     return 'museum';
   }
   
-  // Entertainment mappings (expanded)
+  // Park mappings - must come before entertainment
+  if (value === 'park' || value === 'playground' || value === 'garden' || 
+      value === 'nature_reserve' || value === 'recreation_ground') {
+    return 'park';
+  }
+  
+  // Entertainment mappings (expanded) - excluding parks
   if (value === 'nightclub' || value === 'theatre' || value === 'cinema' || 
-      value === 'park' || value === 'playground' || value === 'garden' ||
       value === 'sports_centre' || value === 'stadium' || value === 'water_park' ||
       value === 'amusement_arcade' || value === 'bowling_alley' || value === 'theme_park' ||
       value === 'zoo' || value === 'aquarium' || value === 'attraction' ||
@@ -120,8 +125,11 @@ function mapOsmToCategory(osmKey?: string, osmValue?: string): AllowedCategory |
     return 'entertainment';
   }
   
-  // Leisure venues default to entertainment
+  // Leisure venues - check for parks first, then entertainment
   if (key === 'leisure') {
+    if (value === 'park' || value === 'playground' || value === 'garden' || value === 'nature_reserve') {
+      return 'park';
+    }
     return 'entertainment';
   }
   
