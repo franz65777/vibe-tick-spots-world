@@ -744,7 +744,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
             onClick={() => setIsMapMinimized(false)}
             className="flex-shrink-0 flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-4 h-5" />
             <span>{t('showMap', { ns: 'common' })}</span>
           </button>
         )}
