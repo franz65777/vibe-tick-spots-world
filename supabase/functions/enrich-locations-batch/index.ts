@@ -109,6 +109,9 @@ serve(async (req) => {
       enrichPhotos = true, 
       enrichHours = true,
       maxPhotosPerLocation = 2, // Reduced default
+      // IMPORTANT: Finding/creating Google Place IDs can be costly and can loop forever when Google returns no match.
+      // Keep it opt-in from the dashboard.
+      resolvePlaceIds = false,
       dryRun = false 
     } = requestBody;
 
@@ -171,8 +174,26 @@ serve(async (req) => {
 
     let locations = locationsWithPlaceId || [];
 
-    // If no locations with valid place IDs, try locations without
+    // If no locations with valid place IDs, optionally try to resolve place IDs (expensive)
     if (locations.length === 0) {
+      if (!resolvePlaceIds) {
+        return new Response(
+          JSON.stringify({
+            processed: 0,
+            successful: 0,
+            failed: 0,
+            results: [],
+            totalCost: 0,
+            monthlySpend,
+            remainingBudget,
+            hasMore: false,
+            nextOffset: 0,
+            message: 'Nessuna location con Google Place ID valido da arricchire. Attiva "Trova Google ID" per provare a risolverli (costo extra).'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const { data: noPlaceIdLocations, error: fetchError2 } = await supabase
         .from('locations')
         .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
@@ -235,30 +256,38 @@ serve(async (req) => {
       try {
         let googlePlaceId = location.google_place_id;
 
-        // Step 1: Find Google Place ID if needed
-        if (!isValidGooglePlaceId(googlePlaceId) && location.latitude && location.longitude) {
+        // Step 1: Find Google Place ID if needed (OPTIONAL, can be expensive)
+        if (
+          resolvePlaceIds &&
+          !isValidGooglePlaceId(googlePlaceId) &&
+          location.latitude &&
+          location.longitude
+        ) {
           console.log(`Finding place ID for: ${location.name}`);
-          
+
           if (!dryRun) {
             const input = encodeURIComponent(location.name);
             const locationBias = `point:${location.latitude},${location.longitude}`;
             const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${input}&inputtype=textquery&locationbias=${locationBias}&fields=place_id&key=${googleApiKey}`;
-            
+
             const findResponse = await fetch(findUrl);
             const findData = await findResponse.json();
-            
+
             result.costs.findPlace = COSTS.FIND_PLACE;
-            
+
             if (findData.status === 'OK' && findData.candidates?.[0]?.place_id) {
               googlePlaceId = findData.candidates[0].place_id;
               result.googlePlaceId = googlePlaceId;
-              
+
               await supabase
                 .from('locations')
                 .update({ google_place_id: googlePlaceId })
                 .eq('id', location.id);
-                
+
               console.log(`Found place ID: ${googlePlaceId}`);
+            } else {
+              // Do not keep retrying in a tight loop; the dashboard can re-run later if desired.
+              result.error = `Google FindPlace: ${findData.status || 'NO_RESULT'}`;
             }
           } else {
             result.costs.findPlace = COSTS.FIND_PLACE;
@@ -421,10 +450,16 @@ serve(async (req) => {
     const newMonthlySpend = monthlySpend + totalBatchCost;
     const newRemainingBudget = MONTHLY_FREE_CREDIT - newMonthlySpend;
 
-    const { count: remainingCount } = await supabase
+    const remainingQuery = supabase
       .from('locations')
       .select('id', { count: 'exact', head: true })
       .or('photos.is.null,opening_hours_data.is.null');
+
+    // If we are NOT resolving Place IDs, only consider locations that already have a valid Place ID.
+    // This prevents spending money looping over locations that Google can't match.
+    const { count: remainingCount } = resolvePlaceIds
+      ? await remainingQuery
+      : await remainingQuery.like('google_place_id', 'ChIJ%');
 
     const batchResult: BatchResult = {
       processed: results.length,
