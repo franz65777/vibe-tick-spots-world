@@ -194,11 +194,13 @@ serve(async (req) => {
         );
       }
 
+      // Fetch locations without valid Google Place ID BUT exclude those already marked as "not found"
       const { data: noPlaceIdLocations, error: fetchError2 } = await supabase
         .from('locations')
         .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
         .or('photos.is.null,opening_hours_data.is.null')
         .or('google_place_id.is.null,google_place_id.not.like.ChIJ%')
+        .is('google_place_not_found_at', null) // CRITICAL: Skip locations already marked as not found on Google
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .range(0, batchSize - 1);
@@ -286,8 +288,15 @@ serve(async (req) => {
 
               console.log(`Found place ID: ${googlePlaceId}`);
             } else {
-              // Do not keep retrying in a tight loop; the dashboard can re-run later if desired.
-              result.error = `Google FindPlace: ${findData.status || 'NO_RESULT'}`;
+              // CRITICAL FIX: Mark this location as "not found on Google" to prevent infinite retries
+              // This saves money by not calling find_place again for this location
+              console.log(`Place not found for ${location.name}, marking as not_found`);
+              await supabase
+                .from('locations')
+                .update({ google_place_not_found_at: new Date().toISOString() })
+                .eq('id', location.id);
+              
+              result.error = `Google FindPlace: ${findData.status || 'NO_RESULT'} - marcato come non trovato`;
             }
           } else {
             result.costs.findPlace = COSTS.FIND_PLACE;

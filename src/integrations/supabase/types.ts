@@ -1256,6 +1256,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           google_place_id: string | null
+          google_place_not_found_at: string | null
           id: string
           image_url: string | null
           is_system_seeded: boolean | null
@@ -1284,6 +1285,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           google_place_id?: string | null
+          google_place_not_found_at?: string | null
           id?: string
           image_url?: string | null
           is_system_seeded?: boolean | null
@@ -1312,6 +1314,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           google_place_id?: string | null
+          google_place_not_found_at?: string | null
           id?: string
           image_url?: string | null
           is_system_seeded?: boolean | null
