@@ -841,7 +841,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       <Drawer 
         open={!savedByOpen && !isListOpen}
         modal={false}
-        dismissible={true}
+        dismissible={false}
+        noBodyStyles
         onOpenChange={(open) => { 
           if (!open && !shareOpen && !reviewOpen) {
             if (onBack) {
@@ -858,11 +859,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           data-pin-detail-card="true" 
           showHandle={false}
           hideOverlay={true}
-          disableDefaultTransition={isUserDragging || isInitialRender}
+          disableDefaultTransition={true}
           className={cn(
             "rounded-t-3xl bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10",
             onBack ? "z-[10020]" : "z-[2000]",
-            dropdownOpen ? "overflow-visible" : "overflow-hidden"
+            dropdownOpen ? "overflow-visible" : "overflow-hidden",
+            "!transition-none [&[data-state]]:!transition-none"
           )}
           style={{
             height: `${expandedHeight}vh`,

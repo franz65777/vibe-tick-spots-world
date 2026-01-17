@@ -23,7 +23,20 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+}
+
+/* Override vaul drawer animations for custom-controlled drawers */
+[data-vaul-drawer][data-vaul-custom] [data-vaul-drawer-content] {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Ensure PinDetailCard drawer has no vaul animation */
+[data-pin-detail-card="true"] {
+  animation: none !important;
+}
+
+@layer utilities {
   @keyframes sparkle-float {
     0%, 100% {
       transform: translateY(0) scale(1);
