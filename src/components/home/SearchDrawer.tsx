@@ -129,6 +129,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   // Drag state (Pointer Events for reliable mobile swipe)
   const [dragProgress, setDragProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isInitialRender, setIsInitialRender] = useState(true);
   const dragStartY = useRef(0);
   const dragStartProgress = useRef(0);
   const velocityRef = useRef(0);
@@ -147,6 +148,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const searchCacheRef = useRef<Map<string, { cities: { name: string; lat: number; lng: number }[]; locations: LocationResult[] }>>(new Map());
 
   const processedLocationRef = useRef<string>('');
+
+  // Prevent animation flash on initial render
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setIsInitialRender(false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // Register the reopen function for parent to call
   useEffect(() => {
@@ -782,7 +791,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         bottom: isExpanded
           ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
           : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
-        transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        transition: (isDragging || isInitialRender) ? 'none' : 'all 0.55s cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
@@ -841,11 +850,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           isSearchOpen ? "backdrop-blur-xl bg-background/60" : "bg-background"
         )}
         style={{
-          height: expandedHeight,
+          height: maxExpandedHeight,
+          transform: `translateY(${(1 - dragProgress) * 100}%)`,
           opacity: expandedOpacity,
-          transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transition: (isDragging || isInitialRender) 
+            ? 'none' 
+            : 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease-out',
           display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: isSearchOpen ? 0 : 8,
+          willChange: 'transform',
           // Allow scrolling inside the panel; drag is handled only by the top handle
           touchAction: 'pan-y',
         }}
