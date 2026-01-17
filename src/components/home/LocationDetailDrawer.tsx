@@ -709,7 +709,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 {/* Map container - extends beyond edges */}
                 <div 
                   ref={mapDivRef} 
-                  className="h-40 relative z-0" 
+                  className="h-52 relative z-0" 
                   style={{ 
                     marginLeft: '-24px', 
                     marginRight: '-24px', 
@@ -742,11 +742,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         {isMapMinimized && hasValidCoordinates && (
           <button
             onClick={() => setIsMapMinimized(false)}
-            className="flex-shrink-0 flex items-center justify-center gap-2 py-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors bg-primary/5 hover:bg-primary/10 border-b border-border"
+            className="flex-shrink-0 flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-3.5 h-3.5" />
             <span>{t('showMap', { ns: 'common' })}</span>
-            <ChevronDown className="w-4 h-4" />
           </button>
         )}
 
