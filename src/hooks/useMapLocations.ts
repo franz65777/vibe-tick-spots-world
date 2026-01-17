@@ -13,6 +13,7 @@ interface MapLocation {
   city?: string;
   google_place_id?: string;
   opening_hours_data?: any;
+  photos?: string[];
   coordinates: {
     lat: number;
     lng: number;
@@ -592,7 +593,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           // ---------------------- 2) Fetch from locations table ----------------------
           let locationsQuery = supabase
             .from('locations')
-            .select('id, name, category, address, city, latitude, longitude, created_by, created_at, google_place_id, opening_hours_data')
+            .select('id, name, category, address, city, latitude, longitude, created_by, created_at, google_place_id, opening_hours_data, photos')
             .not('latitude', 'is', null)
             .not('longitude', 'is', null);
 
@@ -679,6 +680,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 city: resolvedCity,
                 google_place_id: loc.google_place_id,
                 opening_hours_data: loc.opening_hours_data,
+                photos: loc.photos as string[] | undefined,
                 coordinates: {
                   lat: Number(loc.latitude) || 0,
                   lng: Number(loc.longitude) || 0,

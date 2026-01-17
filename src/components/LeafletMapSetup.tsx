@@ -1237,6 +1237,8 @@ const LeafletMapSetup = ({
             city: selectedPlace.city,
             google_place_id: selectedPlace.google_place_id,
             coordinates: selectedPlace.coordinates,
+            opening_hours_data: selectedPlace.opening_hours_data,
+            photos: selectedPlace.photos,
             sourcePostId: (selectedPlace as any).sourcePostId,
             isTemporary: (selectedPlace as any).isTemporary,
             returnTo: (selectedPlace as any).returnTo,
