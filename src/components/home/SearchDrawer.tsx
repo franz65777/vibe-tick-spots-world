@@ -831,7 +831,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     const extraProgress = (clampedProgress - TRENDING_PROGRESS) / (1 - TRENDING_PROGRESS);
     expandedHeight = trendingHeight + extraProgress * (searchHeight - trendingHeight);
   }
-  const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
+  // Keep opacity at 1 when drawer is visible to avoid transparency
+  const expandedOpacity = dragProgress > 0 ? 1 : 0;
 
   const isSearching = internalQuery.trim().length > 0;
   const hasResults = cityResults.length > 0 || locationResults.length > 0;
