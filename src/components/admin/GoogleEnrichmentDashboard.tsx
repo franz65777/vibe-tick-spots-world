@@ -69,25 +69,27 @@ export const GoogleEnrichmentDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      // Get location stats
-      const { data: locData } = await supabase
-        .from('locations')
-        .select('id, photos, opening_hours_data, google_place_id');
+      // Use RPC function for accurate counts (avoids client-side pagination limits)
+      const { data: statsData, error: statsError } = await supabase
+        .rpc('get_location_enrichment_stats');
       
-      if (locData) {
-        const withPhotos = locData.filter(l => l.photos && Array.isArray(l.photos) && l.photos.length > 0).length;
-        const withHours = locData.filter(l => l.opening_hours_data).length;
-        const withGoogleId = locData.filter(l => l.google_place_id?.startsWith('ChIJ')).length;
-        const needsEnrichment = locData.filter(l => 
-          !l.photos || !(Array.isArray(l.photos) && l.photos.length > 0) || !l.opening_hours_data
-        ).length;
-        
+      if (statsError) {
+        console.error('Error fetching stats via RPC:', statsError);
+      } else if (statsData) {
+        // Type assertion for the RPC response
+        const data = statsData as {
+          total_locations: number;
+          with_photos: number;
+          with_hours: number;
+          with_google_id: number;
+          needs_enrichment: number;
+        };
         setStats({
-          totalLocations: locData.length,
-          withPhotos,
-          withHours,
-          withGoogleId,
-          needsEnrichment,
+          totalLocations: data.total_locations || 0,
+          withPhotos: data.with_photos || 0,
+          withHours: data.with_hours || 0,
+          withGoogleId: data.with_google_id || 0,
+          needsEnrichment: data.needs_enrichment || 0,
         });
       }
 
