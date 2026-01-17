@@ -13,8 +13,70 @@ const COSTS = {
   FIND_PLACE: 0.017,    // $17 per 1000 = $0.017 each
 };
 
-const MONTHLY_FREE_CREDIT = 200; // $200 free credit
 const MAX_BATCH_SIZE = 3; // Limit batch size to prevent memory issues with more photos
+
+// Helper to get current billing month
+function getCurrentBillingMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Budget check - returns { allowed, enabled, spent, limit } 
+async function checkBudgetAndKillSwitch(supabase: any): Promise<{
+  allowed: boolean;
+  enabled: boolean;
+  spent: number;
+  limit: number;
+  message?: string;
+}> {
+  // Get budget settings
+  const { data: settings } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'google_api_budget')
+    .single();
+
+  const budgetSettings = settings?.value || { monthly_limit_usd: 10, enabled: false };
+  const monthlyLimit = budgetSettings.monthly_limit_usd || 10;
+  const enabled = budgetSettings.enabled === true;
+
+  // If kill switch is off, block immediately
+  if (!enabled) {
+    return {
+      allowed: false,
+      enabled: false,
+      spent: 0,
+      limit: monthlyLimit,
+      message: 'Google API is disabled. Enable it in admin settings.'
+    };
+  }
+
+  // Get current month spend
+  const currentMonth = getCurrentBillingMonth();
+  const { data: costData } = await supabase
+    .from('google_api_costs')
+    .select('cost_usd')
+    .eq('billing_month', currentMonth);
+
+  const totalSpent = costData?.reduce((sum: number, r: any) => sum + (r.cost_usd || 0), 0) || 0;
+
+  if (totalSpent >= monthlyLimit) {
+    return {
+      allowed: false,
+      enabled: true,
+      spent: totalSpent,
+      limit: monthlyLimit,
+      message: `Monthly budget exceeded: $${totalSpent.toFixed(2)} / $${monthlyLimit}`
+    };
+  }
+
+  return {
+    allowed: true,
+    enabled: true,
+    spent: totalSpent,
+    limit: monthlyLimit
+  };
+}
 
 interface EnrichmentResult {
   locationId: string;
@@ -136,26 +198,32 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get current month's spending
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const { data: spendData } = await supabase
-      .rpc('get_google_api_monthly_spend', { target_month: currentMonth });
-    
-    const monthlySpend = spendData?.[0]?.total_cost || 0;
-    let remainingBudget = MONTHLY_FREE_CREDIT - monthlySpend;
-
-    console.log(`Monthly spend: $${monthlySpend.toFixed(2)}, Remaining: $${remainingBudget.toFixed(2)}`);
-
-    if (remainingBudget <= 0) {
+    // ⚠️ BUDGET CHECK - Block if disabled or over budget
+    const budgetCheck = await checkBudgetAndKillSwitch(supabase);
+    if (!budgetCheck.allowed) {
+      console.log(`Budget blocked: ${budgetCheck.message}`);
       return new Response(
-        JSON.stringify({ 
-          error: 'Monthly budget exhausted',
-          monthlySpend,
-          remainingBudget: 0
+        JSON.stringify({
+          error: budgetCheck.message,
+          budget_blocked: true,
+          processed: 0,
+          successful: 0,
+          failed: 0,
+          deleted: 0,
+          results: [],
+          totalCost: 0,
+          monthlySpend: budgetCheck.spent,
+          remainingBudget: 0,
+          hasMore: false,
+          nextOffset: 0
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Use the budget limit from settings instead of hardcoded $200
+    const monthlySpend = budgetCheck.spent;
+    let remainingBudget = budgetCheck.limit - monthlySpend;
 
     // Fetch locations with valid place IDs first
     // IMPORTANT: do NOT use offset-based pagination here.

@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   Loader2, Image, Clock, DollarSign, Play, Eye, RefreshCw, 
-  CheckCircle2, AlertCircle, StopCircle, TrendingUp, Zap
+  CheckCircle2, AlertCircle, StopCircle, TrendingUp, Zap, ShieldAlert, Power
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -42,11 +43,17 @@ interface BatchResult {
   remainingBudget: number;
   hasMore: boolean;
   nextOffset: number;
+  budget_blocked?: boolean;
+  error?: string;
+}
+
+interface BudgetSettings {
+  monthly_limit_usd: number;
+  enabled: boolean;
 }
 
 type EnrichmentStatus = 'idle' | 'starting' | 'running' | 'completed';
 
-const MONTHLY_BUDGET = 200;
 const COST_PER_LOCATION_ESTIMATE = 0.059; // $0.017 details + $0.007 * 6 photos
 
 export const GoogleEnrichmentDashboard = () => {
@@ -54,6 +61,11 @@ export const GoogleEnrichmentDashboard = () => {
   const [monthlySpend, setMonthlySpend] = useState<MonthlySpend | null>(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<EnrichmentStatus>('idle');
+  
+  // Budget settings
+  const [budgetSettings, setBudgetSettings] = useState<BudgetSettings>({ monthly_limit_usd: 10, enabled: false });
+  const [budgetLimitInput, setBudgetLimitInput] = useState('10');
+  const [savingBudget, setSavingBudget] = useState(false);
   
   // Settings
   const [batchSize, setBatchSize] = useState(10);
@@ -116,8 +128,47 @@ export const GoogleEnrichmentDashboard = () => {
           locations_enriched: 0,
         });
       }
+
+      // Get budget settings
+      const { data: settingsData } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'google_api_budget')
+        .single();
+      
+      if (settingsData?.value) {
+        const settings = settingsData.value as unknown as BudgetSettings;
+        setBudgetSettings(settings);
+        setBudgetLimitInput(String(settings.monthly_limit_usd || 10));
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const saveBudgetSettings = async (newSettings: Partial<BudgetSettings>) => {
+    setSavingBudget(true);
+    try {
+      const updated = { ...budgetSettings, ...newSettings };
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({ 
+          key: 'google_api_budget', 
+          value: updated,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+      
+      setBudgetSettings(updated);
+      toast.success(newSettings.enabled !== undefined 
+        ? `Google API ${updated.enabled ? 'abilitato' : 'disabilitato'}`
+        : `Limite budget aggiornato a $${updated.monthly_limit_usd}`
+      );
+    } catch (error: any) {
+      toast.error('Errore nel salvataggio', { description: error.message });
+    } finally {
+      setSavingBudget(false);
     }
   };
 
@@ -173,6 +224,15 @@ export const GoogleEnrichmentDashboard = () => {
         }
 
         const result = data as BatchResult;
+
+        // Check if budget is blocked
+        if (result.budget_blocked) {
+          toast.warning('Google API bloccata', {
+            description: result.error || 'Budget esaurito o API disabilitata',
+            duration: 5000
+          });
+          break;
+        }
         
         totalProcessedSession += result.processed;
         totalSuccessfulSession += result.successful;
@@ -250,9 +310,10 @@ export const GoogleEnrichmentDashboard = () => {
     );
   }
 
-  const spentPercent = monthlySpend ? (monthlySpend.total_cost / MONTHLY_BUDGET) * 100 : 0;
-  const remainingBudget = MONTHLY_BUDGET - (monthlySpend?.total_cost || 0);
-  const estimatedLocationsRemaining = Math.floor(remainingBudget / COST_PER_LOCATION_ESTIMATE);
+  const configuredBudget = budgetSettings.monthly_limit_usd || 10;
+  const spentPercent = monthlySpend ? (monthlySpend.total_cost / configuredBudget) * 100 : 0;
+  const remainingBudget = configuredBudget - (monthlySpend?.total_cost || 0);
+  const estimatedLocationsRemaining = Math.floor(Math.max(0, remainingBudget) / COST_PER_LOCATION_ESTIMATE);
   const photosPercent = stats ? (stats.withPhotos / Math.max(stats.totalLocations, 1)) * 100 : 0;
   const hoursPercent = stats ? (stats.withHours / Math.max(stats.totalLocations, 1)) * 100 : 0;
 
@@ -283,22 +344,80 @@ export const GoogleEnrichmentDashboard = () => {
       </CardHeader>
       
       <CardContent className="space-y-5">
-        {/* Budget Tracker */}
-        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-4 space-y-3">
+        {/* ⚠️ KILL SWITCH & BUDGET CONTROL */}
+        <div className={`border rounded-xl p-4 space-y-4 ${
+          budgetSettings.enabled 
+            ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20' 
+            : 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/20'
+        }`}>
+          {/* Kill Switch */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <span className="font-medium">Budget Mensile</span>
+              <Power className={`w-5 h-5 ${budgetSettings.enabled ? 'text-green-600' : 'text-red-500'}`} />
+              <div>
+                <span className="font-medium">Google API</span>
+                <p className="text-xs text-muted-foreground">
+                  {budgetSettings.enabled ? 'Abilitato' : 'Disabilitato - nessun costo'}
+                </p>
+              </div>
             </div>
-            <Badge variant={spentPercent > 80 ? "destructive" : spentPercent > 50 ? "secondary" : "outline"}>
-              ${monthlySpend?.total_cost.toFixed(2) || '0.00'} / $200
-            </Badge>
+            <Switch
+              checked={budgetSettings.enabled}
+              onCheckedChange={(enabled) => saveBudgetSettings({ enabled })}
+              disabled={savingBudget}
+            />
           </div>
-          <Progress value={spentPercent} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Rimanenti: ${remainingBudget.toFixed(2)}</span>
-            <span>~{estimatedLocationsRemaining} location disponibili</span>
+
+          {/* Budget Limit */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <ShieldAlert className="w-4 h-4 text-amber-500" />
+              <Label className="text-sm">Limite mensile: $</Label>
+              <Input
+                type="number"
+                value={budgetLimitInput}
+                onChange={(e) => setBudgetLimitInput(e.target.value)}
+                className="w-20 h-8 text-sm"
+                min={1}
+                max={200}
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => saveBudgetSettings({ monthly_limit_usd: Number(budgetLimitInput) || 10 })}
+              disabled={savingBudget || Number(budgetLimitInput) === budgetSettings.monthly_limit_usd}
+              className="h-8"
+            >
+              {savingBudget ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Salva'}
+            </Button>
           </div>
+
+          {/* Spend Progress */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-green-600" />
+                Speso questo mese
+              </span>
+              <Badge variant={spentPercent > 100 ? "destructive" : spentPercent > 80 ? "secondary" : "outline"}>
+                ${monthlySpend?.total_cost.toFixed(2) || '0.00'} / ${configuredBudget}
+              </Badge>
+            </div>
+            <Progress value={Math.min(spentPercent, 100)} className="h-2" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Rimanenti: ${Math.max(0, remainingBudget).toFixed(2)}</span>
+              <span>~{estimatedLocationsRemaining} location disponibili</span>
+            </div>
+          </div>
+
+          {/* Warning if over budget */}
+          {remainingBudget <= 0 && (
+            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-100 dark:bg-red-900/30 rounded-lg p-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>Budget esaurito! Le API Google sono bloccate automaticamente.</span>
+            </div>
+          )}
         </div>
 
         {/* Running State */}
