@@ -14,6 +14,7 @@ const COSTS = {
 };
 
 const MONTHLY_FREE_CREDIT = 200; // $200 free credit
+const MAX_BATCH_SIZE = 5; // Limit batch size to prevent memory issues
 
 interface EnrichmentResult {
   locationId: string;
@@ -49,22 +50,73 @@ function isValidGooglePlaceId(placeId: string | null | undefined): boolean {
   return placeId.startsWith('ChIJ');
 }
 
+// Process a single photo - fetch and upload without keeping in memory
+async function processPhoto(
+  photoRef: string,
+  locationId: string,
+  photoIndex: number,
+  googleApiKey: string,
+  supabase: any
+): Promise<string | null> {
+  const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference=${photoRef}&key=${googleApiKey}`;
+  
+  try {
+    const photoResponse = await fetch(photoUrl);
+    
+    if (!photoResponse.ok) {
+      return null;
+    }
+    
+    // Read as ArrayBuffer directly, smaller size
+    const photoBuffer = await photoResponse.arrayBuffer();
+    const photoBytes = new Uint8Array(photoBuffer);
+    
+    const fileName = `${locationId}/photo-${photoIndex}.jpg`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('location-photos')
+      .upload(fileName, photoBytes, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+    
+    if (uploadError) {
+      console.error(`Upload error for photo ${photoIndex}:`, uploadError.message);
+      return null;
+    }
+    
+    const { data: urlData } = supabase.storage
+      .from('location-photos')
+      .getPublicUrl(fileName);
+    
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error(`Photo ${photoIndex} processing error:`, error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      batchSize = 10, 
+    const requestBody = await req.json();
+    let { 
+      batchSize = 5, 
       offset = 0, 
       enrichPhotos = true, 
       enrichHours = true,
-      maxPhotosPerLocation = 4,
+      maxPhotosPerLocation = 2, // Reduced default
       dryRun = false 
-    } = await req.json();
+    } = requestBody;
 
-    console.log(`Starting batch enrichment: offset=${offset}, batchSize=${batchSize}, dryRun=${dryRun}`);
+    // Enforce limits to prevent memory issues
+    batchSize = Math.min(batchSize, MAX_BATCH_SIZE);
+    maxPhotosPerLocation = Math.min(maxPhotosPerLocation, 3);
+
+    console.log(`Starting batch: offset=${offset}, batchSize=${batchSize}, maxPhotos=${maxPhotosPerLocation}`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -80,7 +132,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get current month's spending
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: spendData } = await supabase
       .rpc('get_google_api_monthly_spend', { target_month: currentMonth });
     
@@ -100,14 +152,13 @@ serve(async (req) => {
       );
     }
 
-    // Fetch locations that need enrichment
-    // Priority: locations with google_place_id but missing photos/hours
+    // Fetch locations with valid place IDs first
     const { data: locationsWithPlaceId, error: fetchError } = await supabase
       .from('locations')
       .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
       .or('photos.is.null,opening_hours_data.is.null')
       .not('google_place_id', 'is', null)
-      .like('google_place_id', 'ChIJ%') // Only valid Google Place IDs
+      .like('google_place_id', 'ChIJ%')
       .range(offset, offset + batchSize - 1);
 
     if (fetchError) {
@@ -116,7 +167,7 @@ serve(async (req) => {
 
     let locations = locationsWithPlaceId || [];
 
-    // If no locations with valid place IDs, try locations without (will use Find Place API)
+    // If no locations with valid place IDs, try locations without
     if (locations.length === 0) {
       const { data: noPlaceIdLocations, error: fetchError2 } = await supabase
         .from('locations')
@@ -128,7 +179,7 @@ serve(async (req) => {
         .range(offset, offset + batchSize - 1);
 
       if (fetchError2) {
-        throw new Error(`Failed to fetch locations without place ID: ${fetchError2.message}`);
+        throw new Error(`Failed to fetch locations: ${fetchError2.message}`);
       }
 
       locations = noPlaceIdLocations || [];
@@ -158,9 +209,8 @@ serve(async (req) => {
     let totalBatchCost = 0;
 
     for (const location of locations) {
-      // Check if we still have budget
       if (remainingBudget - totalBatchCost < COSTS.PLACE_DETAILS) {
-        console.log('Budget limit reached during batch');
+        console.log('Budget limit reached');
         break;
       }
 
@@ -181,7 +231,7 @@ serve(async (req) => {
       try {
         let googlePlaceId = location.google_place_id;
 
-        // Step 1: Find Google Place ID if not available
+        // Step 1: Find Google Place ID if needed
         if (!isValidGooglePlaceId(googlePlaceId) && location.latitude && location.longitude) {
           console.log(`Finding place ID for: ${location.name}`);
           
@@ -199,13 +249,12 @@ serve(async (req) => {
               googlePlaceId = findData.candidates[0].place_id;
               result.googlePlaceId = googlePlaceId;
               
-              // Update location with new Place ID
               await supabase
                 .from('locations')
                 .update({ google_place_id: googlePlaceId })
                 .eq('id', location.id);
                 
-              console.log(`Found and saved place ID: ${googlePlaceId}`);
+              console.log(`Found place ID: ${googlePlaceId}`);
             }
           } else {
             result.costs.findPlace = COSTS.FIND_PLACE;
@@ -214,7 +263,7 @@ serve(async (req) => {
           result.googlePlaceId = googlePlaceId;
         }
 
-        // Step 2: Get place details (photos + hours)
+        // Step 2: Get place details
         if (googlePlaceId && isValidGooglePlaceId(googlePlaceId)) {
           const needsPhotos = enrichPhotos && (!location.photos || (Array.isArray(location.photos) && location.photos.length === 0));
           const needsHours = enrichHours && !location.opening_hours_data;
@@ -234,9 +283,9 @@ serve(async (req) => {
               result.costs.placeDetails = COSTS.PLACE_DETAILS;
               
               if (detailsData.status === 'OK') {
-                const updateData: any = {};
+                const updateData: Record<string, any> = {};
                 
-                // Process photos
+                // Process photos one at a time
                 if (needsPhotos && detailsData.result?.photos) {
                   const photoRefs = detailsData.result.photos
                     .slice(0, maxPhotosPerLocation)
@@ -245,37 +294,22 @@ serve(async (req) => {
                   const uploadedPhotos: string[] = [];
                   
                   for (let i = 0; i < photoRefs.length; i++) {
-                    const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRefs[i]}&key=${googleApiKey}`;
+                    result.costs.placePhotos += COSTS.PLACE_PHOTOS;
                     
-                    try {
-                      const photoResponse = await fetch(photoUrl);
-                      result.costs.placePhotos += COSTS.PLACE_PHOTOS;
-                      
-                      if (photoResponse.ok) {
-                        const photoBlob = await photoResponse.blob();
-                        const photoBuffer = await photoBlob.arrayBuffer();
-                        const photoBytes = new Uint8Array(photoBuffer);
-                        
-                        const fileName = `${location.id}/photo-${i}.jpg`;
-                        
-                        const { error: uploadError } = await supabase.storage
-                          .from('location-photos')
-                          .upload(fileName, photoBytes, {
-                            contentType: 'image/jpeg',
-                            upsert: true
-                          });
-                        
-                        if (!uploadError) {
-                          const { data: urlData } = supabase.storage
-                            .from('location-photos')
-                            .getPublicUrl(fileName);
-                          
-                          uploadedPhotos.push(urlData.publicUrl);
-                        }
-                      }
-                    } catch (photoError) {
-                      console.error(`Photo ${i} error:`, photoError);
+                    const photoUrl = await processPhoto(
+                      photoRefs[i],
+                      location.id,
+                      i,
+                      googleApiKey,
+                      supabase
+                    );
+                    
+                    if (photoUrl) {
+                      uploadedPhotos.push(photoUrl);
                     }
+                    
+                    // Small delay between photos
+                    await new Promise(r => setTimeout(r, 100));
                   }
                   
                   if (uploadedPhotos.length > 0) {
@@ -297,7 +331,6 @@ serve(async (req) => {
                   result.hasHours = true;
                 }
                 
-                // Update location
                 if (Object.keys(updateData).length > 0) {
                   await supabase
                     .from('locations')
@@ -308,7 +341,6 @@ serve(async (req) => {
                 result.success = true;
               }
             } else {
-              // Dry run - estimate costs
               result.costs.placeDetails = COSTS.PLACE_DETAILS;
               if (needsPhotos) {
                 result.costs.placePhotos = COSTS.PLACE_PHOTOS * maxPhotosPerLocation;
@@ -321,7 +353,7 @@ serve(async (req) => {
         result.costs.total = result.costs.findPlace + result.costs.placeDetails + result.costs.placePhotos;
         totalBatchCost += result.costs.total;
 
-        // Log cost to database (not in dry run)
+        // Log costs
         if (!dryRun && result.costs.total > 0) {
           const costEntries = [];
           
@@ -364,19 +396,18 @@ serve(async (req) => {
         
       } catch (locationError) {
         console.error(`Error processing ${location.name}:`, locationError);
-        result.error = locationError.message;
+        result.error = locationError instanceof Error ? locationError.message : String(locationError);
         results.push(result);
       }
 
-      // Small delay between locations to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Delay between locations
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
 
     const successCount = results.filter(r => r.success).length;
     const newMonthlySpend = monthlySpend + totalBatchCost;
     const newRemainingBudget = MONTHLY_FREE_CREDIT - newMonthlySpend;
 
-    // Check if there are more locations to process
     const { count: remainingCount } = await supabase
       .from('locations')
       .select('id', { count: 'exact', head: true })
@@ -394,7 +425,7 @@ serve(async (req) => {
       nextOffset: offset + results.length,
     };
 
-    console.log(`Batch complete: ${successCount}/${results.length} successful, cost: $${totalBatchCost.toFixed(4)}`);
+    console.log(`Batch done: ${successCount}/${results.length}, cost: $${totalBatchCost.toFixed(4)}`);
 
     return new Response(
       JSON.stringify(batchResult),
@@ -402,9 +433,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Batch enrichment error:', error);
+    console.error('Batch error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
