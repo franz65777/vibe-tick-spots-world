@@ -279,22 +279,31 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [isExpanded, setIsExpanded] = useState(false);
   const [photoScrollProgress, setPhotoScrollProgress] = useState(0); // 0=fully visible, 1=fully hidden
   const [photoCollapsePx, setPhotoCollapsePx] = useState(120); // how many px of scroll are consumed to fully hide photos (96px photo + padding)
-  const [sheetProgress, setSheetProgress] = useState(0); // 0=collapsed, 1=expanded
   const [isUserDragging, setIsUserDragging] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const photoSectionRef = useRef<HTMLDivElement>(null);
+  const drawerContentRef = useRef<HTMLDivElement>(null);
+  
   // Touch/drag gesture tracking for swipe to expand/collapse
   const touchStartY = useRef<number | null>(null);
   const touchStartTime = useRef<number>(0);
-  const startProgressRef = useRef(0);
+  const startTranslateY = useRef(0);
+  const currentTranslateY = useRef(0);
   const rafRef = useRef<number | null>(null);
   const isDragging = useRef(false);
-
-  // Keep progress in sync when state changes (without interfering during drag)
-  useEffect(() => {
-    if (isUserDragging) return;
-    setSheetProgress(isExpanded ? 1 : 0);
-  }, [isExpanded, isUserDragging]);
+  
+  // Heights for snap points (in vh units converted to px)
+  const collapsedHeight = 42; // vh
+  const expandedHeight = 92; // vh
+  
+  // Calculate translateY based on expanded state
+  const getTargetTranslateY = (expanded: boolean) => {
+    const viewportHeight = window.innerHeight;
+    const collapsedPx = viewportHeight * (collapsedHeight / 100);
+    const expandedPx = viewportHeight * (expandedHeight / 100);
+    // translateY = how much to push down from expanded state
+    return expanded ? 0 : expandedPx - collapsedPx;
+  };
 
 
   // Check if onboarding is active on map-guide step
@@ -836,18 +845,22 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       >
         
         <DrawerContent 
+          ref={drawerContentRef}
           data-pin-detail-card="true" 
           showHandle={false}
           hideOverlay={true}
+          disableDefaultTransition={isUserDragging}
           className={cn(
             "rounded-t-3xl bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10",
             onBack ? "z-[10020]" : "z-[2000]",
-            dropdownOpen ? "overflow-visible" : "overflow-hidden",
-            isUserDragging ? "transition-none" : "transition-[max-height] duration-300"
+            dropdownOpen ? "overflow-visible" : "overflow-hidden"
           )}
           style={{
-            // Give the collapsed state enough vertical room on mobile so the floating actions are never clipped.
-            maxHeight: `${42 + (90 - 42) * sheetProgress}vh`,
+            height: `${expandedHeight}vh`,
+            transform: isUserDragging 
+              ? `translateY(${currentTranslateY.current}px)` 
+              : `translateY(${getTargetTranslateY(isExpanded)}px)`,
+            transition: isUserDragging ? 'none' : 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
           }}
         >
           {/* Compact Draggable Header - No grey bar, still draggable */}
@@ -868,7 +881,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
               touchStartY.current = e.clientY;
               touchStartTime.current = Date.now();
-              startProgressRef.current = sheetProgress;
+              startTranslateY.current = getTargetTranslateY(isExpanded);
+              currentTranslateY.current = startTranslateY.current;
               isDragging.current = true;
               setIsUserDragging(true);
             }}
@@ -877,12 +891,28 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               e.stopPropagation();
               e.preventDefault();
 
-              const deltaY = touchStartY.current - e.clientY; // + = swipe up
-              const dragRangePx = 220; // how many px to go from collapsed to expanded
-              const next = Math.min(1, Math.max(0, startProgressRef.current + deltaY / dragRangePx));
+              const deltaY = e.clientY - touchStartY.current; // + = swipe down, - = swipe up
+              const maxTranslate = getTargetTranslateY(false); // collapsed position
+              const minTranslate = 0; // expanded position
+              
+              // Add rubberband effect at edges
+              let nextTranslate = startTranslateY.current + deltaY;
+              if (nextTranslate < minTranslate) {
+                // Rubberband when pulling past expanded
+                nextTranslate = minTranslate + (nextTranslate - minTranslate) * 0.3;
+              } else if (nextTranslate > maxTranslate + 100) {
+                // Rubberband when pulling past collapsed (dismiss zone)
+                nextTranslate = maxTranslate + 100 + (nextTranslate - maxTranslate - 100) * 0.2;
+              }
+              
+              currentTranslateY.current = nextTranslate;
 
               if (rafRef.current) cancelAnimationFrame(rafRef.current);
-              rafRef.current = requestAnimationFrame(() => setSheetProgress(next));
+              rafRef.current = requestAnimationFrame(() => {
+                if (drawerContentRef.current) {
+                  drawerContentRef.current.style.transform = `translateY(${nextTranslate}px)`;
+                }
+              });
             }}
             onPointerUp={(e) => {
               if (touchStartY.current === null || !isDragging.current) return;
@@ -891,27 +921,44 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               const target = e.currentTarget as HTMLElement;
               target.releasePointerCapture(e.pointerId);
 
-              const deltaY = touchStartY.current - e.clientY;
+              const deltaY = e.clientY - touchStartY.current;
               const deltaTime = Math.max(Date.now() - touchStartTime.current, 1);
-              const velocity = deltaY / deltaTime; // signed (px/ms)
+              const velocity = deltaY / deltaTime; // signed (px/ms), + = down, - = up
 
-              const openVelocity = 0.25;
-              const closeVelocity = -0.25;
+              const maxTranslate = getTargetTranslateY(false);
+              const midPoint = maxTranslate / 2;
+              
+              // Velocity thresholds for quick flicks
+              const flickUp = velocity < -0.3;
+              const flickDown = velocity > 0.3;
 
-              // Decide final snap
+              // Decide final snap based on position and velocity
               let nextExpanded: boolean;
-              if (velocity > openVelocity) nextExpanded = true;
-              else if (velocity < closeVelocity) nextExpanded = false;
-              else nextExpanded = sheetProgress >= 0.5;
+              if (flickUp) {
+                nextExpanded = true;
+              } else if (flickDown) {
+                nextExpanded = false;
+              } else {
+                // Use position threshold
+                nextExpanded = currentTranslateY.current < midPoint;
+              }
 
-              // If already collapsed and user swipes down strongly -> close
-              const shouldClose = !isExpanded && !nextExpanded && (deltaY < -30 || velocity < -0.35);
+              // Check for dismiss: if collapsed and swiped down strongly
+              const shouldClose = !isExpanded && !nextExpanded && 
+                (currentTranslateY.current > maxTranslate + 50 || velocity > 0.5);
+              
               if (shouldClose) {
-                if (onBack) onBack();
-                else onClose();
+                // Animate out before closing
+                if (drawerContentRef.current) {
+                  drawerContentRef.current.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+                  drawerContentRef.current.style.transform = `translateY(100vh)`;
+                }
+                setTimeout(() => {
+                  if (onBack) onBack();
+                  else onClose();
+                }, 250);
               } else {
                 setIsExpanded(nextExpanded);
-                setSheetProgress(nextExpanded ? 1 : 0);
               }
 
               touchStartY.current = null;
@@ -932,8 +979,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 cancelAnimationFrame(rafRef.current);
                 rafRef.current = null;
               }
-              // Snap back to current state
-              setSheetProgress(isExpanded ? 1 : 0);
             }}
           >
             {/* Header Row */}

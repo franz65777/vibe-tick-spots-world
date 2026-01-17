@@ -94,12 +94,25 @@ export default {
 						transform: 'translateY(0)',
 						opacity: '1'
 					}
+				},
+				'drawer-up': {
+					from: {
+						transform: 'translateY(100%)'
+					},
+					to: {
+						transform: 'translateY(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'slide-up': 'slide-up 0.3s ease-out'
+				'slide-up': 'slide-up 0.3s ease-out',
+				'drawer-up': 'drawer-up 0.4s cubic-bezier(0.32, 0.72, 0, 1)'
+			},
+			transitionTimingFunction: {
+				'spring': 'cubic-bezier(0.32, 0.72, 0, 1)',
+				'smooth-out': 'cubic-bezier(0.16, 1, 0.3, 1)'
 			}
 		}
 	},
