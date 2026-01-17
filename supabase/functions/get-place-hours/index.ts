@@ -6,6 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cost constants (in USD) - matching Google's pricing
+const COSTS = {
+  FIND_PLACE: 0.017,          // Find Place from Text (Basic)
+  PLACE_DETAILS_HOURS: 0.02,  // Place Details (Contact) - opening_hours field
+};
+
+// Helper to get current billing month
+function getCurrentBillingMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 interface OpeningHoursResult {
   isOpen: boolean | null;
   todayHours: string | null;
@@ -273,9 +285,11 @@ serve(async (req) => {
     }
 
     // Step 4: If no valid Google Place ID, try to find one using Find Place API
+    let usedFindPlaceApi = false;
     if (!googlePlaceId && googleApiKey && name) {
       console.log('No valid Google Place ID, trying Find Place API...');
       const foundPlaceId = await findGooglePlaceId(name, lat, lng, googleApiKey);
+      usedFindPlaceApi = true; // Track that we made a Find Place API call
       
       if (foundPlaceId) {
         googlePlaceId = foundPlaceId;
@@ -296,6 +310,7 @@ serve(async (req) => {
     }
 
     // Step 5: Try Google Places Details API for opening hours
+    let usedPlaceDetailsApi = false;
     if (googleApiKey && googlePlaceId) {
       try {
         console.log(`Fetching opening hours from Google Places API for: ${googlePlaceId}`);
@@ -304,6 +319,7 @@ serve(async (req) => {
         
         const googleResponse = await fetch(googleUrl);
         const googleData = await googleResponse.json();
+        usedPlaceDetailsApi = true; // Track that we made a Place Details API call
 
         if (googleData.status === 'OK' && googleData.result?.opening_hours) {
           const hours = googleData.result.opening_hours;
@@ -322,6 +338,46 @@ serve(async (req) => {
         }
       } catch (googleError) {
         console.error('Google Places API error:', googleError);
+      }
+    }
+
+    // Track Google API costs
+    const currentMonth = getCurrentBillingMonth();
+    const costEntries = [];
+
+    if (usedFindPlaceApi) {
+      costEntries.push({
+        api_type: 'find_place',
+        location_id: locationId || null,
+        cost_usd: COSTS.FIND_PLACE,
+        request_count: 1,
+        billing_month: currentMonth,
+        metadata: { source: 'user_hours_fetch' }
+      });
+    }
+
+    if (usedPlaceDetailsApi) {
+      costEntries.push({
+        api_type: 'place_details',
+        location_id: locationId || null,
+        cost_usd: COSTS.PLACE_DETAILS_HOURS,
+        request_count: 1,
+        billing_month: currentMonth,
+        metadata: { source: 'user_hours_fetch', fields: ['opening_hours'] }
+      });
+    }
+
+    // Insert cost tracking records
+    if (costEntries.length > 0) {
+      const { error: costError } = await supabase
+        .from('google_api_costs')
+        .insert(costEntries);
+      
+      if (costError) {
+        console.error('Error tracking API costs:', costError);
+      } else {
+        const totalCost = costEntries.reduce((sum, e) => sum + e.cost_usd, 0);
+        console.log(`Tracked API costs: $${totalCost.toFixed(4)}`);
       }
     }
 

@@ -6,10 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cost constants (in USD) - matching Google's pricing
+const COSTS = {
+  PLACE_DETAILS_PHOTOS: 0.007, // Place Details (Basic) - photos field only
+  PLACE_PHOTO: 0.007,         // Place Photo - per photo request
+};
+
 interface PhotoResult {
   photos: string[];
   source: string;
   fetched_at: string;
+}
+
+// Helper to get current billing month
+function getCurrentBillingMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
 serve(async (req) => {
@@ -164,6 +176,46 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating location with photos:', updateError);
+      }
+    }
+
+    // Track Google API costs
+    const currentMonth = getCurrentBillingMonth();
+    const costEntries = [];
+
+    // Cost for Place Details API call (photos field)
+    costEntries.push({
+      api_type: 'place_details',
+      location_id: locationId || null,
+      cost_usd: COSTS.PLACE_DETAILS_PHOTOS,
+      request_count: 1,
+      billing_month: currentMonth,
+      metadata: { source: 'user_save', fields: ['photos'] }
+    });
+
+    // Cost for each Place Photo API call
+    if (uploadedPhotos.length > 0) {
+      costEntries.push({
+        api_type: 'place_photos',
+        location_id: locationId || null,
+        cost_usd: COSTS.PLACE_PHOTO * uploadedPhotos.length,
+        request_count: uploadedPhotos.length,
+        billing_month: currentMonth,
+        metadata: { source: 'user_save', photo_count: uploadedPhotos.length }
+      });
+    }
+
+    // Insert cost tracking records
+    if (costEntries.length > 0) {
+      const { error: costError } = await supabase
+        .from('google_api_costs')
+        .insert(costEntries);
+      
+      if (costError) {
+        console.error('Error tracking API costs:', costError);
+      } else {
+        const totalCost = costEntries.reduce((sum, e) => sum + e.cost_usd, 0);
+        console.log(`Tracked API costs: $${totalCost.toFixed(4)} for ${uploadedPhotos.length} photos`);
       }
     }
 
