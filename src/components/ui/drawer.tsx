@@ -36,21 +36,27 @@ interface DrawerContentProps extends React.ComponentPropsWithoutRef<typeof Drawe
   showHandle?: boolean;
   hideOverlay?: boolean;
   overlayClassName?: string;
+  disableDefaultTransition?: boolean;
 }
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   DrawerContentProps
->(({ className, children, showHandle = true, hideOverlay = false, overlayClassName, ...props }, ref) => (
+>(({ className, children, showHandle = true, hideOverlay = false, overlayClassName, disableDefaultTransition = false, style, ...props }, ref) => (
   <DrawerPortal>
     {!hideOverlay && <DrawerOverlay className={overlayClassName} />}
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background will-change-transform",
+        !disableDefaultTransition && "transition-transform duration-300 ease-spring",
         className
       )}
-      style={{ borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
+      style={{ 
+        borderTopLeftRadius: '20px', 
+        borderTopRightRadius: '20px',
+        ...style
+      }}
       {...props}
     >
       {showHandle && <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />}
