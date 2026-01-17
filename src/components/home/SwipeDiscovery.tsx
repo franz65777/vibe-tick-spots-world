@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LocationDetailDrawer from './LocationDetailDrawer';
-import { ArrowLeft, MapPin, Search, UserPlus } from 'lucide-react';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import discoverMascot from '@/assets/discover-mascot.png';
 import noUsersCharacter from '@/assets/no-users-character.png';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import CityLabel from '@/components/common/CityLabel';
+// CityLabel removed - now using inline city display
 import swipeNo from '@/assets/swipe-no-3d-new.png';
 import swipePin from '@/assets/swipe-pin-3d-new.png';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ interface SwipeLocation {
   city: string | null;
   address?: string;
   image_url?: string;
+  photos?: string[]; // Array of photo URLs from Google (max 6)
   coordinates: {
     lat: number;
     lng: number;
@@ -81,6 +82,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
   });
   const [processedPlaceIds, setProcessedPlaceIds] = useState<Set<string>>(new Set());
   const [detailLocation, setDetailLocation] = useState<SwipeLocation | null>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchFollowedUsers();
@@ -147,7 +149,13 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
   // Reset index when category changes
   useEffect(() => {
     setCurrentIndex(0);
+    setCurrentPhotoIndex(0);
   }, [selectedCategory]);
+
+  // Reset photo index when location changes
+  useEffect(() => {
+    setCurrentPhotoIndex(0);
+  }, [currentIndex]);
 
   // Auto-load more when reaching near the end
   useEffect(() => {
@@ -290,7 +298,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
       // Fetch locations and profiles in parallel
       const [locationsResult, profilesResult] = await Promise.all([
-        supabase.from('locations').select('id, name, category, city, address, latitude, longitude, image_url').in('id', locationIds),
+        supabase.from('locations').select('id, name, category, city, address, latitude, longitude, image_url, photos').in('id', locationIds),
         supabase.from('profiles').select('id, username, avatar_url').in('id', userIds)
       ]);
 
@@ -362,6 +370,15 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
             existing.saved_by_users.push(saver);
           }
         } else {
+          // Extract photos from JSON field
+          const photosData = loc.photos;
+          let photosArray: string[] = [];
+          if (Array.isArray(photosData)) {
+            photosArray = photosData.slice(0, 6).map((p: any) => 
+              typeof p === 'string' ? p : (p?.url || p?.photo_url || '')
+            ).filter(Boolean);
+          }
+
           byLocationId.set(locationId, {
             id: locationId,
             name: loc.name || 'Unknown Place',
@@ -369,6 +386,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
             city: loc.city || null,
             address: loc.address || null,
             image_url: loc.image_url || undefined,
+            photos: photosArray,
             coordinates: { lat: latNum, lng: lngNum },
             saved_by: saver,
             saved_by_users: [saver],
@@ -506,6 +524,19 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     if (!touchStart) return;
     
     const swipeThreshold = 100;
+    const verticalThreshold = 80;
+    
+    // Swipe UP - open details
+    if (touchOffset.y < -verticalThreshold && Math.abs(touchOffset.x) < 50) {
+      if (currentLocation) {
+        setDetailLocation(currentLocation);
+      }
+      setTouchOffset({ x: 0, y: 0 });
+      setTouchStart(null);
+      return;
+    }
+    
+    // Horizontal swipe - like/dislike
     if (Math.abs(touchOffset.x) > swipeThreshold) {
       if (touchOffset.x > 0) {
         handleSwipe('right');
@@ -516,6 +547,38 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
       setTouchOffset({ x: 0, y: 0 });
     }
     setTouchStart(null);
+  };
+
+  // Handle tap for photo navigation
+  const handleCardTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't navigate photos if we're in a swipe gesture
+    if (Math.abs(touchOffset.x) > 10 || Math.abs(touchOffset.y) > 10) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tapX = e.clientX - rect.left;
+    const cardWidth = rect.width;
+    
+    const photos = currentLocation?.photos || [];
+    
+    if (photos.length <= 1) {
+      // No photos to navigate, open details instead
+      if (currentLocation) {
+        setDetailLocation(currentLocation);
+      }
+      return;
+    }
+    
+    if (tapX > cardWidth * 0.5) {
+      // Tap right - next photo
+      if (currentPhotoIndex < photos.length - 1) {
+        setCurrentPhotoIndex(prev => prev + 1);
+      }
+    } else {
+      // Tap left - previous photo
+      if (currentPhotoIndex > 0) {
+        setCurrentPhotoIndex(prev => prev - 1);
+      }
+    }
   };
 
   // Filter locations by selected category
@@ -705,7 +768,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              onClick={() => setDetailLocation(currentLocation)}
+              onClick={handleCardTap}
               className="w-full max-w-[480px] mx-auto transition-transform duration-300 cursor-pointer"
               style={{
                 transform: swipeDirection 
@@ -716,89 +779,138 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
                 opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
               }}
             >
-              <div className="relative w-full aspect-[2/2.5] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
-                {/* Image or Gradient Background */}
+              <div className="relative w-full aspect-[2/2.5] rounded-2xl overflow-hidden shadow-xl bg-card border border-border">
+                {/* Photo Background */}
                 <div className="absolute inset-0">
-                  {currentLocation.image_url ? (
-                    <img
-                      src={currentLocation.image_url}
-                      alt={currentLocation.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
-                      <CategoryIcon category={currentLocation.category} className="w-32 h-32 opacity-40" />
-                    </div>
-                  )}
+                  {(() => {
+                    const photos = currentLocation.photos || [];
+                    const currentPhoto = photos[currentPhotoIndex];
+                    
+                    if (currentPhoto) {
+                      return (
+                        <img
+                          src={currentPhoto}
+                          alt={`${currentLocation.name} - ${currentPhotoIndex + 1}`}
+                          className="w-full h-full object-cover transition-opacity duration-200"
+                        />
+                      );
+                    } else if (currentLocation.image_url) {
+                      return (
+                        <img
+                          src={currentLocation.image_url}
+                          alt={currentLocation.name}
+                          className="w-full h-full object-cover"
+                        />
+                      );
+                    } else {
+                      return (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/80 via-primary/60 to-primary/40 flex items-center justify-center">
+                          <CategoryIcon category={currentLocation.category} className="w-32 h-32 opacity-40 text-primary-foreground" />
+                        </div>
+                      );
+                    }
+                  })()}
                   
-                  {/* Gradient overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20" />
+                  {/* Gradient overlays for readability */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
                 </div>
 
-                {/* Top - Saved by avatars (stacked) */}
-                {(currentLocation.saved_by_users && currentLocation.saved_by_users.length > 0) ? (
-                  <div className="absolute top-6 left-4 flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
-                    <div className="flex -space-x-2">
-                      {currentLocation.saved_by_users.slice(0, 4).map(u => (
-                        <img
-                          key={u.id}
-                          src={u.avatar_url || undefined}
-                          alt={u.username}
-                          className="w-7 h-7 rounded-full object-cover ring-2 ring-white/30 bg-muted"
+                {/* Top Header - Avatar + Location Info */}
+                <div className="absolute top-0 left-0 right-0 z-20 p-4">
+                  <div className="flex items-start gap-3">
+                    {/* Avatar */}
+                    {(currentLocation.saved_by_users && currentLocation.saved_by_users.length > 0) ? (
+                      <div className="flex -space-x-2 flex-shrink-0">
+                        {currentLocation.saved_by_users.slice(0, 3).map(u => (
+                          u.avatar_url ? (
+                            <img
+                              key={u.id}
+                              src={u.avatar_url}
+                              alt={u.username}
+                              className="w-10 h-10 rounded-full object-cover ring-2 ring-white/40 shadow-lg bg-muted"
+                            />
+                          ) : (
+                            <div 
+                              key={u.id}
+                              className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center ring-2 ring-white/40 shadow-lg"
+                            >
+                              <span className="text-primary-foreground text-sm font-bold">
+                                {u.username[0]?.toUpperCase()}
+                              </span>
+                            </div>
+                          )
+                        ))}
+                        {currentLocation.saved_by_users.length > 3 && (
+                          <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center ring-2 ring-white/40 shadow-lg">
+                            <span className="text-white text-xs font-bold">+{currentLocation.saved_by_users.length - 3}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : currentLocation.saved_by ? (
+                      currentLocation.saved_by.avatar_url ? (
+                        <img 
+                          src={currentLocation.saved_by.avatar_url} 
+                          alt={currentLocation.saved_by.username}
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white/40 shadow-lg flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center ring-2 ring-white/40 shadow-lg flex-shrink-0">
+                          <span className="text-primary-foreground text-sm font-bold">
+                            {currentLocation.saved_by.username[0]?.toUpperCase()}
+                          </span>
+                        </div>
+                      )
+                    ) : null}
+                    
+                    {/* Location Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-white truncate drop-shadow-lg">
+                        {currentLocation.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-white/90 text-sm mt-0.5">
+                        <span className="truncate">
+                          {currentLocation.city || currentLocation.address?.split(',')[0] || 'Unknown'}
+                        </span>
+                        <span className="text-white/60">•</span>
+                        <span className="flex items-center gap-1">
+                          <CategoryIcon category={currentLocation.category} className="w-3.5 h-3.5" />
+                          {t(`categories:${currentLocation.category.toLowerCase()}`)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Photo Indicators (dots) */}
+                  {(currentLocation.photos?.length || 0) > 1 && (
+                    <div className="flex justify-center gap-1.5 mt-3">
+                      {currentLocation.photos?.map((_, i) => (
+                        <div 
+                          key={i}
+                          className={`h-1 rounded-full transition-all duration-200 ${
+                            i === currentPhotoIndex 
+                              ? 'bg-white w-6' 
+                              : 'bg-white/40 w-1.5'
+                          }`}
                         />
                       ))}
                     </div>
-                    {currentLocation.saved_by_users.length > 4 && (
-                      <span className="text-white/90 text-xs font-medium">+{currentLocation.saved_by_users.length - 4}</span>
-                    )}
-                  </div>
-                ) : currentLocation.saved_by ? (
-                  <div className="absolute top-6 left-4 flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
-                    {currentLocation.saved_by.avatar_url ? (
-                      <img 
-                        src={currentLocation.saved_by.avatar_url} 
-                        alt={currentLocation.saved_by.username}
-                        className="w-7 h-7 rounded-full object-cover ring-2 ring-white/30"
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ring-2 ring-white/30">
-                        <span className="text-white text-xs font-bold">
-                          {currentLocation.saved_by.username[0]?.toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <span className="text-white text-sm font-semibold">
-                      {currentLocation.saved_by.username}
-                    </span>
-                  </div>
-                ) : null}
+                  )}
+                </div>
 
-                {/* Bottom Info */}
+                {/* Swipe Up Hint */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity"
+                  style={{ opacity: touchOffset.y < -30 ? Math.min(1, Math.abs(touchOffset.y + 30) / 50) : 0 }}
+                >
+                  <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+                    <span className="text-sm font-semibold text-foreground">{t('viewDetails', { defaultValue: 'View Details' })}</span>
+                  </div>
+                </div>
+
+                {/* Bottom - Action Buttons */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 pb-8">
-                  <div className="mb-6">
-                    <h3 className="text-3xl font-bold text-white drop-shadow-lg mb-2">
-                      {currentLocation.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-white/90 text-base">
-                      <MapPin className="w-5 h-5" />
-                      <CityLabel 
-                        id={currentLocation.id}
-                        city={currentLocation.city}
-                        address={currentLocation.address}
-                        coordinates={currentLocation.coordinates}
-                        className="font-medium"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
-                      <span className="text-white/80 text-sm">{t(`categories:${currentLocation.category.toLowerCase()}`)}</span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons Inside Card */}
                   <div className="flex items-center justify-center gap-6">
                     <button
-                      onClick={() => handleSwipe('left')}
+                      onClick={(e) => { e.stopPropagation(); handleSwipe('left'); }}
                       disabled={swipeDirection !== null}
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
@@ -806,7 +918,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
                       <img src={swipeNo} alt="Pass" className="w-full h-full object-contain drop-shadow-lg" />
                     </button>
                     <button
-                      onClick={() => handleSwipe('right')}
+                      onClick={(e) => { e.stopPropagation(); handleSwipe('right'); }}
                       disabled={swipeDirection !== null}
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
