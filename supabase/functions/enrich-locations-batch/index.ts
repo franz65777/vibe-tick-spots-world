@@ -153,13 +153,17 @@ serve(async (req) => {
     }
 
     // Fetch locations with valid place IDs first
+    // IMPORTANT: do NOT use offset-based pagination here.
+    // As we enrich locations, the filtered result set shrinks, which makes `range(offset, ...)`
+    // skip remaining rows and can prematurely end the enrichment loop.
+    // We always take the first N remaining locations each call.
     const { data: locationsWithPlaceId, error: fetchError } = await supabase
       .from('locations')
       .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
       .or('photos.is.null,opening_hours_data.is.null')
       .not('google_place_id', 'is', null)
       .like('google_place_id', 'ChIJ%')
-      .range(offset, offset + batchSize - 1);
+      .range(0, batchSize - 1);
 
     if (fetchError) {
       throw new Error(`Failed to fetch locations: ${fetchError.message}`);
@@ -176,7 +180,7 @@ serve(async (req) => {
         .or('google_place_id.is.null,google_place_id.not.like.ChIJ%')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .range(offset, offset + batchSize - 1);
+        .range(0, batchSize - 1);
 
       if (fetchError2) {
         throw new Error(`Failed to fetch locations: ${fetchError2.message}`);
@@ -195,7 +199,7 @@ serve(async (req) => {
             monthlySpend,
             remainingBudget,
             hasMore: false,
-            nextOffset: offset,
+            nextOffset: 0,
             message: 'All locations are enriched!'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -431,7 +435,8 @@ serve(async (req) => {
       monthlySpend: newMonthlySpend,
       remainingBudget: newRemainingBudget,
       hasMore: (remainingCount || 0) > 0 && newRemainingBudget > COSTS.PLACE_DETAILS,
-      nextOffset: offset + results.length,
+      // Keep offset at 0; we always process the "first" remaining items each call.
+      nextOffset: 0,
     };
 
     console.log(`Batch done: ${successCount}/${results.length}, cost: $${totalBatchCost.toFixed(4)}`);
