@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Image, Star, Navigation, Bookmark, BookmarkCheck, Camera } from 'lucide-react';
+import { MapPin, Image, Star, Navigation, Bookmark, BookmarkCheck, Camera, ChevronUp, ChevronDown } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -213,7 +213,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         center: [lat, lng],
         zoom: 15,
         zoomControl: false,
-        attributionControl: true,
+        attributionControl: false, // Completely hide Leaflet attribution
         doubleClickZoom: false,
         preferCanvas: true, // Better performance
       });
@@ -593,91 +593,172 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const lng = Number(coordSource.lng ?? coordSource.longitude ?? 0);
   const hasValidCoordinates = !!lat && !!lng;
 
-  // Get saves count
+  // Get saves count and first saver avatar
   const [savesCount, setSavesCount] = useState(0);
+  const [firstSaverAvatar, setFirstSaverAvatar] = useState<string | null>(null);
+  const [isMapMinimized, setIsMapMinimized] = useState(false);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  
   useEffect(() => {
     if (!location?.id || !isOpen) return;
-    const fetchSavesCount = async () => {
-      const { count } = await supabase
+    const fetchSavesData = async () => {
+      // Get saves count and first saver
+      const { data: savesData, count } = await supabase
         .from('user_saved_locations')
-        .select('*', { count: 'exact', head: true })
-        .eq('location_id', location.id);
+        .select('user_id', { count: 'exact' })
+        .eq('location_id', location.id)
+        .limit(1);
+      
       setSavesCount(count || 0);
+      
+      // Get avatar of first saver
+      if (savesData && savesData.length > 0) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', savesData[0].user_id)
+          .maybeSingle();
+        setFirstSaverAvatar(profile?.avatar_url || null);
+      }
     };
-    fetchSavesCount();
+    
+    // Fetch average rating
+    const fetchAverageRating = async () => {
+      const { data: ratingsData } = await supabase
+        .from('posts')
+        .select('rating')
+        .eq('location_id', location.id)
+        .not('rating', 'is', null)
+        .gt('rating', 0);
+      
+      if (ratingsData && ratingsData.length > 0) {
+        const avg = ratingsData.reduce((sum, r) => sum + (r.rating || 0), 0) / ratingsData.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+      } else {
+        setAverageRating(null);
+      }
+    };
+    
+    fetchSavesData();
+    fetchAverageRating();
   }, [location?.id, isOpen]);
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="h-[85vh] flex flex-col z-[10000]" showHandle={false} hideOverlay={false}>
-        {/* Header Section - Like photo 2 */}
-        <div className="flex-shrink-0 px-4 pt-6 pb-4 bg-gradient-to-b from-muted/60 to-background">
+      <DrawerContent 
+        className="h-[85vh] flex flex-col z-[10000] bg-background rounded-t-[20px] overflow-hidden" 
+        showHandle={false} 
+        hideOverlay={false}
+      >
+        {/* Drag handle area - invisible but functional */}
+        <div className="flex-shrink-0 h-6 w-full cursor-grab active:cursor-grabbing" />
+        
+        {/* Header Section */}
+        <div className="flex-shrink-0 px-4 pb-4 bg-background">
           <div className="flex items-start justify-between gap-3">
             {/* Location Info */}
             <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold text-foreground mb-1">
-                {location?.name}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {location?.name}
+                </h2>
+                {/* Average rating next to name */}
+                {averageRating !== null && (
+                  <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-full">
+                    <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+                    <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-400">{averageRating}</span>
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
                 {location?.city}{fullAddress ? `, ${fullAddress.split(',').slice(0, 2).join(', ')}` : ''}
               </p>
               
-              {/* Status row: Open hours + saves count */}
+              {/* Status row: Open hours + saves count with avatar */}
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-green-600 font-medium">{t('open', { ns: 'common', defaultValue: 'Aperto' })}</span>
                 <span className="text-muted-foreground">09:15 – 17:30</span>
-                <div className="flex items-center gap-1.5">
-                  <Avatar className="w-5 h-5">
-                    <AvatarFallback className="text-[10px] bg-muted">{savesCount}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-muted-foreground">{savesCount} {t('saves', { ns: 'common', defaultValue: 'salvataggi' })}</span>
-                </div>
+                {savesCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Avatar className="w-5 h-5">
+                      {firstSaverAvatar ? (
+                        <AvatarImage src={firstSaverAvatar} />
+                      ) : null}
+                      <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                        {savesCount > 0 ? 'U' : ''}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-muted-foreground">{savesCount} {t('saves', { ns: 'common', defaultValue: 'salvataggi' })}</span>
+                  </div>
+                )}
               </div>
             </div>
-            
-            {/* Bookmark button */}
-            <SaveLocationDropdown
-              isSaved={isSaved}
-              onSave={handleSave}
-              onUnsave={handleUnsave}
-              currentSaveTag={currentSaveTag}
-              open={dropdownOpen}
-              onOpenChange={setDropdownOpen}
-              variant="ghost"
-              size="icon"
-            />
           </div>
         </div>
 
-        {/* Map Section - Enlarged, edge-to-edge, hiding Leaflet attribution */}
-        <div className="flex-shrink-0 relative -mx-0 overflow-hidden">
-          {hasValidCoordinates ? (
+        {/* Map Section - No rounded corners, hide Leaflet completely */}
+        <div className={`flex-shrink-0 relative overflow-hidden transition-all duration-300 ${isMapMinimized ? 'h-0' : ''}`}>
+          {hasValidCoordinates && !isMapMinimized ? (
             <div className="relative">
-              <div ref={mapDivRef} className="w-[calc(100%+40px)] h-52 -ml-5 -mr-5" style={{ marginLeft: '-20px', marginRight: '-20px', width: 'calc(100% + 40px)' }} />
-              {/* Gradient overlay to hide attribution */}
-              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+              {/* Map container - extends beyond edges to hide any borders */}
+              <div 
+                ref={mapDivRef} 
+                className="h-56" 
+                style={{ 
+                  marginLeft: '-24px', 
+                  marginRight: '-24px', 
+                  width: 'calc(100% + 48px)',
+                }} 
+              />
+              {/* Full overlay at bottom to completely hide Leaflet attribution */}
+              <div className="absolute bottom-0 left-0 right-0 h-10 bg-background pointer-events-none" />
+              {/* Gradient above the solid overlay for smooth transition */}
+              <div className="absolute bottom-10 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none" />
             </div>
-          ) : (
-            <div className="w-full h-52 bg-muted flex items-center justify-center">
+          ) : !isMapMinimized ? (
+            <div className="w-full h-56 bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>{t('coordinatesNotAvailable')}</p>
               </div>
             </div>
-          )}
+          ) : null}
           
           {/* Directions button floating on map */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setDirectionsModalOpen(true)}
-            disabled={!hasValidCoordinates}
-            className="absolute bottom-4 right-4 gap-1.5 shadow-lg bg-background/95 backdrop-blur-sm"
-          >
-            <Navigation className="w-4 h-4" />
-            {t('directions', { ns: 'common', defaultValue: 'Directions' })}
-          </Button>
+          {!isMapMinimized && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setDirectionsModalOpen(true)}
+              disabled={!hasValidCoordinates}
+              className="absolute bottom-12 right-4 gap-1.5 shadow-lg bg-background/95 backdrop-blur-sm z-10"
+            >
+              <Navigation className="w-4 h-4" />
+              {t('directions', { ns: 'common', defaultValue: 'Directions' })}
+            </Button>
+          )}
+          
+          {/* Minimize/Expand map button - top right of map */}
+          {hasValidCoordinates && !isMapMinimized && (
+            <button
+              onClick={() => setIsMapMinimized(true)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/90 backdrop-blur-sm shadow-md flex items-center justify-center z-10 hover:bg-background transition-colors"
+            >
+              <ChevronUp className="w-4 h-4 text-foreground" />
+            </button>
+          )}
         </div>
+        
+        {/* Show map button when minimized */}
+        {isMapMinimized && hasValidCoordinates && (
+          <button
+            onClick={() => setIsMapMinimized(false)}
+            className="flex-shrink-0 flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border-b border-border"
+          >
+            <ChevronDown className="w-4 h-4" />
+            <span>{t('showMap', { ns: 'common', defaultValue: 'Mostra mappa' })}</span>
+          </button>
+        )}
 
         {/* Tabs - Like photo 3 with icons */}
         <div className="flex-shrink-0 border-b border-border">
