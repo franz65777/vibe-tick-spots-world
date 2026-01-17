@@ -855,7 +855,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
         <div 
-          className="w-full relative bg-black dark:bg-white/95 backdrop-blur-md border border-white/10 dark:border-black/10 rounded-full shadow-lg cursor-pointer"
+          className="w-full relative bg-zinc-900 dark:bg-white border border-zinc-800 dark:border-zinc-200 rounded-full shadow-lg cursor-pointer"
           onClick={handleSearchBarClick}
         >
           {/* Invisible drag handle area at top */}
@@ -904,8 +904,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       {/* Expanded content panel - includes search input at top */}
       <div
         className={cn(
-          "w-full overflow-hidden rounded-3xl shadow-2xl border border-border/10 flex flex-col",
-          isSearchOpen ? "backdrop-blur-xl bg-background/80" : "bg-white dark:bg-zinc-900"
+          "w-full overflow-hidden rounded-3xl shadow-2xl border flex flex-col",
+          isSearchOpen ? "backdrop-blur-xl bg-background/95 border-border/20" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
         )}
         style={{
           height: expandedHeight,
@@ -923,7 +923,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         {/* Fixed header: Drag handle + Search input */}
         <div className={cn(
           "flex-shrink-0 rounded-t-3xl",
-          isSearchOpen ? "bg-background/40 backdrop-blur-md" : "bg-white dark:bg-zinc-900"
+          isSearchOpen ? "bg-background/95 backdrop-blur-md" : "bg-white dark:bg-zinc-900"
         )}>
           {/* Drag handle at top - larger touch target */}
           <div
@@ -986,7 +986,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             </div>
           ) : (
             <div
-              className="mx-4 mb-1 h-10 rounded-full backdrop-blur-md bg-black dark:bg-white/90 border border-border/10 flex items-center gap-3 px-4 cursor-text shadow-sm"
+              className="mx-4 mb-1 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center gap-3 px-4 cursor-text shadow-sm"
               onClick={() => {
                 setDrawerMode('search');
                 setDragProgress(1);
@@ -996,8 +996,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
               tabIndex={0}
               aria-label={t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
             >
-              <span className="text-white/70 dark:text-muted-foreground">🔍</span>
-              <span className="flex-1 text-sm text-white/70 dark:text-muted-foreground truncate">
+              <span className="text-muted-foreground">🔍</span>
+              <span className="flex-1 text-sm text-muted-foreground truncate">
                 {t('searchCitiesAndPlaces', { ns: 'explore', defaultValue: 'Cerca città e luoghi...' })}
               </span>
             </div>
@@ -1009,8 +1009,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           ref={scrollRef}
           data-drawer-scroll
           className={cn(
-            "flex-1 overflow-y-auto",
-            isSearchOpen ? "px-4 pb-4 bg-background/40 backdrop-blur-md" : "px-3 pb-2 bg-white dark:bg-zinc-900"
+            "flex-1 overflow-y-auto overscroll-contain",
+            isSearchOpen ? "px-4 pb-4 bg-background/95" : "px-3 pb-2 bg-white dark:bg-zinc-900"
           )}
         >
           {/* TRENDING MODE: show the PopularSpots (Tendenza/Sconto/Evento/Promozione/Nuovo) UI */}
