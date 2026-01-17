@@ -938,6 +938,47 @@ export type Database = {
           },
         ]
       }
+      google_api_costs: {
+        Row: {
+          api_type: string
+          billing_month: string
+          cost_usd: number
+          created_at: string
+          id: string
+          location_id: string | null
+          metadata: Json | null
+          request_count: number
+        }
+        Insert: {
+          api_type: string
+          billing_month: string
+          cost_usd: number
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          request_count?: number
+        }
+        Update: {
+          api_type?: string
+          billing_month?: string
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          request_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_api_costs_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hidden_messages: {
         Row: {
           hidden_at: string
@@ -3363,6 +3404,18 @@ export type Database = {
         }[]
       }
       get_global_distinct_places_count: { Args: never; Returns: number }
+      get_google_api_monthly_spend: {
+        Args: { target_month?: string }
+        Returns: {
+          find_place_cost: number
+          locations_enriched: number
+          month: string
+          place_details_cost: number
+          place_photos_cost: number
+          total_cost: number
+          total_requests: number
+        }[]
+      }
       get_mau: { Args: { target_month: string }; Returns: number }
       get_pin_engagement: {
         Args: { p_google_place_id: string; p_location_id: string }
