@@ -280,6 +280,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [photoScrollProgress, setPhotoScrollProgress] = useState(0); // 0=fully visible, 1=fully hidden
   const [photoCollapsePx, setPhotoCollapsePx] = useState(120); // how many px of scroll are consumed to fully hide photos (96px photo + padding)
   const [isUserDragging, setIsUserDragging] = useState(false);
+  const [isInitialRender, setIsInitialRender] = useState(true); // Track initial render to skip animation
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const photoSectionRef = useRef<HTMLDivElement>(null);
   const drawerContentRef = useRef<HTMLDivElement>(null);
@@ -294,7 +295,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   
   // Heights for snap points (in vh units converted to px)
   const collapsedHeight = 42; // vh
-  const expandedHeight = 92; // vh
+  const expandedHeight = 85; // vh - leaves space at top for search bar
   
   // Calculate translateY based on expanded state
   const getTargetTranslateY = (expanded: boolean) => {
@@ -304,6 +305,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     // translateY = how much to push down from expanded state
     return expanded ? 0 : expandedPx - collapsedPx;
   };
+  
+  // After first render, enable animations
+  useEffect(() => {
+    const timer = requestAnimationFrame(() => {
+      setIsInitialRender(false);
+    });
+    return () => cancelAnimationFrame(timer);
+  }, []);
 
 
   // Check if onboarding is active on map-guide step
@@ -849,7 +858,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           data-pin-detail-card="true" 
           showHandle={false}
           hideOverlay={true}
-          disableDefaultTransition={isUserDragging}
+          disableDefaultTransition={isUserDragging || isInitialRender}
           className={cn(
             "rounded-t-3xl bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10",
             onBack ? "z-[10020]" : "z-[2000]",
@@ -860,7 +869,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             transform: isUserDragging 
               ? `translateY(${currentTranslateY.current}px)` 
               : `translateY(${getTargetTranslateY(isExpanded)}px)`,
-            transition: isUserDragging ? 'none' : 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
+            transition: (isUserDragging || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
           }}
         >
           {/* Compact Draggable Header - No grey bar, still draggable */}
