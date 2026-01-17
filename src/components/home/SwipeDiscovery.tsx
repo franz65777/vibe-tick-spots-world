@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LocationDetailDrawer from './LocationDetailDrawer';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, UserPlus, ChevronUp, Info } from 'lucide-react';
 import discoverMascot from '@/assets/discover-mascot.png';
 import noUsersCharacter from '@/assets/no-users-character.png';
 import { supabase } from '@/integrations/supabase/client';
@@ -524,10 +524,10 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     if (!touchStart) return;
     
     const swipeThreshold = 100;
-    const verticalThreshold = 80;
+    const verticalThreshold = 60; // Reduced for easier swipe up
     
-    // Swipe UP - open details
-    if (touchOffset.y < -verticalThreshold && Math.abs(touchOffset.x) < 50) {
+    // Swipe UP - open details (prioritize if vertical movement is dominant)
+    if (touchOffset.y < -verticalThreshold && Math.abs(touchOffset.y) > Math.abs(touchOffset.x) * 1.5) {
       if (currentLocation) {
         setDetailLocation(currentLocation);
       }
@@ -537,7 +537,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     }
     
     // Horizontal swipe - like/dislike
-    if (Math.abs(touchOffset.x) > swipeThreshold) {
+    if (Math.abs(touchOffset.x) > swipeThreshold && Math.abs(touchOffset.x) > Math.abs(touchOffset.y)) {
       if (touchOffset.x > 0) {
         handleSwipe('right');
       } else {
@@ -897,33 +897,47 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
                   )}
                 </div>
 
-                {/* Swipe Up Hint */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity"
-                  style={{ opacity: touchOffset.y < -30 ? Math.min(1, Math.abs(touchOffset.y + 30) / 50) : 0 }}
+                {/* Swipe Up Hint - shows when swiping up */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-150"
+                  style={{ 
+                    opacity: touchOffset.y < -20 ? Math.min(1, Math.abs(touchOffset.y + 20) / 40) : 0,
+                    transform: `translate(-50%, -50%) scale(${touchOffset.y < -20 ? Math.min(1.1, 1 + Math.abs(touchOffset.y + 20) / 200) : 1})`
+                  }}
                 >
-                  <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-xl flex items-center gap-2">
+                    <ChevronUp className="w-5 h-5 text-primary animate-bounce" />
                     <span className="text-sm font-semibold text-foreground">{t('viewDetails', { defaultValue: 'View Details' })}</span>
                   </div>
                 </div>
 
                 {/* Bottom - Action Buttons */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 pb-8">
-                  <div className="flex items-center justify-center gap-6">
+                <div className="absolute bottom-0 left-0 right-0 p-4 pb-6">
+                  <div className="flex items-center justify-center gap-4">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleSwipe('left'); }}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-18 h-18 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNo} alt="Pass" className="w-full h-full object-contain drop-shadow-lg" />
+                      <img src={swipeNo} alt="Pass" className="w-16 h-16 object-contain drop-shadow-lg" />
                     </button>
+                    
+                    {/* Info button to open details */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDetailLocation(currentLocation); }}
+                      className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
+                      aria-label="View details"
+                    >
+                      <Info className="w-6 h-6 text-foreground" />
+                    </button>
+                    
                     <button
                       onClick={(e) => { e.stopPropagation(); handleSwipe('right'); }}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-18 h-18 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipePin} alt="Save" className="w-full h-full object-contain drop-shadow-lg" />
+                      <img src={swipePin} alt="Save" className="w-16 h-16 object-contain drop-shadow-lg" />
                     </button>
                   </div>
                 </div>
