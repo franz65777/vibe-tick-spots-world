@@ -8,10 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { 
   Loader2, Image, Clock, DollarSign, Play, Eye, RefreshCw, 
-  CheckCircle2, AlertCircle, StopCircle, TrendingUp, Zap, Trash2
+  CheckCircle2, AlertCircle, StopCircle, TrendingUp, Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface MonthlySpend {
   month: string;
@@ -466,18 +467,67 @@ export const GoogleEnrichmentDashboard = () => {
           </Button>
         </div>
 
-        {/* Cost Breakdown */}
+        {/* Cost Breakdown with Pie Chart */}
         {monthlySpend && monthlySpend.total_requests > 0 && (
-          <div className="text-[11px] text-muted-foreground space-y-1 pt-2 border-t">
-            <p className="font-medium">Dettaglio costi {monthlySpend.month}:</p>
-            <div className="flex flex-wrap gap-2">
-              <span>Details: ${monthlySpend.place_details_cost.toFixed(2)}</span>
-              <span>•</span>
-              <span>Photos: ${monthlySpend.place_photos_cost.toFixed(2)}</span>
-              <span>•</span>
-              <span>Find: ${monthlySpend.find_place_cost.toFixed(2)}</span>
+          <div className="pt-2 border-t space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Dettaglio costi {monthlySpend.month}:</p>
+            
+            <div className="flex items-center gap-4">
+              {/* Pie Chart */}
+              <div className="w-20 h-20 flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Details', value: monthlySpend.place_details_cost, color: '#3b82f6' },
+                        { name: 'Photos', value: monthlySpend.place_photos_cost, color: '#10b981' },
+                        { name: 'Find', value: monthlySpend.find_place_cost, color: '#f59e0b' },
+                      ].filter(d => d.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={18}
+                      outerRadius={35}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {[
+                        { name: 'Details', value: monthlySpend.place_details_cost, color: '#3b82f6' },
+                        { name: 'Photos', value: monthlySpend.place_photos_cost, color: '#10b981' },
+                        { name: 'Find', value: monthlySpend.find_place_cost, color: '#f59e0b' },
+                      ].filter(d => d.value > 0).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => `$${value.toFixed(2)}`}
+                      contentStyle={{ fontSize: '11px', padding: '4px 8px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Legend */}
+              <div className="flex-1 space-y-1 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span className="text-muted-foreground">Details:</span>
+                  <span className="font-medium">${monthlySpend.place_details_cost.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span className="text-muted-foreground">Photos:</span>
+                  <span className="font-medium">${monthlySpend.place_photos_cost.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <span className="text-muted-foreground">Find:</span>
+                  <span className="font-medium">${monthlySpend.find_place_cost.toFixed(2)}</span>
+                </div>
+                <p className="text-muted-foreground pt-1">
+                  {monthlySpend.locations_enriched} location arricchite
+                </p>
+              </div>
             </div>
-            <p>{monthlySpend.locations_enriched} location arricchite questo mese</p>
           </div>
         )}
 

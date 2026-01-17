@@ -413,7 +413,9 @@ serve(async (req) => {
         result.costs.total = result.costs.findPlace + result.costs.placeDetails + result.costs.placePhotos;
         totalBatchCost += result.costs.total;
 
-        // Log costs
+        // Log costs with API key identifier (last 6 chars for security)
+        const apiKeyIdentifier = googleApiKey ? googleApiKey.slice(-6) : null;
+        
         if (!dryRun && result.costs.total > 0) {
           const costEntries = [];
           
@@ -424,6 +426,7 @@ serve(async (req) => {
               cost_usd: result.costs.findPlace,
               request_count: 1,
               billing_month: currentMonth,
+              api_key_identifier: apiKeyIdentifier,
             });
           }
           
@@ -434,6 +437,7 @@ serve(async (req) => {
               cost_usd: result.costs.placeDetails,
               request_count: 1,
               billing_month: currentMonth,
+              api_key_identifier: apiKeyIdentifier,
             });
           }
           
@@ -444,6 +448,7 @@ serve(async (req) => {
               cost_usd: result.costs.placePhotos,
               request_count: Math.ceil(result.costs.placePhotos / COSTS.PLACE_PHOTOS),
               billing_month: currentMonth,
+              api_key_identifier: apiKeyIdentifier,
             });
           }
           

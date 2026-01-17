@@ -940,6 +940,7 @@ export type Database = {
       }
       google_api_costs: {
         Row: {
+          api_key_identifier: string | null
           api_type: string
           billing_month: string
           cost_usd: number
@@ -950,6 +951,7 @@ export type Database = {
           request_count: number
         }
         Insert: {
+          api_key_identifier?: string | null
           api_type: string
           billing_month: string
           cost_usd: number
@@ -960,6 +962,7 @@ export type Database = {
           request_count?: number
         }
         Update: {
+          api_key_identifier?: string | null
           api_type?: string
           billing_month?: string
           cost_usd?: number

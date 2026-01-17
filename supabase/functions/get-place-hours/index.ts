@@ -341,8 +341,9 @@ serve(async (req) => {
       }
     }
 
-    // Track Google API costs
+    // Track Google API costs with API key identifier
     const currentMonth = getCurrentBillingMonth();
+    const apiKeyIdentifier = googleApiKey ? googleApiKey.slice(-6) : null;
     const costEntries = [];
 
     if (usedFindPlaceApi) {
@@ -352,6 +353,7 @@ serve(async (req) => {
         cost_usd: COSTS.FIND_PLACE,
         request_count: 1,
         billing_month: currentMonth,
+        api_key_identifier: apiKeyIdentifier,
         metadata: { source: 'user_hours_fetch' }
       });
     }
@@ -363,6 +365,7 @@ serve(async (req) => {
         cost_usd: COSTS.PLACE_DETAILS_HOURS,
         request_count: 1,
         billing_month: currentMonth,
+        api_key_identifier: apiKeyIdentifier,
         metadata: { source: 'user_hours_fetch', fields: ['opening_hours'] }
       });
     }

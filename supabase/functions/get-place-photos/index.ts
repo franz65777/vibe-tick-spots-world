@@ -179,8 +179,9 @@ serve(async (req) => {
       }
     }
 
-    // Track Google API costs
+    // Track Google API costs with API key identifier
     const currentMonth = getCurrentBillingMonth();
+    const apiKeyIdentifier = googleApiKey ? googleApiKey.slice(-6) : null;
     const costEntries = [];
 
     // Cost for Place Details API call (photos field)
@@ -190,6 +191,7 @@ serve(async (req) => {
       cost_usd: COSTS.PLACE_DETAILS_PHOTOS,
       request_count: 1,
       billing_month: currentMonth,
+      api_key_identifier: apiKeyIdentifier,
       metadata: { source: 'user_save', fields: ['photos'] }
     });
 
@@ -201,6 +203,7 @@ serve(async (req) => {
         cost_usd: COSTS.PLACE_PHOTO * uploadedPhotos.length,
         request_count: uploadedPhotos.length,
         billing_month: currentMonth,
+        api_key_identifier: apiKeyIdentifier,
         metadata: { source: 'user_save', photo_count: uploadedPhotos.length }
       });
     }
