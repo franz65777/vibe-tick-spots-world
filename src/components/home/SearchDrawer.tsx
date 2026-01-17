@@ -850,15 +850,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           isSearchOpen ? "backdrop-blur-xl bg-background/60" : "bg-background"
         )}
         style={{
-          height: maxExpandedHeight,
-          transform: `translateY(${(1 - dragProgress) * 100}%)`,
+          height: expandedHeight,
           opacity: expandedOpacity,
           transition: (isDragging || isInitialRender) 
             ? 'none' 
-            : 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease-out',
+            : 'height 0.55s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease-out',
           display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: isSearchOpen ? 0 : 8,
-          willChange: 'transform',
+          willChange: 'height, opacity',
           // Allow scrolling inside the panel; drag is handled only by the top handle
           touchAction: 'pan-y',
         }}
