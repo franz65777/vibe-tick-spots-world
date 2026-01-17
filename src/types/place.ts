@@ -30,6 +30,7 @@ export interface Place {
   createdAt?: string;
   google_place_id?: string;
   opening_hours_data?: any;
+  photos?: string[];
   friendsSaved?: Array<{
     id: string;
     name: string;

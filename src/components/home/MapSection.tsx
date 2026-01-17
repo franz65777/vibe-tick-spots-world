@@ -176,6 +176,7 @@ const MapSection = ({
     coordinates: location.coordinates,
     google_place_id: location.google_place_id,
     opening_hours_data: location.opening_hours_data,
+    photos: location.photos as string[] | undefined,
     isFollowing: location.isFollowing || false,
     isNew: location.isNew || false,
     isSaved: location.isSaved || false,

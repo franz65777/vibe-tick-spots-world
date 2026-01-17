@@ -369,12 +369,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   );
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
-  // Fetch location photos
+  // Fetch location photos - use pre-loaded photos if available
   const { photos: locationPhotos, loading: photosLoading } = useLocationPhotos({
     locationId: locationIdForEngagement,
     googlePlaceId: googlePlaceIdForEngagement,
     autoFetch: true,
-    maxPhotos: 6
+    maxPhotos: 6,
+    initialPhotos: place.photos as string[] | undefined
   });
 
 
