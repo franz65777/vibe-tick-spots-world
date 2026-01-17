@@ -118,7 +118,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastPopularCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   
   type DrawerMode = 'closed' | 'trending' | 'search';
-  const TRENDING_PROGRESS = 0.30;
+  const TRENDING_PROGRESS = 0.28;
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
   const isSearchOpen = drawerMode === 'search';
   const isDrawerVisible = drawerMode !== 'closed';
@@ -817,7 +817,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   // Calculate expanded height - smoothly interpolate between trending and search heights
-  const trendingHeight = 200; // Compact: drag handle + chips + spot row
+  const trendingHeight = 176; // Compact: fits pills + 1 row of cards without dead space
   const searchHeight = window.innerHeight * 0.80; // Larger for search results
   
   // Interpolate height based on progress for smooth transitions
@@ -910,11 +910,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
-          transition: (isDragging || isInitialRender) 
-            ? 'none' 
+          transition: (isDragging || isInitialRender)
+            ? 'none'
             : 'height 0.55s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease-out',
           display: dragProgress > 0 ? 'flex' : 'none',
-          marginBottom: isSearchOpen ? 0 : 8,
+          marginBottom: 0,
           willChange: 'height, opacity',
           // Allow scrolling inside the panel; drag is handled only by the top handle
           touchAction: 'pan-y',
@@ -1009,8 +1009,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           ref={scrollRef}
           data-drawer-scroll
           className={cn(
-            "flex-1 overflow-y-auto px-4 pb-4",
-            isSearchOpen ? "bg-background/20 backdrop-blur-md" : "bg-background"
+            "flex-1 overflow-y-auto",
+            isSearchOpen ? "px-4 pb-4 bg-background/20 backdrop-blur-md" : "px-3 pb-2 bg-background"
           )}
         >
           {/* TRENDING MODE: show the PopularSpots (Tendenza/Sconto/Evento/Promozione/Nuovo) UI */}
