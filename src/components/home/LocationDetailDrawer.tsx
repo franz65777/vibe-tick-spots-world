@@ -81,6 +81,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [directionsModalOpen, setDirectionsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isMapMinimized, setIsMapMinimized] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Leaflet (vanilla) map refs
@@ -193,73 +194,78 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     fetchLocationDetails();
   }, [isOpen, location?.id, location?.name]);
 
-  // Init / update Leaflet map when opening - FIXED for black screen
+  // Init / update Leaflet map when opening or un-minimizing
   useEffect(() => {
-    if (!isOpen || !location) return;
+    if (!isOpen || !location || isMapMinimized) return;
 
     const coordsSource: any = resolvedCoordinates || location.coordinates || {};
     const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
     const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
     if (!lat || !lng || !mapDivRef.current) return;
 
-    try {
-      // Always recreate map to avoid black screen issues
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+    // Small delay to ensure DOM is ready after un-minimizing
+    const initTimeout = setTimeout(() => {
+      if (!mapDivRef.current) return;
+      
+      try {
+        // Always recreate map to avoid black screen issues
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+        }
+
+        const map = L.map(mapDivRef.current, {
+          center: [lat, lng],
+          zoom: 15,
+          zoomControl: false,
+          attributionControl: false,
+          doubleClickZoom: false,
+          preferCanvas: true,
+        });
+
+        // Use CartoDB tiles (same as main map)
+        const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        const tileLayer = L.tileLayer(tileUrl, {
+          maxZoom: 19,
+          subdomains: 'abcd',
+        });
+
+        tileLayer.addTo(map);
+
+        // Use the same custom marker as home page
+        const icon = createLeafletCustomMarker({
+          category: location.category || 'restaurant',
+          isSaved: false,
+          isRecommended: false,
+          isDarkMode,
+        });
+
+        L.marker([lat, lng], { icon }).addTo(map);
+        mapRef.current = map;
+
+        // Force multiple invalidations with increasing delays
+        const timeouts = [50, 150, 300, 600, 1000];
+        timeouts.forEach(delay => {
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.invalidateSize();
+            }
+          }, delay);
+        });
+      } catch (e) {
+        console.error('Leaflet map init error', e);
       }
+    }, 100);
 
-      const map = L.map(mapDivRef.current, {
-        center: [lat, lng],
-        zoom: 15,
-        zoomControl: false,
-        attributionControl: false, // Completely hide Leaflet attribution
-        doubleClickZoom: false,
-        preferCanvas: true, // Better performance
-      });
-
-      // Use CartoDB tiles (same as main map)
-      const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-      const tileLayer = L.tileLayer(tileUrl, {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap, &copy; CartoDB',
-      });
-
-      tileLayer.addTo(map);
-
-      // Use the same custom marker as home page
-      const icon = createLeafletCustomMarker({
-        category: location.category || 'restaurant',
-        isSaved: false,
-        isRecommended: false,
-        isDarkMode,
-      });
-
-      L.marker([lat, lng], { icon }).addTo(map);
-      mapRef.current = map;
-
-      // Force multiple invalidations with increasing delays
-      const timeouts = [50, 150, 300, 600, 1000];
-      timeouts.forEach(delay => {
-        setTimeout(() => {
-          if (mapRef.current) {
-            mapRef.current.invalidateSize();
-          }
-        }, delay);
-      });
-    } catch (e) {
-      console.error('Leaflet map init error', e);
-    }
-
-    // Cleanup on unmount
+    // Cleanup on unmount or when minimized
     return () => {
+      clearTimeout(initTimeout);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [isOpen, location, resolvedCoordinates, isDarkMode]);
+  }, [isOpen, location, resolvedCoordinates, isDarkMode, isMapMinimized]);
 
   // Cleanup handled by component unmount to avoid Leaflet re-init errors
 
@@ -596,7 +602,6 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   // Get saves count and first saver avatar
   const [savesCount, setSavesCount] = useState(0);
   const [firstSaverAvatar, setFirstSaverAvatar] = useState<string | null>(null);
-  const [isMapMinimized, setIsMapMinimized] = useState(false);
   const [averageRating, setAverageRating] = useState<number | null>(null);
   
   useEffect(() => {
@@ -696,25 +701,21 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           </div>
         </div>
 
-        {/* Map Section - No rounded corners, hide Leaflet completely */}
+        {/* Map Section - Taller, cleaner, no directions button */}
         {!isMapMinimized && (
           <div className="flex-shrink-0 relative overflow-hidden">
             {hasValidCoordinates ? (
               <>
-                {/* Map container - extends beyond edges to hide any borders */}
+                {/* Map container - extends beyond edges, taller */}
                 <div 
                   ref={mapDivRef} 
-                  className="h-56 relative z-0" 
+                  className="h-44 relative z-0" 
                   style={{ 
                     marginLeft: '-24px', 
                     marginRight: '-24px', 
                     width: 'calc(100% + 48px)',
                   }} 
                 />
-                {/* Full overlay at bottom to completely hide Leaflet attribution */}
-                <div className="absolute bottom-0 left-0 right-0 h-10 bg-background pointer-events-none z-[1]" />
-                {/* Gradient above the solid overlay for smooth transition */}
-                <div className="absolute bottom-10 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none z-[1]" />
                 
                 {/* Minimize map button - top right */}
                 <button
@@ -723,34 +724,23 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 >
                   <ChevronUp className="w-4 h-4 text-foreground" />
                 </button>
-                
-                {/* Directions button floating on map */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setDirectionsModalOpen(true)}
-                  className="absolute bottom-12 right-4 gap-1.5 shadow-lg bg-background/95 backdrop-blur-sm z-[2]"
-                >
-                  <Navigation className="w-4 h-4" />
-                  {t('directions', { ns: 'common', defaultValue: 'Directions' })}
-                </Button>
               </>
             ) : (
-              <div className="w-full h-56 bg-muted flex items-center justify-center">
+              <div className="w-full h-32 bg-muted flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
-                  <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>{t('coordinatesNotAvailable')}</p>
+                  <MapPin className="w-10 h-10 mx-auto mb-1 opacity-50" />
+                  <p className="text-sm">{t('coordinatesNotAvailable')}</p>
                 </div>
               </div>
             )}
           </div>
         )}
         
-        {/* Show map button when minimized */}
+        {/* Show map button when minimized - compact */}
         {isMapMinimized && hasValidCoordinates && (
           <button
             onClick={() => setIsMapMinimized(false)}
-            className="flex-shrink-0 flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border-b border-border"
+            className="flex-shrink-0 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted"
           >
             <ChevronDown className="w-4 h-4" />
             <span>{t('showMap', { ns: 'common', defaultValue: 'Mostra mappa' })}</span>
