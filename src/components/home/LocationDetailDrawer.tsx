@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Image, Star, Navigation, Bookmark, BookmarkCheck } from 'lucide-react';
+import { MapPin, Image, Star, Navigation, Bookmark, BookmarkCheck, Camera } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,8 +17,6 @@ import { toast } from 'sonner';
 import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
 } from '@/components/ui/drawer';
 import {
   Dialog,
@@ -595,191 +593,222 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const lng = Number(coordSource.lng ?? coordSource.longitude ?? 0);
   const hasValidCoordinates = !!lat && !!lng;
 
+  // Get saves count
+  const [savesCount, setSavesCount] = useState(0);
+  useEffect(() => {
+    if (!location?.id || !isOpen) return;
+    const fetchSavesCount = async () => {
+      const { count } = await supabase
+        .from('user_saved_locations')
+        .select('*', { count: 'exact', head: true })
+        .eq('location_id', location.id);
+      setSavesCount(count || 0);
+    };
+    fetchSavesCount();
+  }, [location?.id, isOpen]);
+
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="h-[85vh] flex flex-col z-[10000]">
-        {/* Drag handle */}
-        <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted-foreground/20 mt-3 mb-2" />
-
-        {/* Header - Fixed */}
-        <DrawerHeader className="flex-shrink-0 px-4 pb-3 border-b">
-          <div className="flex items-start gap-3">
-            {/* Category Icon */}
-            <div className="flex-shrink-0 mt-1">
-              <CategoryIcon category={location?.category || 'restaurant'} className="w-10 h-10" />
-            </div>
-            
+      <DrawerContent className="h-[85vh] flex flex-col z-[10000]" showHandle={false} hideOverlay={false}>
+        {/* Header Section - Like photo 2 */}
+        <div className="flex-shrink-0 px-4 pt-6 pb-4 bg-gradient-to-b from-muted/60 to-background">
+          <div className="flex items-start justify-between gap-3">
             {/* Location Info */}
             <div className="flex-1 min-w-0">
-              <DrawerTitle className="text-xl font-bold text-foreground mb-1 text-left">
+              <h2 className="text-2xl font-bold text-foreground mb-1">
                 {location?.name}
-              </DrawerTitle>
-              <div className="flex items-start gap-1 text-sm text-muted-foreground mb-2">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span className="line-clamp-2">{fullAddress}</span>
-              </div>
+              </h2>
+              <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                {location?.city}{fullAddress ? `, ${fullAddress.split(',').slice(0, 2).join(', ')}` : ''}
+              </p>
               
-              {/* Action Buttons - Equal size grid */}
-              <div className="grid grid-cols-2 gap-2">
-                <SaveLocationDropdown
-                  isSaved={isSaved}
-                  onSave={handleSave}
-                  onUnsave={handleUnsave}
-                  currentSaveTag={currentSaveTag}
-                  open={dropdownOpen}
-                  onOpenChange={setDropdownOpen}
-                  variant="outline"
-                  size="default"
-                />
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => setDirectionsModalOpen(true)}
-                  disabled={!hasValidCoordinates}
-                  className="w-full gap-2"
-                >
-                  <Navigation className="w-4 h-4" />
-                  {t('directions', { ns: 'common', defaultValue: 'Directions' })}
-                </Button>
+              {/* Status row: Open hours + saves count */}
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-green-600 font-medium">{t('open', { ns: 'common', defaultValue: 'Aperto' })}</span>
+                <span className="text-muted-foreground">09:15 – 17:30</span>
+                <div className="flex items-center gap-1.5">
+                  <Avatar className="w-5 h-5">
+                    <AvatarFallback className="text-[10px] bg-muted">{savesCount}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-muted-foreground">{savesCount} {t('saves', { ns: 'common', defaultValue: 'salvataggi' })}</span>
+                </div>
               </div>
             </div>
+            
+            {/* Bookmark button */}
+            <SaveLocationDropdown
+              isSaved={isSaved}
+              onSave={handleSave}
+              onUnsave={handleUnsave}
+              currentSaveTag={currentSaveTag}
+              open={dropdownOpen}
+              onOpenChange={setDropdownOpen}
+              variant="ghost"
+              size="icon"
+            />
           </div>
-        </DrawerHeader>
+        </div>
 
-        {/* Map Section - Fixed */}
-        <div className="flex-shrink-0">
+        {/* Map Section - Enlarged, edge-to-edge, hiding Leaflet attribution */}
+        <div className="flex-shrink-0 relative -mx-0 overflow-hidden">
           {hasValidCoordinates ? (
-            <div ref={mapDivRef} className="w-full h-48 relative rounded-lg overflow-hidden" />
+            <div className="relative">
+              <div ref={mapDivRef} className="w-[calc(100%+40px)] h-52 -ml-5 -mr-5" style={{ marginLeft: '-20px', marginRight: '-20px', width: 'calc(100% + 40px)' }} />
+              {/* Gradient overlay to hide attribution */}
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+            </div>
           ) : (
-            <div className="w-full h-48 bg-muted flex items-center justify-center">
+            <div className="w-full h-52 bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>{t('coordinatesNotAvailable')}</p>
               </div>
             </div>
           )}
+          
+          {/* Directions button floating on map */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setDirectionsModalOpen(true)}
+            disabled={!hasValidCoordinates}
+            className="absolute bottom-4 right-4 gap-1.5 shadow-lg bg-background/95 backdrop-blur-sm"
+          >
+            <Navigation className="w-4 h-4" />
+            {t('directions', { ns: 'common', defaultValue: 'Directions' })}
+          </Button>
         </div>
 
-        {/* Tabs and Content - Scrollable */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Tab Navigation with Horizontal Scroll */}
-          <div 
-            className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
-            onScroll={(e) => {
-              const scrollLeft = e.currentTarget.scrollLeft;
-              const width = e.currentTarget.offsetWidth;
-              if (scrollLeft < width / 2) {
-                setActiveTab('posts');
-              } else {
-                setActiveTab('reviews');
-              }
-            }}
-          >
-            <div className="flex gap-0 min-w-full">
-              <button
-                onClick={() => setActiveTab('posts')}
-                className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
-                  activeTab === 'posts'
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
-                {activeTab === 'posts' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
-                  activeTab === 'reviews'
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
-                {activeTab === 'reviews' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-              </button>
-            </div>
+        {/* Tabs - Like photo 3 with icons */}
+        <div className="flex-shrink-0 border-b border-border">
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('posts')}
+              className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-medium transition-colors relative ${
+                activeTab === 'posts'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              <span>Post</span>
+              {posts.length > 0 && (
+                <span className="text-muted-foreground">{posts.length}</span>
+              )}
+              {activeTab === 'posts' && (
+                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-foreground rounded-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-medium transition-colors relative ${
+                activeTab === 'reviews'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Star className="w-4 h-4" />
+              <span>{t('reviewsTab', { ns: 'explore', defaultValue: 'Recensioni' })}</span>
+              {activeTab === 'reviews' && (
+                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-foreground rounded-full" />
+              )}
+            </button>
           </div>
+        </div>
 
-          {/* Tab Content */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-            {activeTab === 'posts' ? (
-              <div className="p-4">
-                {loading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : posts.length === 0 ? (
-                  <div className="text-center py-12 px-6 text-muted-foreground">
-                    <Image className="w-16 h-16 mx-auto mb-3 opacity-50" />
-                    <p className="font-semibold mb-1">{t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}</p>
-                    <p className="text-sm">{t('beFirstToShare', { ns: 'common', defaultValue: 'Be the first to share your experience at this place!' })}</p>
-                  </div>
-                ) : (
-                  <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
-                    {posts.map((post) => (
-                      <div
-                        key={post.id}
-                        className="relative rounded-lg overflow-hidden bg-muted snap-center flex-shrink-0 w-[75vw] max-w-[350px] h-80"
-                      >
-                        <img
-                          src={post.media_url}
-                          alt={post.caption}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-4">
-                {reviewsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : reviews.length === 0 ? (
-                  <div className="text-center py-12 px-6 text-muted-foreground">
-                    <Star className="w-16 h-16 mx-auto mb-3 opacity-50" />
-                    <p className="font-semibold mb-1">{t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
-                    <p className="text-sm">{t('beFirstToReview', { ns: 'common', defaultValue: 'Be the first to try this place and leave a review!' })}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4 pb-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
-                        <Avatar className="w-10 h-10 shrink-0">
-                          <AvatarImage src={review.avatar_url || ''} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {review.username?.[0]?.toUpperCase() || 'U'}
+        {/* Tab Content - Like photo 3 with avatar overlay and +count badge */}
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto bg-muted/30">
+          {activeTab === 'posts' ? (
+            <div className="p-4">
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center py-12 px-6 text-muted-foreground">
+                  <Camera className="w-16 h-16 mx-auto mb-3 opacity-30" />
+                  <p className="font-semibold mb-1">{t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}</p>
+                  <p className="text-sm">{t('beFirstToShare', { ns: 'common', defaultValue: 'Be the first to share your experience at this place!' })}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {posts.map((post, idx) => (
+                    <div
+                      key={post.id}
+                      className="relative rounded-xl overflow-hidden bg-muted aspect-square"
+                    >
+                      <img
+                        src={post.media_url}
+                        alt={post.caption}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Avatar overlay - top left */}
+                      <div className="absolute top-2 left-2">
+                        <Avatar className="w-8 h-8 ring-2 ring-white shadow-md">
+                          <AvatarImage src={post.avatar_url} />
+                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                            {post.username[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm">{review.username}</p>
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                              <span className="text-sm font-medium">{review.rating}</span>
-                            </div>
-                          </div>
-                          {review.comment && (
-                            <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
-                          </p>
-                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                      {/* +count badge - top right (only on first post if multiple) */}
+                      {idx === 0 && posts.length > 1 && (
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          +{posts.length - 1}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4">
+              {reviewsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-12 px-6 text-muted-foreground">
+                  <Star className="w-16 h-16 mx-auto mb-3 opacity-30" />
+                  <p className="font-semibold mb-1">{t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
+                  <p className="text-sm">{t('beFirstToReview', { ns: 'common', defaultValue: 'Be the first to try this place and leave a review!' })}</p>
+                </div>
+              ) : (
+                <div className="space-y-4 pb-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="flex gap-3 p-3 bg-background rounded-xl shadow-sm">
+                      <Avatar className="w-10 h-10 shrink-0">
+                        <AvatarImage src={review.avatar_url || ''} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {review.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-sm">{review.username}</p>
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`} 
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </DrawerContent>
 

@@ -912,7 +912,16 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
                 {/* Bottom - Action Buttons */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 pb-6">
-                  <div className="flex items-center justify-center gap-4">
+                  {/* Info button - bottom left, smaller */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDetailLocation(currentLocation); }}
+                    className="absolute left-4 bottom-6 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+                    aria-label="View details"
+                  >
+                    <Info className="w-4 h-4 text-foreground" />
+                  </button>
+                  
+                  <div className="flex items-center justify-center gap-6">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleSwipe('left'); }}
                       disabled={swipeDirection !== null}
@@ -920,15 +929,6 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
                       aria-label="Pass"
                     >
                       <img src={swipeNo} alt="Pass" className="w-16 h-16 object-contain drop-shadow-lg" />
-                    </button>
-                    
-                    {/* Info button to open details */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDetailLocation(currentLocation); }}
-                      className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
-                      aria-label="View details"
-                    >
-                      <Info className="w-6 h-6 text-foreground" />
                     </button>
                     
                     <button
