@@ -118,7 +118,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastPopularCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   
   type DrawerMode = 'closed' | 'trending' | 'search';
-  const TRENDING_PROGRESS = 0.25;
+  const TRENDING_PROGRESS = 0.30;
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
   const isSearchOpen = drawerMode === 'search';
   const isDrawerVisible = drawerMode !== 'closed';
@@ -817,7 +817,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   // Calculate expanded height - smoothly interpolate between trending and search heights
-  const trendingHeight = 160; // Compact: just chips + spot row
+  const trendingHeight = 200; // Compact: drag handle + chips + spot row
   const searchHeight = window.innerHeight * 0.80; // Larger for search results
   
   // Interpolate height based on progress for smooth transitions
