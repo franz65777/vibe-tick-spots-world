@@ -3416,6 +3416,7 @@ export type Database = {
           total_requests: number
         }[]
       }
+      get_location_enrichment_stats: { Args: never; Returns: Json }
       get_mau: { Args: { target_month: string }; Returns: number }
       get_pin_engagement: {
         Args: { p_google_place_id: string; p_location_id: string }
