@@ -693,7 +693,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                         {savesCount > 0 ? 'U' : ''}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-muted-foreground">{savesCount} {t('saves', { ns: 'common', defaultValue: 'salvataggi' })}</span>
+                    <span className="text-muted-foreground">{t('savesCount', { count: savesCount, ns: 'common' })}</span>
                   </div>
                 )}
               </div>
@@ -701,21 +701,23 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           </div>
         </div>
 
-        {/* Map Section - Taller, cleaner, no directions button */}
+        {/* Map Section - With fading overlay */}
         {!isMapMinimized && (
           <div className="flex-shrink-0 relative overflow-hidden">
             {hasValidCoordinates ? (
               <>
-                {/* Map container - extends beyond edges, taller */}
+                {/* Map container - extends beyond edges */}
                 <div 
                   ref={mapDivRef} 
-                  className="h-44 relative z-0" 
+                  className="h-40 relative z-0" 
                   style={{ 
                     marginLeft: '-24px', 
                     marginRight: '-24px', 
                     width: 'calc(100% + 48px)',
                   }} 
                 />
+                {/* Gradient fade at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none z-[1]" />
                 
                 {/* Minimize map button - top right */}
                 <button
@@ -726,24 +728,25 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 </button>
               </>
             ) : (
-              <div className="w-full h-32 bg-muted flex items-center justify-center">
+              <div className="w-full h-28 bg-muted flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
-                  <MapPin className="w-10 h-10 mx-auto mb-1 opacity-50" />
-                  <p className="text-sm">{t('coordinatesNotAvailable')}</p>
+                  <MapPin className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                  <p className="text-xs">{t('coordinatesNotAvailable', { ns: 'common' })}</p>
                 </div>
               </div>
             )}
           </div>
         )}
         
-        {/* Show map button when minimized - compact */}
+        {/* Show map button when minimized - improved styling */}
         {isMapMinimized && hasValidCoordinates && (
           <button
             onClick={() => setIsMapMinimized(false)}
-            className="flex-shrink-0 flex items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted"
+            className="flex-shrink-0 flex items-center justify-center gap-2 py-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors bg-primary/5 hover:bg-primary/10 border-b border-border"
           >
+            <MapPin className="w-4 h-4" />
+            <span>{t('showMap', { ns: 'common' })}</span>
             <ChevronDown className="w-4 h-4" />
-            <span>{t('showMap', { ns: 'common', defaultValue: 'Mostra mappa' })}</span>
           </button>
         )}
 
