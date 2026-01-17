@@ -871,7 +871,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             transform: isUserDragging 
               ? `translateY(${currentTranslateY.current}px)` 
               : `translateY(${getTargetTranslateY(isExpanded)}px)`,
-            transition: (isUserDragging || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
+            transition: (isUserDragging || isInitialRender) ? 'none' : 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1)',
           }}
         >
           {/* Compact Draggable Header - No grey bar, still draggable */}
