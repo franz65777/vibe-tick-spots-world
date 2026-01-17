@@ -487,23 +487,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const dragDelta = deltaY / maxDrag;
       let newProgress = dragStartProgress.current + dragDelta;
 
-      // Determine max progress based on mode - trending drawer has a fixed max height
-      const maxProgress = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS : 1;
-
-      // Rubber banding only below 0, hard cap at max for trending
+      // Allow full range - rubber band at edges
       if (newProgress < 0) {
         newProgress = newProgress * 0.3;
-      } else if (newProgress > maxProgress) {
-        // For trending mode, hard cap with minimal rubber band
-        if (dragStartedModeRef.current === 'trending') {
-          newProgress = maxProgress + (newProgress - maxProgress) * 0.1;
-        } else {
-          newProgress = 1 + (newProgress - 1) * 0.3;
-        }
+      } else if (newProgress > 1) {
+        newProgress = 1 + (newProgress - 1) * 0.3;
       }
 
-      const clampMax = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS + 0.05 : 1.1;
-      setDragProgress(Math.max(-0.1, Math.min(clampMax, newProgress)));
+      setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
     },
     [isDragging]
   );
@@ -520,36 +511,66 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       } catch {}
 
       const startedMode = dragStartedModeRef.current;
+      const velocity = velocityRef.current;
+      const strongSwipeThreshold = 0.4;
+      const swipeThreshold = 0.15;
+      const isStrongSwipeDown = velocity < -strongSwipeThreshold;
+      const isSwipeUp = velocity > swipeThreshold;
+      const isSwipeDown = velocity < -swipeThreshold;
 
-      // Drag started CLOSED: pulling up should open Trending at compact height.
+      // Define snap points
+      const CLOSED = 0;
+      const TRENDING = TRENDING_PROGRESS;
+      const SEARCH = 1;
+
+      let targetMode: DrawerMode;
+      let targetProgress: number;
+
       if (startedMode === 'closed') {
-        const shouldOpenTrending = dragProgress > 0.08;
-        setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
-        if (!shouldOpenTrending) setDragProgress(0);
-        dragStartedOpenRef.current = false;
-        return;
-      }
-
-      // More sensitive velocity threshold for closing
-      const velocityThreshold = 0.15;
-      // Lower threshold to make closing easier
-      const openThreshold = 0.45;
-
-      let shouldStayOpen: boolean;
-      if (Math.abs(velocityRef.current) > velocityThreshold) {
-        // Positive velocity = swipe up (open), negative = swipe down (close)
-        shouldStayOpen = velocityRef.current > 0;
+        // From closed: can only open to Trending
+        if (dragProgress > 0.08) {
+          targetMode = 'trending';
+          targetProgress = TRENDING;
+        } else {
+          targetMode = 'closed';
+          targetProgress = CLOSED;
+        }
+      } else if (startedMode === 'trending') {
+        // From Trending: can go to Search (up) or Closed (down)
+        if (isSwipeUp || dragProgress > (TRENDING + SEARCH) / 2) {
+          // Expand to Search
+          targetMode = 'search';
+          targetProgress = SEARCH;
+          setTimeout(() => inputRef.current?.focus(), 100);
+        } else if (isSwipeDown || dragProgress < TRENDING / 2) {
+          // Close
+          targetMode = 'closed';
+          targetProgress = CLOSED;
+        } else {
+          // Stay at Trending
+          targetMode = 'trending';
+          targetProgress = TRENDING;
+        }
       } else {
-        shouldStayOpen = dragProgress > openThreshold;
+        // From Search: can go to Trending (gentle down) or Closed (strong down)
+        if (isStrongSwipeDown) {
+          // Strong swipe = close completely
+          targetMode = 'closed';
+          targetProgress = CLOSED;
+        } else if (isSwipeDown || dragProgress < (TRENDING + SEARCH) / 2) {
+          // Gentle swipe down = go to Trending
+          targetMode = 'trending';
+          targetProgress = TRENDING;
+        } else {
+          // Stay at Search
+          targetMode = 'search';
+          targetProgress = SEARCH;
+        }
       }
 
-      setDragProgress(shouldStayOpen ? 1 : 0);
-      setDrawerMode(shouldStayOpen ? startedMode : 'closed');
+      setDrawerMode(targetMode);
+      setDragProgress(targetProgress);
       dragStartedOpenRef.current = false;
-
-      if (shouldStayOpen && startedMode === 'search' && inputRef.current) {
-        setTimeout(() => inputRef.current?.focus(), 100);
-      }
     },
     [isDragging, dragProgress]
   );
@@ -594,23 +615,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       const dragDelta = deltaY / maxDrag;
       let newProgress = dragStartProgress.current + dragDelta;
 
-      // Determine max progress based on mode - trending drawer has a fixed max height
-      const maxProgress = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS : 1;
-
-      // Rubber banding only below 0, hard cap at max for trending
+      // Allow full range - rubber band at edges
       if (newProgress < 0) {
         newProgress = newProgress * 0.3;
-      } else if (newProgress > maxProgress) {
-        // For trending mode, hard cap with minimal rubber band
-        if (dragStartedModeRef.current === 'trending') {
-          newProgress = maxProgress + (newProgress - maxProgress) * 0.1;
-        } else {
-          newProgress = 1 + (newProgress - 1) * 0.3;
-        }
+      } else if (newProgress > 1) {
+        newProgress = 1 + (newProgress - 1) * 0.3;
       }
 
-      const clampMax = dragStartedModeRef.current === 'trending' ? TRENDING_PROGRESS + 0.05 : 1.1;
-      setDragProgress(Math.max(-0.1, Math.min(clampMax, newProgress)));
+      setDragProgress(Math.max(-0.1, Math.min(1.1, newProgress)));
     },
     [isDragging]
   );
@@ -622,36 +634,67 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     touchActiveRef.current = false;
 
     const startedMode = dragStartedModeRef.current;
+    const velocity = velocityRef.current;
+    const strongSwipeThreshold = 0.4;
+    const swipeThreshold = 0.15;
+    const isStrongSwipeDown = velocity < -strongSwipeThreshold;
+    const isSwipeUp = velocity > swipeThreshold;
+    const isSwipeDown = velocity < -swipeThreshold;
 
-    // Drag started CLOSED: pulling up should open Trending at compact height.
+    // Define snap points
+    const CLOSED = 0;
+    const TRENDING = TRENDING_PROGRESS;
+    const SEARCH = 1;
+
+    let targetMode: DrawerMode;
+    let targetProgress: number;
+
     if (startedMode === 'closed') {
-      const shouldOpenTrending = dragProgress > 0.08;
-      setDrawerMode(shouldOpenTrending ? 'trending' : 'closed');
-      if (!shouldOpenTrending) setDragProgress(0);
-      dragStartedOpenRef.current = false;
-      return;
-    }
-
-    // More sensitive velocity threshold for closing
-    const velocityThreshold = 0.15;
-    // Lower threshold to make closing easier
-    const openThreshold = 0.45;
-
-    let shouldStayOpen: boolean;
-    if (Math.abs(velocityRef.current) > velocityThreshold) {
-      shouldStayOpen = velocityRef.current > 0;
+      // From closed: can only open to Trending
+      if (dragProgress > 0.08) {
+        targetMode = 'trending';
+        targetProgress = TRENDING;
+      } else {
+        targetMode = 'closed';
+        targetProgress = CLOSED;
+      }
+    } else if (startedMode === 'trending') {
+      // From Trending: can go to Search (up) or Closed (down)
+      if (isSwipeUp || dragProgress > (TRENDING + SEARCH) / 2) {
+        // Expand to Search
+        targetMode = 'search';
+        targetProgress = SEARCH;
+        setTimeout(() => inputRef.current?.focus(), 100);
+      } else if (isSwipeDown || dragProgress < TRENDING / 2) {
+        // Close
+        targetMode = 'closed';
+        targetProgress = CLOSED;
+      } else {
+        // Stay at Trending
+        targetMode = 'trending';
+        targetProgress = TRENDING;
+      }
     } else {
-      shouldStayOpen = dragProgress > openThreshold;
+      // From Search: can go to Trending (gentle down) or Closed (strong down)
+      if (isStrongSwipeDown) {
+        // Strong swipe = close completely
+        targetMode = 'closed';
+        targetProgress = CLOSED;
+      } else if (isSwipeDown || dragProgress < (TRENDING + SEARCH) / 2) {
+        // Gentle swipe down = go to Trending
+        targetMode = 'trending';
+        targetProgress = TRENDING;
+      } else {
+        // Stay at Search
+        targetMode = 'search';
+        targetProgress = SEARCH;
+      }
     }
 
-    setDragProgress(shouldStayOpen ? 1 : 0);
-    setDrawerMode(shouldStayOpen ? startedMode : 'closed');
+    setDrawerMode(targetMode);
+    setDragProgress(targetProgress);
     dragStartedOpenRef.current = false;
-
-    if (shouldStayOpen && startedMode === 'search' && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [dragProgress, drawerMode]);
+  }, [dragProgress]);
 
   // Trending mode opens to a medium height so the layout is fully readable (like Search),
   // while still leaving map context visible.
@@ -761,18 +804,33 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleSearchBarClick = () => {
-    if (!isSearchOpen) {
+    if (drawerMode === 'closed') {
+      // Click from closed → open Trending (Photo 1)
+      setDrawerMode('trending');
+      setDragProgress(TRENDING_PROGRESS);
+    } else if (drawerMode === 'trending') {
+      // Click in Trending → open Search (Photo 2)
       setDrawerMode('search');
       setDragProgress(1);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  // Calculate expanded height - use smaller height for trending mode to fit content
+  // Calculate expanded height - smoothly interpolate between trending and search heights
   const trendingHeight = Math.min(window.innerHeight * 0.50, 420); // Fit content for trending
   const searchHeight = window.innerHeight * 0.80; // Larger for search results
-  const maxExpandedHeight = isSearchOpen ? searchHeight : trendingHeight;
-  const expandedHeight = Math.max(0, dragProgress) * maxExpandedHeight;
+  
+  // Interpolate height based on progress for smooth transitions
+  let expandedHeight: number;
+  const clampedProgress = Math.max(0, dragProgress);
+  if (clampedProgress <= TRENDING_PROGRESS) {
+    // From 0 to TRENDING_PROGRESS: scale to trending height
+    expandedHeight = (clampedProgress / TRENDING_PROGRESS) * trendingHeight;
+  } else {
+    // From TRENDING_PROGRESS to 1: interpolate from trending to search height
+    const extraProgress = (clampedProgress - TRENDING_PROGRESS) / (1 - TRENDING_PROGRESS);
+    expandedHeight = trendingHeight + extraProgress * (searchHeight - trendingHeight);
+  }
   const expandedOpacity = Math.max(0, Math.min(1, dragProgress * 1.5));
 
   const isSearching = internalQuery.trim().length > 0;
