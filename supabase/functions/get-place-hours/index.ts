@@ -18,6 +18,63 @@ function getCurrentBillingMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// Budget check - returns { allowed, enabled, spent, limit } 
+async function checkBudgetAndKillSwitch(supabase: any): Promise<{
+  allowed: boolean;
+  enabled: boolean;
+  spent: number;
+  limit: number;
+  message?: string;
+}> {
+  // Get budget settings
+  const { data: settings } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'google_api_budget')
+    .single();
+
+  const budgetSettings = settings?.value || { monthly_limit_usd: 10, enabled: false };
+  const monthlyLimit = budgetSettings.monthly_limit_usd || 10;
+  const enabled = budgetSettings.enabled === true;
+
+  // If kill switch is off, block immediately
+  if (!enabled) {
+    return {
+      allowed: false,
+      enabled: false,
+      spent: 0,
+      limit: monthlyLimit,
+      message: 'Google API is disabled. Enable it in admin settings.'
+    };
+  }
+
+  // Get current month spend
+  const currentMonth = getCurrentBillingMonth();
+  const { data: costData } = await supabase
+    .from('google_api_costs')
+    .select('cost_usd')
+    .eq('billing_month', currentMonth);
+
+  const totalSpent = costData?.reduce((sum: number, r: any) => sum + (r.cost_usd || 0), 0) || 0;
+
+  if (totalSpent >= monthlyLimit) {
+    return {
+      allowed: false,
+      enabled: true,
+      spent: totalSpent,
+      limit: monthlyLimit,
+      message: `Monthly budget exceeded: $${totalSpent.toFixed(2)} / $${monthlyLimit}`
+    };
+  }
+
+  return {
+    allowed: true,
+    enabled: true,
+    spent: totalSpent,
+    limit: monthlyLimit
+  };
+}
+
 interface OpeningHoursResult {
   isOpen: boolean | null;
   todayHours: string | null;
@@ -232,6 +289,45 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // ⚠️ BUDGET CHECK - Block Google API if disabled or over budget
+    const budgetCheck = await checkBudgetAndKillSwitch(supabase);
+    if (!budgetCheck.allowed) {
+      console.log(`Budget blocked: ${budgetCheck.message}`);
+      // Try to return cached data if available
+      if (locationId) {
+        const { data: cached } = await supabase
+          .from('locations')
+          .select('opening_hours_data, opening_hours_source')
+          .eq('id', locationId)
+          .single();
+        
+        if (cached?.opening_hours_data) {
+          const cachedData = cached.opening_hours_data as any;
+          return new Response(
+            JSON.stringify({
+              openingHours: {
+                isOpen: cachedData.isOpen ?? null,
+                todayHours: cachedData.todayHours ?? null,
+                source: cached.opening_hours_source || 'cache'
+              },
+              budget_blocked: true,
+              message: budgetCheck.message
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      // Return unknown hours if no cache
+      return new Response(
+        JSON.stringify({
+          openingHours: { isOpen: null, todayHours: null, source: 'blocked' },
+          budget_blocked: true,
+          message: budgetCheck.message
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const googleApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     let openingHours: OpeningHoursResult | null = null;
