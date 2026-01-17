@@ -512,8 +512,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
       const startedMode = dragStartedModeRef.current;
       const velocity = velocityRef.current;
-      const strongSwipeThreshold = 0.4;
-      const swipeThreshold = 0.15;
+      const strongSwipeThreshold = 0.25; // Lower for easier closing
+      const swipeThreshold = 0.1; // More sensitive for iOS feel
       const isStrongSwipeDown = velocity < -strongSwipeThreshold;
       const isSwipeUp = velocity > swipeThreshold;
       const isSwipeDown = velocity < -swipeThreshold;
@@ -557,8 +557,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           // Strong swipe = close completely
           targetMode = 'closed';
           targetProgress = CLOSED;
-        } else if (isSwipeDown || dragProgress < (TRENDING + SEARCH) / 2) {
-          // Gentle swipe down = go to Trending
+      } else if (isSwipeDown || dragProgress < 0.75) {
+          // Gentle swipe down = go to Trending (easier threshold)
           targetMode = 'trending';
           targetProgress = TRENDING;
         } else {
@@ -635,8 +635,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
     const startedMode = dragStartedModeRef.current;
     const velocity = velocityRef.current;
-    const strongSwipeThreshold = 0.4;
-    const swipeThreshold = 0.15;
+    const strongSwipeThreshold = 0.25; // Lower for easier closing
+    const swipeThreshold = 0.1; // More sensitive for iOS feel
     const isStrongSwipeDown = velocity < -strongSwipeThreshold;
     const isSwipeUp = velocity > swipeThreshold;
     const isSwipeDown = velocity < -swipeThreshold;
@@ -680,8 +680,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         // Strong swipe = close completely
         targetMode = 'closed';
         targetProgress = CLOSED;
-      } else if (isSwipeDown || dragProgress < (TRENDING + SEARCH) / 2) {
-        // Gentle swipe down = go to Trending
+      } else if (isSwipeDown || dragProgress < 0.75) {
+        // Gentle swipe down = go to Trending (easier threshold)
         targetMode = 'trending';
         targetProgress = TRENDING;
       } else {
@@ -905,14 +905,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       <div
         className={cn(
           "w-full overflow-hidden rounded-3xl shadow-2xl border border-border/10 flex flex-col",
-          isSearchOpen ? "backdrop-blur-xl bg-background/60" : "bg-background"
+          isSearchOpen ? "backdrop-blur-xl bg-background/80" : "bg-white dark:bg-zinc-900"
         )}
         style={{
           height: expandedHeight,
           opacity: expandedOpacity,
           transition: (isDragging || isInitialRender)
             ? 'none'
-            : 'height 0.55s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease-out',
+            : 'height 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease-out',
           display: dragProgress > 0 ? 'flex' : 'none',
           marginBottom: 0,
           willChange: 'height, opacity',
@@ -923,11 +923,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         {/* Fixed header: Drag handle + Search input */}
         <div className={cn(
           "flex-shrink-0 rounded-t-3xl",
-          isSearchOpen ? "bg-background/20 backdrop-blur-md" : "bg-background"
+          isSearchOpen ? "bg-background/40 backdrop-blur-md" : "bg-white dark:bg-zinc-900"
         )}>
-          {/* Drag handle at top - compact */}
+          {/* Drag handle at top - larger touch target */}
           <div
-            className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
+            className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
             style={{ touchAction: 'none' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -1010,7 +1010,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           data-drawer-scroll
           className={cn(
             "flex-1 overflow-y-auto",
-            isSearchOpen ? "px-4 pb-4 bg-background/20 backdrop-blur-md" : "px-3 pb-2 bg-background"
+            isSearchOpen ? "px-4 pb-4 bg-background/40 backdrop-blur-md" : "px-3 pb-2 bg-white dark:bg-zinc-900"
           )}
         >
           {/* TRENDING MODE: show the PopularSpots (Tendenza/Sconto/Evento/Promozione/Nuovo) UI */}
