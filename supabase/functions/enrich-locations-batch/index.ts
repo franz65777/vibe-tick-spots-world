@@ -23,6 +23,7 @@ interface EnrichmentResult {
   photosAdded: number;
   hasHours: boolean;
   googlePlaceId?: string;
+  deleted?: boolean;
   error?: string;
   costs: {
     placeDetails: number;
@@ -36,6 +37,7 @@ interface BatchResult {
   processed: number;
   successful: number;
   failed: number;
+  deleted: number;
   results: EnrichmentResult[];
   totalCost: number;
   monthlySpend: number;
@@ -194,13 +196,12 @@ serve(async (req) => {
         );
       }
 
-      // Fetch locations without valid Google Place ID BUT exclude those already marked as "not found"
+      // Fetch locations without valid Google Place ID
       const { data: noPlaceIdLocations, error: fetchError2 } = await supabase
         .from('locations')
         .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
         .or('photos.is.null,opening_hours_data.is.null')
         .or('google_place_id.is.null,google_place_id.not.like.ChIJ%')
-        .is('google_place_not_found_at', null) // CRITICAL: Skip locations already marked as not found on Google
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .range(0, batchSize - 1);
@@ -217,6 +218,7 @@ serve(async (req) => {
             processed: 0,
             successful: 0,
             failed: 0,
+            deleted: 0,
             results: [],
             totalCost: 0,
             monthlySpend,
@@ -288,15 +290,22 @@ serve(async (req) => {
 
               console.log(`Found place ID: ${googlePlaceId}`);
             } else {
-              // CRITICAL FIX: Mark this location as "not found on Google" to prevent infinite retries
-              // This saves money by not calling find_place again for this location
-              console.log(`Place not found for ${location.name}, marking as not_found`);
-              await supabase
+              // CRITICAL: Location not found on Google - DELETE it from the database
+              // This prevents wasting money on repeated find_place calls and removes orphan locations
+              console.log(`Place not found for ${location.name}, DELETING location`);
+              
+              const { error: deleteError } = await supabase
                 .from('locations')
-                .update({ google_place_not_found_at: new Date().toISOString() })
+                .delete()
                 .eq('id', location.id);
               
-              result.error = `Google FindPlace: ${findData.status || 'NO_RESULT'} - marcato come non trovato`;
+              if (deleteError) {
+                console.error(`Failed to delete location ${location.id}:`, deleteError.message);
+                result.error = `Google FindPlace: ${findData.status || 'NO_RESULT'} - eliminazione fallita: ${deleteError.message}`;
+              } else {
+                result.deleted = true;
+                result.error = `Eliminata: non trovata su Google`;
+              }
             }
           } else {
             result.costs.findPlace = COSTS.FIND_PLACE;
@@ -456,6 +465,7 @@ serve(async (req) => {
     }
 
     const successCount = results.filter(r => r.success).length;
+    const deletedCount = results.filter(r => r.deleted).length;
     const newMonthlySpend = monthlySpend + totalBatchCost;
     const newRemainingBudget = MONTHLY_FREE_CREDIT - newMonthlySpend;
 
@@ -473,7 +483,8 @@ serve(async (req) => {
     const batchResult: BatchResult = {
       processed: results.length,
       successful: successCount,
-      failed: results.length - successCount,
+      failed: results.length - successCount - deletedCount,
+      deleted: deletedCount,
       results,
       totalCost: totalBatchCost,
       monthlySpend: newMonthlySpend,
