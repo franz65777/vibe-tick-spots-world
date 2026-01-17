@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { 
   Loader2, Image, Clock, DollarSign, Play, Eye, RefreshCw, 
-  CheckCircle2, AlertCircle, StopCircle, TrendingUp, Zap, XCircle, RotateCcw
+  CheckCircle2, AlertCircle, StopCircle, TrendingUp, Zap, Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,13 +29,13 @@ interface EnrichmentStats {
   withHours: number;
   withGoogleId: number;
   needsEnrichment: number;
-  notFoundOnGoogle: number;
 }
 
 interface BatchResult {
   processed: number;
   successful: number;
   failed: number;
+  deleted: number;
   totalCost: number;
   monthlySpend: number;
   remainingBudget: number;
@@ -64,6 +64,7 @@ export const GoogleEnrichmentDashboard = () => {
   // Progress
   const [totalProcessed, setTotalProcessed] = useState(0);
   const [totalSuccessful, setTotalSuccessful] = useState(0);
+  const [totalDeleted, setTotalDeleted] = useState(0);
   const [currentBatchCost, setCurrentBatchCost] = useState(0);
   const [sessionCost, setSessionCost] = useState(0);
   
@@ -87,19 +88,12 @@ export const GoogleEnrichmentDashboard = () => {
           needs_enrichment: number;
         };
         
-        // Get count of locations marked as not found on Google
-        const { count: notFoundCount } = await supabase
-          .from('locations')
-          .select('id', { count: 'exact', head: true })
-          .not('google_place_not_found_at', 'is', null);
-        
         setStats({
           totalLocations: data.total_locations || 0,
           withPhotos: data.with_photos || 0,
           withHours: data.with_hours || 0,
           withGoogleId: data.with_google_id || 0,
           needsEnrichment: data.needs_enrichment || 0,
-          notFoundOnGoogle: notFoundCount || 0,
         });
       }
 
@@ -145,6 +139,7 @@ export const GoogleEnrichmentDashboard = () => {
     abortRef.current = false;
     setTotalProcessed(0);
     setTotalSuccessful(0);
+    setTotalDeleted(0);
     setSessionCost(0);
 
     toast.info(dryRun ? 'Avvio test...' : 'Avvio enrichment...', { duration: 2000 });
@@ -157,6 +152,7 @@ export const GoogleEnrichmentDashboard = () => {
       let totalCostSession = 0;
       let totalProcessedSession = 0;
       let totalSuccessfulSession = 0;
+      let totalDeletedSession = 0;
 
       while (hasMore && !abortRef.current) {
         const { data, error } = await supabase.functions.invoke('enrich-locations-batch', {
@@ -179,10 +175,12 @@ export const GoogleEnrichmentDashboard = () => {
         
         totalProcessedSession += result.processed;
         totalSuccessfulSession += result.successful;
+        totalDeletedSession += result.deleted || 0;
         totalCostSession += result.totalCost;
         
         setTotalProcessed(totalProcessedSession);
         setTotalSuccessful(totalSuccessfulSession);
+        setTotalDeleted(totalDeletedSession);
         setCurrentBatchCost(result.totalCost);
         setSessionCost(totalCostSession);
         
@@ -212,8 +210,9 @@ export const GoogleEnrichmentDashboard = () => {
           duration: 7000,
         });
       } else {
+        const deletedInfo = totalDeletedSession > 0 ? ` (${totalDeletedSession} eliminate)` : '';
         toast.success(dryRun ? '✅ Test completato!' : '✅ Enrichment completato!', {
-          description: `${totalSuccessfulSession} location arricchite, costo: $${totalCostSession.toFixed(2)}`,
+          description: `${totalSuccessfulSession} location arricchite${deletedInfo}, costo: $${totalCostSession.toFixed(2)}`,
           duration: 5000,
         });
       }
@@ -238,22 +237,6 @@ export const GoogleEnrichmentDashboard = () => {
     await fetchStats();
     setLoading(false);
     toast.success('Statistiche aggiornate');
-  };
-
-  const handleResetNotFound = async () => {
-    try {
-      const { error } = await supabase
-        .from('locations')
-        .update({ google_place_not_found_at: null })
-        .not('google_place_not_found_at', 'is', null);
-      
-      if (error) throw error;
-      
-      await fetchStats();
-      toast.success('Location "non trovate" resettate, puoi riprovare l\'enrichment');
-    } catch (error: any) {
-      toast.error('Errore nel reset', { description: error.message });
-    }
   };
 
   if (loading && !stats) {
@@ -386,38 +369,7 @@ export const GoogleEnrichmentDashboard = () => {
             </div>
             <div className="text-xl font-bold">{stats?.needsEnrichment || 0}</div>
           </div>
-          <div className="bg-muted/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <XCircle className="w-4 h-4 text-red-500" />
-              <span className="text-xs text-muted-foreground">Non Trovati</span>
-            </div>
-            <div className="text-xl font-bold">{stats?.notFoundOnGoogle || 0}</div>
-          </div>
         </div>
-
-        {/* Not Found on Google - Reset Option */}
-        {stats && stats.notFoundOnGoogle > 0 && status === 'idle' && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-red-500" />
-                <div>
-                  <p className="text-xs font-medium">{stats.notFoundOnGoogle} location non trovate su Google</p>
-                  <p className="text-[10px] text-muted-foreground">Bloccate per evitare costi API ripetuti</p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-xs"
-                onClick={handleResetNotFound}
-              >
-                <RotateCcw className="w-3 h-3 mr-1" />
-                Riprova
-              </Button>
-            </div>
-          </div>
-        )}
 
         {/* Settings */}
         {status === 'idle' && (
