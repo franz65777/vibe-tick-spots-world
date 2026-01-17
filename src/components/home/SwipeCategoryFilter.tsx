@@ -9,22 +9,53 @@ interface SwipeCategoryFilterProps {
 }
 
 const SwipeCategoryFilter: React.FC<SwipeCategoryFilterProps> = ({ selected, onSelect, counts }) => {
+  // Filter categories with count > 0
+  const visibleCategories = allowedCategories.filter(cat => (counts[cat] || 0) > 0);
+  
+  if (visibleCategories.length === 0) return null;
+
   return (
-    <div className="px-4 py-2 bg-background/95">
-      <div className="grid grid-cols-5 gap-2">
-        {allowedCategories.map((cat) => {
+    <div className="px-3 py-2">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
+        {/* "All" button */}
+        <button
+          onClick={() => onSelect(null)}
+          className={`flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-full transition-all ${
+            selected === null 
+              ? 'bg-primary text-primary-foreground shadow-md' 
+              : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+          }`}
+          style={{ scrollSnapAlign: 'start' }}
+        >
+          <span className="text-sm font-medium">Tutti</span>
+          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+            selected === null ? 'bg-primary-foreground/20' : 'bg-foreground/10'
+          }`}>
+            {Object.values(counts).reduce((a, b) => a + b, 0)}
+          </span>
+        </button>
+        
+        {visibleCategories.map((cat) => {
           const isSelected = selected === cat;
           const count = counts[cat] || 0;
+          
           return (
             <button
               key={cat}
               onClick={() => onSelect(isSelected ? null : cat)}
-              className={`relative rounded-md p-1.5 flex items-center justify-center ${isSelected ? 'ring-2 ring-primary bg-accent' : 'bg-card'} ${count === 0 ? 'opacity-50 pointer-events-none' : ''}`}
+              className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
+                isSelected 
+                  ? 'bg-primary text-primary-foreground shadow-md' 
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+              style={{ scrollSnapAlign: 'start' }}
               aria-pressed={isSelected}
               aria-label={`${categoryDisplayNames[cat]} (${count})`}
             >
-              <CategoryIcon category={cat} className={cat.toLowerCase() === 'hotel' || cat.toLowerCase() === 'restaurant' ? 'w-10 h-10' : 'w-8 h-8'} />
-              <span className="absolute -top-1 -right-1 text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow">
+              <CategoryIcon category={cat} className="w-6 h-6" />
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                isSelected ? 'bg-primary-foreground/20' : 'bg-foreground/10'
+              }`}>
                 {count}
               </span>
             </button>
