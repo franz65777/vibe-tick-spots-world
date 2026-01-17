@@ -319,16 +319,25 @@ serve(async (req) => {
                   }
                 }
                 
-                // Process hours
-                if (needsHours && detailsData.result?.opening_hours) {
-                  const hours = detailsData.result.opening_hours;
-                  updateData.opening_hours_data = {
-                    periods: hours.periods,
-                    weekdayText: hours.weekday_text,
-                  };
+                // Process hours (mark as fetched even if Google has no hours)
+                if (needsHours) {
+                  const hours = detailsData.result?.opening_hours;
+
+                  if (hours) {
+                    updateData.opening_hours_data = {
+                      periods: hours.periods,
+                      weekdayText: hours.weekday_text,
+                    };
+                    result.hasHours = true;
+                  } else {
+                    // Some places (parks/streets/etc.) may not have opening hours in Google.
+                    // We still mark the field as fetched so the dashboard doesn't keep counting it forever.
+                    updateData.opening_hours_data = { unavailable: true };
+                    result.hasHours = false;
+                  }
+
                   updateData.opening_hours_source = 'google';
                   updateData.opening_hours_fetched_at = new Date().toISOString();
-                  result.hasHours = true;
                 }
                 
                 if (Object.keys(updateData).length > 0) {
