@@ -697,57 +697,54 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         </div>
 
         {/* Map Section - No rounded corners, hide Leaflet completely */}
-        <div className={`flex-shrink-0 relative overflow-hidden transition-all duration-300 ${isMapMinimized ? 'h-0' : ''}`}>
-          {hasValidCoordinates && !isMapMinimized ? (
-            <div className="relative">
-              {/* Map container - extends beyond edges to hide any borders */}
-              <div 
-                ref={mapDivRef} 
-                className="h-56" 
-                style={{ 
-                  marginLeft: '-24px', 
-                  marginRight: '-24px', 
-                  width: 'calc(100% + 48px)',
-                }} 
-              />
-              {/* Full overlay at bottom to completely hide Leaflet attribution */}
-              <div className="absolute bottom-0 left-0 right-0 h-10 bg-background pointer-events-none" />
-              {/* Gradient above the solid overlay for smooth transition */}
-              <div className="absolute bottom-10 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-            </div>
-          ) : !isMapMinimized ? (
-            <div className="w-full h-56 bg-muted flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>{t('coordinatesNotAvailable')}</p>
+        {!isMapMinimized && (
+          <div className="flex-shrink-0 relative overflow-hidden">
+            {hasValidCoordinates ? (
+              <>
+                {/* Map container - extends beyond edges to hide any borders */}
+                <div 
+                  ref={mapDivRef} 
+                  className="h-56 relative z-0" 
+                  style={{ 
+                    marginLeft: '-24px', 
+                    marginRight: '-24px', 
+                    width: 'calc(100% + 48px)',
+                  }} 
+                />
+                {/* Full overlay at bottom to completely hide Leaflet attribution */}
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-background pointer-events-none z-[1]" />
+                {/* Gradient above the solid overlay for smooth transition */}
+                <div className="absolute bottom-10 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none z-[1]" />
+                
+                {/* Minimize map button - top right */}
+                <button
+                  onClick={() => setIsMapMinimized(true)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/90 backdrop-blur-sm shadow-md flex items-center justify-center z-[2] hover:bg-background transition-colors"
+                >
+                  <ChevronUp className="w-4 h-4 text-foreground" />
+                </button>
+                
+                {/* Directions button floating on map */}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setDirectionsModalOpen(true)}
+                  className="absolute bottom-12 right-4 gap-1.5 shadow-lg bg-background/95 backdrop-blur-sm z-[2]"
+                >
+                  <Navigation className="w-4 h-4" />
+                  {t('directions', { ns: 'common', defaultValue: 'Directions' })}
+                </Button>
+              </>
+            ) : (
+              <div className="w-full h-56 bg-muted flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>{t('coordinatesNotAvailable')}</p>
+                </div>
               </div>
-            </div>
-          ) : null}
-          
-          {/* Directions button floating on map */}
-          {!isMapMinimized && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setDirectionsModalOpen(true)}
-              disabled={!hasValidCoordinates}
-              className="absolute bottom-12 right-4 gap-1.5 shadow-lg bg-background/95 backdrop-blur-sm z-10"
-            >
-              <Navigation className="w-4 h-4" />
-              {t('directions', { ns: 'common', defaultValue: 'Directions' })}
-            </Button>
-          )}
-          
-          {/* Minimize/Expand map button - top right of map */}
-          {hasValidCoordinates && !isMapMinimized && (
-            <button
-              onClick={() => setIsMapMinimized(true)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/90 backdrop-blur-sm shadow-md flex items-center justify-center z-10 hover:bg-background transition-colors"
-            >
-              <ChevronUp className="w-4 h-4 text-foreground" />
-            </button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
         
         {/* Show map button when minimized */}
         {isMapMinimized && hasValidCoordinates && (
