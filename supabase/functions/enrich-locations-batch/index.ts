@@ -102,9 +102,9 @@ serve(async (req) => {
 
     // Fetch locations that need enrichment
     // Priority: locations with google_place_id but missing photos/hours
-    const { data: locations, error: fetchError, count } = await supabase
+    const { data: locationsWithPlaceId, error: fetchError } = await supabase
       .from('locations')
-      .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data', { count: 'exact' })
+      .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
       .or('photos.is.null,opening_hours_data.is.null')
       .not('google_place_id', 'is', null)
       .like('google_place_id', 'ChIJ%') // Only valid Google Place IDs
@@ -114,18 +114,26 @@ serve(async (req) => {
       throw new Error(`Failed to fetch locations: ${fetchError.message}`);
     }
 
-    if (!locations || locations.length === 0) {
-      // Try locations without Google Place ID (will use Find Place API)
-      const { data: noPlaceIdLocations, count: totalCount } = await supabase
+    let locations = locationsWithPlaceId || [];
+
+    // If no locations with valid place IDs, try locations without (will use Find Place API)
+    if (locations.length === 0) {
+      const { data: noPlaceIdLocations, error: fetchError2 } = await supabase
         .from('locations')
-        .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data', { count: 'exact' })
+        .select('id, name, google_place_id, latitude, longitude, photos, opening_hours_data')
         .or('photos.is.null,opening_hours_data.is.null')
         .or('google_place_id.is.null,google_place_id.not.like.ChIJ%')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .range(offset, offset + batchSize - 1);
 
-      if (!noPlaceIdLocations || noPlaceIdLocations.length === 0) {
+      if (fetchError2) {
+        throw new Error(`Failed to fetch locations without place ID: ${fetchError2.message}`);
+      }
+
+      locations = noPlaceIdLocations || [];
+
+      if (locations.length === 0) {
         return new Response(
           JSON.stringify({
             processed: 0,
@@ -142,8 +150,6 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
-      locations.push(...noPlaceIdLocations);
     }
 
     console.log(`Processing ${locations.length} locations`);
