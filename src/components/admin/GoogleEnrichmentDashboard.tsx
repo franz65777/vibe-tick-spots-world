@@ -58,6 +58,7 @@ export const GoogleEnrichmentDashboard = () => {
   const [enrichPhotos, setEnrichPhotos] = useState(true);
   const [enrichHours, setEnrichHours] = useState(true);
   const [maxPhotos, setMaxPhotos] = useState(4);
+  const [resolvePlaceIds, setResolvePlaceIds] = useState(false);
   
   // Progress
   const [totalProcessed, setTotalProcessed] = useState(0);
@@ -156,6 +157,7 @@ export const GoogleEnrichmentDashboard = () => {
             enrichPhotos,
             enrichHours,
             maxPhotosPerLocation: maxPhotos,
+            resolvePlaceIds,
             dryRun,
           }
         });
@@ -195,10 +197,17 @@ export const GoogleEnrichmentDashboard = () => {
       setStatus('completed');
       await fetchStats();
 
-      toast.success(dryRun ? '✅ Test completato!' : '✅ Enrichment completato!', {
-        description: `${totalSuccessfulSession} location arricchite, costo: $${totalCostSession.toFixed(2)}`,
-        duration: 5000,
-      });
+      if (totalSuccessfulSession === 0 && totalCostSession > 0) {
+        toast.warning('Nessuna location arricchita', {
+          description: `Spesi $${totalCostSession.toFixed(2)}. Probabile manchino Google Place ID: attiva "Trova Google ID" (costo extra) oppure aggiungi/riconosci gli ID manualmente.`,
+          duration: 7000,
+        });
+      } else {
+        toast.success(dryRun ? '✅ Test completato!' : '✅ Enrichment completato!', {
+          description: `${totalSuccessfulSession} location arricchite, costo: $${totalCostSession.toFixed(2)}`,
+          duration: 5000,
+        });
+      }
 
     } catch (error: any) {
       setStatus('idle');
@@ -383,7 +392,7 @@ export const GoogleEnrichmentDashboard = () => {
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <Switch 
                   id="photos" 
@@ -399,6 +408,14 @@ export const GoogleEnrichmentDashboard = () => {
                   onCheckedChange={setEnrichHours}
                 />
                 <Label htmlFor="hours" className="text-xs">Orari</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="resolvePlaceIds"
+                  checked={resolvePlaceIds}
+                  onCheckedChange={setResolvePlaceIds}
+                />
+                <Label htmlFor="resolvePlaceIds" className="text-xs">Trova Google ID (costo extra)</Label>
               </div>
             </div>
           </div>
