@@ -50,11 +50,15 @@ const DrawerContent = React.forwardRef<
       className={cn(
         "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background will-change-transform",
         !disableDefaultTransition && "transition-transform duration-300 ease-spring",
+        // Override vaul's internal data-state animations when disabled
+        disableDefaultTransition && "[&[data-state=open]]:!animate-none [&[data-state=closed]]:!animate-none",
         className
       )}
       style={{ 
         borderTopLeftRadius: '20px', 
         borderTopRightRadius: '20px',
+        // Prevent vaul from controlling transform when we want custom control
+        ...(disableDefaultTransition ? { '--initial-transform': 'none' } as React.CSSProperties : {}),
         ...style
       }}
       {...props}
