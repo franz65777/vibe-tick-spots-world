@@ -80,10 +80,10 @@ const SpotThumbnailButton = ({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
+      className="flex items-center gap-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors px-2 py-1.5"
       aria-label={`Apri ${spot.name}`}
     >
-      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
         {showImage ? (
           <img
             src={thumbUrl}
@@ -93,12 +93,12 @@ const SpotThumbnailButton = ({
             onError={() => setImgError(true)}
           />
         ) : (
-          <CategoryIcon category={spot.category} className="w-4 h-4" />
+          <CategoryIcon category={spot.category} className="w-3.5 h-3.5" />
         )}
       </div>
       <div className="text-left">
-        <div className="text-[11px] font-medium text-foreground line-clamp-1 max-w-20">{spot.name}</div>
-        <div className="text-[9px] text-muted-foreground">
+        <div className="text-[10px] font-medium text-foreground line-clamp-1 max-w-16">{spot.name}</div>
+        <div className="text-[8px] text-muted-foreground leading-tight">
           {typeof spot.savesCount === 'number' && spot.savesCount > 0
             ? t('savesCount', { ns: 'common', count: spot.savesCount })
             : ''}
@@ -426,10 +426,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   
 
   return (
-    <section className="h-full px-4 pb-2">
+    <section className="h-full">
       {/* Filter pills */}
-      <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2 py-1 w-max">
+      <div className="px-3 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1.5 w-max">
           {filterOptions.map((opt) => {
             const active = opt.value === filterType;
             return (
@@ -438,7 +438,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 type="button"
                 onClick={() => setFilterType(opt.value)}
                 className={cn(
-                  'inline-flex items-center gap-2 h-10 px-4 rounded-full border transition-colors select-none',
+                  'inline-flex items-center gap-1.5 h-8 px-3 rounded-full border transition-colors select-none',
                   active
                     ? 'bg-primary text-primary-foreground border-primary/40'
                     : 'bg-secondary text-secondary-foreground border-border hover:bg-accent'
@@ -446,10 +446,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 aria-pressed={active}
                 aria-label={opt.label}
               >
-                <span className="w-5 h-5 shrink-0">
-                  <img src={opt.icon} alt={opt.label} className="w-5 h-5 object-contain" loading="lazy" />
+                <span className="w-4 h-4 shrink-0">
+                  <img src={opt.icon} alt={opt.label} className="w-4 h-4 object-contain" loading="lazy" />
                 </span>
-                <span className="text-sm font-medium whitespace-nowrap">{opt.label}</span>
+                <span className="text-xs font-medium whitespace-nowrap">{opt.label}</span>
               </button>
             );
           })}
@@ -458,31 +458,31 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
       {/* Content */}
       {loading ? (
-        <div className="mt-2 flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="mt-1 px-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-shrink-0 w-36 h-14 rounded-xl bg-muted animate-pulse" />
+            <div key={i} className="flex-shrink-0 w-32 h-12 rounded-lg bg-muted animate-pulse" />
           ))}
         </div>
       ) : !hasResults ? (
-        <div className="mt-4 text-sm text-muted-foreground">{t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(filterType).toLowerCase(), city: currentCity })}</div>
+        <div className="mt-2 px-3 text-xs text-muted-foreground">{t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(filterType).toLowerCase(), city: currentCity })}</div>
       ) : (
-        <div className="mt-2 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 w-max pb-2">
+        <div className="mt-1 px-3 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1.5 w-max pb-1">
             {showingCities
               ? citySpots.map((city) => (
                   <button
                     key={city.city}
                     type="button"
                     onClick={() => handleCityClick(city)}
-                    className="flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent transition-colors px-3 py-2"
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors px-2 py-1.5"
                     aria-label={`Apri ${city.city}`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <img src={cityIcon} alt="Città" className="w-4 h-4 object-contain" loading="lazy" />
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <img src={cityIcon} alt="Città" className="w-3.5 h-3.5 object-contain" loading="lazy" />
                     </div>
                     <div className="text-left">
-                      <div className="text-[11px] font-medium text-foreground line-clamp-1">{city.city}</div>
-                      <div className="text-[9px] text-muted-foreground">{city.locationCount} luoghi</div>
+                      <div className="text-[10px] font-medium text-foreground line-clamp-1">{city.city}</div>
+                      <div className="text-[8px] text-muted-foreground leading-tight">{city.locationCount} luoghi</div>
                     </div>
                   </button>
                 ))

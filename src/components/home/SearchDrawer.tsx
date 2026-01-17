@@ -118,7 +118,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const lastPopularCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   
   type DrawerMode = 'closed' | 'trending' | 'search';
-  const TRENDING_PROGRESS = 0.62;
+  const TRENDING_PROGRESS = 0.25;
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
   const isSearchOpen = drawerMode === 'search';
   const isDrawerVisible = drawerMode !== 'closed';
@@ -817,7 +817,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   // Calculate expanded height - smoothly interpolate between trending and search heights
-  const trendingHeight = Math.min(window.innerHeight * 0.50, 420); // Fit content for trending
+  const trendingHeight = 160; // Compact: just chips + spot row
   const searchHeight = window.innerHeight * 0.80; // Larger for search results
   
   // Interpolate height based on progress for smooth transitions
@@ -925,9 +925,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           "flex-shrink-0 rounded-t-3xl",
           isSearchOpen ? "bg-background/20 backdrop-blur-md" : "bg-background"
         )}>
-          {/* Drag handle at top - larger touch area (drag-to-close) */}
+          {/* Drag handle at top - compact */}
           <div
-            className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing"
+            className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
             style={{ touchAction: 'none' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -938,7 +938,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
           >
-            <div className="w-14 h-1.5 bg-muted-foreground/60 rounded-full" />
+            <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
           </div>
 
           {/* Top area: Search bar (Trending) OR Search input (Search mode) */}
