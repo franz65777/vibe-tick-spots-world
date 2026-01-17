@@ -14,7 +14,7 @@ const COSTS = {
 };
 
 const MONTHLY_FREE_CREDIT = 200; // $200 free credit
-const MAX_BATCH_SIZE = 5; // Limit batch size to prevent memory issues
+const MAX_BATCH_SIZE = 3; // Limit batch size to prevent memory issues with more photos
 
 interface EnrichmentResult {
   locationId: string;
@@ -114,7 +114,7 @@ serve(async (req) => {
 
     // Enforce limits to prevent memory issues
     batchSize = Math.min(batchSize, MAX_BATCH_SIZE);
-    maxPhotosPerLocation = Math.min(maxPhotosPerLocation, 3);
+    maxPhotosPerLocation = Math.min(maxPhotosPerLocation, 6);
 
     console.log(`Starting batch: offset=${offset}, batchSize=${batchSize}, maxPhotos=${maxPhotosPerLocation}`);
 
