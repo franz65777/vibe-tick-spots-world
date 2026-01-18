@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
+import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -17,7 +18,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 interface FollowersModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'followers' | 'following';
+  initialTab?: 'followers' | 'following' | 'mutuals';
   userId?: string;
   onFollowChange?: () => void;
 }
@@ -30,13 +31,24 @@ interface UserWithFollowStatus {
   savedPlacesCount?: number;
 }
 
+type TabType = 'mutuals' | 'following' | 'followers';
+
 const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onFollowChange }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const targetUserId = userId || currentUser?.id;
   const { profile: targetProfile } = useOptimizedProfile(targetUserId);
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
+  
+  // Determine initial tab - mutuals only shown when viewing other profiles
+  const isOwnProfile = currentUser?.id === targetUserId;
+  const getInitialTab = (): TabType => {
+    if (initialTab === 'mutuals' && !isOwnProfile) return 'mutuals';
+    if (initialTab === 'following') return 'following';
+    return 'followers';
+  };
+  
+  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
   const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,13 +58,30 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   
-  // Embla Carousel for smooth swiping
+  // Mutuals data
+  const { mutualFollowers, totalCount: mutualsCount, loading: mutualsLoading } = useMutualFollowers(targetUserId, true);
+  
+  // Embla Carousel for smooth swiping - 3 panels when viewing others, 2 for own profile
+  const tabCount = isOwnProfile ? 2 : 3;
+  const getTabIndex = (tab: TabType): number => {
+    if (isOwnProfile) {
+      return tab === 'followers' ? 0 : 1;
+    }
+    return tab === 'mutuals' ? 0 : tab === 'following' ? 1 : 2;
+  };
+  const getTabFromIndex = (index: number): TabType => {
+    if (isOwnProfile) {
+      return index === 0 ? 'followers' : 'following';
+    }
+    return index === 0 ? 'mutuals' : index === 1 ? 'following' : 'followers';
+  };
+  
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: false,
-    startIndex: initialTab === 'followers' ? 0 : 1,
+    startIndex: getTabIndex(getInitialTab()),
   });
   
-  // Cache for both tabs to reduce refetching
+  // Cache for tabs to reduce refetching
   const followersCache = useRef<UserWithFollowStatus[]>([]);
   const followingCache = useRef<UserWithFollowStatus[]>([]);
   const cacheLoaded = useRef<{ followers: boolean; following: boolean }>({ followers: false, following: false });
@@ -61,8 +90,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     const index = emblaApi.selectedScrollSnap();
-    setActiveTab(index === 0 ? 'followers' : 'following');
-  }, [emblaApi]);
+    setActiveTab(getTabFromIndex(index));
+  }, [emblaApi, isOwnProfile]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -73,20 +102,20 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   }, [emblaApi, onSelect]);
 
   // Handle tab click - scroll carousel
-  const handleTabClick = (tab: 'followers' | 'following') => {
+  const handleTabClick = (tab: TabType) => {
     setActiveTab(tab);
-    emblaApi?.scrollTo(tab === 'followers' ? 0 : 1);
+    emblaApi?.scrollTo(getTabIndex(tab));
   };
 
-  // Sync activeTab when initialTab changes (e.g., when modal opens with different tab)
+  // Sync activeTab when initialTab changes
   useEffect(() => {
     if (isOpen) {
-      setActiveTab(initialTab);
-      emblaApi?.scrollTo(initialTab === 'followers' ? 0 : 1, true);
-      // Reset cache when modal opens
+      const newTab = getInitialTab();
+      setActiveTab(newTab);
+      emblaApi?.scrollTo(getTabIndex(newTab), true);
       cacheLoaded.current = { followers: false, following: false };
     }
-  }, [initialTab, isOpen, emblaApi]);
+  }, [initialTab, isOpen, emblaApi, isOwnProfile]);
 
   // Fetch counts on modal open
   useEffect(() => {
@@ -107,9 +136,11 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
 
   useEffect(() => {
     const fetchFollowData = async () => {
-      if (!targetUserId) {
-        setUsers([]);
-        setLoading(false);
+      if (!targetUserId || activeTab === 'mutuals') {
+        if (activeTab !== 'mutuals') {
+          setUsers([]);
+          setLoading(false);
+        }
         return;
       }
 
@@ -155,7 +186,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           
           const userIds = followUsers.map((u: any) => u.id);
 
-          // Fetch saved places from BOTH saved_places and user_saved_locations for each user
           const [savedPlacesResult, userSavedLocationsResult] = await Promise.all([
             supabase
               .from('saved_places')
@@ -167,10 +197,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               .in('user_id', userIds)
           ]);
 
-          // Count distinct places for each user (combining both tables)
-          const placesCountMap = new Map<string, number>();
-          
-          // Process saved_places (using place_id as unique identifier)
           const savedPlacesDistinct = new Map<string, Set<string>>();
           savedPlacesResult.data?.forEach((sp: any) => {
             if (!sp.user_id || !sp.place_id) return;
@@ -178,19 +204,17 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
             savedPlacesDistinct.get(sp.user_id)!.add(`sp_${sp.place_id}`);
           });
 
-          // Process user_saved_locations (using location_id as unique identifier)
           userSavedLocationsResult.data?.forEach((usl: any) => {
             if (!usl.user_id || !usl.location_id) return;
             if (!savedPlacesDistinct.has(usl.user_id)) savedPlacesDistinct.set(usl.user_id, new Set());
             savedPlacesDistinct.get(usl.user_id)!.add(`usl_${usl.location_id}`);
           });
 
-          // Calculate total count for each user
-          savedPlacesDistinct.forEach((places, userId) => {
-            placesCountMap.set(userId, places.size);
+          const placesCountMap = new Map<string, number>();
+          savedPlacesDistinct.forEach((places, usrId) => {
+            placesCountMap.set(usrId, places.size);
           });
 
-          // Check follow status for each user
           let usersWithStatus: UserWithFollowStatus[];
           if (currentUser) {
             const { data: followsData } = await supabase
@@ -213,7 +237,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
             }));
           }
           
-          // Update cache
           if (activeTab === 'followers') {
             followersCache.current = usersWithStatus;
             cacheLoaded.current.followers = true;
@@ -232,7 +255,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       }
     };
 
-    if (isOpen) {
+    if (isOpen && activeTab !== 'mutuals') {
       fetchFollowData();
     }
   }, [targetUserId, activeTab, isOpen, currentUser]);
@@ -304,9 +327,21 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     return username ? username.substring(0, 2).toUpperCase() : 'U';
   };
 
-  const isOwnProfile = currentUser?.id === targetUserId;
+  // Get current data based on active tab
+  const getCurrentUsers = (): UserWithFollowStatus[] => {
+    if (activeTab === 'mutuals') {
+      return mutualFollowers.map(m => ({
+        id: m.id,
+        username: m.username,
+        avatar_url: m.avatar_url,
+        isFollowing: m.isFollowing,
+        savedPlacesCount: m.savedPlacesCount,
+      }));
+    }
+    return users;
+  };
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = getCurrentUsers().filter(user => 
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -327,136 +362,131 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  // User Row Component - Clean minimal design
-  const UserRow = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
+  // User Grid Card Component
+  const UserGridCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
     const now = new Date();
     const userHasStories = stories.some(s => 
       s.user_id === user.id && 
       new Date(s.expires_at) > now
     );
 
-    const renderActionButton = () => {
-      if (currentUser?.id === user.id) return null;
-      
-      if (isOwnProfile && activeTab === 'followers') {
-        return (
-          <button
-            onClick={() => removeFollower(user.id)}
-            className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors px-3 py-1.5"
-          >
-            {t('remove', { ns: 'common' })}
-          </button>
-        );
-      }
-      
-      if (user.isFollowing) {
-        return (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => unfollowUser(user.id)}
-            className="rounded-lg h-8 px-4 text-xs font-medium bg-muted hover:bg-muted/80"
-          >
-            {t('following', { ns: 'common' })}
-          </Button>
-        );
-      }
-      
-      return (
-        <Button
-          size="sm"
-          onClick={() => followUser(user.id)}
-          className="rounded-lg h-8 px-4 text-xs font-medium"
-        >
-          {t('follow', { ns: 'common' })}
-        </Button>
-      );
-    };
-
     return (
       <div 
-        className="flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors"
+        className="flex flex-col items-center gap-2 p-3"
         style={{ 
-          animationDelay: `${index * 30}ms`,
-          animation: 'fadeIn 0.2s ease-out forwards',
+          animationDelay: `${index * 40}ms`,
+          animation: 'fadeIn 0.25s ease-out forwards',
           opacity: 0,
         }}
       >
         {/* Avatar */}
         <button
           onClick={() => handleAvatarClick(user)}
-          className="shrink-0"
+          className="relative group"
         >
           <div className={cn(
-            "rounded-full p-[2px]",
+            "rounded-2xl p-[2.5px] transition-transform group-hover:scale-105",
             userHasStories 
-              ? "bg-gradient-to-tr from-primary to-primary/60" 
+              ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
               : ""
           )}>
             <Avatar className={cn(
-              "w-12 h-12",
+              "w-20 h-20 rounded-2xl",
               userHasStories && "border-2 border-background"
             )}>
-              <AvatarImage src={user.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
+              <AvatarImage src={user.avatar_url || undefined} className="object-cover rounded-2xl" />
+              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-2xl">
                 {getInitials(user.username || 'User')}
               </AvatarFallback>
             </Avatar>
           </div>
+          
+          {/* Places badge */}
+          {(user.savedPlacesCount ?? 0) > 0 && (
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-primary text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-full shadow-sm">
+              <MapPin className="w-2.5 h-2.5" />
+              <span>{user.savedPlacesCount}</span>
+            </div>
+          )}
         </button>
 
-        {/* User info */}
+        {/* Username */}
         <button
           onClick={() => {
             onClose();
             navigate(`/profile/${user.id}`);
           }}
-          className="text-left min-w-0 flex-1"
+          className="text-center w-full"
         >
-          <p className="font-semibold text-foreground text-[15px] truncate">
-            {user.username || 'Unknown User'}
+          <p className="font-medium text-foreground text-xs truncate max-w-[80px]">
+            {user.username || 'User'}
           </p>
-          <div className="flex items-center gap-1 text-[13px] text-muted-foreground mt-0.5">
-            <MapPin className="w-3 h-3 shrink-0" />
-            <span className="truncate">
-              {user.savedPlacesCount || 0} {t('savedPlaces', { ns: 'profile', defaultValue: 'luoghi salvati' })}
-            </span>
-          </div>
         </button>
-        
-        {/* Action button */}
-        {renderActionButton()}
+
+        {/* Action Button */}
+        {currentUser?.id !== user.id && (
+          <div className="mt-1">
+            {isOwnProfile && activeTab === 'followers' ? (
+              <button
+                onClick={() => removeFollower(user.id)}
+                className="text-[10px] font-medium text-destructive hover:text-destructive/80 transition-colors px-2 py-1 rounded-md hover:bg-destructive/10"
+              >
+                {t('remove', { ns: 'common' })}
+              </button>
+            ) : user.isFollowing ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => unfollowUser(user.id)}
+                className="rounded-full h-6 px-3 text-[10px] font-medium bg-muted hover:bg-muted/80"
+              >
+                {t('following', { ns: 'common' })}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => followUser(user.id)}
+                className="rounded-full h-6 px-3 text-[10px] font-medium"
+              >
+                {t('follow', { ns: 'common' })}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     );
   };
 
-  // Content for each tab
-  const TabContent = ({ tabType }: { tabType: 'followers' | 'following' }) => {
+  // Grid Content for each tab
+  const TabGridContent = ({ tabType }: { tabType: TabType }) => {
     const isActiveTab = activeTab === tabType;
+    const isLoading = tabType === 'mutuals' ? mutualsLoading : loading;
     const displayUsers = isActiveTab ? filteredUsers : [];
     
     return (
       <ScrollArea className="h-full">
-        <div className="pb-20">
-          {loading && isActiveTab ? (
+        <div className="pb-20 pt-2">
+          {isLoading && isActiveTab ? (
             <div className="flex items-center justify-center py-16">
               <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
             </div>
           ) : displayUsers.length === 0 && isActiveTab ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-sm text-center">
                 {searchQuery 
                   ? t('noResults', { ns: 'common' }) 
-                  : tabType === 'followers' 
-                    ? t('noFollowers', { ns: 'profile' }) 
-                    : t('noFollowing', { ns: 'profile' })
+                  : tabType === 'mutuals'
+                    ? t('noMutuals', { ns: 'profile', defaultValue: 'Nessun amico in comune' })
+                    : tabType === 'followers' 
+                      ? t('noFollowers', { ns: 'profile' }) 
+                      : t('noFollowing', { ns: 'profile' })
                 }
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="grid grid-cols-3 gap-1 px-2">
               {displayUsers.map((user, index) => (
-                <UserRow key={user.id} user={user} index={index} />
+                <UserGridCard key={user.id} user={user} index={index} />
               ))}
             </div>
           )}
@@ -471,14 +501,14 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     <>
       <style>{`
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
       
       <div className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+        <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button 
               onClick={onClose} 
@@ -492,45 +522,54 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           </div>
         </div>
 
-        {/* Tab Switcher - Clean underline style */}
-        <div className="border-b border-border/50">
-          <div className="flex">
-            <button 
-              onClick={() => handleTabClick('followers')}
-              className={cn(
-                "flex-1 py-3.5 text-center relative transition-colors",
-                activeTab === 'followers' ? "text-foreground" : "text-muted-foreground"
-              )}
-            >
-              <span className="font-semibold">{followersCount}</span>
-              <span className="ml-1.5 text-sm">
-                {t('followers', { ns: 'common' })}
-              </span>
-              {activeTab === 'followers' && (
-                <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-foreground rounded-full" />
-              )}
-            </button>
+        {/* Pill Tab Switcher */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {!isOwnProfile && (
+              <button 
+                onClick={() => handleTabClick('mutuals')}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shrink-0",
+                  activeTab === 'mutuals' 
+                    ? "bg-foreground text-background" 
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <span className="font-semibold">{mutualsCount}</span>
+                <span>{t('mutuals', { ns: 'profile', defaultValue: 'in comune' })}</span>
+              </button>
+            )}
             
             <button 
               onClick={() => handleTabClick('following')}
               className={cn(
-                "flex-1 py-3.5 text-center relative transition-colors",
-                activeTab === 'following' ? "text-foreground" : "text-muted-foreground"
+                "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shrink-0",
+                activeTab === 'following' 
+                  ? "bg-foreground text-background" 
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
               )}
             >
               <span className="font-semibold">{followingCount}</span>
-              <span className="ml-1.5 text-sm">
-                {t('followingTab', { ns: 'common', defaultValue: 'Seguiti' })}
-              </span>
-              {activeTab === 'following' && (
-                <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-foreground rounded-full" />
+              <span>{t('followingTab', { ns: 'common', defaultValue: 'seguiti' })}</span>
+            </button>
+            
+            <button 
+              onClick={() => handleTabClick('followers')}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shrink-0",
+                activeTab === 'followers' 
+                  ? "bg-foreground text-background" 
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
               )}
+            >
+              <span className="font-semibold">{followersCount}</span>
+              <span>{t('followers', { ns: 'common' })}</span>
             </button>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 py-3 border-b border-border/30">
+        <div className="px-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -538,7 +577,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               placeholder={t('search', { ns: 'common' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 rounded-lg bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
+              className="pl-9 h-10 rounded-full bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
             />
             {searchQuery && (
               <button 
@@ -554,14 +593,18 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         {/* Embla Carousel Content */}
         <div className="flex-1 overflow-hidden" ref={emblaRef}>
           <div className="flex h-full">
-            {/* Followers Panel */}
+            {!isOwnProfile && (
+              <div className="flex-[0_0_100%] min-w-0 h-full">
+                <TabGridContent tabType="mutuals" />
+              </div>
+            )}
+            
             <div className="flex-[0_0_100%] min-w-0 h-full">
-              <TabContent tabType="followers" />
+              <TabGridContent tabType="following" />
             </div>
             
-            {/* Following Panel */}
             <div className="flex-[0_0_100%] min-w-0 h-full">
-              <TabContent tabType="following" />
+              <TabGridContent tabType="followers" />
             </div>
           </div>
         </div>
@@ -573,8 +616,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           stories={stories.map(s => ({
             id: s.id,
             userId: s.user_id,
-            userName: users.find(u => u.id === s.user_id)?.username || 'User',
-            userAvatar: users.find(u => u.id === s.user_id)?.avatar_url || '',
+            userName: getCurrentUsers().find(u => u.id === s.user_id)?.username || 'User',
+            userAvatar: getCurrentUsers().find(u => u.id === s.user_id)?.avatar_url || '',
             mediaUrl: s.media_url,
             mediaType: s.media_type as 'image' | 'video',
             locationId: s.location_id || '',
