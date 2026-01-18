@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import FolderDetailModal from '@/components/profile/FolderDetailModal';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 
 const FolderDetailPage = () => {
   const { folderId } = useParams<{ folderId: string }>();
@@ -65,14 +66,16 @@ const FolderDetailPage = () => {
 
   // Render with a dark semi-transparent background to show content underneath
   return (
-    <div className="fixed inset-0 bg-black/60 z-[9999]">
-      <FolderDetailModal
-        folderId={folderId}
-        isOpen={true}
-        onClose={handleClose}
-        onLocationClick={handleLocationClick}
-      />
-    </div>
+    <SwipeBackWrapper onBack={handleClose}>
+      <div className="fixed inset-0 bg-black/60 z-[9999]">
+        <FolderDetailModal
+          folderId={folderId}
+          isOpen={true}
+          onClose={handleClose}
+          onLocationClick={handleLocationClick}
+        />
+      </div>
+    </SwipeBackWrapper>
   );
 };
 

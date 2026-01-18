@@ -8,6 +8,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import { Place } from '@/types/place';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 import { normalizeCity, extractParentCityFromAddress } from '@/utils/cityNormalization';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import saveTagAll from '@/assets/save-tag-all.png';
@@ -397,6 +398,7 @@ const UserPlacesPage = () => {
   }
 
   return (
+    <SwipeBackWrapper onBack={handleBack}>
     <div className="fixed inset-0">
       {/* Map taking full screen - extends behind header with no top offset */}
       <div className="absolute top-0 left-0 right-0 bottom-0 z-0">
@@ -472,6 +474,7 @@ const UserPlacesPage = () => {
         </div>
       )}
     </div>
+    </SwipeBackWrapper>
   );
 };
 

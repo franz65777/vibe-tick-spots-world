@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, ArrowLeft, Shield, LogOut } from 'lucide-react';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 import editProfileIcon from '@/assets/settings-edit-profile.png';
 import languageIcon from '@/assets/settings-language.png';
 import businessIcon from '@/assets/settings-business.png';
@@ -123,7 +124,16 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/profile');
+    }
+  };
+
   return (
+    <SwipeBackWrapper onBack={handleBack}>
     <div className="h-screen flex flex-col bg-background">
       {/* Header with back button */}
       <div 
@@ -131,14 +141,7 @@ const SettingsPage: React.FC = () => {
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <button
-          onClick={() => {
-            // Prefer history back to restore the previous ProfilePage state instantly
-            if (window.history.length > 1) {
-              navigate(-1);
-            } else {
-              navigate('/profile');
-            }
-          }}
+          onClick={handleBack}
           className="p-2 hover:bg-muted rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -352,6 +355,7 @@ const SettingsPage: React.FC = () => {
         onOpenChange={setAdminAnalyticsModalOpen}
       />
     </div>
+    </SwipeBackWrapper>
   );
 };
 

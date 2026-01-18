@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useSuperUser } from '@/hooks/useSuperUser';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 
 interface Reward {
   id: string;
@@ -90,6 +91,7 @@ const RewardsPage = () => {
   };
 
   return (
+    <SwipeBackWrapper onBack={() => navigate('/profile?tab=badges')}>
     <div className="h-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div 
@@ -213,6 +215,7 @@ const RewardsPage = () => {
         </main>
       </div>
     </div>
+    </SwipeBackWrapper>
   );
 };
 
