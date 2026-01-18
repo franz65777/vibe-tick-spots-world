@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import MapCategoryFilters from './MapCategoryFilters';
 import SearchDrawer from './SearchDrawer';
@@ -10,7 +10,7 @@ import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { List } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -73,9 +73,11 @@ const MapSection = ({
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   const [activeSharesCount, setActiveSharesCount] = useState(0);
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
-  const [shouldRestoreListView, setShouldRestoreListView] = useState(false);
-  const [shouldRestoreTrendingDrawer, setShouldRestoreTrendingDrawer] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+  // Use refs for restore flags to avoid timing issues with state
+  const restoreListViewRef = useRef(false);
+  const restoreTrendingDrawerRef = useRef(false);
   const reopenTrendingRef = useRef<(() => void) | null>(null);
   
   const { t } = useTranslation();
@@ -294,29 +296,32 @@ const MapSection = ({
               onClearInitialPlace?.();
             }
             
-            // Capture restore flags before clearing state
-            const restoreListView = shouldRestoreListView;
-            const restoreTrendingDrawer = shouldRestoreTrendingDrawer;
+            // Capture restore flags from refs before clearing
+            const shouldRestoreList = restoreListViewRef.current;
+            const shouldRestoreTrending = restoreTrendingDrawerRef.current;
+            
+            // Reset refs immediately
+            restoreListViewRef.current = false;
+            restoreTrendingDrawerRef.current = false;
             
             // Clear the place and source
             setSelectedPlace(null); 
             setSourcePostId(undefined);
             
-            // Restore list view if it was open before selecting a place
-            // Use setTimeout to ensure state updates are processed
-            if (restoreListView) {
-              setShouldRestoreListView(false);
-              setTimeout(() => {
+            // Safety net: ensure drawer state and modal attribute are cleaned up
+            setIsDrawerOpen(false);
+            onSearchDrawerStateChange?.(false);
+            document.body.removeAttribute('data-modal-open');
+            
+            // Restore list view or trending drawer using requestAnimationFrame for timing
+            requestAnimationFrame(() => {
+              if (shouldRestoreList) {
                 setIsListViewOpen(true);
-              }, 50);
-            }
-            // Restore trending drawer if it was open before selecting a trending spot
-            if (restoreTrendingDrawer) {
-              setShouldRestoreTrendingDrawer(false);
-              setTimeout(() => {
+              }
+              if (shouldRestoreTrending) {
                 reopenTrendingRef.current?.();
-              }, 50);
-            }
+              }
+            });
           }}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
@@ -381,8 +386,8 @@ const MapSection = ({
                 onSearchDrawerStateChange?.(isOpen);
               }}
               onSpotSelect={(spot) => {
-                // Mark that we should restore trending drawer when pin card closes
-                setShouldRestoreTrendingDrawer(true);
+                // Mark that we should restore trending drawer when pin card closes (using ref)
+                restoreTrendingDrawerRef.current = true;
                 // Center map on the spot
                 onCitySelect?.(spot.city, spot.coordinates);
                 // Create a Place from the spot and show it
@@ -424,16 +429,13 @@ const MapSection = ({
               ? 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' 
               : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))'
           }}>
-          {/* List View Toggle */}
-          <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
-            <SheetTrigger asChild>
-              <button
-                className="rounded-full bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
-              >
-                <List className="w-5 h-5 text-foreground" />
-              </button>
-            </SheetTrigger>
-          </Sheet>
+          {/* List View Toggle - Simple button, Sheet is rendered separately */}
+          <button
+            onClick={() => setIsListViewOpen(true)}
+            className="rounded-full bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
+          >
+            <List className="w-5 h-5 text-foreground" />
+          </button>
         </div>
         )}
 
@@ -496,9 +498,10 @@ const MapSection = ({
                       key={place.id}
                       className="p-4 rounded-lg border border-border bg-card cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => {
-                        handlePinClick(place);
-                        setShouldRestoreListView(true);
+                        // Mark to restore list when closing the pin card (using ref)
+                        restoreListViewRef.current = true;
                         setIsListViewOpen(false);
+                        handlePinClick(place);
                       }}
                     >
                       <div className="flex gap-3">

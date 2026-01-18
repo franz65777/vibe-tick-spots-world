@@ -181,6 +181,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     // Notify parent when ANY drawer state is visible (Trending or Search).
     // Used by the map UI to hide the "liste" button/controls while the drawer is open.
     onDrawerStateChange?.(isDrawerVisible);
+    
+    // Cleanup: notify parent that drawer is closed when component unmounts
+    return () => {
+      onDrawerStateChange?.(false);
+    };
   }, [isDrawerVisible, onDrawerStateChange]);
 
   useEffect(() => {
