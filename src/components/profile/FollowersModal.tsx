@@ -1,17 +1,19 @@
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
+import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface FollowersModalProps {
   isOpen: boolean;
@@ -35,6 +37,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const navigate = useNavigate();
   const targetUserId = userId || currentUser?.id;
   const { profile: targetProfile } = useOptimizedProfile(targetUserId);
+  const { stats } = useOptimizedFollowStats(targetUserId);
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
   const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,22 +45,48 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
+  
+  // Embla Carousel for smooth swiping
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: false,
+    startIndex: initialTab === 'followers' ? 0 : 1,
+  });
   
   // Cache for both tabs to reduce refetching
   const followersCache = useRef<UserWithFollowStatus[]>([]);
   const followingCache = useRef<UserWithFollowStatus[]>([]);
   const cacheLoaded = useRef<{ followers: boolean; following: boolean }>({ followers: false, following: false });
 
+  // Sync Embla with activeTab
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    const index = emblaApi.selectedScrollSnap();
+    setActiveTab(index === 0 ? 'followers' : 'following');
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  // Handle tab click - scroll carousel
+  const handleTabClick = (tab: 'followers' | 'following') => {
+    setActiveTab(tab);
+    emblaApi?.scrollTo(tab === 'followers' ? 0 : 1);
+  };
+
   // Sync activeTab when initialTab changes (e.g., when modal opens with different tab)
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
+      emblaApi?.scrollTo(initialTab === 'followers' ? 0 : 1, true);
       // Reset cache when modal opens
       cacheLoaded.current = { followers: false, following: false };
     }
-  }, [initialTab, isOpen]);
+  }, [initialTab, isOpen, emblaApi]);
 
   useEffect(() => {
     const fetchFollowData = async () => {
@@ -285,212 +314,262 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartX.current = touch.clientX;
-    touchStartY.current = touch.clientY;
+  // User Card Component with enhanced design
+  const UserCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
+    const now = new Date();
+    const userHasStories = stories.some(s => 
+      s.user_id === user.id && 
+      new Date(s.expires_at) > now
+    );
+
+    return (
+      <div 
+        className="group relative bg-card/60 hover:bg-card/80 backdrop-blur-sm rounded-2xl p-3.5 transition-all duration-200 border border-border/30 hover:border-border/50 hover:shadow-md"
+        style={{ 
+          animationDelay: `${index * 50}ms`,
+          animation: 'fadeInUp 0.3s ease-out forwards',
+          opacity: 0,
+        }}
+      >
+        <div className="flex items-center gap-3.5">
+          {/* Avatar with story ring */}
+          <button
+            onClick={() => handleAvatarClick(user)}
+            className="shrink-0 transition-transform duration-200 hover:scale-105"
+          >
+            <div className={cn(
+              "rounded-full p-[2.5px] transition-all",
+              userHasStories 
+                ? "bg-gradient-to-tr from-primary via-primary/80 to-primary/50 shadow-lg shadow-primary/20" 
+                : "bg-gradient-to-br from-muted/80 to-muted/40"
+            )}>
+              <Avatar className="w-14 h-14 border-[2.5px] border-background">
+                <AvatarImage src={user.avatar_url || undefined} className="object-cover" />
+                <AvatarFallback className="bg-muted text-muted-foreground font-semibold">
+                  {getInitials(user.username || 'User')}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </button>
+
+          {/* User info */}
+          <button
+            onClick={() => {
+              onClose();
+              navigate(`/profile/${user.id}`);
+            }}
+            className="text-left min-w-0 flex-1 group/info"
+          >
+            <p className="font-semibold text-foreground truncate group-hover/info:text-primary transition-colors">
+              {user.username || 'Unknown User'}
+            </p>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {user.savedPlacesCount || 0} {t('savedPlaces', { ns: 'profile', defaultValue: 'luoghi salvati' })}
+              </span>
+            </div>
+          </button>
+          
+          {/* Action button */}
+          {currentUser?.id !== user.id && (
+            <div className="shrink-0">
+              {isOwnProfile && activeTab === 'following' ? (
+                user.isFollowing ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => unfollowUser(user.id)}
+                    className="rounded-full px-4 h-9 font-medium border-border/60 hover:bg-muted/80"
+                  >
+                    {t('following', { ns: 'common' })}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => followUser(user.id)}
+                    className="rounded-full px-4 h-9 font-medium bg-primary hover:bg-primary/90 shadow-sm"
+                  >
+                    {t('follow', { ns: 'common' })}
+                  </Button>
+                )
+              ) : isOwnProfile && activeTab === 'followers' ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => removeFollower(user.id)}
+                  className="rounded-full px-4 h-9 font-medium text-destructive border-destructive/30 hover:bg-destructive/10 hover:border-destructive/50"
+                >
+                  {t('remove', { ns: 'common' })}
+                </Button>
+              ) : user.isFollowing ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => unfollowUser(user.id)}
+                  className="rounded-full px-4 h-9 font-medium border-border/60 hover:bg-muted/80"
+                >
+                  {t('following', { ns: 'common' })}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => followUser(user.id)}
+                  className="rounded-full px-4 h-9 font-medium bg-primary hover:bg-primary/90 shadow-sm"
+                >
+                  {t('follow', { ns: 'common' })}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
-  const handleTouchMove = (_e: React.TouchEvent) => {
-    // We only care about the final position on touch end
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-
-    const touch = e.changedTouches[0];
-    const dx = touchStartX.current - touch.clientX;
-    const dy = touchStartY.current - touch.clientY;
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    const minDistance = 30;
-
-    if (absDx > absDy && absDx > minDistance) {
-      if (dx > 0 && activeTab === 'followers') {
-        setActiveTab('following');
-      } else if (dx < 0 && activeTab === 'following') {
-        setActiveTab('followers');
-      }
-    }
-
-    touchStartX.current = null;
-    touchStartY.current = null;
+  // Content for each tab
+  const TabContent = ({ tabType }: { tabType: 'followers' | 'following' }) => {
+    const isActiveTab = activeTab === tabType;
+    const displayUsers = isActiveTab ? filteredUsers : [];
+    
+    return (
+      <ScrollArea className="h-full">
+        <div className="p-4 space-y-3 pb-20">
+          {loading && isActiveTab ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="relative">
+                <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <div className="absolute inset-0 w-10 h-10 border-3 border-transparent border-b-primary/40 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+              </div>
+            </div>
+          ) : displayUsers.length === 0 && isActiveTab ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                <MapPin className="w-8 h-8 text-muted-foreground/60" />
+              </div>
+              <p className="text-muted-foreground text-center">
+                {searchQuery 
+                  ? t('noResults', { ns: 'common' }) 
+                  : tabType === 'followers' 
+                    ? t('noFollowers', { ns: 'profile' }) 
+                    : t('noFollowing', { ns: 'profile' })
+                }
+              </p>
+            </div>
+          ) : (
+            displayUsers.map((user, index) => (
+              <UserCard key={user.id} user={user} index={index} />
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    );
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      <div 
-        className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Header with Back Button and Username */}
-        <div className="flex items-center gap-4 p-4">
-          <button onClick={onClose} className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-foreground" />
-          </button>
-          <h2 className="text-xl font-bold text-foreground">
-            {targetProfile?.username || 'User'}
-          </h2>
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+      
+      <div className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
+        {/* Glassmorphism Header */}
+        <div className="relative">
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          <div className="flex items-center gap-4 p-4 backdrop-blur-md bg-background/80">
+            <button 
+              onClick={onClose} 
+              className="p-2 -ml-2 rounded-full hover:bg-muted/80 transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6 text-foreground" />
+            </button>
+            <h2 className="text-xl font-bold text-foreground">
+              {targetProfile?.username || 'User'}
+            </h2>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex overflow-x-auto px-4 mb-4">
-          <button
-            onClick={() => setActiveTab('followers')}
-            className={cn(
-              "flex-1 py-3 text-sm font-medium transition-colors relative min-w-[120px]",
-              activeTab === 'followers' 
-                ? "text-foreground" 
-                : "text-muted-foreground"
-            )}
-          >
-            {t('followers', { ns: 'common' })}
-            {activeTab === 'followers' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('following')}
-            className={cn(
-              "flex-1 py-3 text-sm font-medium transition-colors relative min-w-[120px]",
-              activeTab === 'following' 
-                ? "text-foreground" 
-                : "text-muted-foreground"
-            )}
-          >
-            {t('followingTab', { ns: 'common', defaultValue: 'Seguiti' })}
-            {activeTab === 'following' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
-          </button>
+        {/* Pill-style Tab Switcher */}
+        <div className="px-4 pt-2 pb-4">
+          <div className="relative flex bg-muted/60 backdrop-blur-md rounded-2xl p-1.5">
+            {/* Animated sliding indicator */}
+            <div 
+              className="absolute top-1.5 bottom-1.5 bg-background rounded-xl shadow-sm transition-all duration-300 ease-out"
+              style={{ 
+                left: activeTab === 'followers' ? '6px' : 'calc(50% + 3px)',
+                width: 'calc(50% - 9px)'
+              }}
+            />
+            
+            {/* Followers Tab */}
+            <button 
+              onClick={() => handleTabClick('followers')}
+              className={cn(
+                "flex-1 relative z-10 py-3 text-sm font-semibold transition-colors duration-200 rounded-xl",
+                activeTab === 'followers' ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <span className="text-base">{stats.followersCount}</span>
+              <span className="ml-1.5 text-xs opacity-80">
+                {t('followers', { ns: 'common' })}
+              </span>
+            </button>
+            
+            {/* Following Tab */}
+            <button 
+              onClick={() => handleTabClick('following')}
+              className={cn(
+                "flex-1 relative z-10 py-3 text-sm font-semibold transition-colors duration-200 rounded-xl",
+                activeTab === 'following' ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <span className="text-base">{stats.followingCount}</span>
+              <span className="ml-1.5 text-xs opacity-80">
+                {t('followingTab', { ns: 'common', defaultValue: 'Seguiti' })}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Search Bar */}
         <div className="px-4 pb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder={t('search', { ns: 'common' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-10 h-11 rounded-xl bg-muted/40 border-border/40 focus:bg-background focus:border-primary/50 transition-all"
             />
           </div>
         </div>
         
-        {/* Content */}
-        <ScrollArea className="flex-1">
-          <div 
-            className="p-4 space-y-4"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchQuery ? t('noResults', { ns: 'common' }) : activeTab === 'followers' ? t('noFollowers', { ns: 'profile' }) : t('noFollowing', { ns: 'profile' })}
-              </div>
-            ) : (
-              filteredUsers.map((user) => {
-                const now = new Date();
-                const userHasStories = stories.some(s => 
-                  s.user_id === user.id && 
-                  new Date(s.expires_at) > now
-                );
-
-                return (
-                  <div key={user.id} className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleAvatarClick(user)}
-                      className="shrink-0"
-                    >
-                      <div className={cn(
-                        "rounded-full p-[2px]",
-                        userHasStories ? "bg-gradient-to-tr from-primary to-primary/50" : ""
-                      )}>
-                        <Avatar className="w-12 h-12 border-2 border-background">
-                          <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {getInitials(user.username || 'User')}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onClose();
-                        navigate(`/profile/${user.id}`);
-                      }}
-                      className="text-left min-w-0 flex-1"
-                    >
-                      <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground overflow-x-auto scrollbar-hide">
-                        <span className="whitespace-nowrap">{t('visitedOn', { ns: 'explore', defaultValue: 'ha visitato' })}</span>
-                        <span className="whitespace-nowrap">·</span>
-                        <span className="whitespace-nowrap">{user.savedPlacesCount || 0} {t('place', { ns: 'explore', count: user.savedPlacesCount || 0, defaultValue: 'Luoghi' })}</span>
-                      </div>
-                    </button>
-                    
-                    {currentUser?.id !== user.id && (
-                      isOwnProfile && activeTab === 'following' ? (
-                        user.isFollowing ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => unfollowUser(user.id)}
-                            className="rounded-full shrink-0"
-                          >
-                            {t('following', { ns: 'common' })}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => followUser(user.id)}
-                            className="rounded-full shrink-0"
-                          >
-                            {t('follow', { ns: 'common' })}
-                          </Button>
-                        )
-                      ) : isOwnProfile && activeTab === 'followers' ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => removeFollower(user.id)}
-                          className="rounded-full text-destructive hover:bg-destructive/10 shrink-0"
-                        >
-                          {t('remove', { ns: 'common' })}
-                        </Button>
-                      ) : user.isFollowing ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => unfollowUser(user.id)}
-                          className="rounded-full shrink-0"
-                        >
-                          {t('following', { ns: 'common' })}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => followUser(user.id)}
-                          className="rounded-full shrink-0"
-                        >
-                          {t('follow', { ns: 'common' })}
-                        </Button>
-                      )
-                    )}
-                  </div>
-                );
-              })
-            )}
+        {/* Embla Carousel Content */}
+        <div className="flex-1 overflow-hidden" ref={emblaRef}>
+          <div className="flex h-full">
+            {/* Followers Panel */}
+            <div className="flex-[0_0_100%] min-w-0 h-full">
+              <TabContent tabType="followers" />
+            </div>
+            
+            {/* Following Panel */}
+            <div className="flex-[0_0_100%] min-w-0 h-full">
+              <TabContent tabType="following" />
+            </div>
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {isStoriesViewerOpen && (
