@@ -1242,13 +1242,14 @@ const LeafletMapSetup = ({
             sourcePostId: (selectedPlace as any).sourcePostId,
             isTemporary: (selectedPlace as any).isTemporary,
             returnTo: (selectedPlace as any).returnTo,
+            fromList: (selectedPlace as any).fromList,
           }}
           onClose={() => onCloseSelectedPlace?.()}
           onPostSelected={(postId) => setSelectedPostFromPin(postId)}
           onBack={
             fromMessages && onBackToMessages
               ? onBackToMessages
-              : (selectedPlace as any)?.returnTo
+              : (selectedPlace as any)?.returnTo || (selectedPlace as any)?.fromList
                 ? (() => onCloseSelectedPlace?.())
                 : undefined
           }

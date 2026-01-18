@@ -513,7 +513,8 @@ const MapSection = ({
                         // Mark to restore list when closing the pin card (using ref)
                         restoreListViewRef.current = true;
                         setIsListViewOpen(false);
-                        handlePinClick(place);
+                        // Flag so PinDetailCard uses a back handler instead of history navigation
+                        handlePinClick({ ...(place as any), fromList: true } as Place);
                       }}
                     >
                       <div className="flex gap-3">
