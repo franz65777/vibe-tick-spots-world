@@ -44,8 +44,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const isOwnProfile = currentUser?.id === targetUserId;
   const getInitialTab = (): TabType => {
     if (initialTab === 'mutuals' && !isOwnProfile) return 'mutuals';
+    if (initialTab === 'followers') return 'followers';
     if (initialTab === 'following') return 'following';
-    return 'followers';
+    // Default to following for own profile, followers for others
+    return isOwnProfile ? 'following' : 'followers';
   };
   
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
@@ -69,13 +71,15 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const tabCount = isOwnProfile ? 2 : 3;
   const getTabIndex = (tab: TabType): number => {
     if (isOwnProfile) {
-      return tab === 'followers' ? 0 : 1;
+      // Own profile: following (0), followers (1)
+      return tab === 'following' ? 0 : 1;
     }
+    // Other profile: mutuals (0), following (1), followers (2)
     return tab === 'mutuals' ? 0 : tab === 'following' ? 1 : 2;
   };
   const getTabFromIndex = (index: number): TabType => {
     if (isOwnProfile) {
-      return index === 0 ? 'followers' : 'following';
+      return index === 0 ? 'following' : 'followers';
     }
     return index === 0 ? 'mutuals' : index === 1 ? 'following' : 'followers';
   };
@@ -366,13 +370,16 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  // User Grid Card Component
+  // User Grid Card Component - memoize to prevent unnecessary re-renders
   const UserGridCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
     const now = new Date();
     const userHasStories = stories.some(s => 
       s.user_id === user.id && 
       new Date(s.expires_at) > now
     );
+
+    // Cache avatar URL to prevent reload
+    const avatarUrl = user.avatar_url || undefined;
 
     return (
       <div 
@@ -398,7 +405,11 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               "w-20 h-20 rounded-[20px]",
               userHasStories && "border-2 border-background"
             )}>
-              <AvatarImage src={user.avatar_url || undefined} className="object-cover rounded-[20px]" />
+              <AvatarImage 
+                src={avatarUrl} 
+                className="object-cover rounded-[20px]" 
+                loading="lazy"
+              />
               <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
                 {getInitials(user.username || 'User')}
               </AvatarFallback>
