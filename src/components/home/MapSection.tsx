@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import MapCategoryFilters from './MapCategoryFilters';
@@ -14,12 +13,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import ActiveSharesListSheet from './ActiveSharesListSheet';
+import { LocationListItem, LocationListItemSkeleton, LocationListEmpty } from './LocationListItem';
 
 import { useTranslation } from 'react-i18next';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { formatDetailedAddress, formatSearchResultAddress } from '@/utils/addressFormatter';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -82,6 +80,8 @@ const MapSection = ({
   const restoreListViewRef = useRef(false);
   const restoreTrendingDrawerRef = useRef(false);
   const reopenTrendingRef = useRef<(() => void) | null>(null);
+  // Suppress spurious Sheet close events that happen right after we reopen
+  const suppressListCloseRef = useRef(false);
 
   const { t } = useTranslation();
   
@@ -166,8 +166,14 @@ const MapSection = ({
   // If we closed a pin that originated from the list, reopen the list after the close render.
   useEffect(() => {
     if (!selectedPlace && pendingListRestore) {
+      // Set suppress flag to prevent Radix from immediately closing
+      suppressListCloseRef.current = true;
       setIsListViewOpen(true);
       setPendingListRestore(false);
+      // Clear suppress flag after animation settles
+      setTimeout(() => {
+        suppressListCloseRef.current = false;
+      }, 400);
     }
   }, [pendingListRestore, selectedPlace]);
 
@@ -452,23 +458,40 @@ const MapSection = ({
         )}
 
         {/* Location List Sheet - Always rendered */}
-        <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
-          <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col z-[150]">
-            <SheetHeader className="pb-4 flex-shrink-0">
-              <SheetTitle className="text-xl font-semibold">
+        <Sheet 
+          open={isListViewOpen} 
+          onOpenChange={(open) => {
+            // Suppress spurious closes that happen right after we programmatically reopen
+            if (!open && suppressListCloseRef.current) {
+              return;
+            }
+            setIsListViewOpen(open);
+          }}
+        >
+          <SheetContent 
+            side="bottom" 
+            className="h-[85vh] rounded-t-3xl flex flex-col z-[150] bg-background/95 backdrop-blur-xl border-t border-border/30 shadow-2xl"
+          >
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+            
+            <SheetHeader className="pb-3 flex-shrink-0 sticky top-0 bg-background/95 backdrop-blur-xl z-10">
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
                 {t('locationsTitle', { ns: 'mapFilters' })}
-                <Badge variant="secondary" className="ml-3 text-sm">
+                <Badge variant="secondary" className="text-sm font-medium">
                   {places.length}
                 </Badge>
               </SheetTitle>
               
               {/* Filter buttons with horizontal scroll */}
-              <div className="flex gap-2 mt-0 translate-y-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-2 -mx-6 px-6 relative z-10">
+              <div className="flex gap-2 mt-2 overflow-x-auto overflow-y-visible scrollbar-hide pb-2 -mx-6 px-6 relative z-10">
                 <Button
                   size="sm"
                   variant={activeFilter === 'following' ? 'default' : 'outline'}
                   onClick={() => setActiveFilter('following')}
-                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                  className="rounded-full whitespace-nowrap flex-shrink-0 h-8"
                 >
                   {t('friends', { ns: 'mapFilters' })}
                 </Button>
@@ -476,7 +499,7 @@ const MapSection = ({
                   size="sm"
                   variant={activeFilter === 'popular' ? 'default' : 'outline'}
                   onClick={() => setActiveFilter('popular')}
-                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                  className="rounded-full whitespace-nowrap flex-shrink-0 h-8"
                 >
                   {t('everyone', { ns: 'mapFilters' })}
                 </Button>
@@ -484,69 +507,63 @@ const MapSection = ({
                   size="sm"
                   variant={activeFilter === 'saved' ? 'default' : 'outline'}
                   onClick={() => setActiveFilter('saved')}
-                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                  className="rounded-full whitespace-nowrap flex-shrink-0 h-8"
                 >
                   {t('saved', { ns: 'mapFilters' })}
                 </Button>
-                {/* New: Active Shares list */}
+                {/* Active Shares list */}
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={() => setIsActiveSharesOpen(true)}
-                  className="rounded-full whitespace-nowrap flex-shrink-0 relative overflow-visible"
+                  className="rounded-full whitespace-nowrap flex-shrink-0 relative overflow-visible h-8"
                 >
                   {t('activeShares', { ns: 'mapFilters' })}
                   {activeSharesCount > 0 && (
-                    <Badge variant="destructive" className="absolute top-0 -right-2 w-5 h-5 flex items-center justify-center p-0 text-xs z-[999]">{activeSharesCount}</Badge>
+                    <Badge variant="destructive" className="absolute -top-1 -right-2 w-5 h-5 flex items-center justify-center p-0 text-xs z-[999]">
+                      {activeSharesCount}
+                    </Badge>
                   )}
                 </Button>
               </div>
             </SheetHeader>
+            
             <ScrollArea className="flex-1 -mx-6 px-6 [&>div]:!overflow-y-auto [&>div]:!scrollbar-none [&>div::-webkit-scrollbar]:hidden">
-              <div className="space-y-3 pr-4 py-2">
-                {places.map((place) => {
-                  return (
-                    <div
+              <div className="space-y-2 py-2 pb-8">
+                {loading ? (
+                  // Skeleton loaders
+                  <>
+                    <LocationListItemSkeleton />
+                    <LocationListItemSkeleton />
+                    <LocationListItemSkeleton />
+                    <LocationListItemSkeleton />
+                    <LocationListItemSkeleton />
+                  </>
+                ) : places.length === 0 ? (
+                  // Empty state
+                  <LocationListEmpty />
+                ) : (
+                  // Location list
+                  places.map((place) => (
+                    <LocationListItem
                       key={place.id}
-                      className="p-4 rounded-lg border border-border bg-card cursor-pointer hover:shadow-md transition-shadow"
+                      place={place}
+                      enrichedAddress={enrichedAddresses[place.id]}
                       onClick={() => {
                         // Mark to restore list when closing the pin card (using ref)
                         restoreListViewRef.current = true;
+                        // Mark to suppress next spurious close
+                        suppressListCloseRef.current = true;
+                        setTimeout(() => {
+                          suppressListCloseRef.current = false;
+                        }, 300);
                         setIsListViewOpen(false);
                         // Flag so PinDetailCard uses a back handler instead of history navigation
                         handlePinClick({ ...(place as any), fromList: true } as Place);
                       }}
-                    >
-                      <div className="flex gap-3">
-                        {/* Category Icon */}
-                        <div className="flex-shrink-0">
-                          <CategoryIcon 
-                            category={place.category} 
-                            className="w-12 h-12"
-                            sizeMultiplier={place.category.toLowerCase() === 'restaurant' ? 0.75 : 1}
-                          />
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {(() => {
-                              const rawAddress = place.address || enrichedAddresses[place.id] || '';
-                              if (!rawAddress) return t('addressNotAvailable', { ns: 'common' });
-                              // Format as: City, Street Name, Number
-                              return formatSearchResultAddress({
-                                name: place.name,
-                                address: rawAddress,
-                                city: place.city,
-                              });
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    />
+                  ))
+                )}
               </div>
             </ScrollArea>
           </SheetContent>
