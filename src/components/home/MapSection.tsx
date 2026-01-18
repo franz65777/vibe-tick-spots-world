@@ -293,17 +293,29 @@ const MapSection = ({
             if (selectedPlace?.isTemporary) {
               onClearInitialPlace?.();
             }
+            
+            // Capture restore flags before clearing state
+            const restoreListView = shouldRestoreListView;
+            const restoreTrendingDrawer = shouldRestoreTrendingDrawer;
+            
+            // Clear the place and source
             setSelectedPlace(null); 
             setSourcePostId(undefined);
+            
             // Restore list view if it was open before selecting a place
-            if (shouldRestoreListView) {
-              setIsListViewOpen(true);
+            // Use setTimeout to ensure state updates are processed
+            if (restoreListView) {
               setShouldRestoreListView(false);
+              setTimeout(() => {
+                setIsListViewOpen(true);
+              }, 50);
             }
             // Restore trending drawer if it was open before selecting a trending spot
-            if (shouldRestoreTrendingDrawer) {
+            if (restoreTrendingDrawer) {
               setShouldRestoreTrendingDrawer(false);
-              reopenTrendingRef.current?.();
+              setTimeout(() => {
+                reopenTrendingRef.current?.();
+              }, 50);
             }
           }}
           onMapRightClick={handleMapRightClick}
