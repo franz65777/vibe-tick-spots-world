@@ -319,12 +319,19 @@ const HomePage = memo(() => {
           setMapCenter(placeToShow.coordinates);
         }
         setInitialPinToShow(placeToShow);
+        
+        // CRITICAL: Always explicitly set returnTo/returnToState from THIS navigation state
+        // This prevents stale state from previous navigations from leaking
         if (state.returnTo) {
           setReturnTo(state.returnTo);
+        } else {
+          // Clear stale returnTo if this navigation doesn't have one
+          setReturnTo(null);
         }
-        // Save complete returnToState for proper back navigation
         if (state.returnToState) {
           setReturnToState(state.returnToState);
+        } else {
+          setReturnToState(null);
         }
         usedState = true;
       }

@@ -73,15 +73,15 @@ const MapSection = ({
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Deterministic list restore (survives different close paths)
-  const [pendingListRestore, setPendingListRestore] = useState(false);
+  // Track if pin was opened from list - survives across renders
+  const openedFromListRef = useRef(false);
 
   // Use refs for restore flags to avoid timing issues with state
-  const restoreListViewRef = useRef(false);
   const restoreTrendingDrawerRef = useRef(false);
   const reopenTrendingRef = useRef<(() => void) | null>(null);
-  // Suppress spurious Sheet close events that happen right after we reopen
-  const suppressListCloseRef = useRef(false);
+  
+  // Timestamp-based guard: ignore Radix Sheet close events within 500ms of programmatic open
+  const lastProgrammaticListOpenRef = useRef(0);
 
   const { t } = useTranslation();
   
@@ -163,38 +163,33 @@ const MapSection = ({
     onSelectedPlaceChange?.(selectedPlace);
   }, [selectedPlace, onSelectedPlaceChange]);
 
-  // If we closed a pin that originated from the list, reopen the list after the close render.
-  useEffect(() => {
-    if (!selectedPlace && pendingListRestore) {
-      console.log('[List Restore Effect] Reopening list!');
-      // Set suppress flag to prevent Radix from immediately closing
-      suppressListCloseRef.current = true;
-      setIsListViewOpen(true);
-      setPendingListRestore(false);
-      // Clear suppress flag after animation settles
-      setTimeout(() => {
-        suppressListCloseRef.current = false;
-      }, 400);
-    }
-  }, [pendingListRestore, selectedPlace]);
+  // Helper to open the list with timestamp guard
+  const openListWithGuard = useCallback(() => {
+    console.log('[List] Opening with timestamp guard');
+    lastProgrammaticListOpenRef.current = performance.now();
+    setIsListViewOpen(true);
+  }, []);
 
   const closeSelectedPlaceAndRestore = useCallback(() => {
-    // Check if this place was opened from the home page list (not profile/folder list)
-    const wasFromHomeList = (selectedPlace as any)?.fromList && !(selectedPlace as any)?.returnTo;
     const hasReturnTo = !!(selectedPlace as any)?.returnTo;
+    // Check ref (set when clicking list item) OR the fromList flag on place
+    const wasFromHomeList = openedFromListRef.current || ((selectedPlace as any)?.fromList && !hasReturnTo);
+    const shouldRestoreTrending = restoreTrendingDrawerRef.current;
+
+    console.log('[Close] hasReturnTo:', hasReturnTo, 'wasFromHomeList:', wasFromHomeList, 'openedFromListRef:', openedFromListRef.current);
     
-    // If it was opened from a list (feed/profile), navigate back to that list
+    // If it was opened from a profile/folder list, navigate back to that list
     if (hasReturnTo) {
       onClearInitialPlace?.();
-      // Clear the place state
+      // Clear state
       setSelectedPlace(null);
       setSourcePostId(undefined);
       setIsDrawerOpen(false);
       onSearchDrawerStateChange?.(false);
       document.body.removeAttribute('data-modal-open');
-      restoreListViewRef.current = false;
+      openedFromListRef.current = false;
       restoreTrendingDrawerRef.current = false;
-      return; // Exit early - navigation will happen
+      return;
     }
     
     // If it was a temporary location from SaveLocationPage, navigate back
@@ -205,47 +200,37 @@ const MapSection = ({
       setIsDrawerOpen(false);
       onSearchDrawerStateChange?.(false);
       document.body.removeAttribute('data-modal-open');
-      restoreListViewRef.current = false;
+      openedFromListRef.current = false;
       restoreTrendingDrawerRef.current = false;
       return;
     }
 
-    // Capture restore flags from refs before clearing
-    // Use either the ref OR the fromList flag on the place (for home page list)
-    const shouldRestoreList = restoreListViewRef.current || wasFromHomeList;
-    const shouldRestoreTrending = restoreTrendingDrawerRef.current;
-
-    // Reset refs immediately
-    restoreListViewRef.current = false;
+    // Reset ref
+    openedFromListRef.current = false;
     restoreTrendingDrawerRef.current = false;
 
-    // Clear the place and source
+    // Clear the place and source FIRST
     setSelectedPlace(null);
     setSourcePostId(undefined);
-
-    // Safety net: ensure drawer state and modal attribute are cleaned up
     setIsDrawerOpen(false);
     onSearchDrawerStateChange?.(false);
     document.body.removeAttribute('data-modal-open');
 
-    // Reopen the list directly after a small delay to allow state to settle
-    if (shouldRestoreList) {
-      setTimeout(() => {
-        suppressListCloseRef.current = true;
-        setIsListViewOpen(true);
-        setTimeout(() => {
-          suppressListCloseRef.current = false;
-        }, 400);
-      }, 50);
+    // Reopen the list if it was opened from list
+    if (wasFromHomeList) {
+      // Use requestAnimationFrame to ensure state update completes, then open with guard
+      requestAnimationFrame(() => {
+        openListWithGuard();
+      });
     }
 
     // Restore trending drawer
     if (shouldRestoreTrending) {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         reopenTrendingRef.current?.();
-      }, 50);
+      });
     }
-  }, [onClearInitialPlace, onSearchDrawerStateChange, selectedPlace]);
+  }, [onClearInitialPlace, onSearchDrawerStateChange, selectedPlace, openListWithGuard]);
 
   // Register close function for external use (e.g., Header X button)
   useEffect(() => {
@@ -363,38 +348,38 @@ const MapSection = ({
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen relative' : 'w-full h-full relative'} overflow-hidden`}>
-        {/* Hide map when list view is open */}
-        {!isListViewOpen && (
-        <LeafletMapSetup
-          key={isExpanded ? 'map-full' : 'map-embedded'}
-          places={places}
-          onPinClick={handlePinClick}
-          onPinShare={handlePinShare}
-          mapCenter={mapCenter}
-          selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
-          onCloseSelectedPlace={closeSelectedPlaceAndRestore}
-          onMapRightClick={handleMapRightClick}
-          onMapClick={handleMapClick}
-          activeFilter={activeFilter}
-          fullScreen={isExpanded}
-          preventCenterUpdate={false}
-          recenterToken={recenterToken}
-          onMapMove={handleMapMove}
-          onCitySelect={onCitySelect}
-          filtersVisible={filtersVisible}
-          onSharingStateChange={(hasSharing) => {
-            // Update button layout when sharing state changes
-            const container = document.querySelector('[data-has-sharing]');
-            if (container) {
-              container.setAttribute('data-has-sharing', String(hasSharing && !isExpanded));
-            }
-          }}
-          fromMessages={fromMessages}
-          onBackToMessages={onBackToMessages}
-          hideOtherPins={!!sourcePostId || !!(selectedPlace as any)?.fromList || !!(initialSelectedPlace as any)?.fromList}
-          isDrawerOpen={isDrawerOpen}
-        />
-        )}
+        {/* Keep map mounted but visually hidden when list view is open - prevents layout glitches */}
+        <div className={isListViewOpen ? 'opacity-0 pointer-events-none' : ''}>
+          <LeafletMapSetup
+            key={isExpanded ? 'map-full' : 'map-embedded'}
+            places={places}
+            onPinClick={handlePinClick}
+            onPinShare={handlePinShare}
+            mapCenter={mapCenter}
+            selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
+            onCloseSelectedPlace={closeSelectedPlaceAndRestore}
+            onMapRightClick={handleMapRightClick}
+            onMapClick={handleMapClick}
+            activeFilter={activeFilter}
+            fullScreen={isExpanded}
+            preventCenterUpdate={false}
+            recenterToken={recenterToken}
+            onMapMove={handleMapMove}
+            onCitySelect={onCitySelect}
+            filtersVisible={filtersVisible}
+            onSharingStateChange={(hasSharing) => {
+              // Update button layout when sharing state changes
+              const container = document.querySelector('[data-has-sharing]');
+              if (container) {
+                container.setAttribute('data-has-sharing', String(hasSharing && !isExpanded));
+              }
+            }}
+            fromMessages={fromMessages}
+            onBackToMessages={onBackToMessages}
+            hideOtherPins={!!sourcePostId || !!(selectedPlace as any)?.fromList || !!(initialSelectedPlace as any)?.fromList}
+            isDrawerOpen={isDrawerOpen}
+          />
+        </div>
 
         {/* Subtle fade effect at bottom of map */}
         {!isListViewOpen && (
@@ -493,9 +478,13 @@ const MapSection = ({
         <Sheet 
           open={isListViewOpen} 
           onOpenChange={(open) => {
-            // Suppress spurious closes that happen right after we programmatically reopen
-            if (!open && suppressListCloseRef.current) {
-              return;
+            // Timestamp-based guard: ignore close events within 500ms of programmatic open
+            if (!open) {
+              const elapsed = performance.now() - lastProgrammaticListOpenRef.current;
+              if (elapsed < 500) {
+                console.log('[Sheet] Ignoring spurious close, elapsed:', elapsed);
+                return;
+              }
             }
             setIsListViewOpen(open);
           }}
@@ -582,13 +571,10 @@ const MapSection = ({
                       place={place}
                       enrichedAddress={enrichedAddresses[place.id]}
                       onClick={() => {
-                        // Mark to restore list when closing the pin card (using ref)
-                        restoreListViewRef.current = true;
-                        // Mark to suppress next spurious close
-                        suppressListCloseRef.current = true;
-                        setTimeout(() => {
-                          suppressListCloseRef.current = false;
-                        }, 300);
+                        // Mark to restore list when closing the pin card
+                        openedFromListRef.current = true;
+                        console.log('[List Item Click] Set openedFromListRef = true');
+                        // Close the list
                         setIsListViewOpen(false);
                         // Flag so PinDetailCard uses a back handler instead of history navigation
                         handlePinClick({ ...(place as any), fromList: true } as Place);
