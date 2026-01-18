@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
-import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -37,7 +36,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const navigate = useNavigate();
   const targetUserId = userId || currentUser?.id;
   const { profile: targetProfile } = useOptimizedProfile(targetUserId);
-  const { stats } = useOptimizedFollowStats(targetUserId);
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
   const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +43,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   
   // Embla Carousel for smooth swiping
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -87,6 +87,23 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       cacheLoaded.current = { followers: false, following: false };
     }
   }, [initialTab, isOpen, emblaApi]);
+
+  // Fetch counts on modal open
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!targetUserId || !isOpen) return;
+      
+      const [followersResult, followingResult] = await Promise.all([
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', targetUserId),
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', targetUserId),
+      ]);
+      
+      setFollowersCount(followersResult.count || 0);
+      setFollowingCount(followingResult.count || 0);
+    };
+    
+    fetchCounts();
+  }, [targetUserId, isOpen]);
 
   useEffect(() => {
     const fetchFollowData = async () => {
@@ -520,7 +537,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
                 activeTab === 'followers' ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <span className="text-base">{stats.followersCount}</span>
+              <span className="text-base">{followersCount}</span>
               <span className="ml-1.5 text-xs opacity-80">
                 {t('followers', { ns: 'common' })}
               </span>
@@ -534,7 +551,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
                 activeTab === 'following' ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <span className="text-base">{stats.followingCount}</span>
+              <span className="text-base">{followingCount}</span>
               <span className="ml-1.5 text-xs opacity-80">
                 {t('followingTab', { ns: 'common', defaultValue: 'Seguiti' })}
               </span>
