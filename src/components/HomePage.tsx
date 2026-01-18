@@ -766,8 +766,29 @@ const HomePage = memo(() => {
                         },
                         replace: true
                       });
-                    } else {
-                      // Otherwise navigate to the returnTo path with scroll restoration
+                    } 
+                    // If we have returnToState with tripId, navigate to the trip page
+                    else if (returnToState?.tripId) {
+                      navigate(`/trip/${returnToState.tripId}`, {
+                        state: {
+                          from: returnToState.from,
+                          scrollY: returnToState.scrollY
+                        },
+                        replace: true
+                      });
+                    }
+                    // If we have returnToState with userPlacesUserId, navigate to user places
+                    else if (returnToState?.userPlacesUserId) {
+                      navigate(`/user/${returnToState.userPlacesUserId}/places`, {
+                        state: { 
+                          restoreScroll: returnToState.scrollY,
+                          filterCategory: returnToState.filterCategory 
+                        },
+                        replace: true
+                      });
+                    }
+                    // Otherwise navigate to the returnTo path with scroll restoration
+                    else {
                       navigate(returnTo, {
                         state: { restoreScroll: returnToState?.scrollY },
                         replace: true

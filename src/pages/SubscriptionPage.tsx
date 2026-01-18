@@ -60,9 +60,12 @@ const SubscriptionPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div 
+        className="bg-background border-b border-border"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <div className="flex items-center p-4">
           <Button
             variant="ghost"

@@ -92,7 +92,10 @@ const RewardsPage = () => {
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/70 backdrop-blur-md">
+      <div 
+        className="sticky top-0 z-10 bg-background/70 backdrop-blur-md"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <div className="px-4 py-3">
           <div className="flex items-center gap-3">
             <button 

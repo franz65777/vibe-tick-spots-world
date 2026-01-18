@@ -312,7 +312,27 @@ const UserPlacesPage = () => {
   }, [filteredLocations, userLocation, selectedCity]);
 
   const handlePinClick = (place: Place) => {
-    setSelectedPlace(place);
+    // Navigate to HomePage with the selected location and return state
+    navigate('/', {
+      state: {
+        selectedLocation: {
+          id: place.id,
+          name: place.name,
+          category: place.category,
+          coordinates: place.coordinates,
+          address: place.address,
+          city: place.city,
+          google_place_id: (place as any).google_place_id
+        },
+        returnTo: `/user/${userId}/places`,
+        returnToState: {
+          from: `/user/${userId}/places`,
+          scrollY: window.scrollY,
+          userPlacesUserId: userId,
+          filterCategory: filterCategory
+        }
+      }
+    });
   };
 
   const handleCityClick = (city: string) => {
@@ -333,7 +353,10 @@ const UserPlacesPage = () => {
     return (
       <div className="flex flex-col h-screen bg-background">
         {/* Header */}
-        <div className="bg-background/80 backdrop-blur-md z-50 pt-[env(safe-area-inset-top)]">
+        <div 
+          className="bg-background/80 backdrop-blur-md z-50"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
+        >
           <div className="flex items-center justify-between px-4 py-3">
             <button onClick={() => {
               const isOwnProfile = currentUser?.id === userId;
@@ -395,8 +418,9 @@ const UserPlacesPage = () => {
       {/* Blurred header overlay with gradient fade at bottom */}
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-auto">
         <div 
-          className="backdrop-blur-[6px] pt-[env(safe-area-inset-top)]"
+          className="backdrop-blur-[6px]"
           style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
             background: 'linear-gradient(to bottom, hsl(var(--background) / 0.35) 0%, hsl(var(--background) / 0.15) 70%, transparent 100%)'
           }}
         >

@@ -43,7 +43,10 @@ const LeaderboardPage = () => {
 
       <div className="min-h-screen bg-background pb-safe">
         {/* Minimal Header */}
-        <div className="sticky top-0 z-10 bg-background py-4 pt-safe">
+        <div 
+          className="sticky top-0 z-10 bg-background pb-4"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
+        >
           <div className="px-4">
             <div className="flex items-center gap-3 mb-4">
               <Button
