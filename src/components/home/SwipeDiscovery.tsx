@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import LocationDetailDrawer from './LocationDetailDrawer';
 import { ArrowLeft, UserPlus, ChevronUp, Info } from 'lucide-react';
 import discoverMascot from '@/assets/discover-mascot.png';
@@ -63,8 +63,12 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
-  const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
+  // Refs for smooth gesture handling (no re-renders during drag)
+  const cardRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchOffsetRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 }); // Keep for indicators only
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
@@ -152,9 +156,15 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     setCurrentPhotoIndex(0);
   }, [selectedCategory]);
 
-  // Reset photo index when location changes
+  // Reset photo index and card position when location changes
   useEffect(() => {
     setCurrentPhotoIndex(0);
+    // Reset card position for new location
+    if (cardRef.current) {
+      cardRef.current.style.transition = 'none';
+      cardRef.current.style.transform = 'translateZ(0)';
+      cardRef.current.style.opacity = '1';
+    }
   }, [currentIndex]);
 
   // Auto-load more when reaching near the end
@@ -481,6 +491,13 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         setSwipeDirection(null);
         setTouchOffset({ x: 0, y: 0 });
 
+        // Reset card position for next card
+        if (cardRef.current) {
+          cardRef.current.style.transition = 'none';
+          cardRef.current.style.transform = 'translateZ(0)';
+          cardRef.current.style.opacity = '1';
+        }
+
         // Mark this location as processed
         setProcessedPlaceIds((prev) => {
           const next = new Set(prev);
@@ -499,7 +516,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         
         // Remove the current location from the list
         setLocations(prev => prev.filter((_, idx) => idx !== currentIndex));
-      }, 300);
+      }, 350);
     } catch (error) {
       console.error('Error swiping:', error);
       toast.error('Something went wrong');
@@ -507,52 +524,115 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
-    setTouchStart({ x: touch.clientX, y: touch.clientY });
-  };
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchOffsetRef.current = { x: 0, y: 0 };
+    isDraggingRef.current = false;
+    
+    // Disable transitions during drag for instant response
+    if (cardRef.current) {
+      cardRef.current.style.transition = 'none';
+    }
+  }, []);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart) return;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || !cardRef.current) return;
+    
     const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStart.x;
-    const deltaY = touch.clientY - touchStart.y;
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    
+    // Mark as dragging after small movement
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      isDraggingRef.current = true;
+    }
+    
+    // Prevent scroll during horizontal swipe
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.preventDefault();
+    }
+    
+    touchOffsetRef.current = { x: deltaX, y: deltaY };
+    
+    // Update DOM directly - no re-render for smooth 60fps
+    const rotation = deltaX * 0.04;
+    const opacity = Math.max(0.4, 1 - Math.abs(deltaX) / 400);
+    
+    // Handle vertical swipe (pull up for details)
+    if (deltaY < 0 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      const scale = Math.max(0.96, 1 + deltaY / 800);
+      cardRef.current.style.transform = `translateY(${deltaY * 0.4}px) scale(${scale}) translateZ(0)`;
+      cardRef.current.style.opacity = '1';
+    } else {
+      cardRef.current.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg) translateZ(0)`;
+      cardRef.current.style.opacity = String(opacity);
+    }
+    
+    // Update state for visual indicators (throttled via requestAnimationFrame effect)
     setTouchOffset({ x: deltaX, y: deltaY });
-  };
+  }, []);
 
-  const handleTouchEnd = () => {
-    if (!touchStart) return;
+  // Filter locations by selected category - moved up for touch handlers
+  const filteredLocations = selectedCategory
+    ? locations.filter(loc => loc.category === selectedCategory)
+    : locations;
+
+  const currentLocation = filteredLocations[currentIndex];
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartRef.current || !cardRef.current) return;
     
+    const offset = touchOffsetRef.current;
     const swipeThreshold = 100;
-    const verticalThreshold = 60; // Reduced for easier swipe up
+    const verticalThreshold = 60;
     
-    // Swipe UP - open details (prioritize if vertical movement is dominant)
-    if (touchOffset.y < -verticalThreshold && Math.abs(touchOffset.y) > Math.abs(touchOffset.x) * 1.5) {
-      if (currentLocation) {
-        setDetailLocation(currentLocation);
-      }
+    // Re-enable smooth transition for snap-back or swipe-out animation
+    cardRef.current.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease-out';
+    
+    // Swipe UP - open details
+    if (offset.y < -verticalThreshold && Math.abs(offset.y) > Math.abs(offset.x) * 1.5) {
+      // Snap back first, then open details
+      cardRef.current.style.transform = 'translateX(0) rotate(0deg) translateZ(0)';
+      cardRef.current.style.opacity = '1';
       setTouchOffset({ x: 0, y: 0 });
-      setTouchStart(null);
+      touchStartRef.current = null;
+      isDraggingRef.current = false;
+      
+      if (currentLocation) {
+        setTimeout(() => setDetailLocation(currentLocation), 100);
+      }
       return;
     }
     
     // Horizontal swipe - like/dislike
-    if (Math.abs(touchOffset.x) > swipeThreshold && Math.abs(touchOffset.x) > Math.abs(touchOffset.y)) {
-      if (touchOffset.x > 0) {
+    if (Math.abs(offset.x) > swipeThreshold && Math.abs(offset.x) > Math.abs(offset.y)) {
+      // Animate card off screen
+      const direction = offset.x > 0 ? 1 : -1;
+      cardRef.current.style.transform = `translateX(${direction * 120}%) rotate(${direction * 15}deg) translateZ(0)`;
+      cardRef.current.style.opacity = '0';
+      
+      // Then process the swipe
+      if (offset.x > 0) {
         handleSwipe('right');
       } else {
         handleSwipe('left');
       }
     } else {
+      // Snap back to center
+      cardRef.current.style.transform = 'translateX(0) rotate(0deg) translateZ(0)';
+      cardRef.current.style.opacity = '1';
       setTouchOffset({ x: 0, y: 0 });
     }
-    setTouchStart(null);
-  };
+    
+    touchStartRef.current = null;
+    isDraggingRef.current = false;
+  }, [currentLocation, handleSwipe]);
 
   // Handle tap for photo navigation
-  const handleCardTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Don't navigate photos if we're in a swipe gesture
-    if (Math.abs(touchOffset.x) > 10 || Math.abs(touchOffset.y) > 10) return;
+  const handleCardTap = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't navigate photos if we were in a swipe gesture
+    if (isDraggingRef.current) return;
     
     const rect = e.currentTarget.getBoundingClientRect();
     const tapX = e.clientX - rect.left;
@@ -579,12 +659,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         setCurrentPhotoIndex(prev => prev - 1);
       }
     }
-  };
-
-  // Filter locations by selected category
-  const filteredLocations = selectedCategory
-    ? locations.filter(loc => loc.category === selectedCategory)
-    : locations;
+  }, [currentLocation, currentPhotoIndex]);
 
   // Dynamic remaining counts per user based on filtered, swipeable locations
   const remainingCounts = useMemo(() => {
@@ -601,7 +676,6 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
     return map;
   }, [filteredLocations]);
 
-  const currentLocation = filteredLocations[currentIndex];
 
   return (
     <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden safe-area-pt">
@@ -765,18 +839,18 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
           <div className="h-full flex items-start justify-center px-3 pt-3 pb-24 safe-area-pb">
             {/* Swipeable Card */}
             <div
+              ref={cardRef}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onClick={handleCardTap}
-              className="w-full max-w-[480px] mx-auto transition-transform duration-300 cursor-pointer"
+              className="w-full max-w-[480px] mx-auto cursor-pointer"
               style={{
-                transform: swipeDirection 
-                  ? swipeDirection === 'left' 
-                    ? 'translateX(-120%) rotate(-10deg)' 
-                    : 'translateX(120%) rotate(10deg)'
-                  : `translateX(${touchOffset.x}px) rotate(${touchOffset.x * 0.03}deg)`,
-                opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
+                willChange: 'transform, opacity',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                touchAction: 'pan-y pinch-zoom',
               }}
             >
               <div className="relative w-full aspect-[2/2.5] rounded-2xl overflow-hidden shadow-xl bg-card border border-border">
@@ -813,6 +887,27 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
                   
                   {/* Gradient overlays for readability */}
                   <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+                  
+                  {/* Swipe indicator overlays */}
+                  {/* SAVE indicator - right swipe */}
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-opacity duration-100"
+                    style={{ opacity: touchOffset.x > 30 ? Math.min(0.95, (touchOffset.x - 30) / 70) : 0 }}
+                  >
+                    <div className="bg-green-500/95 rounded-full p-6 shadow-2xl border-4 border-white/30">
+                      <img src={swipePin} alt="Save" className="w-16 h-16 object-contain" />
+                    </div>
+                  </div>
+                  
+                  {/* PASS indicator - left swipe */}
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-opacity duration-100"
+                    style={{ opacity: touchOffset.x < -30 ? Math.min(0.95, Math.abs(touchOffset.x + 30) / 70) : 0 }}
+                  >
+                    <div className="bg-red-500/95 rounded-full p-6 shadow-2xl border-4 border-white/30">
+                      <img src={swipeNo} alt="Pass" className="w-16 h-16 object-contain" />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Top Header - Avatar + Location Info */}
