@@ -74,12 +74,15 @@ const MapSection = ({
   const [activeSharesCount, setActiveSharesCount] = useState(0);
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  
+
+  // Deterministic list restore (survives different close paths)
+  const [pendingListRestore, setPendingListRestore] = useState(false);
+
   // Use refs for restore flags to avoid timing issues with state
   const restoreListViewRef = useRef(false);
   const restoreTrendingDrawerRef = useRef(false);
   const reopenTrendingRef = useRef<(() => void) | null>(null);
-  
+
   const { t } = useTranslation();
   
   // Use global filter context - single source of truth
@@ -160,6 +163,14 @@ const MapSection = ({
     onSelectedPlaceChange?.(selectedPlace);
   }, [selectedPlace, onSelectedPlaceChange]);
 
+  // If we closed a pin that originated from the list, reopen the list after the close render.
+  useEffect(() => {
+    if (!selectedPlace && pendingListRestore) {
+      setIsListViewOpen(true);
+      setPendingListRestore(false);
+    }
+  }, [pendingListRestore, selectedPlace]);
+
   const closeSelectedPlaceAndRestore = useCallback(() => {
     // If it was opened from a list (feed/profile), navigate back to that list
     if ((selectedPlace as any)?.returnTo) {
@@ -178,6 +189,9 @@ const MapSection = ({
     restoreListViewRef.current = false;
     restoreTrendingDrawerRef.current = false;
 
+    // Set pending list restore (effect will reopen after close render)
+    setPendingListRestore(shouldRestoreList);
+
     // Clear the place and source
     setSelectedPlace(null);
     setSourcePostId(undefined);
@@ -187,11 +201,8 @@ const MapSection = ({
     onSearchDrawerStateChange?.(false);
     document.body.removeAttribute('data-modal-open');
 
-    // Restore list view or trending drawer using requestAnimationFrame for timing
+    // Restore trending drawer using requestAnimationFrame for timing
     requestAnimationFrame(() => {
-      if (shouldRestoreList) {
-        setIsListViewOpen(true);
-      }
       if (shouldRestoreTrending) {
         reopenTrendingRef.current?.();
       }
