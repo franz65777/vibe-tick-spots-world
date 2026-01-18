@@ -166,6 +166,7 @@ const MapSection = ({
   // If we closed a pin that originated from the list, reopen the list after the close render.
   useEffect(() => {
     if (!selectedPlace && pendingListRestore) {
+      console.log('[List Restore Effect] Reopening list!');
       // Set suppress flag to prevent Radix from immediately closing
       suppressListCloseRef.current = true;
       setIsListViewOpen(true);
@@ -178,25 +179,45 @@ const MapSection = ({
   }, [pendingListRestore, selectedPlace]);
 
   const closeSelectedPlaceAndRestore = useCallback(() => {
+    // Check if this place was opened from the home page list (not profile/folder list)
+    const wasFromHomeList = (selectedPlace as any)?.fromList && !(selectedPlace as any)?.returnTo;
+    const hasReturnTo = !!(selectedPlace as any)?.returnTo;
+    
     // If it was opened from a list (feed/profile), navigate back to that list
-    if ((selectedPlace as any)?.returnTo) {
+    if (hasReturnTo) {
       onClearInitialPlace?.();
+      // Clear the place state
+      setSelectedPlace(null);
+      setSourcePostId(undefined);
+      setIsDrawerOpen(false);
+      onSearchDrawerStateChange?.(false);
+      document.body.removeAttribute('data-modal-open');
+      restoreListViewRef.current = false;
+      restoreTrendingDrawerRef.current = false;
+      return; // Exit early - navigation will happen
     }
+    
     // If it was a temporary location from SaveLocationPage, navigate back
     if (selectedPlace?.isTemporary) {
       onClearInitialPlace?.();
+      setSelectedPlace(null);
+      setSourcePostId(undefined);
+      setIsDrawerOpen(false);
+      onSearchDrawerStateChange?.(false);
+      document.body.removeAttribute('data-modal-open');
+      restoreListViewRef.current = false;
+      restoreTrendingDrawerRef.current = false;
+      return;
     }
 
     // Capture restore flags from refs before clearing
-    const shouldRestoreList = restoreListViewRef.current;
+    // Use either the ref OR the fromList flag on the place (for home page list)
+    const shouldRestoreList = restoreListViewRef.current || wasFromHomeList;
     const shouldRestoreTrending = restoreTrendingDrawerRef.current;
 
     // Reset refs immediately
     restoreListViewRef.current = false;
     restoreTrendingDrawerRef.current = false;
-
-    // Set pending list restore (effect will reopen after close render)
-    setPendingListRestore(shouldRestoreList);
 
     // Clear the place and source
     setSelectedPlace(null);
@@ -207,12 +228,23 @@ const MapSection = ({
     onSearchDrawerStateChange?.(false);
     document.body.removeAttribute('data-modal-open');
 
-    // Restore trending drawer using requestAnimationFrame for timing
-    requestAnimationFrame(() => {
-      if (shouldRestoreTrending) {
+    // Reopen the list directly after a small delay to allow state to settle
+    if (shouldRestoreList) {
+      setTimeout(() => {
+        suppressListCloseRef.current = true;
+        setIsListViewOpen(true);
+        setTimeout(() => {
+          suppressListCloseRef.current = false;
+        }, 400);
+      }, 50);
+    }
+
+    // Restore trending drawer
+    if (shouldRestoreTrending) {
+      setTimeout(() => {
         reopenTrendingRef.current?.();
-      }
-    });
+      }, 50);
+    }
   }, [onClearInitialPlace, onSearchDrawerStateChange, selectedPlace]);
 
   // Register close function for external use (e.g., Header X button)
