@@ -11,6 +11,7 @@ import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { searchPhoton } from '@/lib/photonGeocoding';
 import { searchOverpass } from '@/lib/overpassGeocoding';
 import noResultsIcon from '@/assets/no-results-pin.png';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
 // Category icons for loading animation
 const CATEGORY_LIST: AllowedCategory[] = ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'entertainment'];
@@ -86,6 +87,7 @@ interface LocationResult {
 const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect }: UnifiedSearchOverlayProps) => {
   const { t, i18n } = useTranslation();
   const { location: userLocation } = useGeolocation();
+  const { keyboardHeight, isKeyboardOpen, viewportHeight } = useKeyboardHeight();
   const [query, setQuery] = useState('');
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
@@ -624,7 +626,15 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect, onLocationSelect 
         </div>
 
         {/* Content - scrollable */}
-        <div className="max-h-[60vh] overflow-y-auto px-4 pb-6">
+        <div 
+          className="overflow-y-auto px-4 pb-6"
+          style={{
+            maxHeight: isKeyboardOpen 
+              ? `calc(${viewportHeight}px - 120px)` 
+              : '60vh',
+            transition: 'max-height 0.15s ease-out',
+          }}
+        >
           {/* Popular/Trending cities when no query */}
           {!isSearching && (
             <div className="flex flex-wrap gap-2 mb-4">
