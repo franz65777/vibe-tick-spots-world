@@ -13,6 +13,7 @@ import type { Comment } from '@/services/socialEngagementService';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { supabase } from '@/integrations/supabase/client';
 import noCommentsIcon from '@/assets/speech-bubble-icon.png';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
 interface CommentDrawerProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export const CommentDrawer = ({
   const { user } = useAuth();
   const { profile } = useOptimizedProfile();
   const { t, i18n } = useTranslation();
+  const { keyboardHeight, isKeyboardOpen, viewportHeight } = useKeyboardHeight();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [commentLikes, setCommentLikes] = useState<CommentLikeState>({});
@@ -182,7 +184,16 @@ export const CommentDrawer = ({
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[9998]" onClick={onClose} />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[9999] bg-background rounded-t-3xl flex flex-col h-[85vh] outline-none shadow-2xl">
+        <Drawer.Content 
+          className="fixed inset-x-0 bottom-0 z-[9999] bg-background rounded-t-3xl flex flex-col outline-none shadow-2xl"
+          style={{
+            height: isKeyboardOpen 
+              ? `calc(${viewportHeight}px - env(safe-area-inset-top, 0px))` 
+              : '85vh',
+            maxHeight: '85vh',
+            transition: 'height 0.15s ease-out',
+          }}
+        >
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-10 h-1.5 bg-muted-foreground/30 rounded-full" />
@@ -297,7 +308,13 @@ export const CommentDrawer = ({
           </ScrollArea>
 
           {/* Comment Input */}
-          <form onSubmit={handleSubmit} className="p-4 shrink-0 bg-background">
+          <form 
+            onSubmit={handleSubmit} 
+            className="p-4 shrink-0 bg-background"
+            style={{
+              paddingBottom: isKeyboardOpen ? '8px' : '16px',
+            }}
+          >
             <div className="flex gap-3 items-center">
               <Avatar className="w-9 h-9 shrink-0">
                 <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
