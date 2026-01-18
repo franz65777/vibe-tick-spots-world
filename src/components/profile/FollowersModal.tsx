@@ -396,21 +396,21 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           className="relative group"
         >
           <div className={cn(
-            "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
+            "rounded-full p-[2.5px] transition-transform group-hover:scale-105",
             userHasStories 
               ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
               : ""
           )}>
             <Avatar className={cn(
-              "w-20 h-20 rounded-[20px]",
+              "w-20 h-20 rounded-full",
               userHasStories && "border-2 border-background"
             )}>
               <AvatarImage 
                 src={avatarUrl} 
-                className="object-cover rounded-[20px]" 
+                className="object-cover rounded-full" 
                 loading="lazy"
               />
-              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
+              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-full">
                 {getInitials(user.username || 'User')}
               </AvatarFallback>
             </Avatar>
@@ -451,9 +451,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
             ) : user.isFollowing ? (
               <Button
                 size="sm"
-                variant="secondary"
+                variant="outline"
                 onClick={() => unfollowUser(user.id)}
-                className="rounded-full h-6 px-3 text-[10px] font-medium bg-muted hover:bg-muted/80"
+                className="rounded-full h-7 px-4 text-[11px] font-medium border-border/60 bg-background hover:bg-muted/50 text-foreground/80"
               >
                 {t('following', { ns: 'common' })}
               </Button>
@@ -461,7 +461,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               <Button
                 size="sm"
                 onClick={() => followUser(user.id)}
-                className="rounded-full h-6 px-3 text-[10px] font-medium"
+                className="rounded-full h-7 px-4 text-[11px] font-medium"
               >
                 {t('follow', { ns: 'common' })}
               </Button>
