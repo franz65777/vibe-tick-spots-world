@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useNotificationMuting } from '@/hooks/useNotificationMuting';
 import { useUserBlocking } from '@/hooks/useUserBlocking';
@@ -210,7 +211,7 @@ const UserProfilePage = () => {
         return <PostsGrid userId={userId} />;
     }
   };
-  return <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
+  return <SwipeBackWrapper onBack={handleBack}><div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       {/* Header - Instagram Style */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-3 flex-1">
@@ -573,6 +574,6 @@ const UserProfilePage = () => {
         avatarUrl={profile.avatar_url}
         username={displayUsername}
       />
-    </div>;
+    </div></SwipeBackWrapper>;
 };
 export default UserProfilePage;

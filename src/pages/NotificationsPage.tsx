@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
 import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
 import { useTranslation } from 'react-i18next';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
@@ -115,6 +116,7 @@ const NotificationsPage = () => {
   }, [notifications]);
 
   return (
+    <SwipeBackWrapper onBack={() => navigate('/')}>
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header 
@@ -179,6 +181,7 @@ const NotificationsPage = () => {
         )}
       </div>
     </div>
+    </SwipeBackWrapper>
   );
 };
 

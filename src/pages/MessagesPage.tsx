@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
 import { supabase } from '@/integrations/supabase/client';
 import PlaceMessageCard from '@/components/messages/PlaceMessageCard';
@@ -740,7 +741,7 @@ const MessagesPage = () => {
     });
     return `${day} ${monthAbbr}`;
   };
-  return <div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+  return <SwipeBackWrapper onBack={handleBack}><div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       {/* Header */}
       <header className="shrink-0 bg-background w-full border-b-0">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
@@ -1376,6 +1377,6 @@ const MessagesPage = () => {
       setShowStories(false);
       setStoriesToShow([]);
     }} onStoryViewed={() => {}} onReplyToStory={handleReplyToStory} />}
-    </div>;
+    </div></SwipeBackWrapper>;
 };
 export default MessagesPage;
