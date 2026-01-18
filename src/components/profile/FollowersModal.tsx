@@ -1,4 +1,4 @@
-import { ArrowLeft, Search, MapPin } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -252,7 +252,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         setUsers(prev => prev.map(u => 
           u.id === targetId ? { ...u, isFollowing: true } : u
         ));
-        // Notify parent about the change
         onFollowChange?.();
       }
     } catch (error) {
@@ -271,11 +270,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         .eq('following_id', targetId);
 
       if (!error) {
-        // Keep user in list but mark as not following (show "Segui" button)
         setUsers(prev => prev.map(u => 
           u.id === targetId ? { ...u, isFollowing: false } : u
         ));
-        // Notify parent about the change
         onFollowChange?.();
       }
     } catch (error) {
@@ -287,14 +284,13 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     if (!currentUser) return;
 
     try {
-      // Use the RPC function to remove follower (bypasses RLS)
       const { error } = await supabase.rpc('remove_follower', {
         follower_user_id: followerId
       });
 
       if (!error) {
         setUsers(prev => prev.filter(u => u.id !== followerId));
-        // Notify parent about the change
+        setFollowersCount(prev => Math.max(0, prev - 1));
         onFollowChange?.();
       } else {
         console.error('Error removing follower:', error);
@@ -331,115 +327,105 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  // User Card Component with enhanced design
-  const UserCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
+  // User Row Component - Clean minimal design
+  const UserRow = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
     const now = new Date();
     const userHasStories = stories.some(s => 
       s.user_id === user.id && 
       new Date(s.expires_at) > now
     );
 
+    const renderActionButton = () => {
+      if (currentUser?.id === user.id) return null;
+      
+      if (isOwnProfile && activeTab === 'followers') {
+        return (
+          <button
+            onClick={() => removeFollower(user.id)}
+            className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors px-3 py-1.5"
+          >
+            {t('remove', { ns: 'common' })}
+          </button>
+        );
+      }
+      
+      if (user.isFollowing) {
+        return (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => unfollowUser(user.id)}
+            className="rounded-lg h-8 px-4 text-xs font-medium bg-muted hover:bg-muted/80"
+          >
+            {t('following', { ns: 'common' })}
+          </Button>
+        );
+      }
+      
+      return (
+        <Button
+          size="sm"
+          onClick={() => followUser(user.id)}
+          className="rounded-lg h-8 px-4 text-xs font-medium"
+        >
+          {t('follow', { ns: 'common' })}
+        </Button>
+      );
+    };
+
     return (
       <div 
-        className="group relative bg-card/60 hover:bg-card/80 backdrop-blur-sm rounded-2xl p-3.5 transition-all duration-200 border border-border/30 hover:border-border/50 hover:shadow-md"
+        className="flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors"
         style={{ 
-          animationDelay: `${index * 50}ms`,
-          animation: 'fadeInUp 0.3s ease-out forwards',
+          animationDelay: `${index * 30}ms`,
+          animation: 'fadeIn 0.2s ease-out forwards',
           opacity: 0,
         }}
       >
-        <div className="flex items-center gap-3.5">
-          {/* Avatar with story ring */}
-          <button
-            onClick={() => handleAvatarClick(user)}
-            className="shrink-0 transition-transform duration-200 hover:scale-105"
-          >
-            <div className={cn(
-              "rounded-full p-[2.5px] transition-all",
-              userHasStories 
-                ? "bg-gradient-to-tr from-primary via-primary/80 to-primary/50 shadow-lg shadow-primary/20" 
-                : "bg-gradient-to-br from-muted/80 to-muted/40"
+        {/* Avatar */}
+        <button
+          onClick={() => handleAvatarClick(user)}
+          className="shrink-0"
+        >
+          <div className={cn(
+            "rounded-full p-[2px]",
+            userHasStories 
+              ? "bg-gradient-to-tr from-primary to-primary/60" 
+              : ""
+          )}>
+            <Avatar className={cn(
+              "w-12 h-12",
+              userHasStories && "border-2 border-background"
             )}>
-              <Avatar className="w-14 h-14 border-[2.5px] border-background">
-                <AvatarImage src={user.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-muted text-muted-foreground font-semibold">
-                  {getInitials(user.username || 'User')}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </button>
+              <AvatarImage src={user.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
+                {getInitials(user.username || 'User')}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </button>
 
-          {/* User info */}
-          <button
-            onClick={() => {
-              onClose();
-              navigate(`/profile/${user.id}`);
-            }}
-            className="text-left min-w-0 flex-1 group/info"
-          >
-            <p className="font-semibold text-foreground truncate group-hover/info:text-primary transition-colors">
-              {user.username || 'Unknown User'}
-            </p>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">
-                {user.savedPlacesCount || 0} {t('savedPlaces', { ns: 'profile', defaultValue: 'luoghi salvati' })}
-              </span>
-            </div>
-          </button>
-          
-          {/* Action button */}
-          {currentUser?.id !== user.id && (
-            <div className="shrink-0">
-              {isOwnProfile && activeTab === 'following' ? (
-                user.isFollowing ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => unfollowUser(user.id)}
-                    className="rounded-full px-4 h-9 font-medium border-border/60 hover:bg-muted/80"
-                  >
-                    {t('following', { ns: 'common' })}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => followUser(user.id)}
-                    className="rounded-full px-4 h-9 font-medium bg-primary hover:bg-primary/90 shadow-sm"
-                  >
-                    {t('follow', { ns: 'common' })}
-                  </Button>
-                )
-              ) : isOwnProfile && activeTab === 'followers' ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => removeFollower(user.id)}
-                  className="rounded-full px-4 h-9 font-medium text-destructive border-destructive/30 hover:bg-destructive/10 hover:border-destructive/50"
-                >
-                  {t('remove', { ns: 'common' })}
-                </Button>
-              ) : user.isFollowing ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => unfollowUser(user.id)}
-                  className="rounded-full px-4 h-9 font-medium border-border/60 hover:bg-muted/80"
-                >
-                  {t('following', { ns: 'common' })}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => followUser(user.id)}
-                  className="rounded-full px-4 h-9 font-medium bg-primary hover:bg-primary/90 shadow-sm"
-                >
-                  {t('follow', { ns: 'common' })}
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
+        {/* User info */}
+        <button
+          onClick={() => {
+            onClose();
+            navigate(`/profile/${user.id}`);
+          }}
+          className="text-left min-w-0 flex-1"
+        >
+          <p className="font-semibold text-foreground text-[15px] truncate">
+            {user.username || 'Unknown User'}
+          </p>
+          <div className="flex items-center gap-1 text-[13px] text-muted-foreground mt-0.5">
+            <MapPin className="w-3 h-3 shrink-0" />
+            <span className="truncate">
+              {user.savedPlacesCount || 0} {t('savedPlaces', { ns: 'profile', defaultValue: 'luoghi salvati' })}
+            </span>
+          </div>
+        </button>
+        
+        {/* Action button */}
+        {renderActionButton()}
       </div>
     );
   };
@@ -451,20 +437,14 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     
     return (
       <ScrollArea className="h-full">
-        <div className="p-4 space-y-3 pb-20">
+        <div className="pb-20">
           {loading && isActiveTab ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="relative">
-                <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                <div className="absolute inset-0 w-10 h-10 border-3 border-transparent border-b-primary/40 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-              </div>
+            <div className="flex items-center justify-center py-16">
+              <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
             </div>
           ) : displayUsers.length === 0 && isActiveTab ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
-              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                <MapPin className="w-8 h-8 text-muted-foreground/60" />
-              </div>
-              <p className="text-muted-foreground text-center">
+              <p className="text-muted-foreground text-sm">
                 {searchQuery 
                   ? t('noResults', { ns: 'common' }) 
                   : tabType === 'followers' 
@@ -474,9 +454,11 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               </p>
             </div>
           ) : (
-            displayUsers.map((user, index) => (
-              <UserCard key={user.id} user={user} index={index} />
-            ))
+            <div className="divide-y divide-border/50">
+              {displayUsers.map((user, index) => (
+                <UserRow key={user.id} user={user} index={index} />
+              ))}
+            </div>
           )}
         </div>
       </ScrollArea>
@@ -488,88 +470,84 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   return (
     <>
       <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
       
       <div className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
-        {/* Glassmorphism Header */}
-        <div className="relative">
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          <div className="flex items-center gap-4 p-4 backdrop-blur-md bg-background/80">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+          <div className="flex items-center gap-3">
             <button 
               onClick={onClose} 
-              className="p-2 -ml-2 rounded-full hover:bg-muted/80 transition-colors"
+              className="p-1.5 -ml-1.5 rounded-full hover:bg-muted/80 transition-colors"
             >
-              <ArrowLeft className="w-6 h-6 text-foreground" />
+              <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="text-lg font-semibold text-foreground">
               {targetProfile?.username || 'User'}
             </h2>
           </div>
         </div>
 
-        {/* Pill-style Tab Switcher */}
-        <div className="px-4 pt-2 pb-4">
-          <div className="relative flex bg-muted/60 backdrop-blur-md rounded-2xl p-1.5">
-            {/* Animated sliding indicator */}
-            <div 
-              className="absolute top-1.5 bottom-1.5 bg-background rounded-xl shadow-sm transition-all duration-300 ease-out"
-              style={{ 
-                left: activeTab === 'followers' ? '6px' : 'calc(50% + 3px)',
-                width: 'calc(50% - 9px)'
-              }}
-            />
-            
-            {/* Followers Tab */}
+        {/* Tab Switcher - Clean underline style */}
+        <div className="border-b border-border/50">
+          <div className="flex">
             <button 
               onClick={() => handleTabClick('followers')}
               className={cn(
-                "flex-1 relative z-10 py-3 text-sm font-semibold transition-colors duration-200 rounded-xl",
+                "flex-1 py-3.5 text-center relative transition-colors",
                 activeTab === 'followers' ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <span className="text-base">{followersCount}</span>
-              <span className="ml-1.5 text-xs opacity-80">
+              <span className="font-semibold">{followersCount}</span>
+              <span className="ml-1.5 text-sm">
                 {t('followers', { ns: 'common' })}
               </span>
+              {activeTab === 'followers' && (
+                <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-foreground rounded-full" />
+              )}
             </button>
             
-            {/* Following Tab */}
             <button 
               onClick={() => handleTabClick('following')}
               className={cn(
-                "flex-1 relative z-10 py-3 text-sm font-semibold transition-colors duration-200 rounded-xl",
+                "flex-1 py-3.5 text-center relative transition-colors",
                 activeTab === 'following' ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <span className="text-base">{followingCount}</span>
-              <span className="ml-1.5 text-xs opacity-80">
+              <span className="font-semibold">{followingCount}</span>
+              <span className="ml-1.5 text-sm">
                 {t('followingTab', { ns: 'common', defaultValue: 'Seguiti' })}
               </span>
+              {activeTab === 'following' && (
+                <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-foreground rounded-full" />
+              )}
             </button>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 pb-4">
+        <div className="px-4 py-3 border-b border-border/30">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder={t('search', { ns: 'common' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 rounded-xl bg-muted/40 border-border/40 focus:bg-background focus:border-primary/50 transition-all"
+              className="pl-9 h-10 rounded-lg bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
             />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted"
+              >
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
           </div>
         </div>
         
