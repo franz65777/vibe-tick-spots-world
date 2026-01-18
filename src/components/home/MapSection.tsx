@@ -160,13 +160,50 @@ const MapSection = ({
     onSelectedPlaceChange?.(selectedPlace);
   }, [selectedPlace, onSelectedPlaceChange]);
 
+  const closeSelectedPlaceAndRestore = useCallback(() => {
+    // If it was opened from a list (feed/profile), navigate back to that list
+    if ((selectedPlace as any)?.returnTo) {
+      onClearInitialPlace?.();
+    }
+    // If it was a temporary location from SaveLocationPage, navigate back
+    if (selectedPlace?.isTemporary) {
+      onClearInitialPlace?.();
+    }
+
+    // Capture restore flags from refs before clearing
+    const shouldRestoreList = restoreListViewRef.current;
+    const shouldRestoreTrending = restoreTrendingDrawerRef.current;
+
+    // Reset refs immediately
+    restoreListViewRef.current = false;
+    restoreTrendingDrawerRef.current = false;
+
+    // Clear the place and source
+    setSelectedPlace(null);
+    setSourcePostId(undefined);
+
+    // Safety net: ensure drawer state and modal attribute are cleaned up
+    setIsDrawerOpen(false);
+    onSearchDrawerStateChange?.(false);
+    document.body.removeAttribute('data-modal-open');
+
+    // Restore list view or trending drawer using requestAnimationFrame for timing
+    requestAnimationFrame(() => {
+      if (shouldRestoreList) {
+        setIsListViewOpen(true);
+      }
+      if (shouldRestoreTrending) {
+        reopenTrendingRef.current?.();
+      }
+    });
+  }, [onClearInitialPlace, onSearchDrawerStateChange, selectedPlace]);
+
   // Register close function for external use (e.g., Header X button)
   useEffect(() => {
     registerCloseSelectedPlace?.(() => {
-      setSelectedPlace(null);
-      setSourcePostId(undefined);
+      closeSelectedPlaceAndRestore();
     });
-  }, [registerCloseSelectedPlace]);
+  }, [registerCloseSelectedPlace, closeSelectedPlaceAndRestore]);
 
   // Convert locations to Place format for LeafletMapSetup with creator info
   const places: Place[] = locations.map(location => ({
@@ -286,43 +323,7 @@ const MapSection = ({
           onPinShare={handlePinShare}
           mapCenter={mapCenter}
           selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
-          onCloseSelectedPlace={() => { 
-            // If it was opened from a list (feed/profile), navigate back to that list
-            if ((selectedPlace as any)?.returnTo) {
-              onClearInitialPlace?.();
-            }
-            // If it was a temporary location from SaveLocationPage, navigate back
-            if (selectedPlace?.isTemporary) {
-              onClearInitialPlace?.();
-            }
-            
-            // Capture restore flags from refs before clearing
-            const shouldRestoreList = restoreListViewRef.current;
-            const shouldRestoreTrending = restoreTrendingDrawerRef.current;
-            
-            // Reset refs immediately
-            restoreListViewRef.current = false;
-            restoreTrendingDrawerRef.current = false;
-            
-            // Clear the place and source
-            setSelectedPlace(null); 
-            setSourcePostId(undefined);
-            
-            // Safety net: ensure drawer state and modal attribute are cleaned up
-            setIsDrawerOpen(false);
-            onSearchDrawerStateChange?.(false);
-            document.body.removeAttribute('data-modal-open');
-            
-            // Restore list view or trending drawer using requestAnimationFrame for timing
-            requestAnimationFrame(() => {
-              if (shouldRestoreList) {
-                setIsListViewOpen(true);
-              }
-              if (shouldRestoreTrending) {
-                reopenTrendingRef.current?.();
-              }
-            });
-          }}
+          onCloseSelectedPlace={closeSelectedPlaceAndRestore}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
           activeFilter={activeFilter}
