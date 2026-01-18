@@ -312,9 +312,16 @@ const MapSection = ({
 
   const handlePinClick = (place: Place) => {
     console.log('Pin clicked:', place);
+
     // Clear sourcePostId when clicking a pin from the map
     setSourcePostId(undefined);
-    setSelectedPlace(place);
+
+    // IMPORTANT: pins opened from Home list must never carry stale returnTo state
+    // (stale returnTo causes navigation away instead of restoring the list)
+    const sanitized: any = { ...(place as any) };
+    delete sanitized.returnTo;
+
+    setSelectedPlace(sanitized as Place);
   };
 
   const handlePinShare = (place: Place) => {
@@ -576,8 +583,8 @@ const MapSection = ({
                         console.log('[List Item Click] Set openedFromListRef = true');
                         // Close the list
                         setIsListViewOpen(false);
-                        // Flag so PinDetailCard uses a back handler instead of history navigation
-                        handlePinClick({ ...(place as any), fromList: true } as Place);
+                        // Ensure no stale returnTo leaks into this Home-list flow
+                        handlePinClick({ ...(place as any), fromList: true, returnTo: undefined } as Place);
                       }}
                     />
                   ))
