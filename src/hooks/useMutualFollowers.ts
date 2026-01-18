@@ -17,8 +17,16 @@ export const useMutualFollowers = (viewedUserId?: string, fetchAll: boolean = fa
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Skip if no valid user id
+    if (!viewedUserId) {
+      setMutualFollowers([]);
+      setTotalCount(0);
+      setLoading(false);
+      return;
+    }
+
     const fetchMutualFollowers = async () => {
-      if (!currentUser || !viewedUserId || currentUser.id === viewedUserId) {
+      if (!currentUser || currentUser.id === viewedUserId) {
         setMutualFollowers([]);
         setTotalCount(0);
         setLoading(false);

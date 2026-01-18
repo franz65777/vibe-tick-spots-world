@@ -58,8 +58,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   
-  // Mutuals data
-  const { mutualFollowers, totalCount: mutualsCount, loading: mutualsLoading } = useMutualFollowers(targetUserId, true);
+  // Mutuals data - only fetch when viewing other profiles
+  const shouldFetchMutuals = !isOwnProfile && isOpen;
+  const { mutualFollowers, totalCount: mutualsCount, loading: mutualsLoading } = useMutualFollowers(
+    shouldFetchMutuals ? targetUserId : undefined, 
+    shouldFetchMutuals
+  );
   
   // Embla Carousel for smooth swiping - 3 panels when viewing others, 2 for own profile
   const tabCount = isOwnProfile ? 2 : 3;
@@ -385,17 +389,17 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           className="relative group"
         >
           <div className={cn(
-            "rounded-2xl p-[2.5px] transition-transform group-hover:scale-105",
+            "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
             userHasStories 
               ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
               : ""
           )}>
             <Avatar className={cn(
-              "w-20 h-20 rounded-2xl",
+              "w-20 h-20 rounded-[20px]",
               userHasStories && "border-2 border-background"
             )}>
-              <AvatarImage src={user.avatar_url || undefined} className="object-cover rounded-2xl" />
-              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-2xl">
+              <AvatarImage src={user.avatar_url || undefined} className="object-cover rounded-[20px]" />
+              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
                 {getInitials(user.username || 'User')}
               </AvatarFallback>
             </Avatar>
