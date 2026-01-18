@@ -258,6 +258,10 @@ const HomePage = memo(() => {
         if (state.returnTo) {
           (placeToShow as any).returnTo = state.returnTo;
           setReturnTo(state.returnTo);
+        } else {
+          // CRITICAL: clear any stale returnTo (e.g. /feed) when this nav doesn't provide it
+          setReturnTo(null);
+          setReturnToState(null);
         }
         setInitialPinToShow(placeToShow);
         usedState = true;
@@ -284,6 +288,9 @@ const HomePage = memo(() => {
         setInitialPinToShow(placeToShow);
         if (state.returnTo) {
           setReturnTo(state.returnTo);
+        } else {
+          setReturnTo(null);
+          setReturnToState(null);
         }
         // Track if opened from messages for back navigation
         if (state.fromMessages) {

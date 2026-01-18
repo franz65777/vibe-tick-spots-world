@@ -78,6 +78,9 @@ const MapSection = ({
   // Track if pin was opened from list - survives across renders
   const openedFromListRef = useRef(false);
 
+  // Deterministic restore target when closing the pin
+  const previousOverlayRef = useRef<'map' | 'list'>('map');
+
   // Use refs for restore flags to avoid timing issues with state
   const restoreTrendingDrawerRef = useRef(false);
   const reopenTrendingRef = useRef<(() => void) | null>(null);
@@ -175,11 +178,13 @@ const MapSection = ({
 
   const closeSelectedPlaceAndRestore = useCallback(() => {
     const hasReturnTo = !!(selectedPlace as any)?.returnTo;
-    // Check ref (set when clicking list item) OR the fromList flag on place
-    const wasFromHomeList = openedFromListRef.current || ((selectedPlace as any)?.fromList && !hasReturnTo);
+    const wasFromHomeList =
+      previousOverlayRef.current === 'list' ||
+      openedFromListRef.current ||
+      (!!(selectedPlace as any)?.fromList && !hasReturnTo);
     const shouldRestoreTrending = restoreTrendingDrawerRef.current;
 
-    console.log('[Close] hasReturnTo:', hasReturnTo, 'wasFromHomeList:', wasFromHomeList, 'openedFromListRef:', openedFromListRef.current);
+    console.log('[Close] hasReturnTo:', hasReturnTo, 'wasFromHomeList:', wasFromHomeList, 'openedFromListRef:', openedFromListRef.current, 'previousOverlayRef:', previousOverlayRef.current);
     
     // If it was opened from a profile/folder list, navigate back to that list
     if (hasReturnTo) {
@@ -211,8 +216,7 @@ const MapSection = ({
     // Reset refs
     openedFromListRef.current = false;
     restoreTrendingDrawerRef.current = false;
-
-    // Clear the place and source FIRST
+    previousOverlayRef.current = 'map';
     setSelectedPlace(null);
     setSourcePostId(undefined);
     setIsDrawerOpen(false);
@@ -316,6 +320,11 @@ const MapSection = ({
 
   const handlePinClick = (place: Place) => {
     console.log('Pin clicked:', place);
+
+    // Remember where we came from so close can restore deterministically
+    if (overlay !== 'pin') {
+      previousOverlayRef.current = overlay === 'list' ? 'list' : 'map';
+    }
 
     // Clear sourcePostId when clicking a pin from the map
     setSourcePostId(undefined);
@@ -478,7 +487,10 @@ const MapSection = ({
           }}>
           {/* List View Toggle - Simple button, Sheet is rendered separately */}
           <button
-            onClick={() => setOverlay('list')}
+            onClick={() => {
+              previousOverlayRef.current = 'list';
+              setOverlay('list');
+            }}
             className="rounded-full bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
           >
             <List className="w-5 h-5 text-foreground" />
@@ -590,6 +602,7 @@ const MapSection = ({
                       onClick={() => {
                         // Mark to restore list when closing the pin card
                         openedFromListRef.current = true;
+                        previousOverlayRef.current = 'list';
                         console.log('[List Item Click] Set openedFromListRef = true');
                         // Switch overlay to pin (Sheet will close)
                         setOverlay('pin');
