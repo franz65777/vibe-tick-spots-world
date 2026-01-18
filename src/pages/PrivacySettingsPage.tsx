@@ -108,7 +108,10 @@ const PrivacySettingsPage: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4 pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background">
+      <div 
+        className="flex items-center gap-3 px-4 pb-4 sticky top-0 z-10 bg-background"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
+      >
         <button
           onClick={() => {
             if (window.history.length > 1) {
