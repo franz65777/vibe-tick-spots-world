@@ -65,7 +65,9 @@ const MapSection = ({
   registerReopenSearchDrawer,
 }: MapSectionProps) => {
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
-  const [isListViewOpen, setIsListViewOpen] = useState(false);
+  // Single source of truth for Home map overlays
+  const [overlay, setOverlay] = useState<'map' | 'list' | 'pin'>('map');
+  const isListViewOpen = overlay === 'list';
   const [isActiveSharesOpen, setIsActiveSharesOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
@@ -153,6 +155,7 @@ const MapSection = ({
         setSourcePostId(initialSelectedPlace.sourcePostId);
       }
       setSelectedPlace(initialSelectedPlace);
+      setOverlay('pin');
       // Don't call onClearInitialPlace here - only clear the prop reference
       // Navigation back should happen when user explicitly closes the card
     }
@@ -167,7 +170,7 @@ const MapSection = ({
   const openListWithGuard = useCallback(() => {
     console.log('[List] Opening with timestamp guard');
     lastProgrammaticListOpenRef.current = performance.now();
-    setIsListViewOpen(true);
+    setOverlay('list');
   }, []);
 
   const closeSelectedPlaceAndRestore = useCallback(() => {
@@ -205,7 +208,7 @@ const MapSection = ({
       return;
     }
 
-    // Reset ref
+    // Reset refs
     openedFromListRef.current = false;
     restoreTrendingDrawerRef.current = false;
 
@@ -216,12 +219,13 @@ const MapSection = ({
     onSearchDrawerStateChange?.(false);
     document.body.removeAttribute('data-modal-open');
 
-    // Reopen the list if it was opened from list
+    // Deterministically restore overlay
     if (wasFromHomeList) {
-      // Use requestAnimationFrame to ensure state update completes, then open with guard
       requestAnimationFrame(() => {
         openListWithGuard();
       });
+    } else {
+      setOverlay('map');
     }
 
     // Restore trending drawer
@@ -322,6 +326,7 @@ const MapSection = ({
     delete sanitized.returnTo;
 
     setSelectedPlace(sanitized as Place);
+    setOverlay('pin');
   };
 
   const handlePinShare = (place: Place) => {
@@ -473,7 +478,7 @@ const MapSection = ({
           }}>
           {/* List View Toggle - Simple button, Sheet is rendered separately */}
           <button
-            onClick={() => setIsListViewOpen(true)}
+            onClick={() => setOverlay('list')}
             className="rounded-full bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
           >
             <List className="w-5 h-5 text-foreground" />
@@ -493,7 +498,12 @@ const MapSection = ({
                 return;
               }
             }
-            setIsListViewOpen(open);
+
+            if (open) {
+              setOverlay('list');
+            } else {
+              setOverlay(selectedPlace ? 'pin' : 'map');
+            }
           }}
         >
           <SheetContent 
@@ -581,8 +591,8 @@ const MapSection = ({
                         // Mark to restore list when closing the pin card
                         openedFromListRef.current = true;
                         console.log('[List Item Click] Set openedFromListRef = true');
-                        // Close the list
-                        setIsListViewOpen(false);
+                        // Switch overlay to pin (Sheet will close)
+                        setOverlay('pin');
                         // Ensure no stale returnTo leaks into this Home-list flow
                         handlePinClick({ ...(place as any), fromList: true, returnTo: undefined } as Place);
                       }}
@@ -629,7 +639,7 @@ const MapSection = ({
         onSelectLocation={(placeId, shareData) => {
           // Always close both sheets first
           setIsActiveSharesOpen(false);
-          setIsListViewOpen(false);
+          setOverlay('map');
           
           // Try to find in places by id, google_place_id, or location_id
           let p = places.find(pl => 
