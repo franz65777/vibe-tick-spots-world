@@ -396,21 +396,21 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           className="relative group"
         >
           <div className={cn(
-            "rounded-full p-[2.5px] transition-transform group-hover:scale-105",
+            "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
             userHasStories 
               ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
               : ""
           )}>
             <Avatar className={cn(
-              "w-20 h-20 rounded-full",
+              "w-20 h-20 rounded-[20px]",
               userHasStories && "border-2 border-background"
             )}>
               <AvatarImage 
                 src={avatarUrl} 
-                className="object-cover rounded-full" 
+                className="object-cover rounded-[20px]" 
                 loading="lazy"
               />
-              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-full">
+              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
                 {getInitials(user.username || 'User')}
               </AvatarFallback>
             </Avatar>
@@ -431,29 +431,31 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
             onClose();
             navigate(`/profile/${user.id}`);
           }}
-          className="text-center w-full"
+          className="w-full flex justify-center px-1"
         >
-          <p className="font-medium text-foreground text-xs truncate max-w-[80px]">
+          <p className="font-medium text-foreground text-xs truncate text-center max-w-[88px]">
             {user.username || 'User'}
           </p>
         </button>
 
         {/* Action Button */}
         {currentUser?.id !== user.id && (
-          <div className="mt-1">
+          <div className="mt-1.5 flex justify-center">
             {isOwnProfile && activeTab === 'followers' ? (
-              <button
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={() => removeFollower(user.id)}
-                className="text-[10px] font-medium text-destructive hover:text-destructive/80 transition-colors px-2 py-1 rounded-md hover:bg-destructive/10"
+                className="rounded-full h-7 px-3 text-[10px] font-medium text-destructive hover:text-destructive hover:bg-destructive/10 min-w-[68px]"
               >
                 {t('remove', { ns: 'common' })}
-              </button>
+              </Button>
             ) : user.isFollowing ? (
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 onClick={() => unfollowUser(user.id)}
-                className="rounded-full h-7 px-4 text-[11px] font-medium border-border/60 bg-background hover:bg-muted/50 text-foreground/80"
+                className="rounded-full h-7 px-3 text-[10px] font-medium bg-muted/80 hover:bg-muted text-foreground/70 min-w-[68px]"
               >
                 {t('following', { ns: 'common' })}
               </Button>
@@ -461,7 +463,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               <Button
                 size="sm"
                 onClick={() => followUser(user.id)}
-                className="rounded-full h-7 px-4 text-[11px] font-medium"
+                className="rounded-full h-7 px-3 text-[10px] font-medium min-w-[68px]"
               >
                 {t('follow', { ns: 'common' })}
               </Button>
