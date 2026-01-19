@@ -51,13 +51,14 @@ const TARGET_CITIES = [
   { name: 'Melbourne', country: 'Australia', lat: -37.8136, lng: 144.9631 },
 ];
 
-// Categories to seed - fewer categories, more results per category
+// Categories to seed - increased limits for more locations
 const CATEGORIES = [
-  { name: 'restaurant', amenity: 'restaurant', limit: 20 },
-  { name: 'cafe', amenity: 'cafe', limit: 15 },
-  { name: 'bar', amenity: 'bar', limit: 10 },
-  { name: 'hotel', amenity: 'hotel', limit: 8 },
-  { name: 'museum', amenity: 'museum', limit: 6 },
+  { name: 'restaurant', amenity: 'restaurant', limit: 40 },
+  { name: 'cafe', amenity: 'cafe', limit: 30 },
+  { name: 'bar', amenity: 'bar', limit: 20 },
+  { name: 'hotel', amenity: 'hotel', limit: 15 },
+  { name: 'museum', amenity: 'museum', limit: 10 },
+  { name: 'bakery', amenity: 'bakery', limit: 15 },
 ];
 
 interface OverpassElement {
@@ -156,8 +157,8 @@ async function validateWithGoogle(
         candidate.geometry.location.lng
       );
       
-      // Skip if distance > 500m (likely wrong location)
-      if (distance > 0.5) {
+      // Skip if distance > 1km (increased tolerance - OSM and Google often have slightly different coordinates)
+      if (distance > 1.0) {
         return { valid: false, skip_reason: 'location_mismatch' };
       }
     }
@@ -291,7 +292,7 @@ Deno.serve(async (req) => {
     let dryRun = false;
     let specificCities: string[] | null = null;
     let enableValidation = true; // New: enable/disable Google validation
-    let maxValidationsPerBatch = 100; // Limit Google API calls per batch
+    let maxValidationsPerBatch = 300; // Increased limit for more locations per batch
 
     if (req.method === 'POST') {
       try {
@@ -371,6 +372,7 @@ Deno.serve(async (req) => {
     }> = [];
 
     let totalValidations = 0;
+    const seenGoogleIds = new Set<string>(); // Track seen Google Place IDs to avoid duplicates
 
     // Process cities sequentially with delays
     for (const city of citiesToProcess) {
@@ -416,10 +418,19 @@ Deno.serve(async (req) => {
                   break;
                 case 'location_mismatch':
                   validationStats.skipped_mismatch++;
-                  console.log(`  ❌ Skipped "${name}" - location mismatch (>500m)`);
+                  console.log(`  ❌ Skipped "${name}" - location mismatch (>1km)`);
                   break;
               }
               continue; // Skip this location
+            }
+            
+            // Check for duplicate Google Place ID within this batch
+            if (validationResult.google_place_id && seenGoogleIds.has(validationResult.google_place_id)) {
+              console.log(`  ⏭️ Skipped "${name}" - duplicate Google Place ID`);
+              continue;
+            }
+            if (validationResult.google_place_id) {
+              seenGoogleIds.add(validationResult.google_place_id);
             }
             
             cityValidated++;
@@ -473,7 +484,7 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase
           .from('locations')
           .upsert(batch, {
-            onConflict: 'osm_id',
+            onConflict: 'osm_id, google_place_id', // Handle both conflict types
             ignoreDuplicates: false, // Update with new validation data
           })
           .select('id');
