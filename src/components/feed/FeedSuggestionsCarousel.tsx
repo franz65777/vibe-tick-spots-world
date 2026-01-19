@@ -144,14 +144,15 @@ const FeedSuggestionsCarousel = memo(() => {
       };
 
       // 1) Build an "exclude set" of everything the user already saved
+      // Also build a name+coordinates map for fuzzy matching (handles external IDs)
       const [userSavedInternalRes, userSavedPlacesRes] = await Promise.all([
         supabase
           .from('user_saved_locations')
-          .select('location_id, locations(google_place_id, category)')
+          .select('location_id, locations(google_place_id, category, name, latitude, longitude)')
           .eq('user_id', user.id),
         supabase
           .from('saved_places')
-          .select('place_id, place_category')
+          .select('place_id, place_category, place_name, latitude, longitude')
           .eq('user_id', user.id),
       ]);
 
@@ -159,13 +160,36 @@ const FeedSuggestionsCarousel = memo(() => {
       const userSavedPlaces = userSavedPlacesRes.data || [];
 
       const exclude = new Set<string>();
+      // Map for fuzzy matching: normalized name -> { lat, lng }
+      const savedNamesWithCoords = new Map<string, { lat: number; lng: number }>();
+
       userSavedInternal.forEach((s: any) => {
         if (s.location_id) exclude.add(s.location_id);
         if (s.locations?.google_place_id) exclude.add(s.locations.google_place_id);
+        // Add to fuzzy match map
+        const loc = s.locations;
+        if (loc?.name && loc?.latitude && loc?.longitude) {
+          const normalizedName = loc.name.toLowerCase().trim();
+          savedNamesWithCoords.set(normalizedName, { lat: loc.latitude, lng: loc.longitude });
+        }
       });
       userSavedPlaces.forEach((p: any) => {
         if (p.place_id) exclude.add(p.place_id);
+        // Add to fuzzy match map
+        if (p.place_name && p.latitude && p.longitude) {
+          const normalizedName = p.place_name.toLowerCase().trim();
+          savedNamesWithCoords.set(normalizedName, { lat: p.latitude, lng: p.longitude });
+        }
       });
+
+      // Helper to check if a place matches a saved one by name + proximity (within 100m)
+      const isSavedByNameAndCoords = (name: string, lat: number, lng: number): boolean => {
+        const normalizedName = name.toLowerCase().trim();
+        const savedCoords = savedNamesWithCoords.get(normalizedName);
+        if (!savedCoords) return false;
+        const distance = calculateDistance(savedCoords.lat, savedCoords.lng, lat, lng);
+        return distance < 0.1; // Within 100m = same place
+      };
 
       // 2) Determine preferred categories (from both internal + google saved)
       const categoryCounts = new Map<string, number>();
@@ -213,6 +237,8 @@ const FeedSuggestionsCarousel = memo(() => {
         .filter((loc: any) => {
           if (exclude.has(loc.id)) return false;
           if (loc.google_place_id && exclude.has(loc.google_place_id)) return false;
+          // Fuzzy match: exclude if name + coordinates match a saved place
+          if (isSavedByNameAndCoords(loc.name, loc.latitude, loc.longitude)) return false;
           const d = calculateDistance(userLocation.lat, userLocation.lng, loc.latitude, loc.longitude);
           return d <= 50;
         })
@@ -340,6 +366,8 @@ const FeedSuggestionsCarousel = memo(() => {
           if (!p.id || !p.latitude || !p.longitude) return false;
           if (exclude.has(p.id)) return false; // already saved by user
           if (internalGoogleIds.has(p.id)) return false; // already exists in DB
+          // Fuzzy match: exclude if name + coordinates match a saved place
+          if (isSavedByNameAndCoords(p.name, p.latitude, p.longitude)) return false;
           return true;
         });
 
