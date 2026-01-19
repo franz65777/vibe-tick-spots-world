@@ -448,6 +448,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 address: loc.address,
                 city: loc.city,
                 google_place_id: loc.google_place_id,
+                opening_hours_data: loc.opening_hours_data,
+                photos: loc.photos as string[] | undefined,
                 coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
                 isFollowing: true,
                 user_id: loc.created_by,
