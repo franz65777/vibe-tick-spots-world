@@ -6,10 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cost constants (in USD) - matching Google's pricing
+// Cost constants (in USD) - Based on REAL Google billing data
+// These reflect actual costs AFTER the $200 monthly free credit is used
+// Photo SKU: €34.57 / 6821 calls = ~€0.00507/photo = ~$0.0055/photo
 const COSTS = {
-  PLACE_DETAILS_PHOTOS: 0.007, // Place Details (Basic) - photos field only
-  PLACE_PHOTO: 0.007,         // Place Photo - per photo request
+  PLACE_DETAILS_BASIC: 0,      // Basic Data (name, address, geometry) - FREE under $200 credit
+  PLACE_PHOTO: 0.0055,         // Place Photo - actual cost from billing: $0.0055 each
 };
 
 interface PhotoResult {
@@ -279,18 +281,18 @@ serve(async (req) => {
     const apiKeyIdentifier = googleApiKey ? googleApiKey.slice(-6) : null;
     const costEntries = [];
 
-    // Cost for Place Details API call (photos field)
+    // Cost for Place Details API call (photos field) - Basic Data is FREE
     costEntries.push({
       api_type: 'place_details',
       location_id: locationId || null,
-      cost_usd: COSTS.PLACE_DETAILS_PHOTOS,
+      cost_usd: COSTS.PLACE_DETAILS_BASIC, // FREE under $200 credit!
       request_count: 1,
       billing_month: currentMonth,
       api_key_identifier: apiKeyIdentifier,
-      metadata: { source: 'user_save', fields: ['photos'] }
+      metadata: { source: 'user_save', fields: ['photos'], sku: 'basic_data', free_tier: true }
     });
 
-    // Cost for each Place Photo API call
+    // Cost for each Place Photo API call - this is the REAL cost
     if (uploadedPhotos.length > 0) {
       costEntries.push({
         api_type: 'place_photos',
@@ -299,7 +301,7 @@ serve(async (req) => {
         request_count: uploadedPhotos.length,
         billing_month: currentMonth,
         api_key_identifier: apiKeyIdentifier,
-        metadata: { source: 'user_save', photo_count: uploadedPhotos.length }
+        metadata: { source: 'user_save', photo_count: uploadedPhotos.length, sku: 'place_photo' }
       });
     }
 

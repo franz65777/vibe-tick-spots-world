@@ -54,7 +54,12 @@ interface BudgetSettings {
 
 type EnrichmentStatus = 'idle' | 'starting' | 'running' | 'completed';
 
-const COST_PER_LOCATION_ESTIMATE = 0.059; // $0.017 details + $0.007 * 6 photos
+// Real costs based on Google Cloud billing data (after $200 free credit)
+// Photo = $0.0055 each, Contact Data (hours) = $0.0016 each, everything else FREE
+const COST_PER_PHOTO = 0.0055;
+const COST_PER_CONTACT_DATA = 0.0016;
+const AVG_PHOTOS_PER_LOCATION = 4;
+const COST_PER_LOCATION_ESTIMATE = (COST_PER_PHOTO * AVG_PHOTOS_PER_LOCATION) + COST_PER_CONTACT_DATA; // ~$0.024
 
 export const GoogleEnrichmentDashboard = () => {
   const [stats, setStats] = useState<EnrichmentStats | null>(null);
@@ -651,8 +656,11 @@ export const GoogleEnrichmentDashboard = () => {
         )}
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Scarica foto e orari da Google Places API. Costo stimato: ~$0.06/location. 
-          Budget mensile gratuito: $200 (~3,300 location).
+          ✅ <span className="text-green-600 font-medium">GRATIS:</span> Find Place, Basic Data, Atmosphere Data, Text Search, Place Details.
+          <br />
+          💰 <span className="text-amber-600 font-medium">A PAGAMENTO:</span> Photos (~$0.0055/foto), Contact Data/orari (~$0.0016/richiesta).
+          <br />
+          Costo reale stimato: ~$0.024/location (4 foto + orari). Budget $200 = ~8,300 location.
         </p>
       </CardContent>
     </Card>

@@ -6,10 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cost constants (in USD) - matching Google's pricing
+// Cost constants (in USD) - Based on REAL Google billing data
+// These reflect actual costs - many SKUs are FREE under $200 monthly credit!
+// From billing: Find Place (ID only) = €0.00, Contact Data = €3.59/2409 calls = ~$0.0016
 const COSTS = {
-  FIND_PLACE: 0.017,          // Find Place from Text (Basic)
-  PLACE_DETAILS_HOURS: 0.02,  // Place Details (Contact) - opening_hours field
+  FIND_PLACE_ID_ONLY: 0,       // Find Place (ID only) - FREE under $200 credit!
+  BASIC_DATA: 0,               // Basic Data (name, address, geometry) - FREE
+  CONTACT_DATA: 0.0016,        // Contact Data (opening_hours) - actual cost: ~$0.0016 each
 };
 
 // Helper to get current billing month
@@ -446,11 +449,11 @@ serve(async (req) => {
       costEntries.push({
         api_type: 'find_place',
         location_id: locationId || null,
-        cost_usd: COSTS.FIND_PLACE,
+        cost_usd: COSTS.FIND_PLACE_ID_ONLY, // FREE under $200 credit!
         request_count: 1,
         billing_month: currentMonth,
         api_key_identifier: apiKeyIdentifier,
-        metadata: { source: 'user_hours_fetch' }
+        metadata: { source: 'user_hours_fetch', sku: 'find_place_id_only', free_tier: true }
       });
     }
 
@@ -458,11 +461,11 @@ serve(async (req) => {
       costEntries.push({
         api_type: 'place_details',
         location_id: locationId || null,
-        cost_usd: COSTS.PLACE_DETAILS_HOURS,
+        cost_usd: COSTS.CONTACT_DATA, // Contact Data for opening_hours
         request_count: 1,
         billing_month: currentMonth,
         api_key_identifier: apiKeyIdentifier,
-        metadata: { source: 'user_hours_fetch', fields: ['opening_hours'] }
+        metadata: { source: 'user_hours_fetch', fields: ['opening_hours'], sku: 'contact_data' }
       });
     }
 
