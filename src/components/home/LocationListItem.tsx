@@ -43,7 +43,7 @@ export const LocationListItem = ({ place, enrichedAddress, onClick }: LocationLi
   return (
     <div
       onClick={onClick}
-      className="group flex items-center gap-3 p-3 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/30 cursor-pointer transition-all duration-200 hover:bg-accent/50 hover:border-border/50 hover:shadow-md active:scale-[0.98]"
+      className="group flex items-center gap-3 p-3 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 cursor-pointer transition-all duration-200 hover:bg-accent/60 hover:border-border/50 hover:shadow-md active:scale-[0.98]"
     >
       {/* Thumbnail / Category Icon */}
       <div className="relative flex-shrink-0 w-14 h-14 rounded-xl bg-muted/80 flex items-center justify-center overflow-hidden">
@@ -129,7 +129,7 @@ export const LocationListItem = ({ place, enrichedAddress, onClick }: LocationLi
 
 // Skeleton loader for list items
 export const LocationListItemSkeleton = () => (
-  <div className="flex items-center gap-3 p-3 rounded-2xl bg-card/50 border border-border/30">
+  <div className="flex items-center gap-3 p-3 rounded-2xl bg-background/80 border border-border/40">
     <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
     <div className="flex-1 min-w-0 space-y-2">
       <Skeleton className="h-4 w-3/4" />

@@ -248,7 +248,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 user_id,
                 created_at,
                 location:locations (
-                  id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data
+                  id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data, photos
                 )
               `)
               .in('user_id', followedUserIds)
@@ -318,6 +318,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 city: loc.city,
                 google_place_id: loc.google_place_id,
                 opening_hours_data: loc.opening_hours_data,
+                photos: loc.photos as string[] | undefined,
                 coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
                 isFollowing: true,
                 user_id: row.user_id,
@@ -345,15 +346,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
             finalLocations = Array.from(locationMap.values()).filter((loc) => isCategoryAllowed(loc.category));
           } else {
-            // No bounds - fetch by city, ONLY for selectedFollowedUserIds (not current user)
-            // If no friends are selected, show nothing
-            if (selectedFollowedUserIds.length === 0) {
+            // No bounds - fetch by city
+            // If no friends are selected, fetch ALL followed users
+            let followedUserIds = selectedFollowedUserIds;
+            
+            if (followedUserIds.length === 0) {
+              // Fetch all followed users for this user
+              const { data: followedUsers } = await supabase
+                .from('follows')
+                .select('following_id')
+                .eq('follower_id', user.id);
+              
+              followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            }
+            
+            if (followedUserIds.length === 0) {
+              // User doesn't follow anyone
               finalLocations = [];
               break;
             }
-            
-            // Use only the selected friend IDs - never include current user
-            const followedUserIds = selectedFollowedUserIds;
 
             const normalizeCityKey = (s?: string | null) => {
               // Use the same logic everywhere: municipality/district -> parent city, consistent casing.
@@ -390,8 +401,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .select(`
                 user_id,
                 created_at,
-                location:locations (
-                  id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data
+              location:locations (
+                  id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data, photos
                 )
               `)
               .in('user_id', followedUserIds)
@@ -463,6 +474,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 city: loc.city,
                 google_place_id: loc.google_place_id,
                 opening_hours_data: loc.opening_hours_data,
+                photos: loc.photos as string[] | undefined,
                 coordinates: { lat: Number(loc.latitude) || 0, lng: Number(loc.longitude) || 0 },
                 isFollowing: true,
                 user_id: row.user_id,
@@ -752,7 +764,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               save_tag,
               created_at,
               location:locations (
-                id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data
+                id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data, photos
               )
             `)
             .eq('user_id', user.id)
@@ -795,6 +807,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 address: loc.address,
                 city: resolveCityDisplay(loc.city, loc.address),
                 google_place_id: loc.google_place_id,
+                photos: loc.photos as string[] | undefined,
                 coordinates: { lat, lng },
                 isSaved: true,
                 user_id: loc.created_by || user.id,
