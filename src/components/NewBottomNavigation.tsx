@@ -64,10 +64,12 @@ const NewBottomNavigation = () => {
     };
   }, [user?.id, refetchProfile]);
 
-  // Hide navigation on messages, notifications, share-location, and leaderboard pages, or when overlays are open
-  if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications' || location.pathname === '/share-location' || location.pathname === '/leaderboard') {
-    return null;
-  }
+  // Determine if navigation should be hidden (CSS-based, keeps component mounted)
+  const shouldHideNav = hideNav || 
+    location.pathname === '/messages' || 
+    location.pathname === '/notifications' || 
+    location.pathname === '/share-location' || 
+    location.pathname === '/leaderboard';
 
   const handleNavClick = (path: string, label: string) => {
     navigate(path);
@@ -173,9 +175,13 @@ const NewBottomNavigation = () => {
       />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[110] pointer-events-auto"
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-[110] pointer-events-auto transition-all duration-150",
+          shouldHideNav && "opacity-0 pointer-events-none translate-y-full"
+        )}
         role="navigation"
         aria-label="Main navigation"
+        aria-hidden={shouldHideNav}
       >
         <div className="w-full px-3 pb-[env(safe-area-inset-bottom)]">
           <div className="relative bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm">

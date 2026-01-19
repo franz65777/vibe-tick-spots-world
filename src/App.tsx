@@ -82,11 +82,28 @@ const PageLoader = () => (
   </div>
 );
 
+// Preload critical navigation icons for instant loading
+const preloadNavigationIcons = () => {
+  const icons = [
+    '/src/assets/icon-map-search.png',
+    '/src/assets/share-location-icon.png'
+  ];
+  icons.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+};
+
 function AppContent() {
   console.log('🔄 AppContent rendering...');
   const { user } = useAuth();
   console.log('👤 User state:', user?.email || 'No user');
   console.log('🔍 Current pathname:', window.location.pathname);
+
+  // Preload navigation icons on mount
+  useEffect(() => {
+    preloadNavigationIcons();
+  }, []);
 
   useEffect(() => {
     if (user) {
