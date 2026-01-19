@@ -520,14 +520,14 @@ const MapSection = ({
         >
           <SheetContent 
             side="bottom" 
-            className="h-[85vh] rounded-t-3xl flex flex-col z-[150] bg-background/95 backdrop-blur-xl border-t border-border/30 shadow-2xl"
+            className="h-[85vh] rounded-t-3xl flex flex-col z-[150] bg-muted/95 backdrop-blur-xl border-t border-border/30 shadow-2xl"
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-2 pb-1">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             
-            <SheetHeader className="pb-3 flex-shrink-0 sticky top-0 bg-background/95 backdrop-blur-xl z-10">
+            <SheetHeader className="pb-3 flex-shrink-0 sticky top-0 bg-muted/95 backdrop-blur-xl z-10">
               <SheetTitle className="text-xl font-bold flex items-center gap-2">
                 {t('locationsTitle', { ns: 'mapFilters' })}
                 <Badge variant="secondary" className="text-sm font-medium">
