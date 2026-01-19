@@ -9,7 +9,7 @@ import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { List } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -498,15 +498,15 @@ const MapSection = ({
         </div>
         )}
 
-        {/* Location List Sheet - Always rendered */}
-        <Sheet 
+        {/* Location List Drawer - Always rendered */}
+        <Drawer 
           open={isListViewOpen} 
           onOpenChange={(open) => {
             // Timestamp-based guard: ignore close events within 500ms of programmatic open
             if (!open) {
               const elapsed = performance.now() - lastProgrammaticListOpenRef.current;
               if (elapsed < 500) {
-                console.log('[Sheet] Ignoring spurious close, elapsed:', elapsed);
+                console.log('[Drawer] Ignoring spurious close, elapsed:', elapsed);
                 return;
               }
             }
@@ -518,23 +518,18 @@ const MapSection = ({
             }
           }}
         >
-        <SheetContent 
-            side="bottom" 
-            className="h-[85vh] rounded-t-3xl flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
-            hideCloseButton={true}
+          <DrawerContent 
+            showHandle={true}
+            hideOverlay={true}
+            className="h-[85vh] flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
           >
-            {/* Drag Handle */}
-            <div className="flex justify-center pt-1 pb-0.5">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
-            </div>
-            
-            <SheetHeader className="pb-2 flex-shrink-0 sticky top-0 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md z-10">
-              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+            <DrawerHeader className="pb-2 flex-shrink-0 sticky top-0 z-10">
+              <DrawerTitle className="text-xl font-bold flex items-center gap-2">
                 {t('locationsTitle', { ns: 'mapFilters' })}
                 <Badge variant="secondary" className="text-sm font-medium">
                   {places.length}
                 </Badge>
-              </SheetTitle>
+              </DrawerTitle>
               
               {/* Filter buttons with horizontal scroll */}
               <div className="flex gap-2 mt-2 overflow-x-auto overflow-y-visible scrollbar-hide pb-2 -mx-6 px-6 relative z-10">
@@ -577,7 +572,7 @@ const MapSection = ({
                   )}
                 </Button>
               </div>
-            </SheetHeader>
+            </DrawerHeader>
             
             <ScrollArea className="flex-1 -mx-6 px-6 [&>div]:!overflow-y-auto [&>div]:!scrollbar-none [&>div::-webkit-scrollbar]:hidden">
               <div className="space-y-2 py-2 pb-8">
@@ -605,7 +600,7 @@ const MapSection = ({
                         openedFromListRef.current = true;
                         previousOverlayRef.current = 'list';
                         console.log('[List Item Click] Set openedFromListRef = true');
-                        // Switch overlay to pin (Sheet will close)
+                        // Switch overlay to pin (Drawer will close)
                         setOverlay('pin');
                         // Ensure no stale returnTo leaks into this Home-list flow
                         handlePinClick({ ...(place as any), fromList: true, returnTo: undefined } as Place);
@@ -615,8 +610,8 @@ const MapSection = ({
                 )}
               </div>
             </ScrollArea>
-          </SheetContent>
-        </Sheet>
+          </DrawerContent>
+        </Drawer>
         
         {/* Loading/Error States */}
         {loading && (
