@@ -1269,6 +1269,7 @@ export type Database = {
       locations: {
         Row: {
           address: string | null
+          business_status: string | null
           category: string
           city: string | null
           claimed_by: string | null
@@ -1280,6 +1281,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_system_seeded: boolean | null
+          is_validated: boolean | null
           latitude: number | null
           longitude: number | null
           metadata: Json | null
@@ -1294,9 +1296,11 @@ export type Database = {
           pioneer_user_id: string | null
           place_types: string[] | null
           updated_at: string | null
+          validated_at: string | null
         }
         Insert: {
           address?: string | null
+          business_status?: string | null
           category: string
           city?: string | null
           claimed_by?: string | null
@@ -1308,6 +1312,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_system_seeded?: boolean | null
+          is_validated?: boolean | null
           latitude?: number | null
           longitude?: number | null
           metadata?: Json | null
@@ -1322,9 +1327,11 @@ export type Database = {
           pioneer_user_id?: string | null
           place_types?: string[] | null
           updated_at?: string | null
+          validated_at?: string | null
         }
         Update: {
           address?: string | null
+          business_status?: string | null
           category?: string
           city?: string | null
           claimed_by?: string | null
@@ -1336,6 +1343,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_system_seeded?: boolean | null
+          is_validated?: boolean | null
           latitude?: number | null
           longitude?: number | null
           metadata?: Json | null
@@ -1350,6 +1358,7 @@ export type Database = {
           pioneer_user_id?: string | null
           place_types?: string[] | null
           updated_at?: string | null
+          validated_at?: string | null
         }
         Relationships: [
           {

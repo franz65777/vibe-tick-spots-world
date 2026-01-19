@@ -91,6 +91,7 @@ export async function getSeedingStats(): Promise<{
   userCreated: number;
   needsEnrichment: number;
   enrichedLocations: number;
+  validatedLocations: number;
   cityCounts: Record<string, number>;
 }> {
   try {
@@ -110,6 +111,12 @@ export async function getSeedingStats(): Promise<{
       .from('locations')
       .select('*', { count: 'exact', head: true })
       .eq('needs_enrichment', true);
+
+    // Get validated locations count
+    const { count: validatedLocations } = await supabase
+      .from('locations')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_validated', true);
 
     // Get city distribution for seeded locations
     const { data: cityData } = await supabase
@@ -133,6 +140,7 @@ export async function getSeedingStats(): Promise<{
       userCreated: (totalLocations || 0) - (systemSeeded || 0),
       needsEnrichment: needsEnrichment || 0,
       enrichedLocations: (totalLocations || 0) - (needsEnrichment || 0),
+      validatedLocations: validatedLocations || 0,
       cityCounts,
     };
   } catch (error) {
@@ -143,20 +151,31 @@ export async function getSeedingStats(): Promise<{
       userCreated: 0,
       needsEnrichment: 0,
       enrichedLocations: 0,
+      validatedLocations: 0,
       cityCounts: {},
     };
   }
 }
 
+interface ValidationStats {
+  validated: number;
+  skipped_not_found: number;
+  skipped_closed: number;
+  skipped_mismatch: number;
+  api_errors: number;
+}
+
 interface SeedingBatchResult {
   success: boolean;
   dryRun?: boolean;
+  validationEnabled?: boolean;
   stats?: {
     citiesProcessed: number;
     locationsFound: number;
     locationsInserted: number;
     elapsedMs: number;
   };
+  validationStats?: ValidationStats | null;
   batch?: {
     start: number;
     size: number;
@@ -179,6 +198,7 @@ export async function runLocationSeeding(options?: {
   batchStart?: number;
   batchSize?: number;
   dryRun?: boolean;
+  enableValidation?: boolean;
 }): Promise<SeedingBatchResult> {
   try {
     const { data, error } = await supabase.functions.invoke('seed-locations', {
@@ -193,7 +213,9 @@ export async function runLocationSeeding(options?: {
     return {
       success: data?.success || false,
       dryRun: data?.dryRun,
+      validationEnabled: data?.validationEnabled,
       stats: data?.stats,
+      validationStats: data?.validationStats,
       batch: data?.batch,
       next: data?.next,
       completed: data?.completed,
@@ -209,6 +231,14 @@ export async function runLocationSeeding(options?: {
   }
 }
 
+interface FullSeedingResult {
+  success: boolean;
+  totalInserted: number;
+  totalValidated: number;
+  totalSkipped: number;
+  error?: string;
+}
+
 /**
  * Runs seeding for all cities in batches
  */
@@ -218,13 +248,22 @@ export async function runFullSeeding(
     totalBatches: number; 
     citiesProcessed: string[];
     locationsInserted: number;
+    validationStats?: ValidationStats;
   }) => void,
-  dryRun = false
-): Promise<{ success: boolean; totalInserted: number; error?: string }> {
+  dryRun = false,
+  enableValidation = true
+): Promise<FullSeedingResult> {
   const batchSize = 3;
   let batchStart = 0;
   let totalInserted = 0;
   let batchNumber = 0;
+  let cumulativeValidationStats: ValidationStats = {
+    validated: 0,
+    skipped_not_found: 0,
+    skipped_closed: 0,
+    skipped_mismatch: 0,
+    api_errors: 0,
+  };
   
   while (true) {
     batchNumber++;
@@ -233,13 +272,31 @@ export async function runFullSeeding(
       batchStart,
       batchSize,
       dryRun,
+      enableValidation,
     });
     
     if (!result.success) {
-      return { success: false, totalInserted, error: result.error };
+      return { 
+        success: false, 
+        totalInserted, 
+        totalValidated: cumulativeValidationStats.validated,
+        totalSkipped: cumulativeValidationStats.skipped_not_found + 
+                      cumulativeValidationStats.skipped_closed + 
+                      cumulativeValidationStats.skipped_mismatch,
+        error: result.error 
+      };
     }
     
     totalInserted += result.stats?.locationsInserted || 0;
+    
+    // Accumulate validation stats
+    if (result.validationStats) {
+      cumulativeValidationStats.validated += result.validationStats.validated;
+      cumulativeValidationStats.skipped_not_found += result.validationStats.skipped_not_found;
+      cumulativeValidationStats.skipped_closed += result.validationStats.skipped_closed;
+      cumulativeValidationStats.skipped_mismatch += result.validationStats.skipped_mismatch;
+      cumulativeValidationStats.api_errors += result.validationStats.api_errors;
+    }
     
     if (onProgress && result.batch) {
       onProgress({
@@ -247,6 +304,7 @@ export async function runFullSeeding(
         totalBatches: Math.ceil((result.totalCities || 36) / batchSize),
         citiesProcessed: result.batch.citiesProcessed,
         locationsInserted: totalInserted,
+        validationStats: cumulativeValidationStats,
       });
     }
     
@@ -260,5 +318,12 @@ export async function runFullSeeding(
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
-  return { success: true, totalInserted };
+  return { 
+    success: true, 
+    totalInserted,
+    totalValidated: cumulativeValidationStats.validated,
+    totalSkipped: cumulativeValidationStats.skipped_not_found + 
+                  cumulativeValidationStats.skipped_closed + 
+                  cumulativeValidationStats.skipped_mismatch,
+  };
 }
