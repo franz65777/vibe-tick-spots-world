@@ -6,11 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Google API costs per 1000 requests (as of 2024)
+// Cost constants (in USD) - Based on REAL Google Cloud billing data
+// Many APIs are FREE under the $200 monthly credit! Only photos and contact data cost money.
+// From billing report: Photo = €34.57/6821 = $0.0055, Contact = €3.59/2409 = $0.0016
 const COSTS = {
-  PLACE_DETAILS: 0.017, // $17 per 1000 = $0.017 each
-  PLACE_PHOTOS: 0.007,  // $7 per 1000 = $0.007 each
-  FIND_PLACE: 0.017,    // $17 per 1000 = $0.017 each
+  FIND_PLACE_ID_ONLY: 0,     // Find Place (ID only) - FREE under $200 credit!
+  BASIC_DATA: 0,              // Basic Data - FREE
+  CONTACT_DATA: 0.0016,       // Contact Data (opening_hours) - actual cost: ~$0.0016 each  
+  PLACE_PHOTOS: 0.0055,       // Place Photo - actual cost from billing: ~$0.0055 each
+  // Legacy aliases for backwards compatibility
+  PLACE_DETAILS: 0,           // Place Details Basic - FREE (was $0.017)
+  FIND_PLACE: 0,              // Find Place - FREE (was $0.017)
 };
 
 const MAX_BATCH_SIZE = 3; // Limit batch size to prevent memory issues with more photos
