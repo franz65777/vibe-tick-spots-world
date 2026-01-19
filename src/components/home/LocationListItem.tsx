@@ -43,7 +43,7 @@ export const LocationListItem = ({ place, enrichedAddress, onClick }: LocationLi
   return (
     <div
       onClick={onClick}
-      className="group flex items-center gap-3 p-3 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 cursor-pointer transition-all duration-200 hover:bg-accent/60 hover:border-border/50 hover:shadow-md active:scale-[0.98]"
+      className="group flex items-center gap-3 p-3 rounded-2xl bg-white/60 dark:bg-slate-700/60 backdrop-blur-md border border-white/40 dark:border-slate-600/40 cursor-pointer transition-all duration-200 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:border-white/60 dark:hover:border-slate-500/60 hover:shadow-md active:scale-[0.98]"
     >
       {/* Thumbnail / Category Icon */}
       <div className="relative flex-shrink-0 w-14 h-14 rounded-xl bg-muted/80 flex items-center justify-center overflow-hidden">
