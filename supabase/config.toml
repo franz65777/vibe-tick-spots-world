@@ -73,6 +73,9 @@ verify_jwt = false
 [functions.get-place-hours]
 verify_jwt = false
 
+[functions.validate-location]
+verify_jwt = false
+
 [db]
 # Port to use for the local database URL.
 port = 54322

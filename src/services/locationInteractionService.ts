@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { trackInteraction } from './recommendationService';
+import { toast } from 'sonner';
 
 export interface LocationInteraction {
   id: string;
@@ -9,8 +10,29 @@ export interface LocationInteraction {
   created_at: string;
 }
 
+// Validate location exists on Google Maps and is not permanently closed
+async function validateLocationWithGoogle(name: string, latitude: number, longitude: number): Promise<{ valid: boolean; google_place_id?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('validate-location', {
+      body: { name, latitude, longitude }
+    });
+
+    if (error) {
+      console.error('Location validation error:', error);
+      // On error, allow save to not block user
+      return { valid: true };
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Location validation failed:', err);
+    // On error, allow save
+    return { valid: true };
+  }
+}
+
 class LocationInteractionService {
-  // Save a location for the user - IMPROVED duplicate prevention
+  // Save a location for the user - with validation for closed locations
   async saveLocation(locationId: string, locationData?: any, saveTag: string = 'to_try'): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
@@ -29,30 +51,79 @@ class LocationInteractionService {
         if (existingLocation) {
           internalLocationId = existingLocation.id;
         } else {
-          // Create new location only if it doesn't exist
-          const { data: newLocation, error: locationError } = await supabase
-            .from('locations')
-            .insert({
-              google_place_id: locationData.google_place_id,
-              name: locationData.name,
-              address: locationData.address,
-              latitude: locationData.latitude,
-              longitude: locationData.longitude,
-              category: locationData.category || 'restaurant',
-              place_types: locationData.types || [],
-              created_by: user.user.id,
-              pioneer_user_id: user.user.id
-            })
-            .select('id')
-            .single();
+          // For external locations (Foursquare/OSM), validate with Google before creating
+          if (locationData.name && locationData.latitude && locationData.longitude) {
+            const validation = await validateLocationWithGoogle(
+              locationData.name,
+              locationData.latitude,
+              locationData.longitude
+            );
 
-          if (locationError) {
-            console.error('Location creation error:', locationError);
-            return false;
+            if (!validation.valid) {
+              console.log('Location validation failed:', validation.error);
+              toast.error(validation.error || 'Questa location non esiste più su Google Maps');
+              return false;
+            }
+
+            // If we got a google_place_id from validation, use it
+            if (validation.google_place_id) {
+              // Check if location already exists with this google_place_id
+              const { data: validatedLocation } = await supabase
+                .from('locations')
+                .select('id')
+                .eq('google_place_id', validation.google_place_id)
+                .maybeSingle();
+
+              if (validatedLocation) {
+                internalLocationId = validatedLocation.id;
+              } else {
+                // Update locationData with validated google_place_id
+                locationData.google_place_id = validation.google_place_id;
+              }
+            }
           }
-          internalLocationId = newLocation.id;
+
+          // Create new location only if we don't have an internal ID yet
+          if (internalLocationId === locationId) {
+            const { data: newLocation, error: locationError } = await supabase
+              .from('locations')
+              .insert({
+                google_place_id: locationData.google_place_id,
+                name: locationData.name,
+                address: locationData.address,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                category: locationData.category || 'restaurant',
+                place_types: locationData.types || [],
+                created_by: user.user.id,
+                pioneer_user_id: user.user.id
+              })
+              .select('id')
+              .single();
+
+            if (locationError) {
+              console.error('Location creation error:', locationError);
+              return false;
+            }
+            internalLocationId = newLocation.id;
+          }
         }
       } else {
+        // For locations without google_place_id, validate if we have name + coords
+        if (locationData?.name && locationData?.latitude && locationData?.longitude) {
+          const validation = await validateLocationWithGoogle(
+            locationData.name,
+            locationData.latitude,
+            locationData.longitude
+          );
+
+          if (!validation.valid) {
+            console.log('Location validation failed:', validation.error);
+            toast.error(validation.error || 'Questa location non esiste più su Google Maps');
+            return false;
+          }
+        }
+
         // If no locationData, try to check if locationId is a google_place_id
         const { data: existingLocation } = await supabase
           .from('locations')
@@ -66,7 +137,6 @@ class LocationInteractionService {
       }
 
       // Delete any existing save with different tag to ensure only one save per location
-      // Delete from user_saved_locations
       await supabase
         .from('user_saved_locations')
         .delete()
@@ -213,7 +283,6 @@ class LocationInteractionService {
           await trackInteraction(user.user.id, locationId, 'like');
         } catch (trackError) {
           console.error('Error tracking like interaction:', trackError);
-          // Don't fail the like if tracking fails
         }
 
         // Get updated count
