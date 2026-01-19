@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye, RefreshCw, CheckCircle2, AlertCircle, StopCircle } from 'lucide-react';
-import { getSeedingStats, runFullSeeding, runLocationSeeding } from '@/services/lazyPhotoService';
+import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye, RefreshCw, CheckCircle2, AlertCircle, StopCircle, ShieldCheck, XCircle, Ban, DollarSign } from 'lucide-react';
+import { getSeedingStats, runFullSeeding } from '@/services/lazyPhotoService';
 import { toast } from 'sonner';
 
 interface SeedingStats {
@@ -13,7 +13,15 @@ interface SeedingStats {
   userCreated: number;
   needsEnrichment: number;
   enrichedLocations: number;
+  validatedLocations: number;
   cityCounts: Record<string, number>;
+}
+
+interface ValidationStats {
+  validated: number;
+  skipped_not_found: number;
+  skipped_closed: number;
+  skipped_mismatch: number;
 }
 
 type SeedingStatus = 'idle' | 'starting' | 'running' | 'completed';
@@ -30,6 +38,7 @@ export const SeedingDashboard = () => {
   const [totalBatches] = useState(Math.ceil(TOTAL_CITIES / BATCH_SIZE));
   const [currentCities, setCurrentCities] = useState<string[]>([]);
   const [totalInserted, setTotalInserted] = useState(0);
+  const [validationStats, setValidationStats] = useState<ValidationStats | null>(null);
   const abortRef = useRef(false);
 
   const fetchStats = async () => {
@@ -58,17 +67,17 @@ export const SeedingDashboard = () => {
     setTotalInserted(0);
     setCurrentBatch(0);
     setSeedingProgress(0);
+    setValidationStats(null);
 
-    // Use a regular toast with short duration instead of loading toast
-    const toastId = toast.info(dryRun ? 'Avvio test...' : 'Avvio seeding...', {
+    toast.info(dryRun ? 'Avvio test...' : 'Avvio seeding con validazione Google...', {
       duration: 2000,
     });
 
     try {
       setSeedingStatus('running');
       
-      toast.success(dryRun ? '🧪 Test avviato' : '🚀 Seeding avviato!', {
-        description: `Processamento di ${TOTAL_CITIES} città in ${totalBatches} batch`,
+      toast.success(dryRun ? '🧪 Test avviato' : '🚀 Seeding con validazione avviato!', {
+        description: `Processamento di ${TOTAL_CITIES} città con Google ID validation (GRATIS)`,
         duration: 3000,
       });
 
@@ -80,8 +89,12 @@ export const SeedingDashboard = () => {
           setCurrentCities(progress.citiesProcessed);
           setTotalInserted(progress.locationsInserted);
           setSeedingProgress((progress.currentBatch / progress.totalBatches) * 100);
+          if (progress.validationStats) {
+            setValidationStats(progress.validationStats);
+          }
         },
-        dryRun
+        dryRun,
+        true // enableValidation
       );
 
       if (result.success) {
@@ -90,7 +103,7 @@ export const SeedingDashboard = () => {
         await fetchStats();
         
         toast.success('✅ Seeding completato!', {
-          description: `${result.totalInserted} location inserite`,
+          description: `${result.totalInserted} location inserite • ${result.totalValidated} validate • ${result.totalSkipped} scartate`,
           duration: 5000,
         });
       } else {
@@ -132,10 +145,17 @@ export const SeedingDashboard = () => {
   const enrichmentPercent = stats ? 
     Math.round((stats.enrichedLocations / Math.max(stats.totalLocations, 1)) * 100) : 0;
 
+  const validationPercent = stats ?
+    Math.round((stats.validatedLocations / Math.max(stats.systemSeeded, 1)) * 100) : 0;
+
   const topCities = stats ? 
     Object.entries(stats.cityCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6) : [];
+
+  const totalSkipped = validationStats 
+    ? validationStats.skipped_not_found + validationStats.skipped_closed + validationStats.skipped_mismatch
+    : 0;
 
   return (
     <Card className="overflow-hidden">
@@ -151,15 +171,21 @@ export const SeedingDashboard = () => {
               </span>
             )}
           </CardTitle>
-          <Button
-            onClick={handleRefresh}
-            disabled={loading || seedingStatus === 'running'}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+              <DollarSign className="w-3 h-3 mr-1" />
+              €0 Free
+            </Badge>
+            <Button
+              onClick={handleRefresh}
+              disabled={loading || seedingStatus === 'running'}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
@@ -185,9 +211,9 @@ export const SeedingDashboard = () => {
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-sm">🌍 Seeding in esecuzione</p>
+                <p className="font-medium text-sm">🌍 Seeding + Validazione Google</p>
                 <p className="text-xs text-muted-foreground">
-                  Batch {currentBatch}/{totalBatches} • {totalInserted} location inserite
+                  Batch {currentBatch}/{totalBatches} • {totalInserted} inserite
                 </p>
               </div>
               <Badge variant="secondary" className="text-xs font-mono">
@@ -195,6 +221,29 @@ export const SeedingDashboard = () => {
               </Badge>
             </div>
             <Progress value={seedingProgress} className="h-2" />
+            
+            {/* Live validation stats */}
+            {validationStats && (
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                <div className="flex items-center gap-1 text-green-600">
+                  <ShieldCheck className="w-3 h-3" />
+                  <span>{validationStats.validated}</span>
+                </div>
+                <div className="flex items-center gap-1 text-red-500">
+                  <XCircle className="w-3 h-3" />
+                  <span>{validationStats.skipped_not_found}</span>
+                </div>
+                <div className="flex items-center gap-1 text-orange-500">
+                  <Ban className="w-3 h-3" />
+                  <span>{validationStats.skipped_closed}</span>
+                </div>
+                <div className="flex items-center gap-1 text-amber-500">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>{validationStats.skipped_mismatch}</span>
+                </div>
+              </div>
+            )}
+
             {currentCities.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {currentCities.map(city => (
@@ -219,7 +268,7 @@ export const SeedingDashboard = () => {
         
         {/* Completed State */}
         {seedingStatus === 'completed' && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
               <div className="flex-1">
@@ -235,6 +284,27 @@ export const SeedingDashboard = () => {
                 Chiudi
               </Button>
             </div>
+            
+            {/* Final validation stats */}
+            {validationStats && totalSkipped > 0 && (
+              <div className="bg-muted/50 rounded-lg p-2 space-y-1">
+                <p className="text-xs font-medium">Filtri Google applicati:</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <XCircle className="w-3 h-3 text-red-500" />
+                    <span className="text-muted-foreground">{validationStats.skipped_not_found} non trovate</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Ban className="w-3 h-3 text-orange-500" />
+                    <span className="text-muted-foreground">{validationStats.skipped_closed} chiuse</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-amber-500" />
+                    <span className="text-muted-foreground">{validationStats.skipped_mismatch} mismatch</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -249,6 +319,13 @@ export const SeedingDashboard = () => {
           </div>
           <div className="bg-muted/50 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck className="w-4 h-4 text-green-500" />
+              <span className="text-xs text-muted-foreground">Validate</span>
+            </div>
+            <div className="text-xl font-bold">{stats?.validatedLocations.toLocaleString()}</div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span className="text-xs text-muted-foreground">Auto-Seed</span>
             </div>
@@ -256,19 +333,26 @@ export const SeedingDashboard = () => {
           </div>
           <div className="bg-muted/50 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-green-500" />
+              <Users className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-muted-foreground">Da Utenti</span>
             </div>
             <div className="text-xl font-bold">{stats?.userCreated.toLocaleString()}</div>
           </div>
-          <div className="bg-muted/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Eye className="w-4 h-4 text-blue-500" />
-              <span className="text-xs text-muted-foreground">Da Arricchire</span>
-            </div>
-            <div className="text-xl font-bold">{stats?.needsEnrichment.toLocaleString()}</div>
-          </div>
         </div>
+
+        {/* Validation Progress */}
+        {stats && stats.systemSeeded > 0 && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" />
+                Google ID Validation
+              </span>
+              <span className="text-xs font-medium">{validationPercent}%</span>
+            </div>
+            <Progress value={validationPercent} className="h-1.5" />
+          </div>
+        )}
 
         {/* Enrichment Progress */}
         <div className="space-y-2">
@@ -328,7 +412,8 @@ export const SeedingDashboard = () => {
         </div>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Popola location in {TOTAL_CITIES} città con OpenStreetMap. Processa {BATCH_SIZE} città alla volta per evitare timeout. Le foto vengono caricate solo quando un utente visualizza la location.
+          🆓 <strong>Costo: €0</strong> - Usa OpenStreetMap (gratis) + Google Find Place ID (gratis sotto $200/mese). 
+          Filtra automaticamente location chiuse o inesistenti su Google Maps prima di salvarle.
         </p>
       </CardContent>
     </Card>
