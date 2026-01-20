@@ -78,6 +78,8 @@ const UserProfilePage = () => {
       searchMode?: 'locations' | 'users';
       returnTo?: string;
       chatUserId?: string;
+      savedByPlaceId?: string;
+      savedByGooglePlaceId?: string;
     } | null;
     if (state?.returnTo === 'chat' && state?.chatUserId) {
       // Return to chat with specific user
@@ -87,6 +89,13 @@ const UserProfilePage = () => {
         },
         replace: true
       });
+    } else if (state?.returnTo === 'savedBy') {
+      // Store state in sessionStorage so parent page can reopen SavedByModal
+      sessionStorage.setItem('reopenSavedBy', JSON.stringify({
+        placeId: state.savedByPlaceId,
+        googlePlaceId: state.savedByGooglePlaceId,
+      }));
+      navigate(-1);
     } else if (state?.from === 'explore') {
       // Return to explore with preserved search state
       navigate('/explore', {

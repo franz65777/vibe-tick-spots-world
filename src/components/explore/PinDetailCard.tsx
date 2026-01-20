@@ -387,6 +387,27 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   );
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
+  // Check if we should reopen SavedByModal (coming back from profile)
+  useEffect(() => {
+    const savedByData = sessionStorage.getItem('reopenSavedBy');
+    if (savedByData) {
+      try {
+        const { placeId, googlePlaceId } = JSON.parse(savedByData);
+        const currentPlaceId = place.id || locationDetails?.id;
+        const currentGooglePlaceId = place.google_place_id || locationDetails?.google_place_id;
+        
+        // Only reopen if the IDs match this location
+        if ((placeId && placeId === currentPlaceId) || 
+            (googlePlaceId && googlePlaceId === currentGooglePlaceId)) {
+          setSavedByOpen(true);
+          sessionStorage.removeItem('reopenSavedBy');
+        }
+      } catch (e) {
+        sessionStorage.removeItem('reopenSavedBy');
+      }
+    }
+  }, [place.id, place.google_place_id, locationDetails?.id, locationDetails?.google_place_id]);
+
   // Fetch location photos - use pre-loaded photos if available
   const { photos: locationPhotos, loading: photosLoading } = useLocationPhotos({
     locationId: locationIdForEngagement,

@@ -45,8 +45,15 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
 
   const handleUserClick = (userId: string) => {
     if (userId !== currentUser?.id) {
+      // Pass returnTo state so profile page can navigate back to reopen SavedByModal
+      navigate(`/profile/${userId}`, {
+        state: {
+          returnTo: 'savedBy',
+          savedByPlaceId: placeId,
+          savedByGooglePlaceId: googlePlaceId,
+        }
+      });
       onClose();
-      navigate(`/profile/${userId}`);
     }
   };
 
