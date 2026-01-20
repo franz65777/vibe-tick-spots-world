@@ -125,25 +125,24 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const { campaign } = useMarketingCampaign(place?.id, place?.google_place_id);
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
-  // Check if we should reopen SavedByModal (coming back from profile)
+  // Listen for event to reopen SavedByModal (coming back from profile)
   useEffect(() => {
-    const savedByData = sessionStorage.getItem('reopenSavedBy');
-    if (savedByData) {
-      try {
-        const { placeId, googlePlaceId } = JSON.parse(savedByData);
-        const currentPlaceId = place?.id;
-        const currentGooglePlaceId = place?.google_place_id;
-        
-        // Only reopen if the IDs match this location
-        if ((placeId && placeId === currentPlaceId) || 
-            (googlePlaceId && googlePlaceId === currentGooglePlaceId)) {
-          setShowSavedBy(true);
-          sessionStorage.removeItem('reopenSavedBy');
-        }
-      } catch (e) {
-        sessionStorage.removeItem('reopenSavedBy');
+    const handleReopenSavedBy = (event: CustomEvent) => {
+      const { placeId, googlePlaceId } = event.detail;
+      const currentPlaceId = place?.id;
+      const currentGooglePlaceId = place?.google_place_id;
+      
+      // Only reopen if the IDs match this location
+      if ((placeId && placeId === currentPlaceId) || 
+          (googlePlaceId && googlePlaceId === currentGooglePlaceId)) {
+        setShowSavedBy(true);
       }
-    }
+    };
+
+    window.addEventListener('reopen-saved-by-modal', handleReopenSavedBy as EventListener);
+    return () => {
+      window.removeEventListener('reopen-saved-by-modal', handleReopenSavedBy as EventListener);
+    };
   }, [place?.id, place?.google_place_id]);
   
   // Get the current locale for date formatting

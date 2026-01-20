@@ -90,10 +90,12 @@ const UserProfilePage = () => {
         replace: true
       });
     } else if (state?.returnTo === 'savedBy') {
-      // Store state in sessionStorage so parent page can reopen SavedByModal
-      sessionStorage.setItem('reopenSavedBy', JSON.stringify({
-        placeId: state.savedByPlaceId,
-        googlePlaceId: state.savedByGooglePlaceId,
+      // Dispatch event to reopen SavedByModal before navigating back
+      window.dispatchEvent(new CustomEvent('reopen-saved-by-modal', {
+        detail: {
+          placeId: state.savedByPlaceId,
+          googlePlaceId: state.savedByGooglePlaceId,
+        }
       }));
       navigate(-1);
     } else if (state?.from === 'explore') {
