@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
     let dryRun = false;
     let specificCities: string[] | null = null;
     let enableValidation = true; // New: enable/disable Google validation
-    let maxValidationsPerBatch = 300; // Increased limit for more locations per batch
+    let maxValidationsPerBatch = 150; // Reduced to avoid WORKER_LIMIT errors
 
     if (req.method === 'POST') {
       try {
@@ -484,7 +484,7 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase
           .from('locations')
           .upsert(batch, {
-            onConflict: 'osm_id, google_place_id', // Handle both conflict types
+            onConflict: 'osm_id', // Use single constraint - duplicates handled by seenGoogleIds
             ignoreDuplicates: false, // Update with new validation data
           })
           .select('id');
