@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationData } from '@/hooks/useNotificationData';
 import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
 import { useTranslation } from 'react-i18next';
 import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
@@ -11,6 +12,9 @@ const NotificationsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, refresh } = useNotifications();
+  
+  // Pre-fetch all notification data in batch (eliminates N+1 queries)
+  const notificationData = useNotificationData(notifications);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   // Mark all as read when page loads and whenever there are unread notifications
   // This ensures new notifications (e.g. after accepting a follow request) are also marked as read
@@ -175,6 +179,8 @@ const NotificationsPage = () => {
                 }}
                 openSwipeId={openSwipeId}
                 onSwipeOpen={setOpenSwipeId}
+                // Pass pre-fetched data to avoid N+1 queries
+                prefetchedData={notificationData}
               />
             ))}
           </div>

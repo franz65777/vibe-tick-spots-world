@@ -44,6 +44,20 @@ const PostThumbnail = ({ postId, onClick }: { postId: string; onClick: (e: React
   );
 };
 
+// Prefetched data interface (from useNotificationData hook)
+interface PrefetchedData {
+  loading: boolean;
+  getProfile: (userId: string | undefined) => { id: string; username: string; avatar_url: string | null } | null;
+  isFollowing: (userId: string | undefined) => boolean;
+  hasActiveStory: (userId: string | undefined) => boolean;
+  getUserStories: (userId: string | undefined) => any[];
+  isCommentLiked: (commentId: string | undefined) => boolean;
+  getPostContentType: (postId: string | undefined) => 'review' | 'post';
+  isUserPrivate: (userId: string | undefined) => boolean;
+  hasPendingRequest: (userId: string | undefined) => boolean;
+  isLocationShareActive: (userId: string | undefined, locationId: string | undefined) => boolean;
+}
+
 interface MobileNotificationItemProps {
   notification: {
     id: string;
@@ -85,6 +99,8 @@ interface MobileNotificationItemProps {
   onRefresh?: () => void | Promise<void>;
   openSwipeId?: string | null;
   onSwipeOpen?: (id: string | null) => void;
+  // Prefetched data to avoid N+1 queries - if provided, skip individual fetches
+  prefetchedData?: PrefetchedData;
 }
 
 const MobileNotificationItem = ({ 
@@ -94,25 +110,69 @@ const MobileNotificationItem = ({
   onDelete,
   onRefresh,
   openSwipeId,
-  onSwipeOpen
+  onSwipeOpen,
+  prefetchedData
 }: MobileNotificationItemProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isFollowing, setIsFollowing] = useState(false);
+  
+  // Determine target user ID for this notification
+  const notificationUserId = notification.type === 'location_share' 
+    ? (notification.data?.shared_by_user_id ?? notification.data?.user_id)
+    : notification.data?.user_id;
+  
+  // Use prefetched data if available, otherwise initialize local state for fallback
+  const hasPrefetchedData = !!prefetchedData && !prefetchedData.loading;
+  
+  // Get prefetched profile data
+  const prefetchedProfile = hasPrefetchedData ? prefetchedData.getProfile(notificationUserId) : null;
+  
+  // Local state - only used if prefetchedData is not available
+  const [isFollowing, setIsFollowing] = useState(() => 
+    hasPrefetchedData ? prefetchedData.isFollowing(notificationUserId) : false
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const [targetUserId, setTargetUserId] = useState<string | null>(notification.data?.user_id ?? null);
-  const [avatarOverride, setAvatarOverride] = useState<string | null>(null);
-  const [usernameOverride, setUsernameOverride] = useState<string | null>(null);
-  const [hasActiveStory, setHasActiveStory] = useState(false);
-  const [commentLiked, setCommentLiked] = useState(false);
+  const [targetUserId, setTargetUserId] = useState<string | null>(notificationUserId ?? null);
+  const [avatarOverride, setAvatarOverride] = useState<string | null>(() => 
+    prefetchedProfile?.avatar_url ?? null
+  );
+  const [usernameOverride, setUsernameOverride] = useState<string | null>(() => 
+    prefetchedProfile?.username ?? null
+  );
+  const [hasActiveStory, setHasActiveStory] = useState(() => 
+    hasPrefetchedData ? prefetchedData.hasActiveStory(notificationUserId) : false
+  );
+  const [commentLiked, setCommentLiked] = useState(() => 
+    hasPrefetchedData ? prefetchedData.isCommentLiked(notification.data?.comment_id) : false
+  );
   const [showStories, setShowStories] = useState(false);
-  const [userStories, setUserStories] = useState<any[]>([]);
-  const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>({});
-  const [isLocationShareActive, setIsLocationShareActive] = useState(true);
+  const [userStories, setUserStories] = useState<any[]>(() => 
+    hasPrefetchedData ? prefetchedData.getUserStories(notificationUserId) : []
+  );
+  const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>(() => {
+    if (!hasPrefetchedData) return {};
+    const overrides: Record<string, { name: string; avatar?: string }> = {};
+    notification.data?.grouped_users?.forEach(u => {
+      const profile = prefetchedData.getProfile(u.id);
+      if (profile) {
+        overrides[u.id] = { name: profile.username, avatar: profile.avatar_url || undefined };
+      }
+    });
+    return overrides;
+  });
+  const [isLocationShareActive, setIsLocationShareActive] = useState(() => 
+    hasPrefetchedData 
+      ? prefetchedData.isLocationShareActive(notificationUserId, notification.data?.location_id)
+      : true
+  );
   const [followRequestHandled, setFollowRequestHandled] = useState(false);
-  const [targetIsPrivate, setTargetIsPrivate] = useState(false);
-  const [followRequestSent, setFollowRequestSent] = useState(false);
+  const [targetIsPrivate, setTargetIsPrivate] = useState(() => 
+    hasPrefetchedData ? prefetchedData.isUserPrivate(notificationUserId) : false
+  );
+  const [followRequestSent, setFollowRequestSent] = useState(() => 
+    hasPrefetchedData ? prefetchedData.hasPendingRequest(notificationUserId) : false
+  );
 
   // Infer content type (e.g. review) when old notifications miss content_type
   const [inferredContentType, setInferredContentType] = useState<string | null>(null);
@@ -131,8 +191,11 @@ const MobileNotificationItem = ({
     }
   }, [openSwipeId, notification.id]);
 
-  // Check if location share is still active
+  // Check if location share is still active - skip if prefetched data available
   useEffect(() => {
+    // Skip individual fetch if we have prefetched data
+    if (hasPrefetchedData) return;
+    
     if (notification.type === 'location_share' && notification.data?.location_id) {
       const uid = notification.data?.shared_by_user_id || notification.data?.user_id;
       const locId = notification.data.location_id;
@@ -163,17 +226,19 @@ const MobileNotificationItem = ({
       };
 
       checkLocationShareStatus();
-      // Note: Realtime subscription removed to prevent "subscribe multiple times" error
-      // Status is checked on mount which is sufficient for notifications
     }
-  }, [notification.type, notification.data?.location_id, notification.data?.shared_by_user_id, notification.data?.user_id]);
+  }, [notification.type, notification.data?.location_id, notification.data?.shared_by_user_id, notification.data?.user_id, hasPrefetchedData]);
 
   // Cache for profile data to avoid redundant queries
   const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
   const CACHE_DURATION = 30 * 1000; // 30 seconds for more frequent updates
 
   // Resolve target user (id and avatar), check follow status, and check for active stories
+  // SKIP if we have prefetched data - this eliminates the N+1 query problem
   useEffect(() => {
+    // Skip individual fetches if we have prefetched data
+    if (hasPrefetchedData) return;
+    
     const resolveAndCheck = async () => {
       try {
         let uid = (notification.data?.user_id ?? (notification.data as any)?.friend_id ?? null) as string | null;
@@ -362,7 +427,7 @@ const MobileNotificationItem = ({
     };
 
     resolveAndCheck();
-  }, [user?.id, notification.id]);
+  }, [user?.id, notification.id, hasPrefetchedData]);
 
   // Infer post content type for legacy notifications (e.g. review comments without content_type)
   useEffect(() => {
