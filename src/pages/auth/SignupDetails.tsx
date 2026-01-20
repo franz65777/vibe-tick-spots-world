@@ -82,7 +82,7 @@ const SignupDetails: React.FC = () => {
             </Select>
           </div>
 
-          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12 rounded-xl">
+          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12 rounded-full">
             {t('signup:continue')}
           </Button>
 

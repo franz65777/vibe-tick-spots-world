@@ -243,7 +243,7 @@ const SignupPassword: React.FC = () => {
             </div>
           </div>
 
-          <Button disabled={!canCreate || loading} onClick={createAccount} className="w-full h-12 rounded-xl">
+          <Button disabled={!canCreate || loading} onClick={createAccount} className="w-full h-12 rounded-full">
             {loading ? t('signup:creating') : t('signup:createAccount')}
           </Button>
 

@@ -1,5 +1,6 @@
 import { X, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
-import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { type SaveTag } from '@/utils/saveTags';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
@@ -37,9 +38,17 @@ interface SaverUser {
 const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [savers, setSavers] = useState<SaverUser[]>([]);
   const [query, setQuery] = useState('');
+
+  const handleUserClick = (userId: string) => {
+    if (userId !== currentUser?.id) {
+      onClose();
+      navigate(`/profile/${userId}`);
+    }
+  };
 
   useEffect(() => {
     const fetchSavers = async () => {
@@ -154,7 +163,6 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
     if (!currentUser) return;
     try {
       if (isFollowing) {
-        // Optional: support unfollow
         await supabase
           .from('follows')
           .delete()
@@ -193,31 +201,38 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
       `}</style>
 
       <div 
-        className="bg-background w-full rounded-t-xl shadow-xl flex flex-col"
+        className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl w-full rounded-t-3xl shadow-2xl flex flex-col border-t border-border/20"
         style={{ height: '80vh', marginBottom: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 flex-shrink-0">
+        {/* Drag handle indicator */}
+        <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mt-3 mb-1" />
+
+        <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
           <h2 className="text-lg font-semibold text-foreground">{t('savedBy', { ns: 'common' })}</h2>
-          <button onClick={onClose} aria-label="Close">
-            <X className="w-6 h-6 text-muted-foreground" />
+          <button 
+            onClick={onClose} 
+            aria-label="Close"
+            className="p-2 rounded-full hover:bg-muted/50 transition-colors"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
-        <div className="p-4 flex-shrink-0">
+        <div className="px-4 pb-3 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('searchPeople', { ns: 'common' }) as string}
-              className="pl-9 rounded-xl"
+              className="pl-9 rounded-2xl bg-white/50 dark:bg-slate-800/50 border-border/20"
             />
           </div>
         </div>
 
         <ScrollArea className="flex-1 scrollbar-hide">
-          <div className="p-4 pb-8 space-y-3">
+          <div className="px-4 pb-8 space-y-2">
             {loading ? (
               <div className="flex items-center justify-center py-10">
                 <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -229,33 +244,47 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
             ) : (
               filtered.map((u) => {
                 const isCurrentUser = u.id === currentUser?.id;
-                const saveTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === u.save_tag);
                 return (
-                  <div key={u.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {/* Save category indicator */}
+                  <div 
+                    key={u.id} 
+                    className="flex items-center justify-between p-3 bg-white/60 dark:bg-slate-700/40 backdrop-blur-lg rounded-2xl border border-border/10"
+                  >
+                    <button
+                      onClick={() => handleUserClick(u.id)}
+                      className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity text-left"
+                      disabled={isCurrentUser}
+                    >
+                      {/* Save tag indicator */}
                       <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                         <img src={TAG_ICONS[u.save_tag] || saveTagBeen} alt="" className="w-5 h-5 object-contain" />
                       </div>
-                      <Avatar className="h-10 w-10">
+
+                      {/* Avatar with ring styling */}
+                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background flex-shrink-0">
                         <AvatarImage src={u.avatar_url || undefined} />
-                        <AvatarFallback>{(u.username || 'U')[0].toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="bg-muted text-muted-foreground font-semibold">
+                          {(u.username || 'U')[0].toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium text-foreground">
+
+                      {/* Username info */}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground truncate">
                           {isCurrentUser ? t('you', { ns: 'common', defaultValue: 'You' }) : (u.username || 'User')}
                         </p>
                         {!isCurrentUser && (
-                          <p className="text-sm text-muted-foreground">@{u.username}</p>
+                          <p className="text-sm text-muted-foreground truncate">@{u.username}</p>
                         )}
                       </div>
-                    </div>
+                    </button>
+
+                    {/* Follow button */}
                     {!isCurrentUser && (
                       <Button
                         size="sm"
                         variant={u.isFollowing ? 'outline' : 'default'}
                         onClick={() => toggleFollow(u.id, u.isFollowing)}
-                        className="rounded-full px-4"
+                        className="rounded-full px-4 ml-2 flex-shrink-0"
                       >
                         {u.isFollowing
                           ? t('following', { ns: 'common', defaultValue: 'Following' })

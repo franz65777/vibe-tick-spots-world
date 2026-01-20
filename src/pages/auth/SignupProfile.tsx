@@ -114,7 +114,7 @@ const SignupProfile: React.FC = () => {
               <Input
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
                 placeholder={t('signup:usernamePlaceholder')}
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -142,7 +142,7 @@ const SignupProfile: React.FC = () => {
             )}
           </div>
 
-          <Button disabled={!canContinue || checking} onClick={onNext} className="w-full h-12 rounded-xl">
+          <Button disabled={!canContinue || checking} onClick={onNext} className="w-full h-12 rounded-full">
             {t('signup:continue')}
           </Button>
 
