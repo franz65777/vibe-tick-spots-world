@@ -255,9 +255,20 @@ const FeedPage = memo(() => {
     };
   }, [commentDrawerOpen, shareModalOpen]);
 
+  // Stable post ID set for realtime subscription - only recreate channel when post IDs actually change
+  const postIdsRef = useRef<string>('');
+  const feedPostIds = useMemo(() => {
+    const ids = feedItems.map((p: any) => p.id).sort().join(',');
+    return ids;
+  }, [feedItems]);
+
   // Keep post counts live in the feed without needing N realtime channels (one per post)
   useEffect(() => {
     if (!user?.id) return;
+    
+    // Skip if post IDs haven't changed
+    if (postIdsRef.current === feedPostIds) return;
+    postIdsRef.current = feedPostIds;
 
     const postIdSet = new Set<string>(feedItems.map((p: any) => p.id));
     if (postIdSet.size === 0) return;
@@ -274,7 +285,7 @@ const FeedPage = memo(() => {
     };
 
     const ch = supabase
-      .channel(`feed-counts-${feedType}-${user.id}`)
+      .channel(`feed-counts-${feedType}-${user.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'post_comments' },
@@ -312,7 +323,7 @@ const FeedPage = memo(() => {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [user?.id, feedType, feedItems.length]);
+  }, [user?.id, feedType, feedPostIds, queryClient]);
 
   // Carica likes quando cambiano i feedItems
   useEffect(() => {
