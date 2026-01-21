@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, Send, X, MessageSquare, Image, Trash2, Smile } from 'lucide-react';
 import pinIcon from '@/assets/pin-icon.png';
@@ -157,7 +157,7 @@ const MessagesPage = () => {
     ro.observe(viewport);
     return () => ro.disconnect();
   }, [view]);
-  const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
+  const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'smooth') => {
     const wrapper = chatViewportWrapperRef.current;
     const tryScroll = () => {
       const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
@@ -176,8 +176,9 @@ const MessagesPage = () => {
     requestAnimationFrame(tryScroll);
     setTimeout(tryScroll, 80);
     setTimeout(tryScroll, 220);
-  };
-  const loadThreads = async () => {
+  }, []);
+
+  const loadThreads = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
@@ -235,8 +236,9 @@ const MessagesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-  const loadMessages = async (otherUserId: string) => {
+  }, [user]);
+
+  const loadMessages = useCallback(async (otherUserId: string) => {
     try {
       setLoading(true);
       const data = await messageService.getMessagesInThread(otherUserId);
@@ -267,8 +269,9 @@ const MessagesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-  const setupRealtimeSubscription = () => {
+  }, [user, scrollToBottom]);
+
+  const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
@@ -284,12 +287,14 @@ const MessagesPage = () => {
       setMessages(prev => [...prev, payload.new as DirectMessage]);
     }).subscribe();
     channelRef.current = channel;
-  };
-  const handleThreadSelect = (thread: MessageThread) => {
+  }, [selectedThread, user]);
+
+  const handleThreadSelect = useCallback((thread: MessageThread) => {
     setSelectedThread(thread);
     setView('chat');
-  };
-  const handleSendMessage = async () => {
+  }, []);
+
+  const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || !selectedThread || !user) return;
     const otherParticipant = getOtherParticipant(selectedThread);
     if (!otherParticipant) return;
@@ -304,8 +309,9 @@ const MessagesPage = () => {
     } finally {
       setSending(false);
     }
-  };
-  const handleBack = () => {
+  }, [newMessage, selectedThread, user, loadMessages, loadThreads]);
+
+  const handleBack = useCallback(() => {
     if (view === 'chat') {
       // If chat was opened from a user profile, navigate back to that profile
       if (openedFromProfileId) {
@@ -323,7 +329,8 @@ const MessagesPage = () => {
       // When exiting from threads list, go to home page
       navigate('/');
     }
-  };
+  }, [view, openedFromProfileId, navigate]);
+
   const handleLongPressStart = (messageId: string) => {
     const timer = setTimeout(() => {
       setSelectedMessageId(messageId);

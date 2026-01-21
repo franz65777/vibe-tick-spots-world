@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster';
@@ -74,6 +74,7 @@ const LeafletMapSetup = ({
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const markerConfigsRef = useRef<Map<string, string>>(new Map()); // For incremental update change detection
   const currentLocationMarkerRef = useRef<L.Marker | null>(null);
   const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const cityMarkersRef = useRef<Map<string, L.Marker>>(new Map());
@@ -313,6 +314,7 @@ const LeafletMapSetup = ({
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
+      markerConfigsRef.current.clear(); // Clean up config cache
       tileLayerRef.current = null;
       currentLocationMarkerRef.current = null;
     };
@@ -619,11 +621,12 @@ const LeafletMapSetup = ({
       }
     }
 
-    // Remove markers that are not in visiblePlaces
+    // Remove markers that are not in visiblePlaces (with config cleanup)
     markersRef.current.forEach((marker, id) => {
       if (!visiblePlaces.find((p) => p.id === id)) {
         clusterGroup.removeLayer(marker);
         markersRef.current.delete(id);
+        markerConfigsRef.current.delete(id); // Clean up config cache
       }
     });
 
@@ -693,12 +696,35 @@ const LeafletMapSetup = ({
           }));
 
           const isSelected = selectedPlace?.id === place.id;
-           const shouldShowLabel = zoom >= 14 || isSelected;
+          const shouldShowLabel = zoom >= 14 || isSelected;
 
-           const icon = createLeafletCustomMarker({
-             category: place.category || 'attraction',
-             name: shouldShowLabel ? place.name : undefined,
-             isSaved: place.isSaved,
+          // Create config hash for incremental update change detection
+          const markerConfigKey = JSON.stringify({
+            category: place.category,
+            name: shouldShowLabel ? place.name : undefined,
+            isSaved: place.isSaved,
+            isRecommended: place.isRecommended,
+            isDarkMode,
+            hasCampaign,
+            campaignType,
+            sharedByUsersCount: sharedByUsers.length,
+            isSelected,
+            lat: place.coordinates.lat,
+            lng: place.coordinates.lng,
+          });
+
+          const existingMarker = markersRef.current.get(place.id);
+          const existingConfig = markerConfigsRef.current.get(place.id);
+
+          // Skip if marker exists and config hasn't changed (incremental optimization)
+          if (existingMarker && existingConfig === markerConfigKey) {
+            return;
+          }
+
+          const icon = createLeafletCustomMarker({
+            category: place.category || 'attraction',
+            name: shouldShowLabel ? place.name : undefined,
+            isSaved: place.isSaved,
             isRecommended: place.isRecommended,
             recommendationScore: place.recommendationScore,
             friendAvatars: [],
@@ -709,43 +735,45 @@ const LeafletMapSetup = ({
             isSelected,
           });
 
-        let marker = markersRef.current.get(place.id);
-        if (!marker) {
-          marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
-            icon,
-          });
-          marker.on('click', (e) => {
-            // Check if clicked on the sharers badge
-            const target = (e.originalEvent as any).target;
-            if (target && target.closest('.location-sharers-badge') && sharedByUsers.length > 1) {
-              e.originalEvent.stopPropagation();
-              setSelectedSharersLocation({
-                name: place.name,
-                sharers: sharedByUsers
-              });
-              return;
-            }
+          if (existingMarker) {
+            // Update existing marker (only when config changed)
+            existingMarker.setIcon(icon);
+            existingMarker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
+            markerConfigsRef.current.set(place.id, markerConfigKey);
+          } else {
+            // Create new marker
+            const marker = L.marker([place.coordinates.lat, place.coordinates.lng], { icon });
+            marker.on('click', (e) => {
+              // Check if clicked on the sharers badge
+              const target = (e.originalEvent as any).target;
+              if (target && target.closest('.location-sharers-badge') && sharedByUsers.length > 1) {
+                e.originalEvent.stopPropagation();
+                setSelectedSharersLocation({
+                  name: place.name,
+                  sharers: sharedByUsers
+                });
+                return;
+              }
 
-            // Simple bounce animation
-            const el = marker!.getElement();
-            if (el) {
-              el.style.animation = 'bounce 0.7s ease-in-out';
-              setTimeout(() => (el.style.animation = ''), 700);
-            }
-            trackEvent('map_pin_clicked', {
-              place_id: place.id,
-              category: place.category,
-              source_tab: 'map',
-              has_campaign: hasCampaign,
+              // Simple bounce animation
+              const el = marker.getElement();
+              if (el) {
+                el.style.animation = 'bounce 0.7s ease-in-out';
+                setTimeout(() => (el.style.animation = ''), 700);
+              }
+              trackEvent('map_pin_clicked', {
+                place_id: place.id,
+                category: place.category,
+                source_tab: 'map',
+                has_campaign: hasCampaign,
+              });
+              onPinClick?.(place);
             });
-            onPinClick?.(place);
-          });
-          clusterGroup.addLayer(marker);
-          markersRef.current.set(place.id, marker);
-        }
-        marker.setIcon(icon);
-        marker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
-      });
+            clusterGroup.addLayer(marker);
+            markersRef.current.set(place.id, marker);
+            markerConfigsRef.current.set(place.id, markerConfigKey);
+          }
+        });
       } catch (error) {
         console.error('Error fetching campaigns:', error);
       }

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ interface MessageBubbleProps {
   onViewPlace?: (place: any) => void;
 }
 
-const MessageBubble = ({ message, isOwnMessage, onViewPlace }: MessageBubbleProps) => {
+const MessageBubble = memo(({ message, isOwnMessage, onViewPlace }: MessageBubbleProps) => {
   const { i18n } = useTranslation();
   const handleViewPlace = (place: any) => {
     if (onViewPlace) {
@@ -79,6 +79,12 @@ const MessageBubble = ({ message, isOwnMessage, onViewPlace }: MessageBubbleProp
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Only re-render if message ID or content changes
+  return prevProps.message.id === nextProps.message.id && 
+         prevProps.isOwnMessage === nextProps.isOwnMessage;
+});
+
+MessageBubble.displayName = 'MessageBubble';
 
 export default MessageBubble;
