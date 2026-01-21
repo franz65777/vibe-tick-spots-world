@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster';
@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { LocationSharersModal } from './explore/LocationSharersModal';
 import { useTranslation } from 'react-i18next';
 import { useMapFilter } from '@/contexts/MapFilterContext';
+import { useCampaignLocations } from '@/hooks/useCampaignLocations';
 
 interface LeafletMapSetupProps {
   places: Place[];
@@ -87,11 +88,14 @@ const LeafletMapSetup = ({
   const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userActiveShare, setUserActiveShare] = useState<any>(null);
-  const [campaignLocationIds, setCampaignLocationIds] = useState<Set<string>>(new Set());
   const [selectedSharersLocation, setSelectedSharersLocation] = useState<{ 
     name: string; 
     sharers: Array<{ id: string; username: string; avatar_url: string | null }> 
   } | null>(null);
+
+  // Use cached campaign locations hook instead of inline fetching
+  const placeIds = useMemo(() => places.map(p => p.id).filter(Boolean), [places]);
+  const { campaignMap, campaignLocationIds } = useCampaignLocations(placeIds);
 
   // Detect dark mode
   useEffect(() => {
@@ -129,29 +133,7 @@ const LeafletMapSetup = ({
     }
   }, [user, shares]);
 
-  // Pre-fetch campaign locations for prioritization in sorting
-  useEffect(() => {
-    const fetchCampaignLocations = async () => {
-      const locationIds = places.map(p => p.id).filter(Boolean);
-      if (locationIds.length === 0) return;
-      
-      try {
-        const { data: campaigns } = await supabase
-          .from('marketing_campaigns')
-          .select('location_id')
-          .in('location_id', locationIds)
-          .eq('is_active', true)
-          .gt('end_date', new Date().toISOString());
-        
-        const ids = new Set(campaigns?.map(c => c.location_id) || []);
-        setCampaignLocationIds(ids);
-      } catch (error) {
-        console.warn('Failed to fetch campaign locations:', error);
-      }
-    };
-    
-    fetchCampaignLocations();
-  }, [places]);
+  // Campaign locations are now fetched by useCampaignLocations hook above
 
   // Sharing controls always at same height as expand button
   const baseControlPosition = fullScreen 
