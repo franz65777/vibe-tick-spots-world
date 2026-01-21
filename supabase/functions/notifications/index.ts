@@ -143,13 +143,24 @@ serve(async (req) => {
       }
 
       case 'GET:user': {
-        const { data: notifications, error } = await supabaseClient
+        // Support cursor-based pagination
+        const cursorParam = url.searchParams.get('cursor');
+        const limitParam = url.searchParams.get('limit');
+        const limit = Math.min(parseInt(limitParam || '50'), 100); // Max 100 items
+
+        let query = supabaseClient
           .from('notifications')
           .select('*')
           .eq('user_id', user.id)
           .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false })
-          .limit(50)
+          .order('created_at', { ascending: false });
+
+        // Apply cursor filter if provided
+        if (cursorParam) {
+          query = query.lt('created_at', cursorParam);
+        }
+
+        const { data: notifications, error } = await query.limit(limit);
 
         if (error) {
           console.error('Error fetching notifications:', error)
@@ -159,8 +170,23 @@ serve(async (req) => {
           })
         }
 
-        return new Response(JSON.stringify({ data: notifications }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        // Calculate next cursor
+        const hasMore = notifications.length === limit;
+        const nextCursor = hasMore && notifications.length > 0 
+          ? notifications[notifications.length - 1].created_at 
+          : null;
+
+        return new Response(JSON.stringify({ 
+          data: notifications,
+          nextCursor,
+          hasMore,
+        }), {
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            // Short cache for user-specific data
+            'Cache-Control': 'private, max-age=10',
+          },
         })
       }
 

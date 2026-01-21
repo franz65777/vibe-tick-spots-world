@@ -6,12 +6,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache configuration
+const CACHE_TTL_SECONDS = 300; // 5 minutes
+let cachedResponse: { data: any; timestamp: number } | null = null;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const now = Date.now();
+    
+    // Return cached response if still valid
+    if (cachedResponse && (now - cachedResponse.timestamp) < CACHE_TTL_SECONDS * 1000) {
+      console.log('Returning cached trending cities response');
+      return new Response(
+        JSON.stringify(cachedResponse.data),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': `public, max-age=${CACHE_TTL_SECONDS}, stale-while-revalidate=60`,
+            'X-Cache': 'HIT',
+          } 
+        }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -23,9 +45,24 @@ serve(async (req) => {
     if (error) throw error;
 
     // Map pin_count to total for consistent API response
+    const responseData = { 
+      cities: (cities as any[]).slice(0, 12).map((c: any) => ({ city: c.city, total: Number(c.pin_count) })) 
+    };
+
+    // Update cache
+    cachedResponse = { data: responseData, timestamp: now };
+    console.log('Cached trending cities response');
+
     return new Response(
-      JSON.stringify({ cities: (cities as any[]).slice(0, 12).map((c: any) => ({ city: c.city, total: Number(c.pin_count) })) }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(responseData),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': `public, max-age=${CACHE_TTL_SECONDS}, stale-while-revalidate=60`,
+          'X-Cache': 'MISS',
+        } 
+      }
     );
   } catch (err) {
     console.error('trending-cities error:', err);
