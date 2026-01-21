@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationData } from '@/hooks/useNotificationData';
-import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
+import VirtualizedNotificationsList from '@/components/notifications/VirtualizedNotificationsList';
 import { useTranslation } from 'react-i18next';
 import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 
@@ -31,9 +31,7 @@ const NotificationsPage = () => {
     await markAsRead([notificationId]);
   };
 
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
-  };
+  // handleMarkAllAsRead is available for future use via the header button if needed
 
   const handleNotificationClick = (notification: any) => {
     // Mark as read
@@ -161,29 +159,23 @@ const NotificationsPage = () => {
             <p className="text-muted-foreground text-sm">No new notifications</p>
           </div>
         ) : (
-          <div className="w-full">
-            {groupedNotifications.map((notification) => (
-              <MobileNotificationItem
-                key={(notification as any).__groupKey || notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
-                onAction={handleNotificationClick}
-                onRefresh={refresh}
-                onDelete={async (id) => {
-                  // For grouped likes we store the real row ids in data.grouped_notification_ids
-                  const ids: string[] = notification.data?.grouped_notification_ids || [id];
-                  // Delete all in parallel, return a single result
-                  const results = await Promise.all(ids.map((nid) => deleteNotification(nid)));
-                  const failed = results.find((r) => !r.success);
-                  return failed || { success: true };
-                }}
-                openSwipeId={openSwipeId}
-                onSwipeOpen={setOpenSwipeId}
-                // Pass pre-fetched data to avoid N+1 queries
-                prefetchedData={notificationData}
-              />
-            ))}
-          </div>
+          <VirtualizedNotificationsList
+            notifications={groupedNotifications}
+            onMarkAsRead={handleMarkAsRead}
+            onAction={handleNotificationClick}
+            onRefresh={refresh}
+            onDelete={async (id) => {
+              // Find notification to check for grouped ids
+              const notification = groupedNotifications.find(n => n.id === id || (n as any).__groupKey === id);
+              const ids: string[] = notification?.data?.grouped_notification_ids || [id];
+              const results = await Promise.all(ids.map((nid) => deleteNotification(nid)));
+              const failed = results.find((r) => !r.success);
+              return failed || { success: true };
+            }}
+            openSwipeId={openSwipeId}
+            onSwipeOpen={setOpenSwipeId}
+            prefetchedData={notificationData}
+          />
         )}
       </div>
     </div>

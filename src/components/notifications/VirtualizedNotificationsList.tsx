@@ -2,16 +2,7 @@ import { useRef, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import MobileNotificationItem from './MobileNotificationItem';
 
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  data?: any;
-  created_at: string;
-  is_read: boolean;
-}
-
+// Re-export notification interfaces to align with MobileNotificationItem
 interface PrefetchedData {
   loading: boolean;
   getProfile: (userId: string | undefined) => { id: string; username: string; avatar_url: string | null } | null;
@@ -26,11 +17,11 @@ interface PrefetchedData {
 }
 
 interface VirtualizedNotificationsListProps {
-  notifications: Notification[];
+  notifications: any[]; // Use any to match the flexible MobileNotificationItem props
   onMarkAsRead: (id: string) => void;
-  onAction: (notification: Notification) => void;
+  onAction: (notification: any) => void;
   onDelete: (id: string) => Promise<any>;
-  onRefresh: () => Promise<void>;
+  onRefresh: () => void | Promise<void>;
   openSwipeId: string | null;
   onSwipeOpen: (id: string | null) => void;
   prefetchedData?: PrefetchedData;
@@ -60,7 +51,7 @@ const VirtualizedNotificationsList = memo(({
   return (
     <div
       ref={parentRef}
-      className="flex-1 overflow-y-auto"
+      className="flex-1 overflow-y-auto w-full"
       style={{ contain: 'strict' }}
     >
       <div
@@ -74,7 +65,7 @@ const VirtualizedNotificationsList = memo(({
           const notification = notifications[virtualItem.index];
           return (
             <div
-              key={notification.id}
+              key={(notification as any).__groupKey || notification.id}
               style={{
                 position: 'absolute',
                 top: 0,
