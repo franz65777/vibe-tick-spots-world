@@ -38,7 +38,7 @@ const VirtualizedNotificationsList = memo(({
   return (
     <div
       ref={parentRef}
-      className="flex-1 overflow-y-auto w-full"
+      className="h-full w-full overflow-y-auto"
       style={{ contain: 'strict' }}
     >
       <div
