@@ -8,12 +8,28 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import StoriesViewer from '@/components/StoriesViewer';
+import { PrefetchedData } from '@/hooks/useNotificationData';
 
 // Component to fetch and display post thumbnail for comments
-const PostThumbnail = ({ postId, onClick }: { postId: string; onClick: (e: React.MouseEvent) => void }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+// Uses prefetched data when available, otherwise falls back to individual fetch
+const PostThumbnail = ({ 
+  postId, 
+  onClick,
+  prefetchedMediaUrl 
+}: { 
+  postId: string; 
+  onClick: (e: React.MouseEvent) => void;
+  prefetchedMediaUrl?: string | null;
+}) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(prefetchedMediaUrl || null);
 
   useEffect(() => {
+    // Skip fetch if we have prefetched data
+    if (prefetchedMediaUrl !== undefined) {
+      setImageUrl(prefetchedMediaUrl);
+      return;
+    }
+
     const fetchPostImage = async () => {
       const { data } = await supabase
         .from('posts')
@@ -26,7 +42,7 @@ const PostThumbnail = ({ postId, onClick }: { postId: string; onClick: (e: React
       }
     };
     fetchPostImage();
-  }, [postId]);
+  }, [postId, prefetchedMediaUrl]);
 
   if (!imageUrl) return null;
 
@@ -43,20 +59,6 @@ const PostThumbnail = ({ postId, onClick }: { postId: string; onClick: (e: React
     </div>
   );
 };
-
-// Prefetched data interface (from useNotificationData hook)
-interface PrefetchedData {
-  loading: boolean;
-  getProfile: (userId: string | undefined) => { id: string; username: string; avatar_url: string | null } | null;
-  isFollowing: (userId: string | undefined) => boolean;
-  hasActiveStory: (userId: string | undefined) => boolean;
-  getUserStories: (userId: string | undefined) => any[];
-  isCommentLiked: (commentId: string | undefined) => boolean;
-  getPostContentType: (postId: string | undefined) => 'review' | 'post';
-  isUserPrivate: (userId: string | undefined) => boolean;
-  hasPendingRequest: (userId: string | undefined) => boolean;
-  isLocationShareActive: (userId: string | undefined, locationId: string | undefined) => boolean;
-}
 
 interface MobileNotificationItemProps {
   notification: {
@@ -1408,7 +1410,11 @@ const MobileNotificationItem = ({
                     />
                   </div>
                 ) : notification.type === 'comment' && notification.data?.post_id ? (
-                  <PostThumbnail postId={notification.data.post_id} onClick={handlePostClick} />
+                  <PostThumbnail 
+                    postId={notification.data.post_id} 
+                    onClick={handlePostClick}
+                    prefetchedMediaUrl={prefetchedData?.getPostMediaUrl?.(notification.data.post_id)}
+                  />
                 ) : notification.data?.post_image ? (
                   <div 
                     className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"

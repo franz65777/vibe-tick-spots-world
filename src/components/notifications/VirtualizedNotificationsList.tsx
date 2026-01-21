@@ -1,20 +1,7 @@
 import { useRef, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import MobileNotificationItem from './MobileNotificationItem';
-
-// Re-export notification interfaces to align with MobileNotificationItem
-interface PrefetchedData {
-  loading: boolean;
-  getProfile: (userId: string | undefined) => { id: string; username: string; avatar_url: string | null } | null;
-  isFollowing: (userId: string | undefined) => boolean;
-  hasActiveStory: (userId: string | undefined) => boolean;
-  getUserStories: (userId: string | undefined) => any[];
-  isCommentLiked: (commentId: string | undefined) => boolean;
-  getPostContentType: (postId: string | undefined) => 'review' | 'post';
-  isUserPrivate: (userId: string | undefined) => boolean;
-  hasPendingRequest: (userId: string | undefined) => boolean;
-  isLocationShareActive: (userId: string | undefined, locationId: string | undefined) => boolean;
-}
+import { PrefetchedData } from '@/hooks/useNotificationData';
 
 interface VirtualizedNotificationsListProps {
   notifications: any[]; // Use any to match the flexible MobileNotificationItem props

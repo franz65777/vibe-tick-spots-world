@@ -6,11 +6,30 @@
  * - Active stories
  * - Comment like statuses
  * - Post content types (for reviews)
+ * - Post media URLs (for thumbnails)
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+/**
+ * Prefetched data interface - exported for use in notification components
+ * This interface defines the shape of batch-fetched notification data
+ */
+export interface PrefetchedData {
+  loading: boolean;
+  getProfile: (userId: string | undefined) => { id: string; username: string; avatar_url: string | null } | null;
+  isFollowing: (userId: string | undefined) => boolean;
+  hasActiveStory: (userId: string | undefined) => boolean;
+  getUserStories: (userId: string | undefined) => any[];
+  isCommentLiked: (commentId: string | undefined) => boolean;
+  getPostContentType: (postId: string | undefined) => 'review' | 'post';
+  isUserPrivate: (userId: string | undefined) => boolean;
+  hasPendingRequest: (userId: string | undefined) => boolean;
+  isLocationShareActive: (userId: string | undefined, locationId: string | undefined) => boolean;
+  getPostMediaUrl: (postId: string | undefined) => string | null;
+}
 
 interface NotificationDataCache {
   profiles: Map<string, { id: string; username: string; avatar_url: string | null }>;
@@ -22,6 +41,7 @@ interface NotificationDataCache {
   privateUserIds: Set<string>;
   pendingRequestUserIds: Set<string>;
   locationShareStatus: Map<string, boolean>;
+  postMediaUrls: Map<string, string>;
 }
 
 interface Notification {
@@ -50,6 +70,7 @@ export const useNotificationData = (notifications: Notification[]) => {
     privateUserIds: new Set(),
     pendingRequestUserIds: new Set(),
     locationShareStatus: new Map(),
+    postMediaUrls: new Map(),
   });
   
   const lastFetchRef = useRef<string>('');
@@ -172,11 +193,11 @@ export const useNotificationData = (notifications: Notification[]) => {
               .in('comment_id', commentIds)
           : Promise.resolve({ data: [], error: null }),
 
-        // 5. Get post content types for reviews
+        // 5. Get post content types and media URLs for reviews/thumbnails
         postIds.length > 0
           ? supabase
               .from('posts')
-              .select('id, rating, content_type')
+              .select('id, rating, content_type, media_urls')
               .in('id', postIds)
           : Promise.resolve({ data: [], error: null }),
 
@@ -270,9 +291,14 @@ export const useNotificationData = (notifications: Notification[]) => {
       });
 
       const postContentTypes = new Map<string, 'review' | 'post'>();
+      const postMediaUrls = new Map<string, string>();
       postsRes.data?.forEach((p: any) => {
         const isReview = p.content_type === 'review' || p.rating != null;
         postContentTypes.set(p.id, isReview ? 'review' : 'post');
+        // Store first media URL for thumbnail
+        if (p.media_urls && p.media_urls.length > 0) {
+          postMediaUrls.set(p.id, p.media_urls[0]);
+        }
       });
 
       const privateUserIds = new Set<string>();
@@ -295,6 +321,7 @@ export const useNotificationData = (notifications: Notification[]) => {
         privateUserIds,
         pendingRequestUserIds,
         locationShareStatus: locationShareResults,
+        postMediaUrls,
       });
     } catch (error) {
       console.error('Error batch-fetching notification data:', error);
@@ -354,6 +381,11 @@ export const useNotificationData = (notifications: Notification[]) => {
     return cache.locationShareStatus.get(key) ?? false;
   }, [cache.locationShareStatus]);
 
+  const getPostMediaUrl = useCallback((postId: string | undefined) => {
+    if (!postId) return null;
+    return cache.postMediaUrls.get(postId) || null;
+  }, [cache.postMediaUrls]);
+
   return {
     loading,
     getProfile,
@@ -365,6 +397,7 @@ export const useNotificationData = (notifications: Notification[]) => {
     isUserPrivate,
     hasPendingRequest,
     isLocationShareActive,
+    getPostMediaUrl,
     refetch: fetchAllData,
   };
 };
