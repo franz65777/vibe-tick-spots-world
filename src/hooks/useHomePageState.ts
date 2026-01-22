@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Place } from '@/types/place';
-
+import type { GuidedTourStep } from '@/components/onboarding/GuidedTour';
 interface LocalPlace {
   id: string;
   name: string;
@@ -61,7 +61,7 @@ export interface HomePageState {
   showOnboarding: boolean;
   checkingOnboarding: boolean;
   showGuidedTour: boolean;
-  guidedTourStep: string;
+  guidedTourStep: GuidedTourStep;
   showLogo: boolean;
 }
 
@@ -111,7 +111,7 @@ export function useHomePageState() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [showGuidedTour, setShowGuidedTour] = useState(false);
-  const [guidedTourStep, setGuidedTourStep] = useState('profile-photo');
+  const [guidedTourStep, setGuidedTourStep] = useState<GuidedTourStep>('profile-photo');
   const [showLogo, setShowLogo] = useState(() => {
     const hasShownLogo = sessionStorage.getItem('hasShownSpottLogo');
     if (!hasShownLogo) {

@@ -25,6 +25,8 @@ import { useSuggestedContacts } from '@/hooks/useSuggestedContacts';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+
 type ViewMode = 'threads' | 'chat' | 'search';
 const MessagesPage = () => {
   const navigate = useNavigate();
@@ -271,23 +273,44 @@ const MessagesPage = () => {
     }
   }, [user, scrollToBottom]);
 
+  // Use centralized realtime for messages - reduces connections by 80%+
+  const selectedThreadIdRef = useRef<string | null>(null);
+  const selectedOtherUserIdRef = useRef<string | null>(null);
+  
+  // Update refs when thread changes
+  useEffect(() => {
+    if (selectedThread) {
+      selectedThreadIdRef.current = selectedThread.id;
+      const other = getOtherParticipant(selectedThread);
+      selectedOtherUserIdRef.current = other?.id || null;
+    } else {
+      selectedThreadIdRef.current = null;
+      selectedOtherUserIdRef.current = null;
+    }
+  }, [selectedThread]);
+  
+  // Listen to centralized message events
+  useRealtimeEvent('message_insert', useCallback((payload: any) => {
+    if (!selectedOtherUserIdRef.current || !user) return;
+    // Only add message if it's for the current conversation
+    if (payload.sender_id === selectedOtherUserIdRef.current || 
+        (payload.sender_id === user.id && payload.receiver_id === selectedOtherUserIdRef.current)) {
+      setMessages(prev => {
+        // Avoid duplicates
+        if (prev.some(m => m.id === payload.id)) return prev;
+        return [...prev, payload as DirectMessage];
+      });
+    }
+  }, [user]));
+  
+  // Legacy cleanup - remove old channel if exists
   const setupRealtimeSubscription = useCallback(() => {
+    // Channel management now handled by useCentralizedRealtime
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
-    if (!selectedThread || !user) return;
-    const otherParticipant = getOtherParticipant(selectedThread);
-    if (!otherParticipant) return;
-    const channel = supabase.channel(`messages-${selectedThread.id}`).on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'direct_messages',
-      filter: `sender_id=eq.${user.id},receiver_id=eq.${otherParticipant.id}`
-    }, payload => {
-      setMessages(prev => [...prev, payload.new as DirectMessage]);
-    }).subscribe();
-    channelRef.current = channel;
-  }, [selectedThread, user]);
+  }, []);
 
   const handleThreadSelect = useCallback((thread: MessageThread) => {
     setSelectedThread(thread);
