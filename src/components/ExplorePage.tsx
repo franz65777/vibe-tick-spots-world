@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, memo, lazy, Suspense, useCallback } from 'react';
 import { Search, Users, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { searchService } from '@/services/searchService';
@@ -25,7 +25,7 @@ const LocationPostLibrary = lazy(() => import('./explore/LocationPostLibrary'));
 const CommunityChampions = lazy(() => import('./home/CommunityChampions'));
 
 // Small component to render mutual followers line for recent items
-const RecentMutualFollowers = ({ userId }: { userId: string }) => {
+const RecentMutualFollowers = memo(({ userId }: { userId: string }) => {
   const { t } = useTranslation();
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   if (mutualFollowers.length === 0) return null;
@@ -35,7 +35,7 @@ const RecentMutualFollowers = ({ userId }: { userId: string }) => {
       {totalCount > 2 && ` ${t('userProfile.andOthers', { ns: 'common', count: totalCount - 2 })}`}
     </p>
   );
-};
+});
 
 const ExplorePage = memo(() => {
   const { t } = useTranslation();
@@ -190,8 +190,8 @@ const ExplorePage = memo(() => {
     }
   }, [location.state]);
 
-  // Search for users only
-  const performSearch = async (query: string) => {
+  // Search for users only - memoized
+  const performSearch = useCallback(async (query: string) => {
     if (!user || !query.trim()) return {
       users: []
     };
@@ -216,8 +216,9 @@ const ExplorePage = memo(() => {
         users: []
       };
     }
-  };
-  const handleSearch = async (query: string) => {
+  }, [user]);
+
+  const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     if (query.trim()) {
       setIsSearching(true);
@@ -228,7 +229,7 @@ const ExplorePage = memo(() => {
     } else {
       setFilteredUsers([]);
     }
-  };
+  }, [performSearch]);
   const handleCardClick = (place: any) => {
     console.log('Card clicked:', place.name);
     setSelectedLocation(place);
@@ -240,7 +241,7 @@ const ExplorePage = memo(() => {
   const handleComment = (place: any) => {
     console.log('Comment on place:', place.name);
   };
-  const handleUserClick = async (userId: string) => {
+  const handleUserClick = useCallback(async (userId: string) => {
     // Save to search history when user clicks a profile
     if (user) {
       try {
@@ -284,8 +285,8 @@ const ExplorePage = memo(() => {
         searchMode: 'users'
       } 
     });
-  };
-  const handleFollowUser = async (userId: string) => {
+  }, [user, filteredUsers, suggestions, champions, searchQuery, navigate, fetchSearchHistory]);
+  const handleFollowUser = useCallback(async (userId: string) => {
     if (!user) return;
     try {
       const {
@@ -312,7 +313,7 @@ const ExplorePage = memo(() => {
     } catch (error) {
       console.error('Error toggling follow:', error);
     }
-  };
+  }, [user, searchQuery, performSearch, fetchSuggestions]);
   const handleMessageUser = (userId: string) => {
     console.log('Message user:', userId);
   };

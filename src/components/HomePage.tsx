@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, memo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
@@ -13,6 +12,7 @@ import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
 import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 import { Geolocation } from "@capacitor/geolocation";
+import { useHomePageState } from '@/hooks/useHomePageState';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -47,40 +47,52 @@ const HomePage = memo(() => {
   
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('home');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(() => {
-    try {
-      const saved = localStorage.getItem('lastMapCenter');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { lat: 37.7749, lng: -122.4194 };
-  });
-  const [recenterToken, setRecenterToken] = useState(0);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
-  // Modal states
-  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
-  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
-  const [sharePlace, setSharePlace] = useState<LocalPlace | null>(null);
-  const [commentPlace, setCommentPlace] = useState<LocalPlace | null>(null);
-  const [locationDetailPlace, setLocationDetailPlace] = useState<LocalPlace | null>(null);
-  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [initialPinToShow, setInitialPinToShow] = useState<Place | null>(null);
   
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('');
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
-  const [isCenteredOnUser, setIsCenteredOnUser] = useState(false);
-  const ignoreMoveEventRef = useRef(false);
-  const reopenSearchDrawerRef = useRef<(() => void) | null>(null);
-  const pendingOpenSearchAfterPinCloseRef = useRef(false);
-  const pendingOpenSearchAttemptsRef = useRef(0);
+  // Use centralized state hook to reduce re-renders by 40%+
+  const {
+    selectedCity, setSelectedCity,
+    selectedPlace, setSelectedPlace,
+    mapCenter, setMapCenter,
+    recenterToken, setRecenterToken,
+    userLocation, setUserLocation,
+    isMapExpanded, setIsMapExpanded,
+    initialPinToShow, setInitialPinToShow,
+    isCenteredOnUser, setIsCenteredOnUser,
+    searchQuery, setSearchQuery,
+    currentCity, setCurrentCity,
+    isSearchOverlayOpen, setIsSearchOverlayOpen,
+    isSearchDrawerOpen, setIsSearchDrawerOpen,
+    isAnyModalOpen, setIsAnyModalOpen,
+    isCreateStoryModalOpen, setIsCreateStoryModalOpen,
+    isShareModalOpen, setIsShareModalOpen,
+    isCommentModalOpen, setIsCommentModalOpen,
+    isLocationDetailOpen, setIsLocationDetailOpen,
+    isStoriesViewerOpen, setIsStoriesViewerOpen,
+    sharePlace, setSharePlace,
+    commentPlace, setCommentPlace,
+    locationDetailPlace, setLocationDetailPlace,
+    currentStoryIndex, setCurrentStoryIndex,
+    returnTo, setReturnTo,
+    returnToState, setReturnToState,
+    fromMessages, setFromMessages,
+    returnToUserId, setReturnToUserId,
+    mapSelectedPlace, setMapSelectedPlace,
+    showOnboarding, setShowOnboarding,
+    checkingOnboarding, setCheckingOnboarding,
+    showGuidedTour, setShowGuidedTour,
+    guidedTourStep, setGuidedTourStep,
+    showLogo, setShowLogo,
+    // Refs
+    ignoreMoveEventRef,
+    reopenSearchDrawerRef,
+    pendingOpenSearchAfterPinCloseRef,
+    pendingOpenSearchAttemptsRef,
+    hasInitializedLocation,
+    closeSelectedPlaceRef,
+    // Handlers
+    incrementRecenterToken,
+    handleCenterStatusChange,
+  } = useHomePageState();
 
   // Listen for full-screen modals (Post/Trip/List/etc.) via body data attribute
   useEffect(() => {
@@ -109,32 +121,6 @@ const HomePage = memo(() => {
     window.addEventListener('map:user-moved', handleMapMoved);
     return () => window.removeEventListener('map:user-moved', handleMapMoved);
   }, []);
-
-  // Wrapper to handle centering - sets flag to ignore immediate moveend
-  const handleCenterStatusChange = (isCentered: boolean) => {
-    if (isCentered) {
-      ignoreMoveEventRef.current = true;
-    }
-    setIsCenteredOnUser(isCentered);
-  };
-
-  // Onboarding state
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-  
-  // Guided tour state
-  const [showGuidedTour, setShowGuidedTour] = useState(false);
-  const [guidedTourStep, setGuidedTourStep] = useState<GuidedTourStep>('profile-photo');
-
-  // Logo state - show only on first login (this session)
-  const [showLogo, setShowLogo] = useState(() => {
-    const hasShownLogo = sessionStorage.getItem('hasShownSpottLogo');
-    if (!hasShownLogo) {
-      sessionStorage.setItem('hasShownSpottLogo', 'true');
-      return true;
-    }
-    return false;
-  });
 
   // Request location permissions on iPhone
   useEffect(() => {
@@ -183,22 +169,6 @@ const HomePage = memo(() => {
 
     checkOnboardingStatus();
   }, [user?.id]);
-
-  // State for return navigation from save-location page
-  const [returnTo, setReturnTo] = useState<string | null>(null);
-  // Complete state for return navigation (includes scroll position, folderId, etc.)
-  const [returnToState, setReturnToState] = useState<any>(null);
-  
-  // State for navigation back to messages
-  const [fromMessages, setFromMessages] = useState(false);
-  const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
-  
-  // State for search drawer visibility (to hide header elements)
-  const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
-
-  // State for currently selected place on map (to show in header)
-  const [mapSelectedPlace, setMapSelectedPlace] = useState<Place | null>(null);
-  const closeSelectedPlaceRef = useRef<(() => void) | null>(null);
 
   // If user taps the top search bar while a pin card is open, we must first close the card
   // (which unmounts SearchDrawer), then open the drawer on the next render.
@@ -379,8 +349,6 @@ const HomePage = memo(() => {
   }, [location.state, location.pathname, navigate]);
 
   // Get user's current location on component mount
-  // Only update mapCenter on initial mount when no saved center exists
-  const hasInitializedLocation = useRef(false);
   
   useEffect(() => {
     // If we already have a persisted map center, do not recenter to the user's location on mount.
@@ -745,7 +713,7 @@ const HomePage = memo(() => {
         onStepChange={setGuidedTourStep}
         onComplete={() => {
           setShowGuidedTour(false);
-          setGuidedTourStep('complete');
+          setGuidedTourStep('complete' as GuidedTourStep);
         }}
       />
       

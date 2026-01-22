@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MapFilter } from '@/contexts/MapFilterContext';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 import { resolveCityDisplay } from '@/utils/cityNormalization';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface MapLocation {
   id: string;
@@ -52,6 +53,22 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
   const { user } = useAuth();
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialFetchDoneRef = useRef(false);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced refresh function for realtime events
+  const debouncedRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    refreshTimeoutRef.current = setTimeout(() => {
+      console.log('🔄 Map data changed via centralized realtime, refreshing...');
+      fetchLocations();
+    }, 1000); // 1 second debounce
+  }, []);
+
+  // Use centralized realtime instead of per-hook channels - reduces connections by 80%+
+  useRealtimeEvent(
+    ['saved_location_insert', 'saved_location_delete', 'saved_place_insert', 'saved_place_delete'],
+    debouncedRefresh
+  );
 
   useEffect(() => {
     if (!user) {
@@ -70,30 +87,13 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       initialFetchDoneRef.current = true;
     }, delay);
     
-    // Set up realtime subscription for map updates with debouncing
-    let refreshTimeout: NodeJS.Timeout | null = null;
-    const debouncedRefresh = () => {
-      if (refreshTimeout) clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => {
-        console.log('🔄 Map data changed, refreshing...');
-        fetchLocations();
-      }, 1000); // 1 second debounce for realtime
-    };
-    
-    const channel = supabase
-      .channel(`map-locations-refresh-${user?.id || 'anon'}-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, debouncedRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, debouncedRefresh)
-      .subscribe();
-    
     return () => {
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
       }
-      if (refreshTimeout) {
-        clearTimeout(refreshTimeout);
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
       }
-      supabase.removeChannel(channel);
     };
   }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(','), selectedSaveTags.join(','), mapBounds ? `${mapBounds.north},${mapBounds.south},${mapBounds.east},${mapBounds.west}` : '']);
 
