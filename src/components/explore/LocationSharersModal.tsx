@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 interface LocationSharersModalProps {
   isOpen: boolean;
@@ -35,8 +36,8 @@ export const LocationSharersModal = ({
 
       let allSavers: any[] = [];
 
-      // Fetch from user_saved_locations if locationId exists
-      if (locationId) {
+      // Fetch from user_saved_locations only if locationId is a valid UUID
+      if (locationId && isValidUUID(locationId)) {
         const { data: uslData } = await supabase
           .from('user_saved_locations')
           .select(`

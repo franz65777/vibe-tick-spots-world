@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { trackInteraction } from './recommendationService';
 import { toast } from 'sonner';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 export interface LocationInteraction {
   id: string;
@@ -125,11 +126,26 @@ class LocationInteractionService {
         }
 
         // If no locationData, try to check if locationId is a google_place_id
-        const { data: existingLocation } = await supabase
-          .from('locations')
-          .select('id')
-          .or(`id.eq.${locationId},google_place_id.eq.${locationId}`)
-          .maybeSingle();
+        // Only query by UUID if it's a valid UUID to avoid database errors
+        let existingLocation = null;
+        if (isValidUUID(locationId)) {
+          const { data } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('id', locationId)
+            .maybeSingle();
+          existingLocation = data;
+        }
+        
+        // If not found by UUID, try google_place_id
+        if (!existingLocation) {
+          const { data } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', locationId)
+            .maybeSingle();
+          existingLocation = data;
+        }
 
         if (existingLocation) {
           internalLocationId = existingLocation.id;
@@ -192,13 +208,28 @@ class LocationInteractionService {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      // Try to resolve internal location id
+      // Try to resolve internal location id - query separately to avoid UUID parse errors
       let internalLocationId = locationId;
-      const { data: existingLocation } = await supabase
-        .from('locations')
-        .select('id, google_place_id')
-        .or(`id.eq.${locationId},google_place_id.eq.${locationId}`)
-        .maybeSingle();
+      let existingLocation = null;
+      
+      if (isValidUUID(locationId)) {
+        const { data } = await supabase
+          .from('locations')
+          .select('id, google_place_id')
+          .eq('id', locationId)
+          .maybeSingle();
+        existingLocation = data;
+      }
+      
+      // If not found by UUID, try google_place_id
+      if (!existingLocation) {
+        const { data } = await supabase
+          .from('locations')
+          .select('id, google_place_id')
+          .eq('google_place_id', locationId)
+          .maybeSingle();
+        existingLocation = data;
+      }
 
       if (existingLocation) {
         internalLocationId = existingLocation.id;
@@ -219,13 +250,16 @@ class LocationInteractionService {
             .eq('place_id', existingLocation.google_place_id);
         }
       } else {
-        // Fallback: try to delete with the id we have
-        await supabase
-          .from('user_saved_locations')
-          .delete()
-          .eq('user_id', user.user.id)
-          .eq('location_id', locationId);
+        // Fallback: Only try UUID-based delete if it's a valid UUID
+        if (isValidUUID(locationId)) {
+          await supabase
+            .from('user_saved_locations')
+            .delete()
+            .eq('user_id', user.user.id)
+            .eq('location_id', locationId);
+        }
 
+        // Try saved_places with locationId as place_id (works for Google Place IDs)
         await supabase
           .from('saved_places')
           .delete()

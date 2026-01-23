@@ -34,20 +34,37 @@ export type RealtimeEvent =
   | { type: 'post_comment_insert'; payload: any }
   | { type: 'post_comment_delete'; payload: any }
   | { type: 'post_share_insert'; payload: any }
-  | { type: 'post_share_delete'; payload: any };
+  | { type: 'post_share_delete'; payload: any }
+  // Profile updates (for current user)
+  | { type: 'profile_update'; payload: any }
+  // Location shares
+  | { type: 'location_share_insert'; payload: any }
+  | { type: 'location_share_update'; payload: any }
+  | { type: 'location_share_delete'; payload: any };
 
 type EventHandler = (event: RealtimeEvent) => void;
 
 // Global event handlers registry
 const eventHandlers = new Set<EventHandler>();
 
-// Singleton channel reference
+// Singleton channel reference - truly global
 let globalChannel: ReturnType<typeof supabase.channel> | null = null;
 let currentUserId: string | null = null;
+let isGloballySetup = false; // Global flag to prevent multiple subscriptions
+
+// Broadcast event to all handlers
+const broadcastEvent = (event: RealtimeEvent) => {
+  eventHandlers.forEach(handler => {
+    try {
+      handler(event);
+    } catch (e) {
+      console.error('Error in realtime event handler:', e);
+    }
+  });
+};
 
 export const useCentralizedRealtime = () => {
   const { user } = useAuth();
-  const isSetupRef = useRef(false);
 
   // Subscribe a handler to receive events
   const subscribe = useCallback((handler: EventHandler) => {
@@ -57,42 +74,35 @@ export const useCentralizedRealtime = () => {
     };
   }, []);
 
-  // Broadcast event to all handlers
-  const broadcastEvent = useCallback((event: RealtimeEvent) => {
-    eventHandlers.forEach(handler => {
-      try {
-        handler(event);
-      } catch (e) {
-        console.error('Error in realtime event handler:', e);
-      }
-    });
-  }, []);
-
   useEffect(() => {
     if (!user?.id) {
       // Cleanup if user logs out
       if (globalChannel) {
+        console.log('[CentralizedRealtime] User logged out, cleaning up channel');
         supabase.removeChannel(globalChannel);
         globalChannel = null;
         currentUserId = null;
-        isSetupRef.current = false;
+        isGloballySetup = false;
       }
       return;
     }
 
-    // Skip if already setup for this user
-    if (isSetupRef.current && currentUserId === user.id) {
+    // Skip if already setup for this user (global check)
+    if (isGloballySetup && currentUserId === user.id && globalChannel) {
       return;
     }
 
     // Cleanup existing channel if switching users
     if (globalChannel && currentUserId !== user.id) {
+      console.log('[CentralizedRealtime] User changed, cleaning up old channel');
       supabase.removeChannel(globalChannel);
       globalChannel = null;
+      isGloballySetup = false;
     }
 
+    // Mark as setting up immediately to prevent race conditions
+    isGloballySetup = true;
     currentUserId = user.id;
-    isSetupRef.current = true;
 
     console.log('[CentralizedRealtime] Setting up unified channel for user:', user.id);
 
@@ -154,6 +164,28 @@ export const useCentralizedRealtime = () => {
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `receiver_id=eq.${user.id}` },
         (payload) => broadcastEvent({ type: 'message_insert', payload: payload.new })
       )
+      // Profile updates (current user)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'profile_update', payload: payload.new })
+      )
+      // Location shares (global - filtered in handlers)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'user_location_shares' },
+        (payload) => broadcastEvent({ type: 'location_share_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'user_location_shares' },
+        (payload) => broadcastEvent({ type: 'location_share_update', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'user_location_shares' },
+        (payload) => broadcastEvent({ type: 'location_share_delete', payload: payload.old })
+      )
       // Post likes (global - filtered per-post in handlers)
       .on(
         'postgres_changes',
@@ -190,6 +222,10 @@ export const useCentralizedRealtime = () => {
 
     channel.subscribe((status) => {
       console.log('[CentralizedRealtime] Subscription status:', status);
+      if (status === 'CHANNEL_ERROR') {
+        console.error('[CentralizedRealtime] Channel error, will retry on next mount');
+        isGloballySetup = false;
+      }
     });
 
     globalChannel = channel;
@@ -198,7 +234,7 @@ export const useCentralizedRealtime = () => {
       // Don't cleanup on unmount - channel is shared globally
       // It will be cleaned up when user logs out or changes
     };
-  }, [user?.id, broadcastEvent]);
+  }, [user?.id]);
 
   return { subscribe };
 };

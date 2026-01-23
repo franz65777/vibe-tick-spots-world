@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
@@ -39,30 +39,12 @@ const NewBottomNavigation = () => {
     };
   }, [location.pathname]);
 
-  // Subscribe to profile changes for avatar updates
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel('profile-avatar-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`,
-        },
-        () => {
-          refetchProfile();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, refetchProfile]);
+  // Subscribe to profile changes for avatar updates via centralized realtime
+  const handleProfileUpdate = useCallback(() => {
+    refetchProfile();
+  }, [refetchProfile]);
+  
+  useRealtimeEvent('profile_update', handleProfileUpdate);
 
   // Determine if navigation should be hidden (CSS-based, keeps component mounted)
   const shouldHideNav = hideNav || 
