@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeEvent } from './useCentralizedRealtime';
 
 interface LocationShare {
   id: string;
@@ -26,61 +27,7 @@ export const useLocationShares = () => {
   const [loading, setLoading] = useState(true);
   const expiryTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchShares();
-
-      const suffix = Math.random().toString(36).slice(2);
-      
-      // Subscribe to realtime updates with unique channel per user + instance
-      const channel = supabase
-        .channel(`location_shares_changes_${user.id}_${suffix}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'user_location_shares'
-        }, () => {
-          fetchShares();
-        })
-        .subscribe();
-
-      // Soft cleanup: periodically drop expired shares from local state
-      const interval = setInterval(() => {
-        setShares(prev => prev.filter(s => {
-          try { return new Date(s.expires_at) > new Date(); } catch { return false; }
-        }));
-      }, 15000);
-
-      return () => {
-        supabase.removeChannel(channel);
-        clearInterval(interval);
-      };
-    }
-  }, [user]);
-
-  // Keep shares fresh on tab focus/visibility changes
-  useEffect(() => {
-    const handler = () => {
-      try { fetchShares(); } catch {}
-    };
-    window.addEventListener('focus', handler);
-    document.addEventListener('visibilitychange', handler);
-    return () => {
-      window.removeEventListener('focus', handler);
-      document.removeEventListener('visibilitychange', handler);
-    };
-  }, []);
-
-  // Cleanup expiry timer on unmount
-  useEffect(() => {
-    return () => {
-      if (expiryTimerRef.current) {
-        clearTimeout(expiryTimerRef.current);
-      }
-    };
-  }, []);
-
-  const fetchShares = async () => {
+  const fetchShares = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -153,7 +100,54 @@ export const useLocationShares = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchShares();
+    }
+  }, [user, fetchShares]);
+
+  // Subscribe to centralized realtime for location share events
+  useRealtimeEvent(
+    ['location_share_insert', 'location_share_update', 'location_share_delete'],
+    useCallback(() => {
+      fetchShares();
+    }, [fetchShares])
+  );
+
+  // Keep shares fresh on tab focus/visibility changes
+  useEffect(() => {
+    const handler = () => {
+      try { fetchShares(); } catch {}
+    };
+    window.addEventListener('focus', handler);
+    document.addEventListener('visibilitychange', handler);
+    return () => {
+      window.removeEventListener('focus', handler);
+      document.removeEventListener('visibilitychange', handler);
+    };
+  }, [fetchShares]);
+
+  // Cleanup expiry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Soft cleanup: periodically drop expired shares from local state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShares(prev => prev.filter(s => {
+        try { return new Date(s.expires_at) > new Date(); } catch { return false; }
+      }));
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return { shares, loading, refetch: fetchShares };
 };

@@ -12,6 +12,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isValidUUID, filterValidUUIDs } from '@/utils/uuidValidation';
 
 /**
  * Prefetched data interface - exported for use in notification components
@@ -226,21 +227,27 @@ export const useNotificationData = (notifications: Notification[]) => {
       if (locationShareKeys.length > 0) {
         // Batch by unique user IDs and location IDs
         const uniqueUserIds = [...new Set(locationShareKeys.map(k => k.split(':')[0]))];
-        const uniqueLocationIds = [...new Set(locationShareKeys.map(k => k.split(':')[1]))];
+        const allLocationIds = [...new Set(locationShareKeys.map(k => k.split(':')[1]))];
         
-        const { data: shareData } = await supabase
-          .from('user_location_shares')
-          .select('user_id, location_id, expires_at')
-          .in('user_id', uniqueUserIds)
-          .in('location_id', uniqueLocationIds)
-          .gt('expires_at', new Date().toISOString());
+        // Filter to only valid UUIDs for location_id queries
+        const validLocationUUIDs = filterValidUUIDs(allLocationIds);
+        
+        // Only query if we have valid UUIDs
+        if (validLocationUUIDs.length > 0) {
+          const { data: shareData } = await supabase
+            .from('user_location_shares')
+            .select('user_id, location_id, expires_at')
+            .in('user_id', uniqueUserIds)
+            .in('location_id', validLocationUUIDs)
+            .gt('expires_at', new Date().toISOString());
 
-        const now = new Date();
-        shareData?.forEach(share => {
-          const key = `${share.user_id}:${share.location_id}`;
-          const expiresAt = new Date(share.expires_at);
-          locationShareResults.set(key, expiresAt > now);
-        });
+          const now = new Date();
+          shareData?.forEach(share => {
+            const key = `${share.user_id}:${share.location_id}`;
+            const expiresAt = new Date(share.expires_at);
+            locationShareResults.set(key, expiresAt > now);
+          });
+        }
         
         // Set false for keys not found
         locationShareKeys.forEach(key => {
