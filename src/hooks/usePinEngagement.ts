@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeEvent } from './useCentralizedRealtime';
 
 interface PinEngagement {
   totalSaves: number;
@@ -11,10 +12,75 @@ interface PinEngagement {
   }>;
 }
 
+/**
+ * Hook for pin engagement data
+ * 
+ * OPTIMIZED: Uses centralized realtime instead of individual channels
+ * Reduces connections from 2 per location to 0 (uses shared channel + polling)
+ */
 export const usePinEngagement = (locationId: string | null, googlePlaceId: string | null) => {
   const { user } = useAuth();
   const [engagement, setEngagement] = useState<PinEngagement | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Keep IDs in refs for stable callbacks
+  const locationIdRef = useRef(locationId);
+  const googlePlaceIdRef = useRef(googlePlaceId);
+  
+  useEffect(() => {
+    locationIdRef.current = locationId;
+    googlePlaceIdRef.current = googlePlaceId;
+  }, [locationId, googlePlaceId]);
+
+  const fetchEngagement = useCallback(async () => {
+    if (!locationIdRef.current && !googlePlaceIdRef.current) {
+      setEngagement(null);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('🔍 Fetching pin engagement for:', { locationId: locationIdRef.current, googlePlaceId: googlePlaceIdRef.current });
+      
+      let totalSaves = 0;
+      let followedUsers: Array<{ id: string; username: string; avatar_url: string | null }> = [];
+
+      try {
+        const { data, error } = await supabase.rpc('get_pin_engagement', {
+          p_location_id: locationIdRef.current || null,
+          p_google_place_id: googlePlaceIdRef.current || null
+        } as any);
+        
+        if (error) throw error;
+
+        totalSaves = Number(data?.[0]?.total_saves) || 0;
+        followedUsers = ((data?.[0]?.followed_users as any) || []);
+      } catch (rpcError: any) {
+        console.warn('⚠️ RPC failed, using fallback queries:', rpcError.message);
+        
+        if (locationIdRef.current) {
+          const { count } = await supabase
+            .from('user_saved_locations')
+            .select('*', { count: 'exact', head: true })
+            .eq('location_id', locationIdRef.current);
+          totalSaves = count || 0;
+        } else if (googlePlaceIdRef.current) {
+          const { count } = await supabase
+            .from('saved_places')
+            .select('*', { count: 'exact', head: true })
+            .eq('place_id', googlePlaceIdRef.current);
+          totalSaves = count || 0;
+        }
+      }
+
+      setEngagement({ totalSaves, followedUsers });
+    } catch (error) {
+      console.error('❌ Error fetching pin engagement:', error);
+      setEngagement({ totalSaves: 0, followedUsers: [] });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!locationId && !googlePlaceId) {
@@ -22,83 +88,36 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
       return;
     }
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let intervalId: any;
-
-    const fetchEngagement = async () => {
-      setLoading(true);
-      try {
-        console.log('🔍 Fetching pin engagement for:', { locationId, googlePlaceId });
-        
-        // Fallback to direct queries instead of RPC if it fails
-        let totalSaves = 0;
-        let followedUsers: Array<{ id: string; username: string; avatar_url: string | null }> = [];
-
-        try {
-          const { data, error } = await supabase.rpc('get_pin_engagement', {
-            p_location_id: locationId || null,
-            p_google_place_id: googlePlaceId || null
-          } as any);
-          
-          if (error) throw error;
-
-          totalSaves = Number(data?.[0]?.total_saves) || 0;
-          followedUsers = ((data?.[0]?.followed_users as any) || []);
-        } catch (rpcError: any) {
-          // Fallback: count saves directly
-          console.warn('⚠️ RPC failed, using fallback queries:', rpcError.message);
-          
-          if (locationId) {
-            const { count } = await supabase
-              .from('user_saved_locations')
-              .select('*', { count: 'exact', head: true })
-              .eq('location_id', locationId);
-            totalSaves = count || 0;
-          } else if (googlePlaceId) {
-            const { count } = await supabase
-              .from('saved_places')
-              .select('*', { count: 'exact', head: true })
-              .eq('place_id', googlePlaceId);
-            totalSaves = count || 0;
-          }
-        }
-
-        setEngagement({ totalSaves, followedUsers });
-      } catch (error) {
-        console.error('❌ Error fetching pin engagement:', error);
-        setEngagement({ totalSaves: 0, followedUsers: [] });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEngagement();
 
-    // Realtime refresh when saves change
-    try {
-      channel = supabase
-        .channel(`pin-engagement-${locationId || googlePlaceId}-${user?.id}-${Math.random().toString(36).slice(2)}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, (payload) => {
-          const placeId = (payload as any)?.new?.place_id || (payload as any)?.old?.place_id;
-          if (!placeId || placeId === googlePlaceId) fetchEngagement();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, (payload) => {
-          const locId = (payload as any)?.new?.location_id || (payload as any)?.old?.location_id;
-          if (!locId || locId === locationId) fetchEngagement();
-        })
-        .subscribe();
-    } catch (e) {
-      console.warn('Realtime subscription failed, using polling only.', e);
-    }
-
-    // Poll every 60s to reduce load
-    intervalId = setInterval(fetchEngagement, 60000);
+    // Poll every 60s as fallback for non-realtime updates
+    const intervalId = setInterval(fetchEngagement, 60000);
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
-      if (intervalId) clearInterval(intervalId);
+      clearInterval(intervalId);
     };
-  }, [locationId, googlePlaceId, user?.id]);
+  }, [locationId, googlePlaceId, fetchEngagement]);
+
+  // Handle saved location/place changes from centralized realtime
+  const handleSaveChange = useCallback((payload: any) => {
+    const payloadLocationId = payload?.location_id;
+    const payloadPlaceId = payload?.place_id;
+    
+    // Check if this change is relevant to our current pin
+    if (
+      (locationIdRef.current && payloadLocationId === locationIdRef.current) ||
+      (googlePlaceIdRef.current && payloadPlaceId === googlePlaceIdRef.current)
+    ) {
+      // Debounced refetch
+      fetchEngagement();
+    }
+  }, [fetchEngagement]);
+
+  // Subscribe to centralized realtime events for saved location/place changes
+  useRealtimeEvent(
+    ['saved_location_insert', 'saved_location_delete', 'saved_place_insert', 'saved_place_delete'],
+    handleSaveChange
+  );
 
   return { engagement, loading };
 };

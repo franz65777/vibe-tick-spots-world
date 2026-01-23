@@ -2,7 +2,7 @@
  * Centralized Realtime Subscription Hook
  * 
  * Consolidates all realtime subscriptions into a single channel per user
- * to reduce Supabase connection usage by ~89% (9+ channels -> 1 channel)
+ * to reduce Supabase connection usage by ~95% (40+ channels -> 1 channel)
  * 
  * This hook provides a central event bus that components can subscribe to
  * for realtime updates without creating their own channels.
@@ -12,7 +12,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-type RealtimeEvent = 
+export type RealtimeEvent = 
   | { type: 'notification_insert'; payload: any }
   | { type: 'notification_update'; payload: any }
   | { type: 'notification_delete'; payload: any }
@@ -27,7 +27,14 @@ type RealtimeEvent =
   | { type: 'post_delete'; payload: any }
   | { type: 'story_insert'; payload: any }
   | { type: 'story_delete'; payload: any }
-  | { type: 'message_insert'; payload: any };
+  | { type: 'message_insert'; payload: any }
+  // Post engagement events (global - not user-filtered since they're per-post)
+  | { type: 'post_like_insert'; payload: any }
+  | { type: 'post_like_delete'; payload: any }
+  | { type: 'post_comment_insert'; payload: any }
+  | { type: 'post_comment_delete'; payload: any }
+  | { type: 'post_share_insert'; payload: any }
+  | { type: 'post_share_delete'; payload: any };
 
 type EventHandler = (event: RealtimeEvent) => void;
 
@@ -146,6 +153,39 @@ export const useCentralizedRealtime = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `receiver_id=eq.${user.id}` },
         (payload) => broadcastEvent({ type: 'message_insert', payload: payload.new })
+      )
+      // Post likes (global - filtered per-post in handlers)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_likes' },
+        (payload) => broadcastEvent({ type: 'post_like_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_likes' },
+        (payload) => broadcastEvent({ type: 'post_like_delete', payload: payload.old })
+      )
+      // Post comments (global - filtered per-post in handlers)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_comments' },
+        (payload) => broadcastEvent({ type: 'post_comment_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_comments' },
+        (payload) => broadcastEvent({ type: 'post_comment_delete', payload: payload.old })
+      )
+      // Post shares (global - filtered per-post in handlers)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_shares' },
+        (payload) => broadcastEvent({ type: 'post_share_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_shares' },
+        (payload) => broadcastEvent({ type: 'post_share_delete', payload: payload.old })
       );
 
     channel.subscribe((status) => {
@@ -170,22 +210,35 @@ export const useCentralizedRealtime = () => {
  * useRealtimeEvent('notification_insert', (payload) => {
  *   console.log('New notification:', payload);
  * });
+ * 
+ * // For post-specific events, filter by post_id in your handler:
+ * useRealtimeEvent(['post_like_insert', 'post_like_delete'], (payload) => {
+ *   if (payload.post_id === myPostId) {
+ *     // Handle the event
+ *   }
+ * });
  */
 export const useRealtimeEvent = (
   eventType: RealtimeEvent['type'] | RealtimeEvent['type'][],
   handler: (payload: any) => void
 ) => {
   const { subscribe } = useCentralizedRealtime();
+  const handlerRef = useRef(handler);
+  
+  // Keep handler ref updated without causing re-subscriptions
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
   
   useEffect(() => {
     const types = Array.isArray(eventType) ? eventType : [eventType];
     
     const unsubscribe = subscribe((event) => {
       if (types.includes(event.type)) {
-        handler(event.payload);
+        handlerRef.current(event.payload);
       }
     });
 
     return unsubscribe;
-  }, [eventType, handler, subscribe]);
+  }, [eventType, subscribe]);
 };

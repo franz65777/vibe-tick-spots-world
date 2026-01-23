@@ -1,7 +1,7 @@
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeEvent } from './useCentralizedRealtime';
 
 interface Notification {
   id: string;
@@ -15,12 +15,22 @@ interface Notification {
   expires_at: string;
 }
 
+/**
+ * Hook for managing user notifications
+ * 
+ * OPTIMIZED: Uses centralized realtime instead of individual channels
+ * Reduces connections from 2 per user (notifications + follows) to 0
+ */
 export const useNotifications = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const channelRef = useRef<any>(null);
+  const userIdRef = useRef(user?.id);
+
+  useEffect(() => {
+    userIdRef.current = user?.id;
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -29,14 +39,6 @@ export const useNotifications = () => {
     }
 
     fetchNotifications();
-    setupRealtimeSubscription();
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -44,27 +46,24 @@ export const useNotifications = () => {
     setUnreadCount(unread);
   }, [notifications]);
 
+  const parseData = useCallback((raw: any): Record<string, any> => {
+    if (!raw) return {};
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error('Error parsing notification data:', e);
+        return {};
+      }
+    }
+    if (typeof raw === 'object') return raw as Record<string, any>;
+    return {};
+  }, []);
+
   const fetchNotifications = async () => {
     if (!user) return;
 
-    const parseData = (raw: any): Record<string, any> => {
-      if (!raw) return {};
-      if (typeof raw === 'string') {
-        try {
-          return JSON.parse(raw);
-        } catch (e) {
-          console.error('Error parsing notification data:', e);
-          return {};
-        }
-      }
-      if (typeof raw === 'object') return raw as Record<string, any>;
-      return {};
-    };
-
     const pruneOrphaned = async (list: Notification[]) => {
-      // Remove notifications that reference content that no longer exists (e.g. deleted post/comment)
-      // Also validate follow notifications to check if the user still follows
-      // Also validate follow_accepted notifications to check if the current user still follows that person
       const postIds = Array.from(
         new Set(list.map((n) => n.data?.post_id).filter(Boolean) as string[])
       );
@@ -72,13 +71,11 @@ export const useNotifications = () => {
         new Set(list.map((n) => n.data?.comment_id).filter(Boolean) as string[])
       );
       
-      // Get user IDs from follow notifications to validate they still follow ME
       const followNotifications = list.filter(n => n.type === 'follow' && n.data?.user_id);
       const followerUserIds = Array.from(
         new Set(followNotifications.map(n => n.data?.user_id).filter(Boolean) as string[])
       );
 
-      // Get user IDs from follow_accepted notifications to validate I still follow THEM
       const followAcceptedNotifications = list.filter(n => n.type === 'follow_accepted' && n.data?.user_id);
       const followAcceptedUserIds = Array.from(
         new Set(followAcceptedNotifications.map(n => n.data?.user_id).filter(Boolean) as string[])
@@ -110,11 +107,9 @@ export const useNotifications = () => {
           const cid = n.data?.comment_id as string | undefined;
           if (pid && !existingPostIds.has(pid)) return true;
           if (cid && !existingCommentIds.has(cid)) return true;
-          // Check if follow notification is from someone who no longer follows ME
           if (n.type === 'follow' && n.data?.user_id) {
             if (!activeFollowerIds.has(n.data.user_id)) return true;
           }
-          // Check if follow_accepted notification is from someone I no longer follow
           if (n.type === 'follow_accepted' && n.data?.user_id) {
             if (!myActiveFollowingIds.has(n.data.user_id)) return true;
           }
@@ -123,7 +118,6 @@ export const useNotifications = () => {
         .map((n) => n.id);
 
       if (invalidIds.length > 0) {
-        // Best-effort cleanup; don't block rendering
         supabase
           .from('notifications')
           .delete()
@@ -140,7 +134,6 @@ export const useNotifications = () => {
     try {
       console.log('Fetching notifications for user:', user.id);
 
-      // Fetch notifications and muted users in parallel for better performance
       const [notificationsResult, mutedResult] = await Promise.all([
         supabase
           .from('notifications')
@@ -187,164 +180,100 @@ export const useNotifications = () => {
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    if (!user || channelRef.current) return;
+  // Handle notification insert from centralized realtime
+  const handleNotificationInsert = useCallback(async (payload: any) => {
+    if (!userIdRef.current) return;
+    
+    console.log('New notification received via centralized channel:', payload);
 
-    try {
-      const channel = supabase
-        .channel(`notifications-changes-${user.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          },
-          async (payload) => {
-            console.log('New notification received:', payload);
+    const parsedData = parseData(payload.data);
 
-            const parseData = (raw: any): Record<string, any> => {
-              if (!raw) return {};
-              if (typeof raw === 'string') {
-                try {
-                  return JSON.parse(raw);
-                } catch (e) {
-                  console.error('Error parsing realtime notification data:', e);
-                  return {};
-                }
-              }
-              if (typeof raw === 'object') return raw as Record<string, any>;
-              return {};
-            };
+    // Check if the notification is from a muted user
+    const notifUserId = parsedData?.user_id;
+    if (notifUserId) {
+      const { data: mutedSetting } = await supabase
+        .from('user_mutes')
+        .select('is_muted')
+        .eq('muter_id', userIdRef.current)
+        .eq('muted_user_id', notifUserId)
+        .maybeSingle();
 
-            const parsedData = parseData(payload.new.data);
-
-            // Check if the notification is from a muted user
-            const notifUserId = parsedData?.user_id;
-            if (notifUserId) {
-              const { data: mutedSetting } = await supabase
-                .from('user_mutes')
-                .select('is_muted')
-                .eq('muter_id', user.id)
-                .eq('muted_user_id', notifUserId)
-                .maybeSingle();
-
-              if (mutedSetting?.is_muted) {
-                console.log('Notification from muted user, ignoring');
-                return;
-              }
-            }
-
-            // Drop + delete notifications that reference deleted content
-            try {
-              const pid = parsedData?.post_id as string | undefined;
-              const cid = parsedData?.comment_id as string | undefined;
-
-              if (pid) {
-                const { data: p } = await supabase.from('posts').select('id').eq('id', pid).maybeSingle();
-                if (!p) {
-                  await supabase.from('notifications').delete().eq('id', payload.new.id).eq('user_id', user.id);
-                  return;
-                }
-              }
-
-              if (cid) {
-                const { data: c } = await supabase.from('comments').select('id').eq('id', cid).maybeSingle();
-                if (!c) {
-                  await supabase.from('notifications').delete().eq('id', payload.new.id).eq('user_id', user.id);
-                  return;
-                }
-              }
-            } catch (e) {
-              // If validation fails, we still show the notification (best-effort)
-              console.warn('Failed to validate notification references:', e);
-            }
-
-            const newNotification = {
-              ...payload.new,
-              data: parsedData,
-            } as Notification;
-            setNotifications((prev) => [newNotification, ...prev]);
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log('Notification updated:', payload);
-            
-            // Parse data properly
-            let parsedData: Record<string, any> = {};
-            if (typeof payload.new.data === 'string') {
-              try {
-                parsedData = JSON.parse(payload.new.data);
-              } catch (e) {
-                console.error('Error parsing updated notification data:', e);
-              }
-            } else if (payload.new.data && typeof payload.new.data === 'object') {
-              parsedData = payload.new.data as Record<string, any>;
-            }
-            
-            const updatedNotification = {
-              ...payload.new,
-              data: parsedData
-            } as Notification;
-            setNotifications(prev => 
-              prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
-            );
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log('Notification deleted:', payload);
-            setNotifications(prev => 
-              prev.filter(n => n.id !== payload.old.id)
-            );
-          }
-        )
-        // Also listen for unfollows to remove stale follow notifications
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'follows',
-            filter: `following_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log('Follow deleted, removing related notification:', payload);
-            // Remove any 'follow' notification from the user who unfollowed
-            const unfollowerId = payload.old?.follower_id;
-            if (unfollowerId) {
-              setNotifications(prev => 
-                prev.filter(n => !(n.type === 'follow' && n.data?.user_id === unfollowerId))
-              );
-            }
-          }
-        );
-
-      channel.subscribe((status) => {
-        console.log('Notification subscription status:', status);
-      });
-
-      channelRef.current = channel;
-    } catch (error) {
-      console.error('Error setting up realtime subscription:', error);
+      if (mutedSetting?.is_muted) {
+        console.log('Notification from muted user, ignoring');
+        return;
+      }
     }
-  };
+
+    // Validate post/comment references exist
+    try {
+      const pid = parsedData?.post_id as string | undefined;
+      const cid = parsedData?.comment_id as string | undefined;
+
+      if (pid) {
+        const { data: p } = await supabase.from('posts').select('id').eq('id', pid).maybeSingle();
+        if (!p) {
+          await supabase.from('notifications').delete().eq('id', payload.id).eq('user_id', userIdRef.current);
+          return;
+        }
+      }
+
+      if (cid) {
+        const { data: c } = await supabase.from('comments').select('id').eq('id', cid).maybeSingle();
+        if (!c) {
+          await supabase.from('notifications').delete().eq('id', payload.id).eq('user_id', userIdRef.current);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to validate notification references:', e);
+    }
+
+    const newNotification = {
+      ...payload,
+      data: parsedData,
+    } as Notification;
+    setNotifications((prev) => [newNotification, ...prev]);
+  }, [parseData]);
+
+  // Handle notification update from centralized realtime
+  const handleNotificationUpdate = useCallback((payload: any) => {
+    console.log('Notification updated via centralized channel:', payload);
+    
+    const parsedData = parseData(payload.data);
+    
+    const updatedNotification = {
+      ...payload,
+      data: parsedData
+    } as Notification;
+    setNotifications(prev => 
+      prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+    );
+  }, [parseData]);
+
+  // Handle notification delete from centralized realtime
+  const handleNotificationDelete = useCallback((payload: any) => {
+    console.log('Notification deleted via centralized channel:', payload);
+    setNotifications(prev => 
+      prev.filter(n => n.id !== payload.id)
+    );
+  }, []);
+
+  // Handle follow delete - remove stale follow notifications
+  const handleFollowDelete = useCallback((payload: any) => {
+    console.log('Follow deleted, removing related notification:', payload);
+    const unfollowerId = payload?.follower_id;
+    if (unfollowerId) {
+      setNotifications(prev => 
+        prev.filter(n => !(n.type === 'follow' && n.data?.user_id === unfollowerId))
+      );
+    }
+  }, []);
+
+  // Subscribe to centralized realtime events
+  useRealtimeEvent('notification_insert', handleNotificationInsert);
+  useRealtimeEvent('notification_update', handleNotificationUpdate);
+  useRealtimeEvent('notification_delete', handleNotificationDelete);
+  useRealtimeEvent('follow_delete', handleFollowDelete);
 
   const sendNotification = async (
     userId: string,
@@ -389,7 +318,6 @@ export const useNotifications = () => {
         return { success: false, error: error.message };
       }
 
-      // Update local state
       setNotifications(prev => 
         prev.map(n => 
           notificationIds.includes(n.id) ? { ...n, is_read: true } : n
@@ -414,7 +342,6 @@ export const useNotifications = () => {
     if (!user) return { success: false, error: 'Not authenticated' };
 
     try {
-      // Optimistically remove from local state first
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
 
       const { error } = await supabase
@@ -425,7 +352,6 @@ export const useNotifications = () => {
 
       if (error) {
         console.error('Error deleting notification:', error);
-        // Refetch to restore state if delete failed
         fetchNotifications();
         return { success: false, error: error.message };
       }
