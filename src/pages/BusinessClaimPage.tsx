@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Building2, CheckCircle, Clock, XCircle } from 'lucide-react';
 import BusinessClaimModal from '@/components/business/BusinessClaimModal';
 import SubscriptionModal from '@/components/business/SubscriptionModal';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 const BusinessClaimPage = () => {
   const { user } = useAuth();
@@ -16,42 +17,7 @@ const BusinessClaimPage = () => {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    fetchClaims();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel(`business-claims-changes-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'business_claim_requests',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Claim status changed:', payload);
-          if (payload.eventType === 'UPDATE' && payload.new.status === 'approved') {
-            setSelectedClaimId(payload.new.id);
-            setShowSubscriptionModal(true);
-          }
-          fetchClaims();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  const fetchClaims = async () => {
+  const fetchClaims = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -64,7 +30,24 @@ const BusinessClaimPage = () => {
       setClaims(data);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    fetchClaims();
+
+    // Poll for claim status changes every 30 seconds
+    // This is more efficient than maintaining a separate channel
+    const interval = setInterval(fetchClaims, 30000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [user, navigate, fetchClaims]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

@@ -10,6 +10,7 @@ import promotionIcon from '@/assets/filter-promotion.png';
 import newIcon from '@/assets/new-icon.png';
 import cityIcon from '@/assets/city-icon-new.png';
 import { useTranslation } from 'react-i18next';
+import { filterValidUUIDs } from '@/utils/uuidValidation';
 
 type FilterType = 'most_saved' | 'discount' | 'event' | 'promotion' | 'new';
 
@@ -306,7 +307,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         if (locationsResult.error) throw locationsResult.error;
 
         const locationsData = locationsResult.data || [];
-        const locationIds = locationsData.map((l) => l.id);
+        const locationIds = filterValidUUIDs(locationsData.map((l) => l.id));
 
         const { data: savesData } =
           locationIds.length > 0

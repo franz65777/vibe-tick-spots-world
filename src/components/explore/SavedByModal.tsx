@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { type SaveTag } from '@/utils/saveTags';
+import { isValidUUID } from '@/utils/uuidValidation';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
@@ -69,7 +70,8 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
         // 1) Collect all user_ids who saved this location (internal + google) with their save_tag
         const userSaveTags = new Map<string, SaveTag>();
 
-        if (placeId) {
+        // Only query user_saved_locations if placeId is a valid UUID
+        if (placeId && isValidUUID(placeId)) {
           const { data: internal, error: internalError } = await supabase
             .from('user_saved_locations')
             .select('user_id, save_tag')

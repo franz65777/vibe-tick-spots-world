@@ -49,24 +49,12 @@ const BusinessBottomNavigation = () => {
     
     fetchBusinessAvatar();
 
-    // Subscribe to location changes
-    const channel = supabase
-      .channel('business-avatar-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'locations',
-        },
-        () => {
-          fetchBusinessAvatar();
-        }
-      )
-      .subscribe();
+    // Poll for avatar changes every 60 seconds instead of realtime channel
+    // This reduces Supabase channel usage
+    const interval = setInterval(fetchBusinessAvatar, 60000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [user?.id]);
 
