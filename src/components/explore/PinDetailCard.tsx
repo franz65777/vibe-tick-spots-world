@@ -1291,16 +1291,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           <div 
             ref={photoSectionRef}
             className={cn(
-              "px-4 transition-[max-height,opacity,padding] duration-200 ease-out",
+              "px-4 transition-all duration-300 ease-out will-change-transform",
               !isExpanded && "pt-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
               isExpanded && photoScrollProgress < 1 && "pt-1 pb-1",
               isExpanded && photoScrollProgress >= 1 && "pt-0 pb-0"
             )}
             style={isExpanded ? {
-              maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
-              opacity: Math.max(0, 1 - photoScrollProgress),
-              overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
-              pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+              transform: `scaleY(${Math.max(0, 1 - photoScrollProgress)})`,
+              transformOrigin: 'top',
+              opacity: Math.max(0, 1 - photoScrollProgress * 1.5),
+              pointerEvents: photoScrollProgress > 0.7 ? 'none' : 'auto',
             } : undefined}
           >
             {photosLoading ? (
@@ -1367,12 +1367,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               {/* Marketing Campaign - Expandable Section */}
               {campaign && (
                 <div 
-                  className="px-4 pb-1 transition-[max-height,opacity] duration-200 ease-out"
+                  className="px-4 pb-1 transition-all duration-300 ease-out will-change-transform"
                   style={{
-                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
-                    opacity: Math.max(0, 1 - photoScrollProgress),
-                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
-                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                    transform: `scaleY(${Math.max(0, 1 - photoScrollProgress)})`,
+                    transformOrigin: 'top',
+                    opacity: Math.max(0, 1 - photoScrollProgress * 1.5),
+                    pointerEvents: photoScrollProgress > 0.7 ? 'none' : 'auto',
                   }}
                 >
                   <div className="rounded-2xl bg-muted/40 border border-border/30 overflow-hidden">
@@ -1403,14 +1403,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               )}
 
-              {/* What Did You Think Card - Before Featured Lists */}
+              {/* What Did You Think Card - Appears when photos/lists are hidden */}
               <div 
-                className="px-4 py-2 transition-[max-height,opacity] duration-200 ease-out"
+                className="px-4 py-2 transition-all duration-300 ease-out will-change-transform"
                 style={{
-                  maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
-                  opacity: Math.max(0, 1 - photoScrollProgress),
-                  overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
-                  pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                  transform: photoScrollProgress < 0.8 
+                    ? 'translateY(-10px) scale(0.95)' 
+                    : 'translateY(0) scale(1)',
+                  opacity: photoScrollProgress < 0.8 ? 0 : Math.min(1, (photoScrollProgress - 0.8) * 5),
+                  pointerEvents: photoScrollProgress < 0.9 ? 'none' : 'auto',
                 }}
               >
                 <button
@@ -1439,12 +1440,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               {/* Featured Lists Section */}
                 {!listsLoading && featuredLists.length > 0 && (
                 <div 
-                  className="px-4 py-2 transition-[max-height,opacity] duration-200 ease-out"
+                  className="px-4 py-2 transition-all duration-300 ease-out will-change-transform"
                   style={{
-                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
-                    opacity: Math.max(0, 1 - photoScrollProgress),
-                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
-                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                    transform: `scaleY(${Math.max(0, 1 - photoScrollProgress)})`,
+                    transformOrigin: 'top',
+                    opacity: Math.max(0, 1 - photoScrollProgress * 1.5),
+                    pointerEvents: photoScrollProgress > 0.7 ? 'none' : 'auto',
                   }}
                 >
                   <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
