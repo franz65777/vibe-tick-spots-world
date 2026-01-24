@@ -10,6 +10,7 @@ import { signupTranslations } from './i18n-signup';
 import { createListTranslations } from './i18n-create-list';
 import { guidedTourTranslations } from './i18n-guided-tour';
 import { rewardsTranslations } from './i18n-rewards';
+import { contributionTranslations } from './i18n-contribution';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -9921,6 +9922,19 @@ Object.keys(rewardsTranslations).forEach(lang => {
     resources[lang].profile = {
       ...resources[lang].profile,
       ...rewardsTranslations[lang]
+    };
+  }
+});
+
+// Merge contribution translations into explore namespace
+Object.keys(contributionTranslations).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang] = {
+      ...resources[lang],
+      explore: {
+        ...(resources[lang] as any).explore,
+        ...(contributionTranslations as any)[lang].explore,
+      },
     };
   }
 });
