@@ -15,6 +15,7 @@ import swipePin from '@/assets/swipe-pin-3d-new.png';
 import { useTranslation } from 'react-i18next';
 import SwipeCategoryFilter from './SwipeCategoryFilter';
 import { allowedCategories, type AllowedCategory } from '@/utils/allowedCategories';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface SwipeLocation {
   id: string;
@@ -90,30 +91,15 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
   useEffect(() => {
     fetchFollowedUsers();
-    
-    // Subscribe to realtime updates for followed users' saves
-    if (!user) return;
-    
-    const channel = supabase
-      .channel('discover-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'saved_places'
-        },
-        () => {
-          // Refresh followed users when new saves happen
-          fetchFollowedUsers();
-        }
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [user]);
+
+  // Use centralized realtime for save events - eliminates individual channel
+  const handleSaveChange = useCallback(() => {
+    // Refresh followed users when new saves happen
+    fetchFollowedUsers();
+  }, []);
+
+  useRealtimeEvent('saved_place_insert', handleSaveChange);
 
   useEffect(() => {
     fetchDailyLocations();

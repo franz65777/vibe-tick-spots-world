@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { filterValidUUIDs } from '@/utils/uuidValidation';
 
 interface CampaignData {
   locationId: string;
@@ -57,12 +58,14 @@ export function useCampaignLocations(locationIds: string[]): UseCampaignLocation
   }, [locationIds]);
 
   const fetchCampaigns = useCallback(async (ids: string[]) => {
-    if (ids.length === 0) return;
+    // Filter out non-UUID strings (e.g., Google Place IDs) to prevent DB errors
+    const validUUIDs = filterValidUUIDs(ids);
+    if (validUUIDs.length === 0) return;
 
     // Request coalescing: if there's already a pending fetch, add to it
     if (pendingFetch) {
-      // Add new IDs to pending request
-      ids.forEach(id => {
+      // Add new IDs to pending request (only valid UUIDs)
+      validUUIDs.forEach(id => {
         if (!pendingLocationIds.includes(id)) {
           pendingLocationIds.push(id);
         }
@@ -75,7 +78,7 @@ export function useCampaignLocations(locationIds: string[]): UseCampaignLocation
     }
 
     setLoading(true);
-    pendingLocationIds = [...ids];
+    pendingLocationIds = [...validUUIDs];
 
     try {
       const fetchPromise = (async () => {

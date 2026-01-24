@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, useRef } from 'react';
+import { memo, useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import noUsersCharacter from '@/assets/no-users-character.png';
 import { cn } from '@/lib/utils';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface CityRanking {
   city: string;
@@ -33,6 +34,7 @@ const CityStatsCard = memo(() => {
   const [loading, setLoading] = useState(!globalStatsCache);
   const [isMinimized, setIsMinimized] = useState(false);
   const fetchingRef = useRef(false);
+  const fetchStatsRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -122,27 +124,31 @@ const CityStatsCard = memo(() => {
     };
 
     fetchStats();
+    fetchStatsRef.current = fetchStats;
 
-    const channel = supabase
-      .channel('city-stats-feed')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
-        globalStatsCache = null;
-        fetchStats();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
-        globalStatsCache = null;
-        fetchStats();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, () => {
-        globalStatsCache = null;
-        fetchStats();
-      })
-      .subscribe();
+    // Poll every 60s as fallback (global stats don't need sub-second updates)
+    const intervalId = setInterval(() => {
+      globalStatsCache = null;
+      fetchStats();
+    }, 60000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [user?.id, geoLocation?.city, geoLocation?.latitude, geoLocation?.longitude]);
+
+  // Use centralized realtime for save events - eliminates individual channel
+  const handleSaveChange = useCallback(() => {
+    globalStatsCache = null;
+    if (fetchStatsRef.current) {
+      fetchStatsRef.current();
+    }
+  }, []);
+
+  useRealtimeEvent(
+    ['saved_place_insert', 'saved_place_delete', 'saved_location_insert', 'saved_location_delete'],
+    handleSaveChange
+  );
 
   // Show cached data immediately, never show skeleton if we have cache
   if (loading && !globalStatsCache) {

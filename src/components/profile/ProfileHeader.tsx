@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
 import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
@@ -22,6 +21,7 @@ import { useStories } from '@/hooks/useStories';
 import CreateStoryModal from '../CreateStoryModal';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface ProfileHeaderProps {
   onFollowersClick: () => void;
@@ -55,31 +55,13 @@ const ProfileHeader = ({
   const navigate = useNavigate();
   const { stories, refetch: refetchStories } = useStories();
 
-  // Optimized realtime updates - only on specific changes, no polling
-  useEffect(() => {
-    if (!user?.id) return;
+  // Use centralized realtime for profile updates - eliminates individual channel
+  const handleProfileUpdate = useCallback(() => {
+    // Debounce refetch to avoid too many calls
+    setTimeout(() => refetch(), 300);
+  }, [refetch]);
 
-    const channel = supabase
-      .channel(`profile-changes-${user.id}-${Math.random().toString(36).slice(2)}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`
-        },
-        () => {
-          // Debounce refetch to avoid too many calls
-          setTimeout(() => refetch(), 300);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, refetch]);
+  useRealtimeEvent('profile_update', handleProfileUpdate);
 
   const hasBusinessAccount = (profile as any)?.is_business_user || false;
 

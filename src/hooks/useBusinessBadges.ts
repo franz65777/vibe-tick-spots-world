@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 export interface BusinessBadgeItem {
   id: string;
@@ -45,9 +46,9 @@ export const useBusinessBadges = ({ locationId, googlePlaceId }: UseBusinessBadg
       const eventsCount = posts?.filter((p: any) => p.content_type === 'event').length || 0;
       const discountsCount = posts?.filter((p: any) => p.content_type === 'discount').length || 0;
 
-      // Saves for this location
+      // Saves for this location - only query if locationId is a valid UUID
       let savesCount = 0;
-      if (locationId) {
+      if (locationId && isValidUUID(locationId)) {
         const { count: internalSaves } = await supabase
           .from('user_saved_locations')
           .select('*', { count: 'exact', head: true })
