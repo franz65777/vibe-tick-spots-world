@@ -3329,6 +3329,7 @@ export type Database = {
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_location_shares: { Args: never; Returns: undefined }
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      cleanup_expired_shares: { Args: never; Returns: undefined }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       cleanup_old_analytics: { Args: never; Returns: undefined }
       cleanup_sensitive_data: { Args: never; Returns: undefined }
