@@ -205,33 +205,28 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     try {
       setLoading(true);
       
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // Parallelize location ID lookups
+      const [relatedLocationsResult, nameMatchResult] = await Promise.all([
+        place.google_place_id 
+          ? supabase.from('locations').select('id').eq('google_place_id', place.google_place_id)
+          : Promise.resolve({ data: null, error: null }),
+        supabase.from('locations').select('id').ilike('name', place.name)
+      ]);
+      
       let locationIds: string[] = [];
       
-      if (place.google_place_id) {
-        const { data: relatedLocations, error: locationError } = await supabase
-          .from('locations')
-          .select('id, name, google_place_id')
-          .eq('google_place_id', place.google_place_id);
-        
-        if (!locationError && relatedLocations && relatedLocations.length > 0) {
-          locationIds = relatedLocations.map(loc => loc.id);
-        }
+      if (relatedLocationsResult.data?.length) {
+        locationIds = relatedLocationsResult.data.map(loc => loc.id);
       }
       
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(place.id) && !locationIds.includes(place.id)) {
         locationIds.push(place.id);
       }
       
-      if (locationIds.length === 0) {
-        const { data: nameMatchLocations, error: nameError } = await supabase
-          .from('locations')
-          .select('id, name')
-          .ilike('name', place.name);
-        
-        if (!nameError && nameMatchLocations && nameMatchLocations.length > 0) {
-          locationIds = nameMatchLocations.map(loc => loc.id);
-        }
+      if (locationIds.length === 0 && nameMatchResult.data?.length) {
+        locationIds = nameMatchResult.data.map(loc => loc.id);
       }
       
       if (locationIds.length === 0) {
@@ -270,22 +265,18 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       if (postsError) throw postsError;
 
       if (postsData && postsData.length > 0) {
+        // Fetch profiles in parallel with no blocking
         const userIds = [...new Set(postsData.map(post => post.user_id))];
-        const { data: profilesData, error: profilesError } = await supabase
+        const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, username, avatar_url')
           .in('id', userIds);
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-        }
 
         let postsWithProfiles = postsData.map(post => ({
           ...post,
           profiles: profilesData?.find(profile => profile.id === post.user_id) || null
         }));
 
-        // Filter out posts without valid media_urls for Posts tab
         if (activeTab === 'posts') {
           postsWithProfiles = postsWithProfiles.filter(post => 
             post.media_urls && 
