@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo, useDeferredValue } from 'react';
 import { UserPlus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -12,18 +12,83 @@ interface UserTagSelectorProps {
   onUserRemoved: (userId: string) => void;
 }
 
-export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
+// Memoized tagged user chip
+const TaggedUserChip = memo(({ 
+  user, 
+  onRemove 
+}: { 
+  user: any; 
+  onRemove: (id: string) => void;
+}) => {
+  const handleRemove = useCallback(() => onRemove(user.id), [user.id, onRemove]);
+  
+  return (
+    <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
+      <Avatar className="w-5 h-5">
+        <AvatarImage src={user.avatar_url} />
+        <AvatarFallback className="text-xs">
+          {user.username?.[0] || 'U'}
+        </AvatarFallback>
+      </Avatar>
+      <span className="font-medium">{user.username}</span>
+      <button
+        onClick={handleRemove}
+        className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
+});
+
+TaggedUserChip.displayName = 'TaggedUserChip';
+
+// Memoized search result item
+const SearchResultItem = memo(({ 
+  result, 
+  onSelect 
+}: { 
+  result: any; 
+  onSelect: (user: any) => void;
+}) => {
+  const handleSelect = useCallback(() => onSelect(result), [result, onSelect]);
+  
+  return (
+    <button
+      onClick={handleSelect}
+      className="w-full px-3 py-2 flex items-center gap-2 hover:bg-muted transition-colors text-left"
+    >
+      <Avatar className="w-8 h-8">
+        <AvatarImage src={result.avatar_url} />
+        <AvatarFallback>{result.username?.[0] || 'U'}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{result.username}</p>
+        {result.bio && (
+          <p className="text-xs text-muted-foreground truncate">{result.bio}</p>
+        )}
+      </div>
+    </button>
+  );
+});
+
+SearchResultItem.displayName = 'SearchResultItem';
+
+export const UserTagSelector = memo(({
   taggedUsers,
   onUserTagged,
   onUserRemoved
-}) => {
+}: UserTagSelectorProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Use deferred value for responsive input
+  const deferredQuery = useDeferredValue(searchQuery);
 
-  const searchUsers = async (query: string) => {
+  const searchUsers = useCallback(async (query: string) => {
     if (!query.trim() || !user) {
       setSearchResults([]);
       return;
@@ -49,13 +114,26 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [user, taggedUsers]);
 
-  const handleSelectUser = (selectedUser: any) => {
+  // Effect for deferred search
+  React.useEffect(() => {
+    if (deferredQuery.length >= 2) {
+      searchUsers(deferredQuery);
+    } else {
+      setSearchResults([]);
+    }
+  }, [deferredQuery, searchUsers]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  const handleSelectUser = useCallback((selectedUser: any) => {
     onUserTagged(selectedUser);
     setSearchQuery('');
     setSearchResults([]);
-  };
+  }, [onUserTagged]);
 
   return (
     <div className="space-y-3">
@@ -70,10 +148,7 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
           type="text"
           placeholder={t('searchUsersToTag', { ns: 'add' })}
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            searchUsers(e.target.value);
-          }}
+          onChange={handleInputChange}
           className="w-full"
         />
 
@@ -81,22 +156,11 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
         {searchResults.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-2xl shadow-lg z-10 max-h-48 overflow-y-auto scrollbar-hide">
             {searchResults.map((result) => (
-              <button
+              <SearchResultItem
                 key={result.id}
-                onClick={() => handleSelectUser(result)}
-                className="w-full px-3 py-2 flex items-center gap-2 hover:bg-muted transition-colors text-left"
-              >
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={result.avatar_url} />
-                  <AvatarFallback>{result.username?.[0] || 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{result.username}</p>
-                  {result.bio && (
-                    <p className="text-xs text-muted-foreground truncate">{result.bio}</p>
-                  )}
-                </div>
-              </button>
+                result={result}
+                onSelect={handleSelectUser}
+              />
             ))}
           </div>
         )}
@@ -106,27 +170,16 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
       {taggedUsers.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {taggedUsers.map((taggedUser) => (
-            <div
+            <TaggedUserChip
               key={taggedUser.id}
-              className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm"
-            >
-              <Avatar className="w-5 h-5">
-                <AvatarImage src={taggedUser.avatar_url} />
-                <AvatarFallback className="text-xs">
-                  {taggedUser.username?.[0] || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-medium">{taggedUser.username}</span>
-              <button
-                onClick={() => onUserRemoved(taggedUser.id)}
-                className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
+              user={taggedUser}
+              onRemove={onUserRemoved}
+            />
           ))}
         </div>
       )}
     </div>
   );
-};
+});
+
+UserTagSelector.displayName = 'UserTagSelector';

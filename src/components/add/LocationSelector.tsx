@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { memo, useCallback } from 'react';
 import { MapPin, AlertCircle } from 'lucide-react';
 import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
 import { useTranslation } from 'react-i18next';
-// Category selection removed per latest UX
 
 interface LocationSelectorProps {
   selectedLocation: any;
@@ -12,14 +11,19 @@ interface LocationSelectorProps {
   disabled?: boolean;
 }
 
-export const LocationSelector: React.FC<LocationSelectorProps> = ({
+export const LocationSelector = memo(({
   selectedLocation,
   onLocationSelect,
   selectedCategory,
   onCategoryChange,
   disabled = false
-}) => {
+}: LocationSelectorProps) => {
   const { t } = useTranslation();
+  
+  const handleClearLocation = useCallback(() => {
+    onLocationSelect(null);
+    onCategoryChange('');
+  }, [onLocationSelect, onCategoryChange]);
   
   return (
     <div className="space-y-4">
@@ -56,10 +60,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
                 </p>
               </div>
               <button
-                onClick={() => {
-                  onLocationSelect(null);
-                  onCategoryChange('');
-                }}
+                onClick={handleClearLocation}
                 className="text-sm text-primary hover:text-primary/80 transition-colors font-medium shrink-0"
               >
                 {t('changeLocation', { ns: 'add' })}
@@ -70,4 +71,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       )}
     </div>
   );
-};
+});
+
+LocationSelector.displayName = 'LocationSelector';
