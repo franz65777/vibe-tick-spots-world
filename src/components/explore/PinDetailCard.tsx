@@ -5,6 +5,7 @@ import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { useNavigate } from 'react-router-dom';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { supabase } from '@/integrations/supabase/client';
@@ -248,6 +249,7 @@ interface PinDetailCardProps {
 
 const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCardProps) => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const { t, i18n } = useTranslation();
@@ -1358,13 +1360,53 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               )}
 
+              {/* What Did You Think Card - BEFORE Featured Lists */}
+              {user && (
+                <div 
+                  className={cn(
+                    "px-4 py-2",
+                    (locationPhotos.length > 0 || campaign) && "border-t border-border/30"
+                  )}
+                  style={{
+                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
+                    opacity: Math.max(0, 1 - photoScrollProgress),
+                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
+                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                  }}
+                >
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContributionModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 py-2 px-3 rounded-xl border border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20 transition-all"
+                  >
+                    {/* User Avatar */}
+                    <Avatar className="h-8 w-8 ring-2 ring-background shrink-0">
+                      <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* CTA Text */}
+                    <span className="text-muted-foreground text-sm font-medium">
+                      {t('whatDidYouThink', { ns: 'explore', defaultValue: 'what did you think??' })}
+                    </span>
+                    
+                    {/* Camera icon */}
+                    <div className="ml-auto flex items-center gap-1.5 text-muted-foreground">
+                      <Camera className="w-4 h-4" />
+                      <MessageCircle className="w-4 h-4" />
+                    </div>
+                  </button>
+                </div>
+              )}
+
               {/* Featured Lists Section */}
                 {!listsLoading && featuredLists.length > 0 && (
                 <div 
-                  className={cn(
-                    "px-4 py-2 transition-[max-height,opacity] duration-200 ease-out",
-                    (locationPhotos.length > 0 || campaign) && "border-t border-border/30"
-                  )}
+                  className="px-4 py-2 transition-[max-height,opacity] duration-200 ease-out"
                   style={{
                     maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
                     opacity: Math.max(0, 1 - photoScrollProgress),
@@ -1406,46 +1448,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* What Did You Think Card */}
-              {user && (
-                <div 
-                  className="px-4 py-3"
-                  style={{
-                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
-                    opacity: Math.max(0, 1 - photoScrollProgress),
-                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
-                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
-                  }}
-                >
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setContributionModalOpen(true);
-                    }}
-                    className="w-full flex items-center gap-3 p-3 rounded-2xl border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20 transition-all"
-                  >
-                    {/* User Avatar */}
-                    <Avatar className="h-10 w-10 ring-2 ring-background shrink-0">
-                      <AvatarImage src={user?.user_metadata?.avatar_url} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {user?.email?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    {/* CTA Text */}
-                    <span className="text-muted-foreground text-sm font-medium">
-                      {t('whatDidYouThink', { ns: 'explore', defaultValue: 'what did you think??' })}
-                    </span>
-                    
-                    {/* Camera icon */}
-                    <div className="ml-auto flex items-center gap-1 text-muted-foreground">
-                      <Camera className="w-4 h-4" />
-                      <MessageCircle className="w-4 h-4" />
-                    </div>
-                  </button>
                 </div>
               )}
 
