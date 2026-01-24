@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell, Calendar } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell, Calendar, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import VisitedModal from './VisitedModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { LocationShareModal } from './LocationShareModal';
 import LocationReviewModal from './LocationReviewModal';
+import LocationContributionModal from './LocationContributionModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -277,6 +278,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [contributionModalOpen, setContributionModalOpen] = useState(false);
   const [photoScrollProgress, setPhotoScrollProgress] = useState(0); // 0=fully visible, 1=fully hidden
   const [photoCollapsePx, setPhotoCollapsePx] = useState(120); // how many px of scroll are consumed to fully hide photos (96px photo + padding)
   const [isUserDragging, setIsUserDragging] = useState(false);
@@ -1201,20 +1203,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </span>
               </button>
 
-              {/* Review/Rate */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReviewOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
-              >
-                <Star className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {t('review', { ns: 'explore', defaultValue: 'Rate' })}
-                </span>
-              </button>
-
               {/* Mute */}
               <button
                 onClick={(e) => {
@@ -1418,6 +1406,46 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* What Did You Think Card */}
+              {user && (
+                <div 
+                  className="px-4 py-3"
+                  style={{
+                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
+                    opacity: Math.max(0, 1 - photoScrollProgress),
+                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
+                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                  }}
+                >
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContributionModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20 transition-all"
+                  >
+                    {/* User Avatar */}
+                    <Avatar className="h-10 w-10 ring-2 ring-background shrink-0">
+                      <AvatarImage src={user?.user_metadata?.avatar_url} />
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {user?.email?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* CTA Text */}
+                    <span className="text-muted-foreground text-sm font-medium">
+                      {t('whatDidYouThink', { ns: 'explore', defaultValue: 'what did you think??' })}
+                    </span>
+                    
+                    {/* Camera icon */}
+                    <div className="ml-auto flex items-center gap-1 text-muted-foreground">
+                      <Camera className="w-4 h-4" />
+                      <MessageCircle className="w-4 h-4" />
+                    </div>
+                  </button>
                 </div>
               )}
 
@@ -1739,6 +1767,23 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           }}
         />
       )}
+
+      <LocationContributionModal
+        isOpen={contributionModalOpen}
+        onClose={() => setContributionModalOpen(false)}
+        location={{
+          id: locationIdForEngagement || undefined,
+          name: place.name,
+          google_place_id: place.google_place_id || locationDetails?.google_place_id,
+          latitude: place.coordinates?.lat || place.latitude,
+          longitude: place.coordinates?.lng || place.longitude,
+        }}
+        onSuccess={() => {
+          setContributionModalOpen(false);
+          fetchPosts(); // Refresh posts after contribution
+          toast.success(t('contributionSaved', { ns: 'explore', defaultValue: 'Your contribution has been saved!' }));
+        }}
+      />
     </>
   );
 };
