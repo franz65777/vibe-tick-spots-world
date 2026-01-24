@@ -1363,13 +1363,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           {/* Expanded Content - Only visible when drawer is expanded */}
           {isExpanded && (
             <>
-              {/* Marketing Campaign - Expandable Section */}
+              {/* Marketing Campaign - Collapsible Section */}
               {campaign && (
                 <div 
-                  className="px-4 pb-1 transition-all duration-300 ease-out overflow-hidden"
+                  className="transition-all duration-300 ease-out overflow-hidden"
                   style={{
                     maxHeight: photoScrollProgress >= 1 ? '0px' : '200px',
                     opacity: Math.max(0, 1 - photoScrollProgress * 1.2),
+                    padding: photoScrollProgress >= 1 ? '0 16px' : '0 16px 4px 16px',
                     pointerEvents: photoScrollProgress > 0.8 ? 'none' : 'auto',
                   }}
                 >
@@ -1426,13 +1427,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </button>
               </div>
 
-              {/* Featured Lists Section */}
-                {!listsLoading && featuredLists.length > 0 && (
+              {/* Featured Lists Section - Collapsible */}
+              {!listsLoading && featuredLists.length > 0 && (
                 <div 
-                  className="px-4 py-2 transition-all duration-300 ease-out overflow-hidden"
+                  className="transition-all duration-300 ease-out overflow-hidden"
                   style={{
-                    maxHeight: photoScrollProgress >= 1 ? '0px' : '100px',
+                    maxHeight: photoScrollProgress >= 1 ? '0px' : '80px',
                     opacity: Math.max(0, 1 - photoScrollProgress * 1.2),
+                    padding: photoScrollProgress >= 1 ? '0 16px' : '8px 16px',
                     pointerEvents: photoScrollProgress > 0.8 ? 'none' : 'auto',
                   }}
                 >

@@ -24,6 +24,7 @@ import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { VirtualizedPostGrid, VirtualizedReviewList } from './VirtualizedPostGrid';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
@@ -641,10 +642,10 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
               </div>
             </div>
 
-            {/* Tab Content */}
+            {/* Tab Content - Virtualized */}
             <div 
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
+              className="flex-1 overflow-hidden max-h-[calc(90vh-280px)]"
               onScroll={(e) => {
                 const currentScrollY = e.currentTarget.scrollTop;
                 
@@ -662,113 +663,18 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
               }}
             >
               {activeTab === 'posts' ? (
-                <div className="px-4 py-4">
-                  {loading && posts.length === 0 ? (
-                    <div className="flex justify-center py-8">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : posts.length === 0 ? (
-                    <div className="py-8 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Camera className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
-                      {posts.map((post) => (
-                        <button
-                          key={post.id} 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPostId(post.id);
-                          }}
-                          className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
-                        >
-                          <div className="absolute inset-0">
-                            <img 
-                              src={post.media_urls[0]} 
-                              alt="Post image" 
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            <div className="absolute top-2 left-2">
-                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                                <AvatarImage src={post.profiles?.avatar_url} />
-                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
-                            {post.media_urls.length > 1 && (
-                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                +{post.media_urls.length - 1}
-                              </div>
-                            )}
-                            {post.caption && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5">
-                                <p className="text-xs text-white line-clamp-2 leading-relaxed">
-                                  {post.caption}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <VirtualizedPostGrid
+                  posts={posts}
+                  loading={loading}
+                  onPostSelect={(postId) => setSelectedPostId(postId)}
+                />
               ) : (
-                <div className="px-4 py-4">
-                  {loading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : posts.length === 0 ? (
-                    <div className="py-8 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Star className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 pb-4">
-                      {posts.map((post) => (
-                        <div key={post.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
-                          <Avatar className="w-10 h-10 shrink-0">
-                            <AvatarImage src={post.profiles?.avatar_url || ''} />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-semibold text-sm">{post.profiles?.username || 'User'}</p>
-                              <div className="flex items-center gap-1">
-                                {(() => {
-                                  const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
-                                  return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
-                                })()}
-                                <span className={cn("text-sm font-medium", getRatingColor(post.rating))}>{post.rating}</span>
-                              </div>
-                            </div>
-                            {post.caption && (
-                              <p className="text-sm text-muted-foreground mb-1 text-left">{post.caption}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground text-left">
-                              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: currentLocale })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <VirtualizedReviewList
+                  posts={posts}
+                  loading={loading}
+                  category={place.category}
+                  locale={currentLocale}
+                />
               )}
             </div>
           </div>
