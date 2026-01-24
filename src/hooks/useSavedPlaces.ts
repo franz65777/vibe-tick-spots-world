@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeCity } from '@/utils/cityNormalization';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 interface SavedPlace {
   id: string;
@@ -416,10 +416,15 @@ export const useSavedPlaces = () => {
 
       // Also try to delete from user_saved_locations (internal locations)
       // First find the internal location by google_place_id or by id
+      // Only include id in the OR filter if it's a valid UUID
+      const orFilter = isValidUUID(placeId)
+        ? `google_place_id.eq.${placeId},id.eq.${placeId}`
+        : `google_place_id.eq.${placeId}`;
+      
       const { data: locationData } = await supabase
         .from('locations')
         .select('id')
-        .or(`google_place_id.eq.${placeId},id.eq.${placeId}`)
+        .or(orFilter)
         .maybeSingle();
 
       if (locationData?.id) {

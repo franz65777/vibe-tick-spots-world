@@ -160,48 +160,32 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
     };
   }, [isOpen, initialLoadComplete]);
 
-  // Real-time subscription for save count and share count
+  // Real-time subscription for save count and share count - using polling instead of individual channels
+  // This reduces Supabase channel usage significantly
   useEffect(() => {
     if (!folderId || !isOpen) return;
 
-    const channel = supabase
-      .channel(`folder-stats-${folderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'folder_saves',
-          filter: `folder_id=eq.${folderId}`
-        },
-        async () => {
-          const { count } = await supabase
-            .from('folder_saves')
-            .select('id', { count: 'exact', head: true })
-            .eq('folder_id', folderId);
-          setRealSaveCount(count || 0);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'folder_shares',
-          filter: `folder_id=eq.${folderId}`
-        },
-        async () => {
-          const { count } = await supabase
-            .from('folder_shares')
-            .select('id', { count: 'exact', head: true })
-            .eq('folder_id', folderId);
-          setShareCount(count || 0);
-        }
-      )
-      .subscribe();
+    // Initial fetch + polling every 30 seconds instead of realtime channel
+    const fetchCounts = async () => {
+      const [saveResult, shareResult] = await Promise.all([
+        supabase
+          .from('folder_saves')
+          .select('id', { count: 'exact', head: true })
+          .eq('folder_id', folderId),
+        supabase
+          .from('folder_shares')
+          .select('id', { count: 'exact', head: true })
+          .eq('folder_id', folderId)
+      ]);
+      setRealSaveCount(saveResult.count || 0);
+      setShareCount(shareResult.count || 0);
+    };
+
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000); // Poll every 30 seconds
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [folderId, isOpen]);
 

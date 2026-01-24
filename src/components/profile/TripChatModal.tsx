@@ -48,25 +48,14 @@ const TripChatModal = ({ tripId, tripName, isOpen, onClose }: TripChatModalProps
       loadMessages();
       loadParticipants();
       
-      // Subscribe to new messages
-      const channel = supabase
-        .channel(`trip_${tripId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'trip_messages',
-            filter: `trip_id=eq.${tripId}`
-          },
-          (payload) => {
-            loadMessages();
-          }
-        )
-        .subscribe();
+      // Poll for new messages every 5 seconds instead of realtime channel
+      // This reduces Supabase channel usage while maintaining responsive UX
+      const interval = setInterval(() => {
+        loadMessages();
+      }, 5000);
 
       return () => {
-        supabase.removeChannel(channel);
+        clearInterval(interval);
       };
     }
   }, [isOpen, tripId]);

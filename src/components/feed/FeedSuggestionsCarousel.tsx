@@ -10,6 +10,7 @@ import { type SaveTag } from '@/utils/saveTags';
 import { toast } from 'sonner';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import locationPinIcon from '@/assets/location-pin-icon.png';
+import { filterValidUUIDs } from '@/utils/uuidValidation';
 
 interface SuggestedLocation {
   id: string;
@@ -255,7 +256,8 @@ const FeedSuggestionsCarousel = memo(() => {
 
       // Fetch save_count for the nearest internal candidates (used as tie-breaker)
       const internalSample = internalRaw.slice(0, 200);
-      const internalSampleIds = internalSample.map((l: any) => l.id);
+      // Filter to only valid UUIDs to prevent database errors
+      const internalSampleIds = filterValidUUIDs(internalSample.map((l: any) => l.id));
 
       const internalCounts = new Map<string, number>();
       if (internalSampleIds.length > 0) {
@@ -407,7 +409,8 @@ const FeedSuggestionsCarousel = memo(() => {
         .map((x) => x.c);
 
       // 6) Hydrate saved_by ONLY for DB locations
-      const dbIds = ranked.filter((c) => c.source === 'db').map((c) => c.id);
+      // Filter to only valid UUIDs to prevent database errors
+      const dbIds = filterValidUUIDs(ranked.filter((c) => c.source === 'db').map((c) => c.id));
       if (dbIds.length > 0) {
         const { data: uslRows } = await supabase
           .from('user_saved_locations')
