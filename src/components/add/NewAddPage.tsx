@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, memo } from 'react';
 import { PostEditor } from './PostEditor';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,29 +6,43 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import { useAddPageState } from '@/hooks/useAddPageState';
 
-export const NewAddPage = () => {
+export const NewAddPage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { businessProfile, hasValidBusinessAccount } = useBusinessProfile();
   
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [caption, setCaption] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<any>(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [taggedUsers, setTaggedUsers] = useState<any[]>([]);
-  const [rating, setRating] = useState<number | undefined>();
-  const [isUploading, setIsUploading] = useState(false);
-  const [businessLocation, setBusinessLocation] = useState<any>(null);
+  // Consolidated state management
+  const {
+    selectedFiles,
+    previewUrls,
+    caption,
+    selectedLocation,
+    selectedCategory,
+    taggedUsers,
+    rating,
+    isUploading,
+    businessLocation,
+    setCaption,
+    setTaggedUsers,
+    setRating,
+    setIsUploading,
+    addFiles,
+    removeFile,
+    setLocationWithCategory,
+    setBusinessLocationWithAutoSelect,
+    resetState,
+  } = useAddPageState();
 
   // Fetch business location if this is a business account
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBusinessLocation = async () => {
       if (!hasValidBusinessAccount || !businessProfile) return;
       
       try {
+        // Parallel fetch: get location claim and location data together
         const { data: locationClaim } = await supabase
           .from('location_claims')
           .select('location_id')
@@ -45,21 +59,23 @@ export const NewAddPage = () => {
             .single();
 
           if (location) {
-            setBusinessLocation(location);
-            // Auto-set location for business posts
-            setSelectedLocation({
-              place_id: location.google_place_id || location.id,
-              name: location.name,
-              formatted_address: location.address,
-              geometry: {
-                location: {
-                  lat: () => location.latitude,
-                  lng: () => location.longitude
-                }
+            // Single state update for all business location data
+            setBusinessLocationWithAutoSelect(
+              location,
+              {
+                place_id: location.google_place_id || location.id,
+                name: location.name,
+                formatted_address: location.address,
+                geometry: {
+                  location: {
+                    lat: () => location.latitude,
+                    lng: () => location.longitude
+                  }
+                },
+                types: []
               },
-              types: []
-            });
-            setSelectedCategory(location.category);
+              location.category
+            );
           }
         }
       } catch (error) {
@@ -68,9 +84,10 @@ export const NewAddPage = () => {
     };
 
     fetchBusinessLocation();
-  }, [hasValidBusinessAccount, businessProfile]);
+  }, [hasValidBusinessAccount, businessProfile, setBusinessLocationWithAutoSelect]);
 
-  const handleFilesSelect = async (files: FileList) => {
+  // Memoized file selection handler with batched updates
+  const handleFilesSelect = useCallback(async (files: FileList) => {
     const fileArray = Array.from(files);
     const validFiles = fileArray.filter(file => 
       file.type.startsWith('image/') || file.type.startsWith('video/')
@@ -79,24 +96,14 @@ export const NewAddPage = () => {
     const newFiles = validFiles.slice(0, 5 - selectedFiles.length);
     
     if (newFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...newFiles]);
-      
-      newFiles.forEach(file => {
-        const url = URL.createObjectURL(file);
-        setPreviewUrls(prev => [...prev, url]);
-      });
+      // Generate all URLs first, then batch update state
+      const newUrls = newFiles.map(file => URL.createObjectURL(file));
+      addFiles(newFiles, newUrls);
     }
-  };
+  }, [selectedFiles.length, addFiles]);
 
-  const handleRemoveFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => {
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
-    });
-  };
-
-  const handleLocationSelect = (location: any) => {
+  // Memoized location handler
+  const handleLocationSelect = useCallback((location: any) => {
     // Prevent location change if business account
     if (hasValidBusinessAccount && businessLocation) {
       toast.info(t('locationLockedToBusiness', { ns: 'business' }));
@@ -104,8 +111,7 @@ export const NewAddPage = () => {
     }
 
     if (location === null) {
-      setSelectedLocation(null);
-      setSelectedCategory('');
+      setLocationWithCategory(null, '');
       return;
     }
 
@@ -113,8 +119,6 @@ export const NewAddPage = () => {
     const lat = location.coordinates?.lat ?? location.lat ?? location.geometry?.location?.lat?.();
     const lng = location.coordinates?.lng ?? location.lng ?? location.geometry?.location?.lng?.();
     
-    console.log('📍 Location selected:', location.name, 'coordinates:', { lat, lng });
-
     // Use category from autocomplete if available (mapped from Nominatim/database)
     let category = location.category || 'place';
     
@@ -143,26 +147,28 @@ export const NewAddPage = () => {
       }
     }
 
-    console.log('🏷️ Category:', category, 'from autocomplete or fallback. Nominatim type:', location.nominatimType);
-    setSelectedCategory(category);
-
-    setSelectedLocation({
-      place_id: location.id || `osm_${Date.now()}`,
-      name: location.name,
-      formatted_address: location.address,
-      city: location.city,
-      category: category, // Pass category to location object
-      geometry: {
-        location: {
-          lat: () => lat,
-          lng: () => lng
-        }
+    // Single state update for location and category
+    setLocationWithCategory(
+      {
+        place_id: location.id || `osm_${Date.now()}`,
+        name: location.name,
+        formatted_address: location.address,
+        city: location.city,
+        category: category,
+        geometry: {
+          location: {
+            lat: () => lat,
+            lng: () => lng
+          }
+        },
+        types: location.types || []
       },
-      types: location.types || []
-    });
-  };
+      category
+    );
+  }, [hasValidBusinessAccount, businessLocation, t, setLocationWithCategory]);
 
-  const uploadFiles = async (): Promise<string[]> => {
+  // Memoized file upload
+  const uploadFiles = useCallback(async (): Promise<string[]> => {
     if (!user || selectedFiles.length === 0) return [];
 
     const uploadPromises = selectedFiles.map(async (file, index) => {
@@ -183,9 +189,10 @@ export const NewAddPage = () => {
     });
 
     return Promise.all(uploadPromises);
-  };
+  }, [user, selectedFiles]);
 
-  const handleSubmit = async () => {
+  // Memoized submit handler with parallelized location lookup
+  const handleSubmit = useCallback(async () => {
     if (!user || !selectedLocation || !selectedCategory) {
       toast.error(t('selectLocationAndCategory', { ns: 'add' }));
       return;
@@ -194,62 +201,51 @@ export const NewAddPage = () => {
     setIsUploading(true);
     
     try {
-      console.log('🚀 Starting post creation...');
-      
       // Upload media files
       const mediaUrls = await uploadFiles();
-      console.log('✅ Media uploaded:', mediaUrls.length, 'files');
       
-      // Find or create location
+      // Find or create location with PARALLEL strategies
       let locationId = null;
       const lat = selectedLocation.geometry?.location?.lat?.();
       const lng = selectedLocation.geometry?.location?.lng?.();
       
-      console.log('📍 Location coordinates:', { lat, lng, name: selectedLocation.name });
-      
-      // STRATEGY 1: Check by coordinates first (most reliable)
+      // PARALLEL STRATEGY: Check coordinates and name simultaneously
       if (lat != null && lng != null) {
         const threshold = 0.0001; // ~11 meters
-        const { data: nearbyLocs } = await supabase
-          .from('locations')
-          .select('id, name')
-          .gte('latitude', lat - threshold)
-          .lte('latitude', lat + threshold)
-          .gte('longitude', lng - threshold)
-          .lte('longitude', lng + threshold)
-          .limit(1);
         
-        if (nearbyLocs && nearbyLocs.length > 0) {
-          locationId = nearbyLocs[0].id;
-          console.log('✅ Found existing location by coordinates:', nearbyLocs[0].name);
+        const [coordResult, nameResult] = await Promise.all([
+          // Strategy 1: Check by coordinates
+          supabase
+            .from('locations')
+            .select('id, name')
+            .gte('latitude', lat - threshold)
+            .lte('latitude', lat + threshold)
+            .gte('longitude', lng - threshold)
+            .lte('longitude', lng + threshold)
+            .limit(1),
+          // Strategy 2: Check by name
+          supabase
+            .from('locations')
+            .select('id, name, latitude, longitude')
+            .ilike('name', selectedLocation.name)
+            .not('latitude', 'is', null)
+            .limit(1)
+        ]);
+        
+        if (coordResult.data && coordResult.data.length > 0) {
+          locationId = coordResult.data[0].id;
+        } else if (nameResult.data && nameResult.data.length > 0) {
+          locationId = nameResult.data[0].id;
         }
       }
       
-      // STRATEGY 2: Check by name (fallback) - prefer locations with coordinates
-      if (!locationId) {
-        const { data: nameLocs } = await supabase
-          .from('locations')
-          .select('id, name, latitude, longitude')
-          .ilike('name', selectedLocation.name)
-          .not('latitude', 'is', null)
-          .limit(1);
-        
-        if (nameLocs && nameLocs.length > 0) {
-          locationId = nameLocs[0].id;
-          console.log('✅ Found existing location by name:', nameLocs[0].name);
-        }
-      }
-      
-      // Create new location if not found - only if we have valid coordinates
+      // Create new location if not found
       if (!locationId) {
         if (lat == null || lng == null) {
-          console.error('❌ Cannot create location without coordinates');
           toast.error(t('invalidLocation', { ns: 'add' }));
           setIsUploading(false);
           return;
         }
-        
-        console.log('🆕 Creating new location with coordinates:', lat, lng);
         
         const { data: newLocation, error: locationError } = await supabase
           .from('locations')
@@ -265,13 +261,8 @@ export const NewAddPage = () => {
           .select('id')
           .single();
         
-        if (locationError) {
-          console.error('❌ Location error:', locationError);
-          throw locationError;
-        }
-        
+        if (locationError) throw locationError;
         locationId = newLocation.id;
-        console.log('✅ Created new location:', locationId);
       }
       
       // Create post
@@ -288,49 +279,38 @@ export const NewAddPage = () => {
         .select()
         .single();
       
-      if (postError) {
-        console.error('❌ Post error:', postError);
-        throw postError;
-      }
+      if (postError) throw postError;
       
-      console.log('✅ Post created successfully!', post.id);
-      
-      // Auto-save location as "visited" (been) - silently, don't fail post if this fails
+      // Auto-save location as "visited" (non-blocking)
       if (locationId) {
-        try {
-          // Check if user already has this location saved as "been"
-          const { data: existingSave } = await supabase
-            .from('user_saved_locations')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('location_id', locationId)
-            .eq('save_tag', 'been')
-            .maybeSingle();
-          
-          if (!existingSave) {
-            await supabase
+        (async () => {
+          try {
+            const { data: existingSave } = await supabase
               .from('user_saved_locations')
-              .insert({
-                user_id: user.id,
-                location_id: locationId,
-                save_tag: 'been'
-              });
-            console.log('✅ Location auto-saved as visited');
-          } else {
-            console.log('ℹ️ Location already saved as visited');
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('location_id', locationId)
+              .eq('save_tag', 'been')
+              .maybeSingle();
+            
+            if (!existingSave) {
+              await supabase
+                .from('user_saved_locations')
+                .insert({
+                  user_id: user.id,
+                  location_id: locationId,
+                  save_tag: 'been'
+                });
+              console.log('✅ Location auto-saved as visited');
+            }
+          } catch (err) {
+            console.warn('⚠️ Failed to auto-save location:', err);
           }
-        } catch (saveError) {
-          console.warn('⚠️ Failed to auto-save location as visited:', saveError);
-          // Don't throw - post is already created
-        }
+        })();
       }
       
       toast.success(t('postShared', { ns: 'add' }));
-      
-      // Clean up
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
-      
-      // Navigate to home page after successful post
+      resetState();
       navigate('/');
       
     } catch (error) {
@@ -339,15 +319,21 @@ export const NewAddPage = () => {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [user, selectedLocation, selectedCategory, caption, taggedUsers, rating, uploadFiles, t, setIsUploading, resetState, navigate]);
 
-  const handleUserTagged = (user: any) => {
-    setTaggedUsers(prev => [...prev, user]);
-  };
+  // Memoized user tag handlers
+  const handleUserTagged = useCallback((taggedUser: any) => {
+    setTaggedUsers(prev => [...prev, taggedUser]);
+  }, [setTaggedUsers]);
 
-  const handleUserRemoved = (userId: string) => {
+  const handleUserRemoved = useCallback((userId: string) => {
     setTaggedUsers(prev => prev.filter(u => u.id !== userId));
-  };
+  }, [setTaggedUsers]);
+
+  // Memoized category change handler
+  const handleCategoryChange = useCallback((category: string) => {
+    setLocationWithCategory(selectedLocation, category);
+  }, [selectedLocation, setLocationWithCategory]);
 
   return (
     <PostEditor
@@ -360,10 +346,10 @@ export const NewAddPage = () => {
       rating={hasValidBusinessAccount ? undefined : rating}
       isUploading={isUploading}
       onFilesSelect={handleFilesSelect}
-      onRemoveFile={handleRemoveFile}
+      onRemoveFile={removeFile}
       onCaptionChange={setCaption}
       onLocationSelect={handleLocationSelect}
-      onCategoryChange={setSelectedCategory}
+      onCategoryChange={handleCategoryChange}
       onUserTagged={handleUserTagged}
       onUserRemoved={handleUserRemoved}
       onRatingChange={hasValidBusinessAccount ? undefined : setRating}
@@ -371,4 +357,6 @@ export const NewAddPage = () => {
       isBusinessAccount={hasValidBusinessAccount}
     />
   );
-};
+});
+
+NewAddPage.displayName = 'NewAddPage';

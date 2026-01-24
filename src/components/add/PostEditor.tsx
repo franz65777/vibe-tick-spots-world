@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,7 +6,6 @@ import { MediaSelector } from './MediaSelector';
 import { LocationSelector } from './LocationSelector';
 import { UserTagSelector } from './UserTagSelector';
 import { useNavigate } from 'react-router-dom';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
 
 interface PostEditorProps {
@@ -30,7 +29,86 @@ interface PostEditorProps {
   isBusinessAccount?: boolean;
 }
 
-export const PostEditor: React.FC<PostEditorProps> = ({
+// Memoized rating button
+const RatingButton = memo(({ 
+  value, 
+  isSelected, 
+  onClick 
+}: { 
+  value: number; 
+  isSelected: boolean; 
+  onClick: (value: number) => void;
+}) => {
+  const handleClick = useCallback(() => onClick(value), [value, onClick]);
+  
+  const getButtonGradient = () => {
+    if (!isSelected) return 'bg-muted text-muted-foreground hover:bg-muted/80';
+    if (value <= 2) return 'bg-red-500 text-white';
+    if (value <= 3) return 'bg-red-400 text-white';
+    if (value <= 4) return 'bg-orange-500 text-white';
+    if (value <= 5) return 'bg-orange-400 text-white';
+    if (value <= 6) return 'bg-amber-500 text-white';
+    if (value <= 7) return 'bg-yellow-500 text-black';
+    if (value <= 8) return 'bg-lime-500 text-black';
+    if (value <= 9) return 'bg-green-500 text-white';
+    return 'bg-green-600 text-white';
+  };
+  
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`w-10 h-10 rounded-lg font-semibold transition-all ${getButtonGradient()}`}
+    >
+      {value}
+    </button>
+  );
+});
+
+RatingButton.displayName = 'RatingButton';
+
+// Memoized rating selector
+const RatingSelector = memo(({ 
+  rating, 
+  onRatingChange 
+}: { 
+  rating?: number; 
+  onRatingChange: (rating: number | undefined) => void;
+}) => {
+  const { t } = useTranslation();
+  
+  const handleRatingClick = useCallback((value: number) => {
+    onRatingChange(rating === value ? undefined : value);
+  }, [rating, onRatingChange]);
+  
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{t('ratePlace', { ns: 'add' })}</label>
+      <div className="flex gap-2">
+        {[...Array(10)].map((_, i) => {
+          const ratingNum = i + 1;
+          return (
+            <RatingButton
+              key={i}
+              value={ratingNum}
+              isSelected={rating !== undefined && rating >= ratingNum}
+              onClick={handleRatingClick}
+            />
+          );
+        })}
+      </div>
+      {rating && (
+        <p className="text-xs text-muted-foreground">
+          {t('youRated', { ns: 'add' })} {rating}/10
+        </p>
+      )}
+    </div>
+  );
+});
+
+RatingSelector.displayName = 'RatingSelector';
+
+export const PostEditor = memo(({
   selectedFiles,
   previewUrls,
   caption,
@@ -49,7 +127,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   onRatingChange,
   onSubmit,
   isBusinessAccount = false
-}) => {
+}: PostEditorProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   
@@ -62,20 +140,19 @@ export const PostEditor: React.FC<PostEditorProps> = ({
     };
   }, [selectedFiles.length]);
   
-  const canSubmit = 
+  const canSubmit = useMemo(() => 
     selectedFiles.length > 0 && 
     selectedLocation !== null && 
     selectedCategory !== '' && 
-    !isUploading;
+    !isUploading,
+    [selectedFiles.length, selectedLocation, selectedCategory, isUploading]
+  );
 
-  console.log('PostEditor canSubmit:', {
-    filesCount: selectedFiles.length,
-    hasLocation: !!selectedLocation,
-    hasCategory: !!selectedCategory,
-    category: selectedCategory,
-    isUploading,
-    canSubmit
-  });
+  const handleBack = useCallback(() => navigate(-1), [navigate]);
+  
+  const handleCaptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onCaptionChange(e.target.value);
+  }, [onCaptionChange]);
 
   if (selectedFiles.length === 0) {
     return (
@@ -94,7 +171,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background px-4 py-3 flex items-center gap-3">
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="p-2 hover:bg-muted rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -118,7 +195,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           <div className="space-y-2">
             <Textarea
               value={caption}
-              onChange={(e) => onCaptionChange(e.target.value)}
+              onChange={handleCaptionChange}
               placeholder={t('captionPlaceholder', { ns: 'add' })}
               className="min-h-[60px] resize-none border-border text-sm"
               rows={2}
@@ -166,48 +243,12 @@ export const PostEditor: React.FC<PostEditorProps> = ({
 
           {/* Optional Rating - Only for personal accounts */}
           {onRatingChange && !isBusinessAccount && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('ratePlace', { ns: 'add' })}</label>
-              <div className="flex gap-2">
-                {[...Array(10)].map((_, i) => {
-                  const ratingNum = i + 1;
-                  const isSelected = rating && rating >= ratingNum;
-                  
-                  // Get gradient color based on rating value
-                  const getButtonGradient = () => {
-                    if (!isSelected) return 'bg-muted text-muted-foreground hover:bg-muted/80';
-                    if (ratingNum <= 2) return 'bg-red-500 text-white';
-                    if (ratingNum <= 3) return 'bg-red-400 text-white';
-                    if (ratingNum <= 4) return 'bg-orange-500 text-white';
-                    if (ratingNum <= 5) return 'bg-orange-400 text-white';
-                    if (ratingNum <= 6) return 'bg-amber-500 text-white';
-                    if (ratingNum <= 7) return 'bg-yellow-500 text-black';
-                    if (ratingNum <= 8) return 'bg-lime-500 text-black';
-                    if (ratingNum <= 9) return 'bg-green-500 text-white';
-                    return 'bg-green-600 text-white';
-                  };
-                  
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => onRatingChange(rating === ratingNum ? undefined : ratingNum)}
-                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${getButtonGradient()}`}
-                    >
-                      {ratingNum}
-                    </button>
-                  );
-                })}
-              </div>
-              {rating && (
-                <p className="text-xs text-muted-foreground">
-                  {t('youRated', { ns: 'add' })} {rating}/10
-                </p>
-              )}
-            </div>
+            <RatingSelector rating={rating} onRatingChange={onRatingChange} />
           )}
         </div>
       </div>
     </div>
   );
-};
+});
+
+PostEditor.displayName = 'PostEditor';

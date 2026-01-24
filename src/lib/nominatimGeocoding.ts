@@ -2,6 +2,7 @@
  * FREE Geocoding using OpenStreetMap Nominatim
  * No API key required, completely free
  * Rate limit: ~1 request/second (respectful usage)
+ * Optimized with caching and request deduplication
  */
 
 interface NominatimResult {
@@ -44,15 +45,58 @@ export interface GeocodeResult {
   // Structured address components for accurate display
   streetName?: string;
   streetNumber?: string;
+  distance?: number;
 }
+
+// Response cache with 5-minute TTL
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const inFlightRequests = new Map<string, Promise<any>>();
 
 class NominatimGeocoding {
   private baseUrl = 'https://nominatim.openstreetmap.org';
   private lastRequestTime = 0;
-  private minRequestInterval = 1000; // 1 second between requests
+  private minRequestInterval = 300; // Reduced to 300ms (Nominatim allows 1 req/sec sustained)
 
   /**
-   * Enforce rate limiting
+   * Get cached response or null
+   */
+  private getCached(key: string): any | null {
+    const entry = responseCache.get(key);
+    if (!entry) return null;
+    
+    if (Date.now() - entry.timestamp > CACHE_TTL) {
+      responseCache.delete(key);
+      return null;
+    }
+    
+    return entry.data;
+  }
+
+  /**
+   * Store response in cache
+   */
+  private setCache(key: string, data: any): void {
+    responseCache.set(key, { data, timestamp: Date.now() });
+    
+    // Clean up old entries periodically (keep cache size manageable)
+    if (responseCache.size > 100) {
+      const now = Date.now();
+      for (const [k, v] of responseCache.entries()) {
+        if (now - v.timestamp > CACHE_TTL) {
+          responseCache.delete(k);
+        }
+      }
+    }
+  }
+
+  /**
+   * Enforce rate limiting with reduced delay
    */
   private async rateLimit() {
     const now = Date.now();
@@ -72,6 +116,34 @@ class NominatimGeocoding {
    * Optionally accepts user location to prioritize nearby results
    */
   async searchPlace(
+    query: string, 
+    language?: string,
+    userLocation?: { lat: number; lng: number },
+    options?: { skipViewbox?: boolean }
+  ): Promise<GeocodeResult[]> {
+    // Check cache first
+    const cacheKey = `search:${query}:${language}:${userLocation?.lat}:${userLocation?.lng}:${options?.skipViewbox}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    // Check for in-flight request with same params (request deduplication)
+    if (inFlightRequests.has(cacheKey)) {
+      return inFlightRequests.get(cacheKey)!;
+    }
+
+    const requestPromise = this.executeSearchPlace(query, language, userLocation, options);
+    inFlightRequests.set(cacheKey, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      this.setCache(cacheKey, result);
+      return result;
+    } finally {
+      inFlightRequests.delete(cacheKey);
+    }
+  }
+
+  private async executeSearchPlace(
     query: string, 
     language?: string,
     userLocation?: { lat: number; lng: number },
@@ -119,7 +191,7 @@ class NominatimGeocoding {
 
       const results: NominatimResult[] = await response.json();
 
-      let geocodeResults = results.map(result => {
+      let geocodeResults: GeocodeResult[] = results.map(result => {
         // Extract structured address components
         const streetName = result.address.road || result.address.street || result.address.pedestrian || '';
         const streetNumber = result.address.house_number || '';
@@ -157,7 +229,7 @@ class NominatimGeocoding {
               result.lng
             )
           }))
-          .sort((a, b) => a.distance - b.distance)
+          .sort((a, b) => (a.distance || 0) - (b.distance || 0))
           .slice(0, 10); // Return top 10 closest
       }
 
@@ -173,6 +245,29 @@ class NominatimGeocoding {
    * Uses multiple strategies to ensure we find cities reliably
    */
   async searchCities(query: string, language?: string): Promise<GeocodeResult[]> {
+    // Check cache first
+    const cacheKey = `cities:${query}:${language}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    // Check for in-flight request
+    if (inFlightRequests.has(cacheKey)) {
+      return inFlightRequests.get(cacheKey)!;
+    }
+
+    const requestPromise = this.executeSearchCities(query, language);
+    inFlightRequests.set(cacheKey, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      this.setCache(cacheKey, result);
+      return result;
+    } finally {
+      inFlightRequests.delete(cacheKey);
+    }
+  }
+
+  private async executeSearchCities(query: string, language?: string): Promise<GeocodeResult[]> {
     await this.rateLimit();
 
     const allResults: GeocodeResult[] = [];
@@ -296,6 +391,11 @@ class NominatimGeocoding {
    * FREE - No API key needed
    */
   async reverseGeocode(lat: number, lng: number, language?: string): Promise<GeocodeResult | null> {
+    // Check cache first
+    const cacheKey = `reverse:${lat}:${lng}:${language}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
     await this.rateLimit();
 
     try {
@@ -325,7 +425,7 @@ class NominatimGeocoding {
                    result.address.village || 
                    '';
 
-      return {
+      const geocodeResult: GeocodeResult = {
         lat: parseFloat(result.lat),
         lng: parseFloat(result.lon),
         city,
@@ -334,6 +434,9 @@ class NominatimGeocoding {
         type: result.type,
         class: result.class,
       };
+
+      this.setCache(cacheKey, geocodeResult);
+      return geocodeResult;
     } catch (error) {
       console.error('Nominatim reverse geocoding error:', error);
       return null;
