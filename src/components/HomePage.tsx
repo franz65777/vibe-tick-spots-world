@@ -7,6 +7,7 @@ import { Place } from '@/types/place';
 import Header from './home/Header';
 import ModalsManager from './home/ModalsManager';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchOnboardingStatus, fetchLocationById } from '@/lib/coalescedFetchers';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
@@ -139,7 +140,7 @@ const HomePage = memo(() => {
     })();
   }, []);
 
-  // Check onboarding status on mount
+  // Check onboarding status on mount - using coalesced fetcher to prevent thundering herd
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (!user?.id) {
@@ -148,20 +149,8 @@ const HomePage = memo(() => {
       }
 
       try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error checking onboarding status:', error);
-          setCheckingOnboarding(false);
-          return;
-        }
-
-        // Show onboarding if not completed
-        if (!profile?.onboarding_completed) {
+        const completed = await fetchOnboardingStatus(user.id);
+        if (!completed) {
           setShowOnboarding(true);
         }
       } catch (error) {
@@ -316,14 +305,10 @@ const HomePage = memo(() => {
         }
         usedState = true;
       }
-      // Open a specific location by id from notifications
+      // Open a specific location by id from notifications - using coalesced fetcher
       if (state?.openLocationId) {
         try {
-          const { data: loc } = await supabase
-            .from('locations')
-            .select('id, name, category, latitude, longitude, address')
-            .eq('id', state.openLocationId)
-            .maybeSingle();
+          const loc = await fetchLocationById(state.openLocationId);
           if (loc) {
             const placeToShow: Place = {
               id: loc.id,
