@@ -553,6 +553,7 @@ const resources = {
         entertainment: 'Entertainment',
       },
       searchingNearby: 'Searching {{category}} nearby...',
+      whatDidYouThink: 'what did you think??',
     },
     add: {
       newPost: 'New Post',
@@ -1568,6 +1569,7 @@ const resources = {
         entertainment: 'Entretenimiento',
       },
       searchingNearby: 'Buscando {{category}} cerca...',
+      whatDidYouThink: '¿qué te pareció??',
     },
     add: {
       newPost: 'Nueva publicación',
@@ -2582,6 +2584,7 @@ const resources = {
         nightclub: 'Discoteche',
       },
       searchingNearby: 'Cercando {{category}} vicini...',
+      whatDidYouThink: 'cosa ne pensi??',
     },
     add: {
       newPost: 'Nuovo Post',
@@ -3570,6 +3573,7 @@ const resources = {
         entertainment: 'Divertissement',
       },
       searchingNearby: 'Recherche de {{category}} à proximité...',
+      whatDidYouThink: 'qu\'en avez-vous pensé ??',
     },
     add: {
       newPost: 'Nouveau post',
@@ -4438,6 +4442,7 @@ const resources = {
         entertainment: 'Unterhaltung',
       },
       searchingNearby: '{{category}} in der Nähe suchen...',
+      whatDidYouThink: 'was denkst du??',
     },
     add: {
       newPost: 'Neuer Beitrag',
@@ -5244,6 +5249,7 @@ const resources = {
         entertainment: 'Entretenimento',
       },
       searchingNearby: 'Buscando {{category}} perto...',
+      whatDidYouThink: 'o que você achou??',
     },
     add: {
       newPost: 'Nova publicação',
@@ -5999,6 +6005,7 @@ const resources = {
         entertainment: '娱乐',
       },
       searchingNearby: '正在搜索附近的{{category}}...',
+      whatDidYouThink: '你觉得怎么样？？',
     },
     add: {
       newPost: '新帖子',
@@ -6678,6 +6685,7 @@ const resources = {
         entertainment: 'エンターテイメント',
       },
       searchingNearby: '近くの{{category}}を検索中...',
+      whatDidYouThink: 'どう思いましたか？？',
     },
     add: {
       newPost: '新しい投稿',
@@ -7398,6 +7406,7 @@ const resources = {
         entertainment: '오락',
       },
       searchingNearby: '근처 {{category}} 검색 중...',
+      whatDidYouThink: '어떻게 생각하세요??',
     },
     add: {
       newPost: '새 게시물',
@@ -8101,6 +8110,7 @@ const resources = {
         entertainment: 'ترفيه',
       },
       searchingNearby: 'البحث عن {{category}} قريب...',
+      whatDidYouThink: 'ما رأيك؟؟',
     },
     add: {
       newPost: 'منشور جديد',
@@ -8789,6 +8799,7 @@ const resources = {
         entertainment: 'मनोरंजन',
       },
       searchingNearby: 'आस-पास {{category}} खोज रहे हैं...',
+      whatDidYouThink: 'आपको क्या लगा??',
     },
     add: {
       newPost: 'नई पोस्ट',
@@ -9494,6 +9505,7 @@ const resources = {
         entertainment: 'Развлечения',
       },
       searchingNearby: 'Поиск {{category}} поблизости...',
+      whatDidYouThink: 'что вы думаете??',
     },
     add: {
       newPost: 'Новый пост',

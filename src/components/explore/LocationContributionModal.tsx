@@ -272,7 +272,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const hiddenPhotosCount = allPhotos.length - nearbyPhotos.length;
 
   return (
-    <div className="fixed inset-0 z-[10050] flex flex-col bg-background">
+    <div className="fixed inset-0 z-[100000] flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-border/30">
         <div className="w-10" /> {/* Spacer for centering */}

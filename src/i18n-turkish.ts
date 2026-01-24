@@ -187,7 +187,8 @@ export const turkishTranslations = {
     },
     explore: {
       noResultsFound: 'Sonuç bulunamadı',
-      tryDifferentSearch: 'Farklı bir arama deneyin'
+      tryDifferentSearch: 'Farklı bir arama deneyin',
+      whatDidYouThink: 'ne düşündün??'
     },
     shareLocation: {
       frequentContacts: 'Sık Kullanılan Kişiler',
