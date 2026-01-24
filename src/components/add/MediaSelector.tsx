@@ -1,13 +1,12 @@
-import React, { useRef, useEffect, memo, useCallback } from 'react';
-import { X, Video } from 'lucide-react';
+import React, { useRef, useEffect, memo, useCallback, useState } from 'react';
+import { X, Video, Camera, ListPlus } from 'lucide-react';
 import addPostButton from '@/assets/add-post-button.png';
-import listIcon from '@/assets/list-icon.png';
-import postIcon from '@/assets/camera-icon.png';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import addPageHero from '@/assets/add-hero-cards.png';
 import { lazy, Suspense } from 'react';
+import { AddPageOnboarding } from './AddPageOnboarding';
 
 // Lazy load the social import tutorial (rarely used)
 const SocialImportTutorial = lazy(() => 
@@ -75,67 +74,82 @@ const EmptyState = memo(({
   const { t } = useTranslation();
   const navigate = useNavigate();
   
+  // First-visit onboarding
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    const hasSeenOnboarding = localStorage.getItem('hasSeenAddPageOnboarding');
+    return !hasSeenOnboarding;
+  });
+
+  const handleOnboardingComplete = useCallback(() => {
+    localStorage.setItem('hasSeenAddPageOnboarding', 'true');
+    setShowOnboarding(false);
+  }, []);
+  
   return (
-    <div 
-      className="flex flex-col items-center justify-center bg-background px-6 pt-8 pb-24 relative overflow-hidden min-h-screen" 
-      data-photo-selection="true"
-    >
-      <div className="text-center space-y-8 max-w-sm relative z-10 animate-fade-in-up">
-        {/* Hero Image with floating animation */}
-        <div className="relative w-full flex items-center justify-center">
-          <div className="w-80 h-52 flex items-center justify-center animate-hero-float">
-            <img 
-              src={addPageHero} 
-              alt="Share experience" 
-              className="w-full h-full object-contain drop-shadow-xl" 
-            />
+    <>
+      {showOnboarding && <AddPageOnboarding onComplete={handleOnboardingComplete} />}
+      
+      <div 
+        className="flex flex-col items-center justify-center bg-background px-6 pt-6 pb-24 relative overflow-hidden min-h-screen" 
+        data-photo-selection="true"
+      >
+        <div className="text-center space-y-6 max-w-sm relative z-10">
+          {/* Hero Image with floating animation */}
+          <div className="relative w-full flex items-center justify-center animate-fade-in-up">
+            <div className="w-80 h-52 flex items-center justify-center animate-hero-float">
+              <img 
+                src={addPageHero} 
+                alt="Share experience" 
+                className="w-full h-full object-contain drop-shadow-xl" 
+              />
+            </div>
           </div>
-        </div>
-        
-        {/* Typography with improved hierarchy */}
-        <div className="space-y-3">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            {t('shareExperience', { ns: 'add' })}
-          </h2>
-          <p className="text-muted-foreground text-base italic">
-            {t('addPhotosVideos', { ns: 'add' })}
-          </p>
-        </div>
+          
+          {/* Typography with improved hierarchy */}
+          <div className="space-y-2 animate-fade-in-up-delay-1">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+              {t('shareExperience', { ns: 'add' })}
+            </h2>
+            <p className="text-muted-foreground/80 text-sm">
+              {t('addPhotosVideos', { ns: 'add' })}
+            </p>
+          </div>
 
-        {/* Action buttons with clear hierarchy */}
-        <div className="space-y-3 w-full pt-2">
-          {/* Primary CTA - Create Post */}
-          <Button
-            onClick={onSelectFiles}
-            size="lg"
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground font-semibold text-lg shadow-lg shadow-primary/25 transition-all duration-200 active:scale-[0.98]"
-          >
-            <img src={postIcon} alt="Post" className="w-6 h-6 mr-3 brightness-0 invert" />
-            <span>{t('createPost', { ns: 'add' })}</span>
-          </Button>
+          {/* Action buttons with clear hierarchy */}
+          <div className="space-y-3 w-full pt-4 animate-fade-in-up-delay-2">
+            {/* Primary CTA - Create Post */}
+            <Button
+              onClick={onSelectFiles}
+              size="lg"
+              className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-lg shadow-xl shadow-blue-500/25 transition-all duration-300 active:scale-[0.97] flex items-center justify-center gap-3"
+            >
+              <Camera className="w-6 h-6" />
+              <span>{t('createPost', { ns: 'add' })}</span>
+            </Button>
 
-          {/* Secondary CTA - Create List */}
-          <Button
-            onClick={() => navigate('/create-list')}
-            variant="outline"
-            size="lg"
-            className="w-full h-12 rounded-2xl border-2 border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary bg-transparent transition-all duration-200 active:scale-[0.98]"
-          >
-            <img src={listIcon} alt="List" className="w-5 h-5 mr-2 opacity-70" />
-            <span>{t('createAList', { ns: 'add' })}</span>
-          </Button>
+            {/* Secondary CTA - Create List */}
+            <Button
+              onClick={() => navigate('/create-list')}
+              variant="ghost"
+              size="lg"
+              className="w-full h-12 rounded-2xl bg-muted/50 hover:bg-muted text-foreground font-medium text-base border border-border/50 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <ListPlus className="w-5 h-5 text-muted-foreground" />
+              <span className="text-muted-foreground">{t('createAList', { ns: 'add' })}</span>
+            </Button>
+          </div>
+
+          <input 
+            ref={fileInputRef} 
+            type="file" 
+            accept="image/*,video/*" 
+            multiple 
+            onChange={e => e.target.files && (e.target as HTMLInputElement).form?.dispatchEvent(new Event('filesSelected', { bubbles: true }))}
+            className="hidden" 
+          />
         </div>
-
-        <input 
-          ref={fileInputRef} 
-          type="file" 
-          accept="image/*,video/*" 
-          multiple 
-          onChange={e => e.target.files && (e.target as HTMLInputElement).form?.dispatchEvent(new Event('filesSelected', { bubbles: true }))}
-          className="hidden" 
-        />
       </div>
-    </div>
+    </>
   );
 });
 
