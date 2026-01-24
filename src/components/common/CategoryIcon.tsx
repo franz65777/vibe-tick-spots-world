@@ -62,7 +62,6 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
           transform: `scale(${scale * sizeMultiplier})`
         }}
         loading="eager"
-        fetchPriority="high"
         decoding="async"
       />
     </div>

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
-import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
+import { useNotificationData } from '@/hooks/useNotificationData';
+import VirtualizedNotificationsList from '@/components/notifications/VirtualizedNotificationsList';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -13,14 +13,12 @@ interface NotificationsModalProps {
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
   const navigate = useNavigate();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, refresh } = useNotifications();
+  const prefetchedData = useNotificationData(notifications);
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead([notificationId]);
-  };
-
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
   };
 
   const handleNotificationClick = (notification: any) => {
@@ -38,8 +36,22 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
         break;
       case 'like':
         if (notification.data?.post_id) {
-          // Navigate to own profile to see the liked post
           navigate(`/profile`);
+        }
+        break;
+      case 'friend_request':
+        if (notification.data?.user_id) {
+          navigate(`/profile/${notification.data.user_id}`);
+        }
+        break;
+      case 'friend_accepted':
+        if (notification.data?.user_id) {
+          navigate(`/profile/${notification.data.user_id}`);
+        }
+        break;
+      case 'message':
+        if (notification.data?.sender_id) {
+          navigate(`/messages/${notification.data.sender_id}`);
         }
         break;
       default:
@@ -76,17 +88,17 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
           </Button>
         </div>
 
-        {/* Content - Full width without padding */}
-        <ScrollArea className="flex-1">
+        {/* Content - Virtualized list for 60fps performance */}
+        <div className="flex-1 overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
+            <div className="flex items-center justify-center py-20 h-full">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-muted-foreground text-sm">Loading notifications…</span>
               </div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center h-full">
               <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
                 <Bell className="w-7 h-7 text-muted-foreground" />
               </div>
@@ -94,18 +106,18 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
               <p className="text-muted-foreground text-sm">No new notifications</p>
             </div>
           ) : (
-            <div className="w-full">
-              {notifications.map((notification) => (
-                <MobileNotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onMarkAsRead={handleMarkAsRead}
-                  onAction={handleNotificationClick}
-                />
-              ))}
-            </div>
+            <VirtualizedNotificationsList
+              notifications={notifications}
+              onMarkAsRead={handleMarkAsRead}
+              onAction={handleNotificationClick}
+              onDelete={deleteNotification}
+              onRefresh={refresh}
+              openSwipeId={openSwipeId}
+              onSwipeOpen={setOpenSwipeId}
+              prefetchedData={prefetchedData}
+            />
           )}
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );
