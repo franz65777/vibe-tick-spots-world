@@ -82,22 +82,20 @@ const PageLoader = () => (
   </div>
 );
 
-// Preload critical navigation icons and Add page assets for instant loading
+// Import proper preloading utilities
+import { preloadAddPageAssets } from '@/utils/preloadAddPageAssets';
+import iconMapSearch from '@/assets/icon-map-search.png';
+import shareLocationIcon from '@/assets/share-location-icon.png';
+
+// Preload critical navigation icons for instant loading
 const preloadNavigationIcons = () => {
-  const icons = [
-    '/src/assets/icon-map-search.png',
-    '/src/assets/share-location-icon.png',
-    // Add page hero and action icons
-    '/src/assets/add-hero-cards.png',
-    '/src/assets/add-page-hero.png',
-    '/src/assets/camera-icon.png',
-    '/src/assets/list-icon.png',
-    '/src/assets/add-post-button.png'
-  ];
+  const icons = [iconMapSearch, shareLocationIcon];
   icons.forEach(src => {
     const img = new Image();
     img.src = src;
   });
+  // Also preload Add page assets
+  preloadAddPageAssets();
 };
 
 function AppContent() {

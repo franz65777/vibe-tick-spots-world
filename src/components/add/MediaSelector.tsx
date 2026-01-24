@@ -64,7 +64,7 @@ const MediaPreviewItem = memo(({
 
 MediaPreviewItem.displayName = 'MediaPreviewItem';
 
-// Empty state component
+// Empty state component with enhanced UI
 const EmptyState = memo(({ 
   onSelectFiles, 
   fileInputRef 
@@ -77,48 +77,53 @@ const EmptyState = memo(({
   
   return (
     <div 
-      className="flex flex-col items-center justify-center bg-background p-6 -mt-[30px] relative overflow-hidden min-h-screen" 
+      className="flex flex-col items-center justify-center bg-background px-6 pt-8 pb-24 relative overflow-hidden min-h-screen" 
       data-photo-selection="true"
     >
-      <div className="text-center space-y-6 max-w-sm relative z-10">
-        {/* Hero Image with 5 photo cards */}
-        <div className="relative w-full flex items-center justify-center mb-4">
-          <div className="w-72 h-48 flex items-center justify-center">
-            <img src={addPageHero} alt="Share experience" className="w-full h-full object-contain" />
+      <div className="text-center space-y-8 max-w-sm relative z-10 animate-fade-in-up">
+        {/* Hero Image with floating animation */}
+        <div className="relative w-full flex items-center justify-center">
+          <div className="w-80 h-52 flex items-center justify-center animate-hero-float">
+            <img 
+              src={addPageHero} 
+              alt="Share experience" 
+              className="w-full h-full object-contain drop-shadow-xl" 
+            />
           </div>
         </div>
         
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold">{t('shareExperience', { ns: 'add' })}</h2>
-          <p className="text-muted-foreground">
+        {/* Typography with improved hierarchy */}
+        <div className="space-y-3">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            {t('shareExperience', { ns: 'add' })}
+          </h2>
+          <p className="text-muted-foreground text-base italic">
             {t('addPhotosVideos', { ns: 'add' })}
           </p>
         </div>
 
-        <div className="space-y-3 w-full">
-          <div className="flex flex-col gap-3 w-full">
-            <Button
-              onClick={onSelectFiles}
-              size="lg"
-              className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
-            >
-              <img src={postIcon} alt="Post" className="w-6 h-6 mr-2" />
-              <span className="whitespace-nowrap">
-                {t('createPost', { ns: 'add' })}
-              </span>
-            </Button>
+        {/* Action buttons with clear hierarchy */}
+        <div className="space-y-3 w-full pt-2">
+          {/* Primary CTA - Create Post */}
+          <Button
+            onClick={onSelectFiles}
+            size="lg"
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground font-semibold text-lg shadow-lg shadow-primary/25 transition-all duration-200 active:scale-[0.98]"
+          >
+            <img src={postIcon} alt="Post" className="w-6 h-6 mr-3 brightness-0 invert" />
+            <span>{t('createPost', { ns: 'add' })}</span>
+          </Button>
 
-            <Button
-              onClick={() => navigate('/create-list')}
-              size="lg"
-              className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
-            >
-              <img src={listIcon} alt="List" className="w-6 h-6 mr-2" />
-              <span className="whitespace-nowrap">
-                {t('createAList', { ns: 'add' })}
-              </span>
-            </Button>
-          </div>
+          {/* Secondary CTA - Create List */}
+          <Button
+            onClick={() => navigate('/create-list')}
+            variant="outline"
+            size="lg"
+            className="w-full h-12 rounded-2xl border-2 border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary bg-transparent transition-all duration-200 active:scale-[0.98]"
+          >
+            <img src={listIcon} alt="List" className="w-5 h-5 mr-2 opacity-70" />
+            <span>{t('createAList', { ns: 'add' })}</span>
+          </Button>
         </div>
 
         <input 
