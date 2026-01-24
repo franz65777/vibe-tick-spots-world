@@ -15,6 +15,7 @@ const preloadCriticalPages = () => {
     () => import('@/pages/MessagesPage'),
     () => import('@/pages/FeedPage'),
     () => import('@/pages/DiscoverPage'),
+    () => import('@/components/AddLocationPage'),
   ];
 
   // Start preloading all pages in parallel
