@@ -1240,6 +1240,20 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   </>
                 )}
               </button>
+
+              {/* Review Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <Star className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {t('review', { ns: 'explore', defaultValue: 'Review' })}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -1360,48 +1374,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               )}
 
-              {/* What Did You Think Card - BEFORE Featured Lists */}
-              {user && (
-                <div 
-                  className={cn(
-                    "px-4 py-2",
-                    (locationPhotos.length > 0 || campaign) && "border-t border-border/30"
-                  )}
-                  style={{
-                    maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
-                    opacity: Math.max(0, 1 - photoScrollProgress),
-                    overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
-                    pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
-                  }}
-                >
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setContributionModalOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 py-2 px-3 rounded-xl border border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20 transition-all"
-                  >
-                    {/* User Avatar */}
-                    <Avatar className="h-8 w-8 ring-2 ring-background shrink-0">
-                      <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    {/* CTA Text */}
-                    <span className="text-muted-foreground text-sm font-medium">
-                      {t('whatDidYouThink', { ns: 'explore', defaultValue: 'what did you think??' })}
-                    </span>
-                    
-                    {/* Camera icon */}
-                    <div className="ml-auto flex items-center gap-1.5 text-muted-foreground">
-                      <Camera className="w-4 h-4" />
-                      <MessageCircle className="w-4 h-4" />
-                    </div>
-                  </button>
-                </div>
-              )}
+              {/* What Did You Think Card - BEFORE Featured Lists - REMOVED, now using Review button */}
 
               {/* Featured Lists Section */}
                 {!listsLoading && featuredLists.length > 0 && (

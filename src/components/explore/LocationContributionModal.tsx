@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Camera, Plus, ChevronRight, Link as LinkIcon, Lock, FolderPlus } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Camera, Plus, ChevronRight, Lock, FolderPlus, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +47,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
 
   // State
   const [selectedPhotos, setSelectedPhotos] = useState<NearbyPhoto[]>([]);
-  const [reviewText, setReviewText] = useState('');
+  const [descriptionText, setDescriptionText] = useState('');
   const [userFolders, setUserFolders] = useState<UserFolder[]>([]);
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [folderNotes, setFolderNotes] = useState<Record<string, string>>({});
@@ -114,7 +114,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setSelectedPhotos([]);
-      setReviewText('');
+      setDescriptionText('');
       setSelectedFolders(new Set());
       setFolderNotes({});
       setShowAllPhotos(false);
@@ -156,13 +156,13 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
 
   const handleSave = async () => {
     if (!user) {
-      toast.error(t('auth_required', { defaultValue: 'Please sign in to continue' }));
+      toast.error(t('auth_required', { ns: 'explore', defaultValue: 'Please sign in to continue' }));
       return;
     }
 
-    const hasContent = selectedPhotos.length > 0 || reviewText.trim() || selectedFolders.size > 0;
+    const hasContent = selectedPhotos.length > 0 || descriptionText.trim() || selectedFolders.size > 0;
     if (!hasContent) {
-      toast.error(t('addSomething', { defaultValue: 'Add a photo, review, or save to a list' }));
+      toast.error(t('addSomething', { ns: 'explore', defaultValue: 'Add a photo, a description, or save to a list' }));
       return;
     }
 
@@ -201,8 +201,8 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
         }
       }
 
-      // Upload photos and create post if we have photos or review
-      if (selectedPhotos.length > 0 || reviewText.trim()) {
+      // Upload photos and create post if we have photos or description
+      if (selectedPhotos.length > 0 || descriptionText.trim()) {
         const mediaUrls: string[] = [];
 
         // Upload selected photos
@@ -223,12 +223,12 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           }
         }
 
-        // Create post with photos and/or review
-        if (mediaUrls.length > 0 || reviewText.trim()) {
+        // Create post with photos and/or description
+        if (mediaUrls.length > 0 || descriptionText.trim()) {
           const { error: postError } = await supabase.from('posts').insert({
             user_id: user.id,
             location_id: locationId,
-            caption: reviewText.trim() || null,
+            caption: descriptionText.trim() || null,
             media_urls: mediaUrls.length > 0 ? mediaUrls : null,
           });
 
@@ -250,12 +250,12 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
         if (folderError) throw folderError;
       }
 
-      toast.success(t('contributionSaved', { defaultValue: 'Your contribution has been saved!' }));
+      toast.success(t('contributionSaved', { ns: 'explore', defaultValue: 'Saved!' }));
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Error saving contribution:', error);
-      toast.error(t('saveFailed', { defaultValue: 'Failed to save. Please try again.' }));
+      toast.error(t('saveFailed', { ns: 'explore', defaultValue: 'Failed to save. Please try again.' }));
     } finally {
       setLoading(false);
     }
@@ -271,10 +271,10 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const displayPhotos = showAllPhotos ? allPhotos : nearbyPhotos;
   const hiddenPhotosCount = allPhotos.length - nearbyPhotos.length;
 
-  return (
-    <div className="fixed inset-0 z-[100000] flex flex-col bg-background">
+  const modal = (
+    <div className="fixed inset-0 z-[2147483647] flex flex-col bg-background/40 backdrop-blur-xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border/30">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border/30 bg-background/60 backdrop-blur-md">
         <div className="w-10" /> {/* Spacer for centering */}
         <h2 className="text-lg font-bold text-foreground truncate max-w-[60%]">
           {location.name}
@@ -294,7 +294,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           <div className="flex items-center gap-2 mb-3">
             <Camera className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">
-              {t('addPhotos', { defaultValue: 'add photos' })}
+              {t('addPhotos', { ns: 'explore', defaultValue: 'add photos' })}
             </span>
           </div>
 
@@ -359,6 +359,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
               <span>
                 {t('weFoundOtherPhotos', {
+                  ns: 'explore',
                   count: hiddenPhotosCount,
                   defaultValue: `we found ${hiddenPhotosCount} other photos`,
                 })}
@@ -375,30 +376,19 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
             onChange={handleFileSelect}
             className="hidden"
           />
-        </div>
 
-        {/* What Did You Think Section */}
-        <div className="px-4 py-4 border-b border-border/30">
-          <div className="flex items-start gap-3">
-            <Avatar className="w-10 h-10 shrink-0">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {user?.email?.[0]?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <textarea
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder={t('whatDidYouThink', { defaultValue: 'what did you think?' })}
-                className="w-full bg-transparent border-none outline-none resize-none text-foreground placeholder:text-muted-foreground text-sm min-h-[60px]"
-                rows={2}
-              />
-              <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1">
-                <LinkIcon className="w-3 h-3" />
-                <span>{t('addLink', { defaultValue: 'add link' })}</span>
-              </button>
+          {/* Description box (replaces "what did you think") */}
+          <div className="mt-4">
+            <div className="text-sm font-medium text-muted-foreground mb-2">
+              {t('addDescription', { ns: 'explore', defaultValue: 'add a description (optional)' })}
             </div>
+            <textarea
+              value={descriptionText}
+              onChange={(e) => setDescriptionText(e.target.value)}
+              placeholder={t('descriptionPlaceholder', { ns: 'explore', defaultValue: 'Write a short description…' })}
+              className="w-full rounded-2xl bg-muted/30 border border-border/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[88px]"
+              rows={3}
+            />
           </div>
         </div>
 
@@ -406,7 +396,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-muted-foreground">
-              {t('addToCuration', { defaultValue: 'add to a curation' })}
+              {t('addToCuration', { ns: 'explore', defaultValue: 'add to a curation' })}
             </span>
             <button
               onClick={handleCreateList}
@@ -424,11 +414,11 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           ) : userFolders.length === 0 ? (
             <div className="py-6 text-center">
               <p className="text-sm text-muted-foreground mb-3">
-                {t('noListsYet', { defaultValue: "You don't have any lists yet" })}
+                {t('noListsYet', { ns: 'explore', defaultValue: "You don't have any lists yet" })}
               </p>
               <Button variant="outline" size="sm" onClick={handleCreateList}>
                 <FolderPlus className="w-4 h-4 mr-2" />
-                {t('createList', { defaultValue: 'Create a list' })}
+                {t('createList', { ns: 'explore', defaultValue: 'Create a list' })}
               </Button>
             </div>
           ) : (
@@ -461,7 +451,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                           {folder.name}
                         </span>
                         <span className="text-white/70 text-[9px]">
-                          {folder.location_count || 0} {t('places', { defaultValue: 'places' })}
+                          {folder.location_count || 0} {t('places', { ns: 'common', defaultValue: 'places' })}
                         </span>
                       </div>
                     </div>
@@ -474,7 +464,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                       </div>
 
                       <input
-                        placeholder={t('addANote', { defaultValue: 'add a note' })}
+                        placeholder={t('addANote', { ns: 'explore', defaultValue: 'add a note' })}
                         value={folderNotes[folder.id] || ''}
                         onChange={(e) =>
                           setFolderNotes((prev) => ({
@@ -508,21 +498,23 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       </div>
 
       {/* Save Button - Fixed at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border/30 pb-safe">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border/30 pb-safe">
         <Button
           onClick={handleSave}
-          disabled={loading || (!selectedPhotos.length && !reviewText.trim() && !selectedFolders.size)}
+          disabled={loading || (!selectedPhotos.length && !descriptionText.trim() && !selectedFolders.size)}
           className="w-full h-12 text-base font-semibold rounded-xl"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            t('save', { defaultValue: 'save' })
+            t('save', { ns: 'common', defaultValue: 'save' })
           )}
         </Button>
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };
 
 export default LocationContributionModal;
