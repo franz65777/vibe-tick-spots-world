@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell, Calendar, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 import { useOpeningHours } from '@/hooks/useOpeningHours';
 import { useSavedByUsers } from '@/hooks/useSavedByUsers';
 import { useLocationPhotos } from '@/hooks/useLocationPhotos';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 // Campaign type icons
 import trendingIcon from '@/assets/foam-finger.png';
@@ -47,6 +48,18 @@ import discountIcon from '@/assets/discount-icon.png';
 import eventIcon from '@/assets/event-icon.png';
 import promotionIcon from '@/assets/filter-promotion.png';
 import newIcon from '@/assets/new-icon.png';
+
+// Calculate distance between two points in km using Haversine formula
+const calculateDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 // Get campaign icon based on campaign type
 const getCampaignTypeIcon = (campaignType?: string): string => {
@@ -263,6 +276,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [reviewOpen, setReviewOpen] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
+  const { location: userLocation } = useGeolocation();
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
@@ -1191,7 +1205,21 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </span>
               </button>
 
-              {/* Directions */}
+              {/* What Did You Think (Cosa ne pensi) Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContributionModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {t('whatDidYouThink', { ns: 'explore', defaultValue: 'What did you think?' })}
+                </span>
+              </button>
+
+              {/* Directions with distance */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1202,6 +1230,21 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 <Navigation className="w-4 h-4" />
                 <span className="text-sm font-medium">
                   {t('directions', { ns: 'explore', defaultValue: 'Directions' })}
+                  {(() => {
+                    const placeCoords = place.coordinates || (place.latitude && place.longitude 
+                      ? { lat: place.latitude, lng: place.longitude } 
+                      : null);
+                    if (userLocation?.latitude && userLocation?.longitude && placeCoords) {
+                      const dist = calculateDistanceKm(
+                        userLocation.latitude,
+                        userLocation.longitude,
+                        placeCoords.lat,
+                        placeCoords.lng
+                      );
+                      return ` · ${dist.toFixed(1)} km`;
+                    }
+                    return '';
+                  })()}
                 </span>
               </button>
 
