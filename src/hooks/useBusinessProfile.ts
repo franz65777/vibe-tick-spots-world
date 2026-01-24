@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,37 +17,23 @@ export interface BusinessProfile {
 
 export const useBusinessProfile = () => {
   const { user } = useAuth();
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchBusinessProfile = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const { data: businessProfile, isLoading: loading, error } = useQuery({
+    queryKey: ['businessProfile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_profiles')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
 
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('business_profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-        setBusinessProfile(data);
-      } catch (err) {
-        console.error('Error fetching business profile:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load business profile');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBusinessProfile();
-  }, [user]);
+      if (error) throw error;
+      return data as BusinessProfile | null;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,  // Cache for 5 minutes
+    gcTime: 10 * 60 * 1000,   // Keep in memory for 10 minutes
+  });
 
   const hasValidBusinessAccount = businessProfile?.verification_status === 'verified';
 
@@ -55,6 +41,6 @@ export const useBusinessProfile = () => {
     businessProfile,
     hasValidBusinessAccount,
     loading,
-    error
+    error: error?.message || null
   };
 };

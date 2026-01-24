@@ -153,7 +153,7 @@ const FeedSuggestionsCarousel = memo(() => {
           .eq('user_id', user.id),
         supabase
           .from('saved_places')
-          .select('place_id, place_category, place_name, latitude, longitude')
+          .select('place_id, place_category, place_name, coordinates')
           .eq('user_id', user.id),
       ]);
 
@@ -176,10 +176,11 @@ const FeedSuggestionsCarousel = memo(() => {
       });
       userSavedPlaces.forEach((p: any) => {
         if (p.place_id) exclude.add(p.place_id);
-        // Add to fuzzy match map
-        if (p.place_name && p.latitude && p.longitude) {
+        // Add to fuzzy match map - extract lat/lng from coordinates JSON
+        const coords = p.coordinates as { lat?: number; lng?: number } | null;
+        if (p.place_name && coords?.lat && coords?.lng) {
           const normalizedName = p.place_name.toLowerCase().trim();
-          savedNamesWithCoords.set(normalizedName, { lat: p.latitude, lng: p.longitude });
+          savedNamesWithCoords.set(normalizedName, { lat: coords.lat, lng: coords.lng });
         }
       });
 

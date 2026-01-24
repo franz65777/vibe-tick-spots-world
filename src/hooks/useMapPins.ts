@@ -73,37 +73,44 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
         const followedUserIds = followedUsers.map(f => f.following_id);
         console.log('✅ Following user IDs:', followedUserIds);
 
-        // Get saved locations from followed users (internal locations)
-        const { data: savedLocations, error: savedError } = await supabase
-          .from('user_saved_locations')
-          .select(`
-            location_id,
-            user_id,
-            created_at,
-            locations!inner(
-              id,
-              name,
-              address,
-              latitude,
-              longitude,
-              category,
-              google_place_id
-            )
-          `)
-          .in('user_id', followedUserIds);
+        // PARALLEL fetch: saved locations, Google places, and profiles simultaneously
+        const [savedLocationsRes, savedPlacesRes, profilesRes] = await Promise.all([
+          supabase
+            .from('user_saved_locations')
+            .select(`
+              location_id,
+              user_id,
+              created_at,
+              locations!inner(
+                id,
+                name,
+                address,
+                latitude,
+                longitude,
+                category,
+                google_place_id
+              )
+            `)
+            .in('user_id', followedUserIds),
+          supabase
+            .from('saved_places')
+            .select('place_id, place_name, place_category, city, coordinates, user_id, created_at')
+            .in('user_id', followedUserIds),
+          supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .in('id', followedUserIds)
+        ]);
+
+        const savedLocations = savedLocationsRes.data;
+        const savedError = savedLocationsRes.error;
+        const savedPlaces = savedPlacesRes.data;
+        const spError = savedPlacesRes.error;
+        const profiles = profilesRes.data;
 
         if (savedError) {
           console.error('❌ Following saved locations error:', savedError);
-          setPins([]);
-          setLoading(false);
-          return;
         }
-
-        // Get Google saved places from followed users
-        const { data: savedPlaces, error: spError } = await supabase
-          .from('saved_places')
-          .select('place_id, place_name, place_category, city, coordinates, user_id, created_at')
-          .in('user_id', followedUserIds);
         if (spError) {
           console.error('❌ Following saved Google places error:', spError);
         }
@@ -116,12 +123,6 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
           setLoading(false);
           return;
         }
-
-        // Get user profiles for attribution
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .in('id', followedUserIds);
 
         const profileMap = new Map();
         profiles?.forEach(profile => {
@@ -250,35 +251,40 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
         });
       } else if (filter === 'saved') {
         console.log('🔍 Fetching saved locations...');
-        // Internal saved locations
-        const { data: savedLocations, error: uslError } = await supabase
-          .from('user_saved_locations')
-          .select(`
-            location_id,
-            created_at,
-            locations!inner (
-              id,
-              name,
-              category,
-              address,
-              latitude,
-              longitude,
-              google_place_id
-            )
-          `)
-          .eq('user_id', user.id);
+        
+        // PARALLEL fetch: internal saved locations and Google saved places
+        const [savedLocationsRes, savedPlacesRes] = await Promise.all([
+          supabase
+            .from('user_saved_locations')
+            .select(`
+              location_id,
+              created_at,
+              locations!inner (
+                id,
+                name,
+                category,
+                address,
+                latitude,
+                longitude,
+                google_place_id
+              )
+            `)
+            .eq('user_id', user.id),
+          supabase
+            .from('saved_places')
+            .select('place_id, place_name, place_category, city, coordinates, created_at')
+            .eq('user_id', user.id)
+        ]);
+
+        const savedLocations = savedLocationsRes.data;
+        const uslError = savedLocationsRes.error;
+        const savedPlaces = savedPlacesRes.data;
+        const spError = savedPlacesRes.error;
 
         if (uslError) {
           console.error('Error fetching saved locations:', uslError);
           throw uslError;
         }
-
-        // Google saved places
-        const { data: savedPlaces, error: spError } = await supabase
-          .from('saved_places')
-          .select('place_id, place_name, place_category, city, coordinates, created_at')
-          .eq('user_id', user.id);
-
         if (spError) {
           console.error('Error fetching saved places:', spError);
           throw spError;
