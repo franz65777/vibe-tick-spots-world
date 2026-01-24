@@ -1,7 +1,7 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { fetchStoriesCoalesced } from '@/lib/coalescedFetchers';
 
 export interface Story {
   id: string;
@@ -23,43 +23,24 @@ export const useStories = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  const fetchStories = async () => {
+  // Coalesced fetch to prevent thundering herd with 20k+ users
+  const fetchStories = useCallback(async () => {
     try {
-      console.log('Fetching stories...');
-      
-      // Fetch active stories and user's own stories (even if expired)
-      let query = supabase
-        .from('stories')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      // If user is authenticated, include their expired stories too
-      if (user) {
-        query = query.or(`expires_at.gt.${new Date().toISOString()},user_id.eq.${user.id}`);
-      } else {
-        query = query.gt('expires_at', new Date().toISOString());
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching stories:', error);
-        setStories([]);
-      } else {
-        console.log('Stories fetched successfully:', data?.length || 0);
-        setStories(data || []);
-      }
+      console.log('Fetching stories (coalesced)...');
+      const data = await fetchStoriesCoalesced(user?.id || null);
+      console.log('Stories fetched successfully:', data.length);
+      setStories(data);
     } catch (error) {
       console.error('Error fetching stories:', error);
       setStories([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     fetchStories();
-  }, [user]);
+  }, [fetchStories]);
 
   const uploadStory = async (
     file: File,
