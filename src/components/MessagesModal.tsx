@@ -58,28 +58,31 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
     scrollToBottom();
   }, [messages]);
 
-  // Setup realtime subscription for selected thread
+  // Use centralized realtime for messages
+  const selectedOtherUserIdRef = useRef<string | null>(null);
+  
   useEffect(() => {
-    if (!selectedThread || !user) return;
-
-    const otherUserId =
-      selectedThread.participant_1_id === user.id
+    if (selectedThread && user) {
+      selectedOtherUserIdRef.current = selectedThread.participant_1_id === user.id
         ? selectedThread.participant_2_id
         : selectedThread.participant_1_id;
-
-    const unsubscribe = realtimeChatService.subscribeToThread(
-      user.id,
-      otherUserId,
-      (newMessage) => {
-        setMessages((prev) => [...prev, newMessage as DirectMessage]);
-        scrollToBottom();
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
+    } else {
+      selectedOtherUserIdRef.current = null;
+    }
   }, [selectedThread, user]);
+
+  // Listen to centralized message events
+  useRealtimeEvent('message_insert', (payload: any) => {
+    if (!selectedOtherUserIdRef.current || !user) return;
+    if (payload.sender_id === selectedOtherUserIdRef.current || 
+        (payload.sender_id === user.id && payload.receiver_id === selectedOtherUserIdRef.current)) {
+      setMessages((prev) => {
+        if (prev.some(m => m.id === payload.id)) return prev;
+        return [...prev, payload as DirectMessage];
+      });
+      scrollToBottom();
+    }
+  });
 
   const loadThreads = async () => {
     if (!user) return;

@@ -26,6 +26,8 @@ import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+import VirtualizedThreadList from '@/components/messages/VirtualizedThreadList';
+import VirtualizedMessageList from '@/components/messages/VirtualizedMessageList';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 const MessagesPage = () => {
@@ -904,325 +906,62 @@ const MessagesPage = () => {
           </div>
         </div>}
 
-      {/* Threads View */}
-      {view === 'threads' && <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            {loading ? <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div> : threads.length === 0 ? <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-              <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
-                <MessageSquare className="w-7 h-7 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-1">{t('noMessages', {
-              ns: 'messages'
-            })}</h3>
-              <p className="text-muted-foreground text-sm mb-4">{t('startConversation', {
-              ns: 'messages'
-            })}</p>
-              <Button onClick={() => setView('search')} size="sm">
-                {t('newMessage', {
-              ns: 'messages'
-            })}
-              </Button>
-            </div> : <div className="space-y-0">
-              {threads.map(thread => {
-            const otherParticipant = getOtherParticipant(thread);
-            if (!otherParticipant) return null;
-            const unreadCount = unreadCounts[otherParticipant.id] || 0;
-            const lastMessage = thread.last_message;
-            const isMyMessage = lastMessage?.sender_id === user?.id;
-            const isStoryReply = lastMessage?.message_type === 'story_reply';
-            const isStoryShare = lastMessage?.message_type === 'story_share';
+      {/* Threads View - Virtualized for 60fps with 1000+ threads */}
+      {view === 'threads' && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <VirtualizedThreadList
+            threads={threads}
+            loading={loading}
+            userId={user?.id}
+            unreadCounts={unreadCounts}
+            hasActiveStoryInThread={hasActiveStoryInThread}
+            onThreadSelect={handleThreadSelect}
+            onAvatarClick={handleAvatarClickInThread}
+            onNewMessage={() => setView('search')}
+            formatMessageTime={formatMessageTime}
+            getOtherParticipant={getOtherParticipant}
+          />
+        </div>
+      )}
 
-            // Format message preview
-            let messagePreview = '';
-            if (isStoryReply && !isMyMessage) {
-              messagePreview = t('repliedToYourStory', {
-                ns: 'messages'
-              });
-            } else if (isStoryShare) {
-              messagePreview = t('sharedAStory', {
-                ns: 'messages'
-              });
-            } else if (unreadCount > 1) {
-              messagePreview = t('newMessages', {
-                ns: 'messages',
-                count: unreadCount
-              });
-            } else if (lastMessage?.message_type === 'audio') {
-              messagePreview = t('audioMessage', {
-                ns: 'messages'
-              });
-            } else if (lastMessage?.message_type === 'place_share') {
-              messagePreview = t('sharedAPlace', {
-                ns: 'messages'
-              });
-            } else if (lastMessage?.message_type === 'post_share') {
-              messagePreview = t('sharedAPost', {
-                ns: 'messages'
-              });
-            } else if (lastMessage?.message_type === 'profile_share') {
-              messagePreview = t('sharedAProfile', {
-                ns: 'messages'
-              });
-            } else if (lastMessage?.message_type === 'folder_share') {
-              messagePreview = t('sharedAList', {
-                ns: 'messages'
-              });
-            } else if (lastMessage?.message_type === 'trip_share') {
-              messagePreview = t('sharedATrip', {
-                ns: 'messages'
-              });
-            } else if (lastMessage?.content) {
-              const content = lastMessage.content;
-              messagePreview = content.length > 30 ? `${content.substring(0, 30)}...` : content;
-            } else {
-              messagePreview = t('startConversation', {
-                ns: 'messages'
-              });
-            }
-
-            // Message status for sent messages
-            let statusText = '';
-            if (isMyMessage && !isStoryReply && !isStoryShare) {
-              statusText = lastMessage?.is_read ? t('viewed', {
-                ns: 'messages'
-              }) : t('sent', {
-                ns: 'messages'
-              });
-            }
-            return <button key={thread.id} onClick={() => handleThreadSelect(thread)} className="w-full flex items-center gap-3 p-4 hover:bg-accent transition-colors">
-                    <button onClick={e => {
-                e.stopPropagation();
-                handleAvatarClickInThread(thread);
-              }} className="flex-shrink-0">
-                      <Avatar className={`w-14 h-14 border-2 ${hasActiveStoryInThread[otherParticipant.id] ? 'border-primary' : 'border-background'}`}>
-                        <AvatarImage src={otherParticipant.avatar_url} />
-                        <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                    </button>
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="flex justify-between items-end mb-1">
-                        <p className="font-semibold text-base text-foreground truncate">
-                          {otherParticipant.username}
-                        </p>
-                        <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                          <span className="text-xs text-muted-foreground">
-                            {thread.last_message_at && formatMessageTime(thread.last_message_at)}
-                          </span>
-                          {unreadCount > 0 && <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                              <span className="text-xs text-primary-foreground font-bold">
-                                {unreadCount}
-                              </span>
-                            </div>}
-                        </div>
-                      </div>
-                       <div className="flex items-center gap-2">
-                        <p className="text-sm text-muted-foreground truncate">
-                          {isStoryReply ? <span className="font-semibold">{messagePreview}</span> : lastMessage?.message_type === 'audio' ? <span className="font-semibold">{messagePreview}</span> : <>
-                              {lastMessage?.content && <>
-                                  <span className="font-semibold">
-                                    {lastMessage.content.substring(0, Math.min(20, lastMessage.content.length))}
-                                  </span>
-                                  {lastMessage.content.length > 20 && '...'}
-                                </>}
-                              {!lastMessage?.content && messagePreview}
-                            </>}
-                        </p>
-                        {statusText && <span className="text-xs text-muted-foreground">· {statusText}</span>}
-                      </div>
-                    </div>
-                  </button>;
-          })}
-            </div>}
-          </ScrollArea>
-        </div>}
-
-      {/* Chat View */}
-      {view === 'chat' && <div className="flex-1 min-h-0 flex flex-col">
+      {/* Chat View - Virtualized for 60fps with 1000+ messages */}
+      {view === 'chat' && (
+        <div className="flex-1 min-h-0 flex flex-col">
           <div ref={chatViewportWrapperRef} className="flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-full p-4 [&>div>div]:!overflow-y-auto [&>div>div]:scrollbar-hide">
-            {loading ? <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              </div> : <div className="space-y-3">
-                 {messages.filter(m => !hiddenMessageIds.includes(m.id)).map(message => {
-              const isOwn = message.sender_id === user?.id;
-              // Touch/mouse handlers for long-press and double-tap on message bubbles
-              const messageInteractionProps = {
-                onTouchStart: () => handleLongPressStart(message.id),
-                onTouchEnd: handleLongPressEnd,
-                onMouseDown: () => handleLongPressStart(message.id),
-                onMouseUp: handleLongPressEnd,
-                onMouseLeave: handleLongPressEnd,
-                onClick: () => handleDoubleTap(message.id),
-              };
-              return <div key={message.id} className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}>
-                          <div className={`flex items-end gap-2 w-full ${isOwn ? 'flex-row-reverse justify-start' : 'flex-row'}`}>
-                            {/* Avatar - only for received messages */}
-                            {!isOwn && <Avatar className="w-6 h-6 flex-shrink-0">
-                                <AvatarImage src={otherUserProfile?.avatar_url} />
-                                <AvatarFallback className="text-xs">
-                                  {otherUserProfile?.username?.[0]?.toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>}
-
-                            <div className="flex-shrink-0 max-w-[calc(100%-40px)]" {...messageInteractionProps}>
-                        
-                        {message.message_type === 'audio' && message.shared_content?.audio_url ? <div className="w-full">
-                            <div className={`rounded-2xl px-3 py-2.5 relative ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isOwn ? 'bg-primary-foreground/20' : 'bg-primary/10'}`}>
-                                  <svg className={`w-5 h-5 ${isOwn ? 'text-primary-foreground' : 'text-primary'}`} fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <audio controls className="w-full h-8" style={{
-                              maxWidth: '100%'
-                            }}>
-                                    <source src={message.shared_content.audio_url} type="audio/webm" />
-                                  </audio>
-                                </div>
-                              </div>
-                              {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
-                                  {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
-                            e.stopPropagation();
-                            toggleReaction(message.id, reaction.emoji);
-                          }} className="text-sm leading-none hover:scale-110 transition-transform">
-                                      {reaction.emoji}
-                                    </button>)}
-                                </div>}
-                            </div>
-                            {/* Timestamp below message */}
-                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                              {formatMessageTime(message.created_at)}
-                            </p>
-                          </div> : message.message_type === 'story_reply' && (message.story_id || message.shared_content) ?
-                    // Story reply - show "Ha respondido a tu historia" with story preview
-                    <div className={`max-w-[85%] ${isOwn ? 'ml-auto' : ''}`}>
-                            {!isOwn && <p className="text-xs text-muted-foreground mb-2 px-1">
-                                {t('repliedToYourStory', {
-                          ns: 'messages'
-                        })}
-                              </p>}
-                            {message.shared_content && <div className="bg-card rounded-2xl border border-border overflow-hidden p-3 mb-2 relative">
-                                <StoryMessageCard storyData={message.shared_content} />
-                                {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
-                                    {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
-                            e.stopPropagation();
-                            toggleReaction(message.id, reaction.emoji);
-                          }} className="text-sm leading-none hover:scale-110 transition-transform">
-                                        {reaction.emoji}
-                                      </button>)}
-                                  </div>}
-                              </div>}
-                            {message.content && <div className={`rounded-2xl px-4 py-3 mb-2 relative ${isOwn ? 'bg-primary text-primary-foreground ml-auto max-w-fit' : 'bg-card text-card-foreground border border-border'}`}>
-                                <p className="text-sm">{message.content}</p>
-                                {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
-                                    {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
-                            e.stopPropagation();
-                            toggleReaction(message.id, reaction.emoji);
-                          }} className="text-sm leading-none hover:scale-110 transition-transform">
-                                        {reaction.emoji}
-                                      </button>)}
-                                  </div>}
-                              </div>}
-                            {/* Timestamp below message */}
-                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                              {formatMessageTime(message.created_at)}
-                            </p>
-                          </div> : message.message_type === 'story_share' && message.shared_content ?
-                    // Story share - show story preview
-                    <div className={`max-w-[85%] ${isOwn ? 'ml-auto' : ''}`}>
-                            <div className="bg-card rounded-2xl border border-border overflow-hidden p-3 relative">
-                              <StoryMessageCard storyData={message.shared_content} content={message.content} />
-                              {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
-                                  {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
-                            e.stopPropagation();
-                            toggleReaction(message.id, reaction.emoji);
-                          }} className="text-sm leading-none hover:scale-110 transition-transform">
-                                      {reaction.emoji}
-                                    </button>)}
-                                </div>}
-                            </div>
-                            {/* Timestamp below message */}
-                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                              {formatMessageTime(message.created_at)}
-                            </p>
-                          </div> : ['place_share', 'post_share', 'profile_share', 'folder_share', 'trip_share'].includes(message.message_type) && message.shared_content ? <div className={`w-full max-w-[200px] ${isOwn ? 'ml-auto' : ''}`}>
-                            {message.content && <div className={`rounded-2xl px-4 py-3 mb-2 relative ${isOwn ? 'bg-primary text-primary-foreground ml-auto max-w-fit' : 'bg-card text-card-foreground border border-border'}`}>
-                                <p className="text-sm">{message.content}</p>
-                              </div>}
-                            <div className="bg-card rounded-2xl border border-border relative overflow-visible">
-                              {message.message_type === 'place_share' && <PlaceMessageCard placeData={message.shared_content} onViewPlace={placeData => {
-                          // Get the other user ID from the message
-                          const otherUserId = message.sender_id === user?.id ? message.receiver_id : message.sender_id;
-                          navigate('/', {
-                            state: {
-                              showLocationCard: true,
-                              locationData: {
-                                id: placeData.id || placeData.place_id || placeData.google_place_id || '',
-                                google_place_id: placeData.google_place_id || placeData.place_id || '',
-                                name: placeData.name || '',
-                                category: placeData.category || 'place',
-                                address: placeData.address || '',
-                                city: placeData.city || '',
-                                coordinates: placeData.coordinates || {
-                                  lat: 0,
-                                  lng: 0
-                                }
-                              },
-                              fromMessages: true,
-                              returnToUserId: otherUserId
-                            }
-                          });
-                        }} />}
-                              {message.message_type === 'post_share' && <PostMessageCard postData={message.shared_content} />}
-                              {message.message_type === 'profile_share' && <ProfileMessageCard profileData={message.shared_content} currentChatUserId={otherParticipant?.id} />}
-                              {message.message_type === 'folder_share' && <FolderMessageCard folderData={message.shared_content} />}
-                              {message.message_type === 'trip_share' && <TripMessageCard tripData={message.shared_content} />}
-                              {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
-                                  {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
-                            e.stopPropagation();
-                            toggleReaction(message.id, reaction.emoji);
-                          }} className="text-sm leading-none hover:scale-110 transition-transform">
-                                      {reaction.emoji}
-                                    </button>)}
-                                </div>}
-                            </div>
-                            {/* Timestamp below message */}
-                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                              {formatMessageTime(message.created_at)}
-                            </p>
-                          </div> : <div className="w-full">
-                            <div className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`} style={{
-                        wordBreak: 'normal',
-                        whiteSpace: 'pre-wrap',
-                        overflowWrap: 'break-word'
-                      }}>
-                              <p className="text-sm whitespace-normal break-words">{message.content}</p>
-                              {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
-                                  {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
-                            e.stopPropagation();
-                            toggleReaction(message.id, reaction.emoji);
-                          }} className="text-sm leading-none hover:scale-110 transition-transform">
-                                      {reaction.emoji}
-                                    </button>)}
-                                </div>}
-                            </div>
-                            {/* Timestamp below message */}
-                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                              {formatMessageTime(message.created_at)}
-                            </p>
-                          </div>}
-                          </div>
-                        </div>
-                       </div>;
-            })}
-                 <div ref={messagesEndRef} />
-               </div>}
-             </ScrollArea>
-           </div>
+            <VirtualizedMessageList
+              messages={messages}
+              loading={loading}
+              userId={user?.id}
+              hiddenMessageIds={hiddenMessageIds}
+              messageReactions={messageReactions}
+              otherUserProfile={otherUserProfile}
+              otherParticipantId={otherParticipant?.id}
+              formatMessageTime={formatMessageTime}
+              onLongPressStart={handleLongPressStart}
+              onLongPressEnd={handleLongPressEnd}
+              onDoubleTap={handleDoubleTap}
+              onToggleReaction={toggleReaction}
+              onViewPlace={(placeData, otherUserId) => {
+                navigate('/', {
+                  state: {
+                    showLocationCard: true,
+                    locationData: {
+                      id: placeData.id || placeData.place_id || placeData.google_place_id || '',
+                      google_place_id: placeData.google_place_id || placeData.place_id || '',
+                      name: placeData.name || '',
+                      category: placeData.category || 'place',
+                      address: placeData.address || '',
+                      city: placeData.city || '',
+                      coordinates: placeData.coordinates || { lat: 0, lng: 0 }
+                    },
+                    fromMessages: true,
+                    returnToUserId: otherUserId
+                  }
+                });
+              }}
+            />
+            <div ref={messagesEndRef} />
+          </div>
 
           {/* Message Input */}
           <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+12px)] mt-auto">
@@ -1268,7 +1007,8 @@ const MessagesPage = () => {
               </Button>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       {/* Stories Viewer */}
       {showStories && convertedStories && convertedStories.length > 0 && <StoriesViewer stories={convertedStories} initialStoryIndex={initialStoryIndex} onClose={() => setShowStories(false)} onStoryViewed={storyId => {
