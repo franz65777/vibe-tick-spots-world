@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtimeEvent } from './useCentralizedRealtime';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 interface PinEngagement {
   totalSaves: number;
@@ -58,7 +59,8 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
       } catch (rpcError: any) {
         console.warn('⚠️ RPC failed, using fallback queries:', rpcError.message);
         
-        if (locationIdRef.current) {
+        // Fallback: Only query user_saved_locations if locationId is a valid UUID
+        if (locationIdRef.current && isValidUUID(locationIdRef.current)) {
           const { count } = await supabase
             .from('user_saved_locations')
             .select('*', { count: 'exact', head: true })

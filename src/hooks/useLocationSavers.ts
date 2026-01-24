@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 interface LocationSaver {
   id: string;
@@ -14,7 +15,7 @@ export const useLocationSavers = (locationId: string | undefined, limit: number 
   const { data: savers, isLoading } = useQuery({
     queryKey: ['location-savers', locationId, limit, user?.id],
     queryFn: async () => {
-      if (!locationId || !user?.id) return [];
+      if (!locationId || !user?.id || !isValidUUID(locationId)) return [];
 
       // Get the list of users that the current user follows
       const { data: followingData } = await supabase

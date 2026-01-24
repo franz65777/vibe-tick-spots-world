@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { isValidUUID } from '@/utils/uuidValidation';
 
 interface SavedByUser {
   id: string;
@@ -28,8 +29,8 @@ export const useSavedByUsers = (
       try {
         const userIds = new Set<string>();
         
-        // Fetch from user_saved_locations
-        if (locationId) {
+        // Fetch from user_saved_locations - only if locationId is a valid UUID
+        if (locationId && isValidUUID(locationId)) {
           const { data: savedLocations } = await supabase
             .from('user_saved_locations')
             .select('user_id')

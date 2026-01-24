@@ -15,6 +15,7 @@ import binocularsIcon from '@/assets/onboarding-binoculars.png';
 import friendsIcon from '@/assets/onboarding-friends.png';
 import spottLogo from '@/assets/spott-logo-onboarding.png';
 import onboardingCollage from '@/assets/onboarding-collage-welcome.png';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 export type GuidedTourStep = 'profile-photo' | 'map-guide' | 'explore-guide' | 'welcome' | 'complete';
 interface GuidedTourProps {
   isActive: boolean;
@@ -63,26 +64,6 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     // We only care about NEW saves during onboarding, not existing ones
     setHasSavedPlace(false);
 
-    // Subscribe to NEW saved_places inserts
-    const savedPlacesChannel = supabase.channel('saved_places_onboarding').on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'saved_places',
-      filter: `user_id=eq.${user.id}`
-    }, () => {
-      setHasSavedPlace(true);
-    }).subscribe();
-
-    // Also subscribe to user_saved_locations inserts
-    const userSavedLocationsChannel = supabase.channel('user_saved_locations_onboarding').on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'user_saved_locations',
-      filter: `user_id=eq.${user.id}`
-    }, () => {
-      setHasSavedPlace(true);
-    }).subscribe();
-
     // Also listen to location-save-changed event for immediate feedback
     const handleSaveChange = (e: CustomEvent) => {
       if (e.detail?.isSaved) {
@@ -91,11 +72,18 @@ const GuidedTour: React.FC<GuidedTourProps> = ({
     };
     window.addEventListener('location-save-changed', handleSaveChange as EventListener);
     return () => {
-      supabase.removeChannel(savedPlacesChannel);
-      supabase.removeChannel(userSavedLocationsChannel);
       window.removeEventListener('location-save-changed', handleSaveChange as EventListener);
     };
   }, [currentStep, user?.id]);
+
+  // Use centralized realtime for save events during onboarding - eliminates 2 channels
+  const handleRealtimeSave = useCallback(() => {
+    if (currentStep === 'map-guide') {
+      setHasSavedPlace(true);
+    }
+  }, [currentStep]);
+
+  useRealtimeEvent(['saved_place_insert', 'saved_location_insert'], handleRealtimeSave);
 
   // Prefetch ExplorePage when on map-guide step
   useEffect(() => {

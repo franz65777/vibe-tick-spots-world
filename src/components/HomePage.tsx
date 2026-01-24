@@ -12,6 +12,7 @@ import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
 import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 import { Geolocation } from "@capacitor/geolocation";
+import { Capacitor } from '@capacitor/core';
 import { useHomePageState } from '@/hooks/useHomePageState';
 
 // Lazy load heavy components
@@ -122,8 +123,11 @@ const HomePage = memo(() => {
     return () => window.removeEventListener('map:user-moved', handleMapMoved);
   }, []);
 
-  // Request location permissions on iPhone
+  // Request location permissions on mobile only (Capacitor not available on web)
   useEffect(() => {
+    // Only run on native platforms (iOS/Android)
+    if (!Capacitor.isNativePlatform()) return;
+    
     (async () => {
       try {
         await Geolocation.requestPermissions();
