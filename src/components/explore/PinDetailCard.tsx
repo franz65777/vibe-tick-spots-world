@@ -1205,17 +1205,17 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </span>
               </button>
 
-              {/* What Did You Think (Cosa ne pensi) Button */}
+              {/* Review Button */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setContributionModalOpen(true);
+                  setReviewOpen(true);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
               >
-                <MessageCircle className="w-4 h-4" />
+                <Star className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {t('whatDidYouThink', { ns: 'explore', defaultValue: 'What did you think?' })}
+                  {t('review', { ns: 'explore', defaultValue: 'Review' })}
                 </span>
               </button>
 
@@ -1282,20 +1282,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                     </span>
                   </>
                 )}
-              </button>
-
-              {/* Review Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReviewOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur-md border border-border/50 shadow-sm hover:bg-accent transition-colors flex-shrink-0"
-              >
-                <Star className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {t('review', { ns: 'explore', defaultValue: 'Review' })}
-                </span>
               </button>
             </div>
           </div>
@@ -1417,7 +1403,34 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 </div>
               )}
 
-              {/* What Did You Think Card - BEFORE Featured Lists - REMOVED, now using Review button */}
+              {/* What Did You Think Card - Before Featured Lists */}
+              <div 
+                className="px-4 py-2 transition-[max-height,opacity] duration-200 ease-out"
+                style={{
+                  maxHeight: photoScrollProgress >= 1 ? '0px' : 'none',
+                  opacity: Math.max(0, 1 - photoScrollProgress),
+                  overflow: photoScrollProgress >= 1 ? 'hidden' : 'visible',
+                  pointerEvents: photoScrollProgress > 0.95 ? 'none' : 'auto',
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setContributionModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl border-2 border-dashed border-border/60 bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <Avatar className="h-8 w-8 border-2 border-background">
+                    <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                    <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                      {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-muted-foreground font-medium">
+                    {t('whatDidYouThink', { ns: 'explore', defaultValue: 'What did you think?' })}
+                  </span>
+                </button>
+              </div>
 
               {/* Featured Lists Section */}
                 {!listsLoading && featuredLists.length > 0 && (
