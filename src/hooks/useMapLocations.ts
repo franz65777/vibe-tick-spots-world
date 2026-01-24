@@ -5,6 +5,7 @@ import type { MapFilter } from '@/contexts/MapFilterContext';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 import { resolveCityDisplay } from '@/utils/cityNormalization';
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+import { coalesce } from '@/lib/requestCoalescing';
 
 interface MapLocation {
   id: string;
@@ -126,10 +127,14 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
     setLoading(true);
     setError(null);
 
+    // Use request coalescing to prevent duplicate fetches when multiple map components mount
+    const coalesceKey = `map-locations:${user.id}:${cacheKey}`;
+    
     try {
-      console.log(`🗺️ Fetching ${mapFilter} locations${mapBounds ? ' within map bounds' : currentCity ? ` for city: ${currentCity}` : ''}`);
+      const fetchedLocations = await coalesce(coalesceKey, async () => {
+        console.log(`🗺️ Fetching ${mapFilter} locations${mapBounds ? ' within map bounds' : currentCity ? ` for city: ${currentCity}` : ''}`);
 
-      let finalLocations: MapLocation[] = [];
+        let finalLocations: MapLocation[] = [];
 
       switch (mapFilter) {
         case 'shared': {
@@ -892,23 +897,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           console.log(`✅ Merged saved locations: ${finalLocations.length} total (no duplicates via google_place_id)`);
           break;
         }
-      }
+        }
 
-      // Filter out locations with invalid coordinates
-      finalLocations = finalLocations.filter((location) => {
-        const { lat, lng } = location.coordinates || { lat: 0, lng: 0 };
-        return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
-      });
+        // Filter out locations with invalid coordinates
+        finalLocations = finalLocations.filter((location) => {
+          const { lat, lng } = location.coordinates || { lat: 0, lng: 0 };
+          return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+        });
 
-      console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations`);
+        console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations`);
+        return finalLocations;
+      }, 150); // 150ms deduplication window
       
       // Cache the results
       locationCache.set(cacheKey, {
-        data: finalLocations,
+        data: fetchedLocations,
         timestamp: Date.now()
       });
       
-      setLocations(finalLocations);
+      setLocations(fetchedLocations);
 
     } catch (err: any) {
       console.error('❌ Error fetching map locations:', err);
