@@ -148,115 +148,85 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const fetchLocationsData = async () => {
     if (!user) return { locations: [], userSavedIds: new Set<string>() };
 
-      // Fetch from locations table
-      let query = supabase
-        .from('locations')
-        .select(`
-          id,
-          name,
-          category,
-          city,
-          address,
-          google_place_id,
-          latitude,
-          longitude
-        `);
+    // Build queries
+    let locationsQuery = supabase
+      .from('locations')
+      .select('id, name, category, city, address, google_place_id, latitude, longitude');
 
-      // Apply search filter server-side for name matching
-      if (searchQuery && searchQuery.trim()) {
-        query = query.ilike('name', `%${searchQuery}%`);
-      }
+    let savedPlacesQuery = supabase
+      .from('saved_places')
+      .select('place_id, place_name, place_category, city, coordinates');
 
-      // Apply category filter
-      if (selectedCategory) {
-        query = query.eq('category', selectedCategory);
-      }
+    if (searchQuery?.trim()) {
+      locationsQuery = locationsQuery.ilike('name', `%${searchQuery}%`);
+      savedPlacesQuery = savedPlacesQuery.ilike('place_name', `%${searchQuery}%`);
+    }
 
-      const { data: locationsData, error } = await query.limit(100);
+    if (selectedCategory) {
+      locationsQuery = locationsQuery.eq('category', selectedCategory);
+      savedPlacesQuery = savedPlacesQuery.eq('place_category', selectedCategory);
+    }
 
-      if (error) throw error;
+    // PARALLEL: Fetch locations and saved_places together
+    const [locationsResult, savedPlacesResult] = await Promise.all([
+      locationsQuery.limit(100),
+      savedPlacesQuery.limit(100)
+    ]);
 
-      // Also fetch from saved_places to include Google Places that might not be in locations yet
-      let savedPlacesQuery = supabase
-        .from('saved_places')
-        .select('place_id, place_name, place_category, city, coordinates');
+    if (locationsResult.error) throw locationsResult.error;
 
-      if (searchQuery && searchQuery.trim()) {
-        savedPlacesQuery = savedPlacesQuery.ilike('place_name', `%${searchQuery}%`);
-      }
+    const locationsData = locationsResult.data || [];
+    const savedPlacesData = savedPlacesResult.data || [];
 
-      if (selectedCategory) {
-        savedPlacesQuery = savedPlacesQuery.eq('place_category', selectedCategory);
-      }
+    const savedPlacesAsLocations = savedPlacesData
+      .filter(sp => sp.place_name && sp.place_name !== 'Unknown' && sp.city && sp.city !== 'Unknown')
+      .map(sp => ({
+        id: sp.place_id,
+        name: sp.place_name,
+        category: sp.place_category || 'place',
+        city: normalizeCity(sp.city) || 'Unknown',
+        address: undefined,
+        google_place_id: sp.place_id,
+        latitude: (sp.coordinates as any)?.lat,
+        longitude: (sp.coordinates as any)?.lng,
+      }));
 
-      const { data: savedPlacesData } = await savedPlacesQuery.limit(100);
+    const allLocations = [...locationsData, ...savedPlacesAsLocations];
+    const internalLocationIds = locationsData.map(l => l.id);
+    const placeIds = allLocations.map(l => l.google_place_id).filter(Boolean) as string[];
 
-      // Convert saved_places to location format, filtering out low-quality entries
-      // Normalize city names for consistency
-      const savedPlacesAsLocations = (savedPlacesData || [])
-        .filter(sp => sp.place_name && sp.place_name !== 'Unknown' && sp.city && sp.city !== 'Unknown')
-        .map(sp => ({
-          id: sp.place_id,
-          name: sp.place_name,
-          category: sp.place_category || 'place',
-          city: normalizeCity(sp.city) || 'Unknown',
-          address: undefined,
-          google_place_id: sp.place_id,
-          latitude: (sp.coordinates as any)?.lat,
-          longitude: (sp.coordinates as any)?.lng,
-        }));
+    // PARALLEL: Fetch saves, saved_places counts, and related locations together
+    const [savesResult, savedPlacesCountResult, relatedLocationsResult] = await Promise.all([
+      internalLocationIds.length > 0
+        ? supabase.from('user_saved_locations').select('location_id, user_id').in('location_id', internalLocationIds)
+        : Promise.resolve({ data: [] }),
+      placeIds.length > 0
+        ? supabase.from('saved_places').select('place_id, user_id').in('place_id', placeIds)
+        : Promise.resolve({ data: [] }),
+      placeIds.length > 0
+        ? supabase.from('locations').select('id').in('google_place_id', placeIds)
+        : Promise.resolve({ data: [] })
+    ]);
 
-      // Merge both datasets
-      const allLocations = [...(locationsData || []), ...savedPlacesAsLocations];
+    const savesData = savesResult.data || [];
+    const savedPlacesCountData = savedPlacesCountResult.data || [];
+    
+    const allRelatedLocationIds = new Set<string>(internalLocationIds);
+    relatedLocationsResult.data?.forEach(loc => allRelatedLocationIds.add(loc.id));
+    const allIdsArray = Array.from(allRelatedLocationIds);
 
-      // Internal location IDs (only real locations table, no Google place IDs)
-      const internalLocationIds = (locationsData || []).map(l => l.id);
+    // PARALLEL: Fetch posts and ratings together
+    const [postsResult, ratingsResult] = await Promise.all([
+      allIdsArray.length > 0
+        ? supabase.from('posts').select('location_id, id, rating').in('location_id', allIdsArray)
+        : Promise.resolve({ data: [] }),
+      allIdsArray.length > 0
+        ? supabase.from('interactions').select('location_id, weight').in('location_id', allIdsArray).eq('action_type', 'review').not('weight', 'is', null)
+        : Promise.resolve({ data: [] })
+    ]);
 
-      // Get ALL saves for these internal locations (from all users)
-      let savesData: any[] | null = null;
-      if (internalLocationIds.length > 0) {
-        const { data } = await supabase
-          .from('user_saved_locations')
-          .select('location_id, user_id')
-          .in('location_id', internalLocationIds);
-        savesData = data;
-      }
-
-      // Also count saves from saved_places table (by Google place id)
-      const placeIds = allLocations.map(l => l.google_place_id).filter(Boolean);
-      const { data: savedPlacesCountData } = await supabase
-        .from('saved_places')
-        .select('place_id, user_id')
-        .in('place_id', placeIds);
-
-      // Build internal location IDs set for posts/ratings
-      const allRelatedLocationIds = new Set<string>(internalLocationIds);
-      
-      // Find all locations with matching google_place_ids
-      if (placeIds.length > 0) {
-        const { data: relatedLocations } = await supabase
-          .from('locations')
-          .select('id')
-          .in('google_place_id', placeIds);
-        
-        relatedLocations?.forEach(loc => allRelatedLocationIds.add(loc.id));
-      }
-      
-      const allIdsArray = Array.from(allRelatedLocationIds);
-
-      // Fetch posts count (and ratings from posts) for ALL related locations
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select('location_id, id, rating')
-        .in('location_id', allIdsArray);
-
-      // Fetch ratings from interactions table for ALL related locations
-      const { data: ratingsData } = await supabase
-        .from('interactions')
-        .select('location_id, weight')
-        .in('location_id', allIdsArray)
-        .eq('action_type', 'review')
-        .not('weight', 'is', null);
+    const postsData = postsResult.data || [];
+    const ratingsData = ratingsResult.data || [];
 
       const savesMap = new Map<string, number>();
       savesData?.forEach(save => {
