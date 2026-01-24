@@ -40,7 +40,14 @@ export type RealtimeEvent =
   // Location shares
   | { type: 'location_share_insert'; payload: any }
   | { type: 'location_share_update'; payload: any }
-  | { type: 'location_share_delete'; payload: any };
+  | { type: 'location_share_delete'; payload: any }
+  // Friend requests (for private account follow requests)
+  | { type: 'friend_request_insert'; payload: any }
+  | { type: 'friend_request_update'; payload: any }
+  | { type: 'friend_request_delete'; payload: any }
+  // Follow when current user is the follower (for useFollowStats)
+  | { type: 'follow_by_me_insert'; payload: any }
+  | { type: 'follow_by_me_delete'; payload: any };
 
 type EventHandler = (event: RealtimeEvent) => void;
 
@@ -218,6 +225,48 @@ export const useCentralizedRealtime = () => {
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'post_shares' },
         (payload) => broadcastEvent({ type: 'post_share_delete', payload: payload.old })
+      )
+      // Friend requests (for current user as requester or requested)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'friend_requests', filter: `requester_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'friend_request_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'friend_requests', filter: `requester_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'friend_request_update', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'friend_requests', filter: `requester_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'friend_request_delete', payload: payload.old })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'friend_requests', filter: `requested_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'friend_request_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'friend_requests', filter: `requested_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'friend_request_update', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'friend_requests', filter: `requested_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'friend_request_delete', payload: payload.old })
+      )
+      // Follows when current user is following someone (for useFollowStats)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'follows', filter: `follower_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'follow_by_me_insert', payload: payload.new })
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'follows', filter: `follower_id=eq.${user.id}` },
+        (payload) => broadcastEvent({ type: 'follow_by_me_delete', payload: payload.old })
       );
 
     channel.subscribe((status) => {

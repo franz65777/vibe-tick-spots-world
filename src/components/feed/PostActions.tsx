@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { LikersDrawer } from '@/components/social/LikersDrawer';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
@@ -70,7 +71,7 @@ export const PostActions = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Load location save status
+  // Load location save status and Google Place ID
   useEffect(() => {
     const loadStatus = async () => {
       if (!locationId || !user) return;
@@ -115,53 +116,43 @@ export const PostActions = ({
     };
 
     loadStatus();
+  }, [locationId, user]);
 
+  // Use centralized realtime for internal saves - NO individual channel!
+  useRealtimeEvent(['saved_location_insert', 'saved_location_delete'], (payload) => {
     if (!locationId || !user) return;
-
-    // Realtime for internal saves
-    const chInternal = supabase
-      .channel(`location-saves-${locationId}-${postId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_saved_locations', filter: `location_id=eq.${locationId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
-            setIsLocationSaved(true);
-            if (payload.new.save_tag) setCurrentSaveTag(payload.new.save_tag as SaveTag);
-          } else if (payload.eventType === 'DELETE' && payload.old.user_id === user.id) {
-            setIsLocationSaved(false);
-          }
-        }
-      )
-      .subscribe();
-
-    // Realtime for saved_places by Google Place ID
-    let chGoogle: ReturnType<typeof supabase.channel> | undefined;
-    if (googlePlaceId) {
-      chGoogle = supabase
-        .channel(`saved-places-${googlePlaceId}-${postId}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'saved_places', filter: `place_id=eq.${googlePlaceId}` },
-          (payload) => {
-            if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
-              setIsLocationSaved(true);
-              if (payload.new.save_tag) setCurrentSaveTag(payload.new.save_tag as SaveTag);
-            } else if (payload.eventType === 'DELETE' && payload.old.user_id === user.id) {
-              setIsLocationSaved(false);
-            }
-          }
-        )
-        .subscribe();
+    
+    // Filter: only handle events for THIS location
+    if (payload.location_id === locationId && payload.user_id === user.id) {
+      if (payload.id && !payload._deleted) {
+        // INSERT
+        setIsLocationSaved(true);
+        if (payload.save_tag) setCurrentSaveTag(payload.save_tag as SaveTag);
+      } else {
+        // DELETE (old payload)
+        setIsLocationSaved(false);
+      }
     }
+  });
 
-    return () => {
-      supabase.removeChannel(chInternal);
-      if (chGoogle) supabase.removeChannel(chGoogle);
-    };
-  }, [locationId, user, postId, googlePlaceId]);
+  // Use centralized realtime for Google Place saves
+  useRealtimeEvent(['saved_place_insert', 'saved_place_delete'], (payload) => {
+    if (!googlePlaceId || !user) return;
+    
+    // Filter: only handle events for THIS Google Place
+    if (payload.place_id === googlePlaceId && payload.user_id === user.id) {
+      if (payload.id && !payload._deleted) {
+        // INSERT
+        setIsLocationSaved(true);
+        if (payload.save_tag) setCurrentSaveTag(payload.save_tag as SaveTag);
+      } else {
+        // DELETE
+        setIsLocationSaved(false);
+      }
+    }
+  });
 
-  // Listen for global save changes
+  // Listen for global save changes (from other components)
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
       const { locationId: changedLocationId, isSaved, saveTag } = event.detail;
