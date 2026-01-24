@@ -12,6 +12,7 @@ import { HomeMenuDropdown } from './HomeMenuDropdown';
 import { useTranslation } from 'react-i18next';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { haptics } from '@/utils/haptics';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ const NewBottomNavigation = () => {
     location.pathname === '/leaderboard';
 
   const handleNavClick = (path: string, label: string) => {
+    haptics.selection();
     navigate(path);
     trackEvent('nav_tab_clicked', { tab: label.toLowerCase() });
   };
@@ -63,6 +65,7 @@ const NewBottomNavigation = () => {
     if (!hasValidBusinessAccount) return;
     
     const timer = setTimeout(() => {
+      haptics.impact('heavy');
       setShowSwitchModal(true);
     }, 800); // 800ms long press
     setLongPressTimer(timer);

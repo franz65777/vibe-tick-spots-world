@@ -7,6 +7,7 @@ import { locationService } from '@/services/locationService';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { haptics } from '@/utils/haptics';
 
 interface SaveLocationDrawerProps {
   isOpen: boolean;
@@ -114,6 +115,7 @@ const SaveLocationDrawer = ({ isOpen, onClose, onLocationSaved, initialCoordinat
       });
 
       if (result) {
+        haptics.success();
         toast({
           title: t('locationSaved', { ns: 'common' }),
           description: t('saveLocation.locationSavedDesc', { ns: 'common', name: selectedPlace.name }),

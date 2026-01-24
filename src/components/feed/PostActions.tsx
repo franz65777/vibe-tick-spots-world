@@ -12,6 +12,7 @@ import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
+import { haptics } from '@/utils/haptics';
 
 const TAG_ICONS: Record<SaveTag, string> = {
   been: saveTagBeen,
@@ -187,6 +188,7 @@ export const PostActions = ({
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptics.impact('light');
     try {
       await toggleLike();
     } catch (error) {
@@ -203,6 +205,7 @@ export const PostActions = ({
 
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptics.impact('light');
     if (!locationId || !user) {
       toast.error(t('noLocationAssociated', { ns: 'common', defaultValue: 'No location associated with this post' }));
       return;
@@ -210,6 +213,7 @@ export const PostActions = ({
     
     if (isLocationSaved) {
       // Show remove confirmation instead of unsaving directly
+      haptics.warning();
       setShowRemoveConfirm(true);
     } else {
       // Calculate dropdown position based on button position
@@ -276,6 +280,7 @@ export const PostActions = ({
           save_tag: tag
         });
       
+      haptics.success();
       setIsLocationSaved(true);
       setCurrentSaveTag(tag);
       // Emit global event
@@ -284,6 +289,7 @@ export const PostActions = ({
       }));
       toast.success(t('locationSaved', { ns: 'common' }));
     } catch (error) {
+      haptics.error();
       console.error('Error saving location:', error);
       toast.error(t('failedToSave', { ns: 'common' }));
     }

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import addPageHero from '@/assets/add-hero-cards.png';
 import { lazy, Suspense } from 'react';
 import { AddPageOnboarding } from './AddPageOnboarding';
+import { haptics } from '@/utils/haptics';
 
 // Lazy load the social import tutorial (rarely used)
 const SocialImportTutorial = lazy(() => 
@@ -119,7 +120,10 @@ const EmptyState = memo(({
           <div className="space-y-3 w-full pt-4 animate-fade-in-up-delay-2">
             {/* Primary CTA - Create Post */}
             <Button
-              onClick={onSelectFiles}
+              onClick={() => {
+                haptics.impact('medium');
+                onSelectFiles();
+              }}
               size="lg"
               className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-lg shadow-xl shadow-blue-500/25 transition-all duration-300 active:scale-[0.97] flex items-center justify-center gap-3"
             >
@@ -129,7 +133,10 @@ const EmptyState = memo(({
 
             {/* Secondary CTA - Create List */}
             <Button
-              onClick={() => navigate('/create-list')}
+              onClick={() => {
+                haptics.impact('light');
+                navigate('/create-list');
+              }}
               variant="ghost"
               size="lg"
               className="w-full h-12 rounded-2xl bg-muted/50 hover:bg-muted text-foreground font-medium text-base border border-border/50 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
