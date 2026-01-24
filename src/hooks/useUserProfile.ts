@@ -1,8 +1,8 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { sendLocalizedNotification } from '@/services/notificationLocalizationService';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface UserProfile {
   id: string;
@@ -30,9 +30,15 @@ export const useUserProfile = (userId?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
+  const userIdRef = useRef(userId);
+  
+  // Keep userId ref updated
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
   // Function to refetch follow request status
-  const refetchFollowRequestStatus = async () => {
+  const refetchFollowRequestStatus = useCallback(async () => {
     if (!currentUser || !userId || currentUser.id === userId) return;
     
     try {
@@ -64,30 +70,31 @@ export const useUserProfile = (userId?: string) => {
     } catch (error) {
       console.error('Error refetching follow status:', error);
     }
-  };
+  }, [currentUser, userId]);
+
+  const fetchCounts = useCallback(async () => {
+    if (!userId) return { followers: 0, following: 0 };
+
+    const [followersRes, followingRes] = await Promise.all([
+      supabase
+        .from('follows')
+        .select('id', { count: 'exact', head: true })
+        .eq('following_id', userId),
+      supabase
+        .from('follows')
+        .select('id', { count: 'exact', head: true })
+        .eq('follower_id', userId),
+    ]);
+
+    return {
+      followers: followersRes.count || 0,
+      following: followingRes.count || 0,
+    };
+  }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
 
-    const fetchCounts = async () => {
-      if (!userId) return { followers: 0, following: 0 };
-
-      const [followersRes, followingRes] = await Promise.all([
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact', head: true })
-          .eq('following_id', userId),
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact', head: true })
-          .eq('follower_id', userId),
-      ]);
-
-      return {
-        followers: followersRes.count || 0,
-        following: followingRes.count || 0,
-      };
-    };
     const fetchProfile = async () => {
       if (!userId) {
         setProfile(null);
@@ -219,110 +226,6 @@ export const useUserProfile = (userId?: string) => {
 
     fetchProfile();
 
-    // Live updates: refresh counts when follows changes for this profile
-    const channel = userId
-      ? supabase
-          .channel(`user-profile-follows-${userId}`)
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${userId}` },
-            async () => {
-              try {
-                const counts = await fetchCounts();
-                if (cancelled) return;
-                setProfile((prev) =>
-                  prev
-                    ? { ...prev, followers_count: counts.followers, following_count: counts.following }
-                    : prev
-                );
-              } catch (e) {
-                console.error('Error updating follower counts:', e);
-              }
-            }
-          )
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${userId}` },
-            async () => {
-              try {
-                const counts = await fetchCounts();
-                if (cancelled) return;
-                setProfile((prev) =>
-                  prev
-                    ? { ...prev, followers_count: counts.followers, following_count: counts.following }
-                    : prev
-                );
-              } catch (e) {
-                console.error('Error updating follower counts:', e);
-              }
-            }
-          )
-          .subscribe()
-      : null;
-
-    // Live updates: watch friend_requests so requester sees decline immediately
-    // Watch both directions: when current user is requester OR when viewing someone who sent us a request
-    const friendReqChannel = (currentUser && userId && currentUser.id !== userId)
-      ? supabase
-          .channel(`friend-request-status-${currentUser.id}-${userId}`)
-          // When current user sent a request to userId (current user is requester)
-          .on(
-            'postgres_changes',
-            {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'friend_requests',
-              filter: `requester_id=eq.${currentUser.id}`,
-            },
-            (payload: any) => {
-              if (payload.new?.requested_id === userId) {
-                const newStatus = payload.new.status;
-                if (newStatus === 'declined') {
-                  setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
-                } else if (newStatus === 'accepted') {
-                  setProfile((prev) =>
-                    prev
-                      ? { ...prev, is_following: true, follow_request_status: null, can_view_content: true }
-                      : prev
-                  );
-                }
-              }
-            }
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: 'DELETE',
-              schema: 'public',
-              table: 'friend_requests',
-              filter: `requester_id=eq.${currentUser.id}`,
-            },
-            (payload: any) => {
-              // If my pending request was deleted (declined then removed), reset button
-              if (payload.old?.requested_id === userId) {
-                setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
-              }
-            }
-          )
-          // When userId sent a request to current user (userId is requester) - for when current user declines
-          .on(
-            'postgres_changes',
-            {
-              event: 'DELETE',
-              schema: 'public',
-              table: 'friend_requests',
-              filter: `requester_id=eq.${userId}`,
-            },
-            (payload: any) => {
-              // If the request from userId to me was deleted (I declined), update their profile view
-              if (payload.old?.requested_id === currentUser.id) {
-                setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
-              }
-            }
-          )
-          .subscribe()
-      : null;
-
     // Polling fallback: check every 5 seconds if we have a pending request (realtime can miss DELETE events)
     const pollInterval = (currentUser && userId && currentUser.id !== userId)
       ? setInterval(() => {
@@ -340,12 +243,56 @@ export const useUserProfile = (userId?: string) => {
 
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
-      if (friendReqChannel) supabase.removeChannel(friendReqChannel);
       if (pollInterval) clearInterval(pollInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [userId, currentUser]);
+  }, [userId, currentUser, fetchCounts, refetchFollowRequestStatus]);
+
+  // Use centralized realtime for follow updates - NO individual channel!
+  useRealtimeEvent(['follow_insert', 'follow_delete'], useCallback(async (payload: any) => {
+    const targetUserId = userIdRef.current;
+    if (!targetUserId) return;
+    
+    // Only handle events relevant to this profile
+    if (payload.following_id === targetUserId || payload.follower_id === targetUserId) {
+      try {
+        const counts = await fetchCounts();
+        setProfile((prev) =>
+          prev
+            ? { ...prev, followers_count: counts.followers, following_count: counts.following }
+            : prev
+        );
+      } catch (e) {
+        console.error('Error updating follower counts:', e);
+      }
+    }
+  }, [fetchCounts]));
+
+  // Use centralized realtime for friend request updates - NO individual channel!
+  useRealtimeEvent(['friend_request_update', 'friend_request_delete'], useCallback((payload: any) => {
+    const targetUserId = userIdRef.current;
+    if (!currentUser || !targetUserId) return;
+    
+    // When current user's request to this profile was updated/deleted
+    if (payload.requester_id === currentUser.id && payload.requested_id === targetUserId) {
+      const newStatus = payload.status;
+      if (newStatus === 'declined' || !payload.id) {
+        // Declined or deleted
+        setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
+      } else if (newStatus === 'accepted') {
+        setProfile((prev) =>
+          prev
+            ? { ...prev, is_following: true, follow_request_status: null, can_view_content: true }
+            : prev
+        );
+      }
+    }
+    
+    // When this profile's request to current user was deleted (current user declined)
+    if (payload.requester_id === targetUserId && payload.requested_id === currentUser.id) {
+      setProfile((prev) => (prev ? { ...prev, follow_request_status: null } : prev));
+    }
+  }, [currentUser]));
 
   const followUser = async () => {
     if (!currentUser || !userId || currentUser.id === userId) return;
@@ -357,8 +304,6 @@ export const useUserProfile = (userId?: string) => {
       const isPrivate = profile?.is_private ?? false;
 
       if (isPrivate) {
-        const previousStatus = profile?.follow_request_status ?? null;
-
         // Optimistic: immediately reflect "requested" to avoid double-tap glitches
         setProfile((prev) => (prev ? { ...prev, follow_request_status: 'pending' } : prev));
 
@@ -522,19 +467,10 @@ export const useUserProfile = (userId?: string) => {
   const refreshCounts = async () => {
     if (!userId) return;
     try {
-      const [followersRes, followingRes] = await Promise.all([
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact', head: true })
-          .eq('following_id', userId),
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact', head: true })
-          .eq('follower_id', userId),
-      ]);
+      const counts = await fetchCounts();
       setProfile((prev) =>
         prev
-          ? { ...prev, followers_count: followersRes.count || 0, following_count: followingRes.count || 0 }
+          ? { ...prev, followers_count: counts.followers, following_count: counts.following }
           : prev
       );
     } catch (e) {

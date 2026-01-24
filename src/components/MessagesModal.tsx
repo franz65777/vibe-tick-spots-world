@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
-import { realtimeChatService } from '@/services/realtimeChatService';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { getDateFnsLocale } from '@/utils/dateFnsLocales';

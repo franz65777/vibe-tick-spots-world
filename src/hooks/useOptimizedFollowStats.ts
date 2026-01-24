@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface FollowStats {
   followersCount: number;
@@ -38,28 +39,28 @@ export const useOptimizedFollowStats = (userId?: string) => {
     refetchOnMount: 'always',
   });
 
-  // Realtime: invalidate counts as soon as follows rows change for this user
-  useEffect(() => {
-    if (!targetUserId) return;
-
-    const channel = supabase
-      .channel(`follow-stats-${targetUserId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${targetUserId}` },
-        () => queryClient.invalidateQueries({ queryKey: ['followStats', targetUserId] })
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${targetUserId}` },
-        () => queryClient.invalidateQueries({ queryKey: ['followStats', targetUserId] })
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+  // Invalidate callback for realtime events
+  const invalidateStats = useCallback(() => {
+    if (targetUserId) {
+      queryClient.invalidateQueries({ queryKey: ['followStats', targetUserId] });
+    }
   }, [queryClient, targetUserId]);
+
+  // Use centralized realtime for follow updates - NO individual channel!
+  // When someone follows/unfollows the target user
+  useRealtimeEvent(['follow_insert', 'follow_delete'], useCallback((payload: any) => {
+    // Only invalidate if this event is for the target user
+    if (payload.following_id === targetUserId || payload.follower_id === targetUserId) {
+      invalidateStats();
+    }
+  }, [targetUserId, invalidateStats]));
+
+  // When current user follows/unfollows someone (for when viewing own profile)
+  useRealtimeEvent(['follow_by_me_insert', 'follow_by_me_delete'], useCallback((payload: any) => {
+    if (user?.id === targetUserId) {
+      invalidateStats();
+    }
+  }, [user?.id, targetUserId, invalidateStats]));
 
   return {
     stats: stats || { followersCount: 0, followingCount: 0, postsCount: 0 },

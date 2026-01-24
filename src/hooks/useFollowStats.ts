@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface FollowStats {
   followersCount: number;
@@ -76,44 +76,16 @@ export const useFollowStats = () => {
     fetchStats();
   }, [fetchStats]);
 
-  // Subscribe to realtime changes on follows table for live updates
-  useEffect(() => {
-    if (!user) return;
+  // Use centralized realtime for follow updates - NO individual channel!
+  // When someone follows/unfollows current user
+  useRealtimeEvent(['follow_insert', 'follow_delete'], useCallback(() => {
+    fetchStats();
+  }, [fetchStats]));
 
-    const channel = supabase
-      .channel('follow-stats-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'follows',
-          filter: `following_id=eq.${user.id}`
-        },
-        () => {
-          // Refetch stats when follows change
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'follows',
-          filter: `follower_id=eq.${user.id}`
-        },
-        () => {
-          // Refetch stats when follows change
-          fetchStats();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchStats]);
+  // When current user follows/unfollows someone
+  useRealtimeEvent(['follow_by_me_insert', 'follow_by_me_delete'], useCallback(() => {
+    fetchStats();
+  }, [fetchStats]));
 
   return { stats, loading, refetch: fetchStats };
 };

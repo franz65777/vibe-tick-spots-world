@@ -22,6 +22,7 @@ import FolderDetailModal from '@/components/profile/FolderDetailModal';
 import { useVisitedSaves } from '@/hooks/useVisitedSaves';
 import UserVisitedCard from '@/components/feed/UserVisitedCard';
 import { storeFeedScrollAnchor } from '@/utils/feedScroll';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
@@ -262,68 +263,46 @@ const FeedPage = memo(() => {
     return ids;
   }, [feedItems]);
 
-  // Keep post counts live in the feed without needing N realtime channels (one per post)
+  // Keep post counts live using centralized realtime - NO individual channel!
+  const postIdSetRef = useRef<Set<string>>(new Set());
+  
+  // Update the post ID set when feed changes
   useEffect(() => {
-    if (!user?.id) return;
+    postIdSetRef.current = new Set(feedItems.map((p: any) => p.id));
+  }, [feedItems]);
+
+  const queryKey = useMemo(() => 
+    feedType === 'promotions' ? ['promotions-feed', user?.id] : ['feed', user?.id],
+    [feedType, user?.id]
+  );
+
+  // Use centralized realtime for comment count updates
+  useRealtimeEvent(['post_comment_insert', 'post_comment_delete'], useCallback((payload: any) => {
+    const postId = payload.post_id;
+    if (!postId || !postIdSetRef.current.has(postId)) return;
     
-    // Skip if post IDs haven't changed
-    if (postIdsRef.current === feedPostIds) return;
-    postIdsRef.current = feedPostIds;
+    const delta = payload.id && !payload._deleted ? 1 : -1;
+    queryClient.setQueryData<any[]>(queryKey, (prev) => {
+      if (!Array.isArray(prev)) return prev;
+      return prev.map((p: any) =>
+        p.id === postId ? { ...p, comments_count: Math.max(0, (p.comments_count || 0) + delta) } : p
+      );
+    });
+  }, [queryClient, queryKey]));
 
-    const postIdSet = new Set<string>(feedItems.map((p: any) => p.id));
-    if (postIdSet.size === 0) return;
-
-    const queryKey = feedType === 'promotions' ? ['promotions-feed', user.id] : ['feed', user.id];
-
-    const bumpCount = (postId: string, field: 'comments_count' | 'shares_count', delta: number) => {
-      queryClient.setQueryData<any[]>(queryKey, (prev) => {
-        if (!Array.isArray(prev)) return prev;
-        return prev.map((p: any) =>
-          p.id === postId ? { ...p, [field]: Math.max(0, (p[field] || 0) + delta) } : p
-        );
-      });
-    };
-
-    const ch = supabase
-      .channel(`feed-counts-${feedType}-${user.id}-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'post_comments' },
-        (payload) => {
-          const postId = (payload.new as any)?.post_id as string | undefined;
-          if (postId && postIdSet.has(postId)) bumpCount(postId, 'comments_count', 1);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'post_comments' },
-        (payload) => {
-          const postId = (payload.old as any)?.post_id as string | undefined;
-          if (postId && postIdSet.has(postId)) bumpCount(postId, 'comments_count', -1);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'post_shares' },
-        (payload) => {
-          const postId = (payload.new as any)?.post_id as string | undefined;
-          if (postId && postIdSet.has(postId)) bumpCount(postId, 'shares_count', 1);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'post_shares' },
-        (payload) => {
-          const postId = (payload.old as any)?.post_id as string | undefined;
-          if (postId && postIdSet.has(postId)) bumpCount(postId, 'shares_count', -1);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [user?.id, feedType, feedPostIds, queryClient]);
+  // Use centralized realtime for share count updates
+  useRealtimeEvent(['post_share_insert', 'post_share_delete'], useCallback((payload: any) => {
+    const postId = payload.post_id;
+    if (!postId || !postIdSetRef.current.has(postId)) return;
+    
+    const delta = payload.id && !payload._deleted ? 1 : -1;
+    queryClient.setQueryData<any[]>(queryKey, (prev) => {
+      if (!Array.isArray(prev)) return prev;
+      return prev.map((p: any) =>
+        p.id === postId ? { ...p, shares_count: Math.max(0, (p.shares_count || 0) + delta) } : p
+      );
+    });
+  }, [queryClient, queryKey]));
 
   // Carica likes quando cambiano i feedItems
   useEffect(() => {

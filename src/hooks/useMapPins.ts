@@ -1,9 +1,8 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { locationInteractionService } from '@/services/locationInteractionService';
 import { backendService } from '@/services/backendService';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 
 interface MapPin {
   id: string;
@@ -42,7 +41,7 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
   const [error, setError] = useState<string | null>(null);
   const [hasFollowedUsers, setHasFollowedUsers] = useState(false);
 
-  const fetchPins = async (cityFilter?: string) => {
+  const fetchPins = useCallback(async (cityFilter?: string) => {
     if (!user) {
       setLoading(false);
       return;
@@ -360,30 +359,17 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, filter]);
 
   useEffect(() => {
     fetchPins();
-    
-    // Set up realtime subscription for new saves to refresh pins
-    if (!user) return;
-    
-    const channel = supabase
-      .channel(`map-pins-refresh-${user?.id || 'anon'}-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
-        console.log('🔄 Saved places changed, refreshing pins...');
-        fetchPins();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
-        console.log('🔄 User saved locations changed, refreshing pins...');
-        fetchPins();
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, filter]);
+  }, [fetchPins]);
+
+  // Use centralized realtime for save updates - NO individual channel!
+  useRealtimeEvent(['saved_place_insert', 'saved_place_delete', 'saved_location_insert', 'saved_location_delete'], useCallback(() => {
+    console.log('🔄 Saved location changed via centralized realtime, refreshing pins...');
+    fetchPins();
+  }, [fetchPins]));
 
   const refreshPins = (cityFilter?: string) => {
     fetchPins(cityFilter);
