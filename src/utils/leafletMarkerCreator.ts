@@ -65,7 +65,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   
   // ========== FRIENDS FILTER MODE ==========
   // Show avatar as main pin with category badge at top-left
-  if (friendsFilterMode && friendAvatar && friendUsername) {
+  if (friendsFilterMode && friendUsername) {
     const size = isSelected ? 56 : 44;
     const avatarSize = size;
     const badgeSize = 20;
@@ -80,6 +80,10 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       'posted': 'posted'
     };
     const actionLabel = actionLabels[friendAction || 'saved'] || 'saved';
+    
+    // Fallback initial for users without avatar
+    const initial = (friendUsername[0] || 'U').toUpperCase();
+    const hasAvatar = !!friendAvatar;
     
     const markerHtml = `
       <div class="friend-filter-marker" style="
@@ -119,13 +123,20 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
             box-shadow: 0 4px 12px rgba(0,0,0,0.25);
             overflow: hidden;
             background: #9333EA;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           ">
-            <img 
-              src="${friendAvatar}" 
-              alt="${friendUsername}"
-              style="width: 100%; height: 100%; object-fit: cover;"
-              onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;\\'>${friendUsername[0]?.toUpperCase() || 'U'}</div>';"
-            />
+            ${hasAvatar 
+              ? `<img 
+                  src="${friendAvatar}" 
+                  alt="${friendUsername}"
+                  style="width: 100%; height: 100%; object-fit: cover;"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                />
+                <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">${initial}</div>`
+              : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">${initial}</div>`
+            }
           </div>
           
           <!-- Category badge top-left -->

@@ -32,6 +32,19 @@ interface MapLocation {
     username: string;
     avatar_url: string | null;
   };
+  // For friend pins with avatar display
+  savedByUser?: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    action: 'saved' | 'liked' | 'faved' | 'posted';
+  };
+  // For activity bubble above pins
+  latestActivity?: {
+    type: 'review' | 'photo';
+    snippet?: string;
+    created_at: string;
+  };
 }
 
 interface UseMapLocationsProps {
@@ -349,7 +362,71 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
             });
 
-            finalLocations = Array.from(locationMap.values()).filter((loc) => isCategoryAllowed(loc.category));
+            // Fetch profiles for followed users to get avatar/username
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .in('id', followedUserIds);
+
+            const profileMap = new Map<string, { id: string; username: string; avatar_url: string | null }>();
+            profiles?.forEach(p => profileMap.set(p.id, { id: p.id, username: p.username || 'user', avatar_url: p.avatar_url }));
+
+            // Fetch recent posts/reviews by friends for these locations
+            const internalLocationIds = Array.from(locationMap.values())
+              .filter(loc => loc.id && !loc.id.startsWith('ChIJ')) // Only internal UUIDs
+              .map(loc => loc.id);
+
+            let activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string; user_id: string }>();
+            
+            if (internalLocationIds.length > 0) {
+              const { data: friendPosts } = await supabase
+                .from('posts')
+                .select('location_id, user_id, caption, rating, media_urls, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', internalLocationIds)
+                .order('created_at', { ascending: false })
+                .limit(300);
+
+              friendPosts?.forEach(post => {
+                if (post.location_id && !activityMap.has(post.location_id)) {
+                  activityMap.set(post.location_id, {
+                    type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                    snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                    created_at: post.created_at,
+                    user_id: post.user_id
+                  });
+                }
+              });
+            }
+
+            // Enrich locations with savedByUser and latestActivity
+            finalLocations = Array.from(locationMap.values())
+              .filter((loc) => isCategoryAllowed(loc.category))
+              .map(loc => {
+                const userProfile = profileMap.get(loc.user_id);
+                const activity = activityMap.get(loc.id);
+                
+                // Determine user action
+                let userAction: 'saved' | 'liked' | 'faved' | 'posted' = 'saved';
+                if (activity && activity.user_id === loc.user_id) {
+                  userAction = activity.type === 'review' ? 'faved' : 'posted';
+                }
+
+                return {
+                  ...loc,
+                  savedByUser: userProfile ? {
+                    id: userProfile.id,
+                    username: userProfile.username,
+                    avatar_url: userProfile.avatar_url,
+                    action: userAction
+                  } : undefined,
+                  latestActivity: activity ? {
+                    type: activity.type,
+                    snippet: activity.snippet,
+                    created_at: activity.created_at
+                  } : undefined
+                };
+              });
           } else {
             // No bounds - fetch by city
             // If no friends are selected, fetch ALL followed users
@@ -507,7 +584,71 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
             });
 
-            finalLocations = Array.from(locationMap.values()).filter((loc) => isCategoryAllowed(loc.category));
+            // Fetch profiles for followed users to get avatar/username
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .in('id', followedUserIds);
+
+            const profileMap = new Map<string, { id: string; username: string; avatar_url: string | null }>();
+            profiles?.forEach(p => profileMap.set(p.id, { id: p.id, username: p.username || 'user', avatar_url: p.avatar_url }));
+
+            // Fetch recent posts/reviews by friends for these locations
+            const internalLocationIds = Array.from(locationMap.values())
+              .filter(loc => loc.id && !loc.id.startsWith('ChIJ')) // Only internal UUIDs
+              .map(loc => loc.id);
+
+            let activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string; user_id: string }>();
+            
+            if (internalLocationIds.length > 0) {
+              const { data: friendPosts } = await supabase
+                .from('posts')
+                .select('location_id, user_id, caption, rating, media_urls, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', internalLocationIds)
+                .order('created_at', { ascending: false })
+                .limit(300);
+
+              friendPosts?.forEach(post => {
+                if (post.location_id && !activityMap.has(post.location_id)) {
+                  activityMap.set(post.location_id, {
+                    type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                    snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                    created_at: post.created_at,
+                    user_id: post.user_id
+                  });
+                }
+              });
+            }
+
+            // Enrich locations with savedByUser and latestActivity
+            finalLocations = Array.from(locationMap.values())
+              .filter((loc) => isCategoryAllowed(loc.category))
+              .map(loc => {
+                const userProfile = profileMap.get(loc.user_id);
+                const activity = activityMap.get(loc.id);
+                
+                // Determine user action
+                let userAction: 'saved' | 'liked' | 'faved' | 'posted' = 'saved';
+                if (activity && activity.user_id === loc.user_id) {
+                  userAction = activity.type === 'review' ? 'faved' : 'posted';
+                }
+
+                return {
+                  ...loc,
+                  savedByUser: userProfile ? {
+                    id: userProfile.id,
+                    username: userProfile.username,
+                    avatar_url: userProfile.avatar_url,
+                    action: userAction
+                  } : undefined,
+                  latestActivity: activity ? {
+                    type: activity.type,
+                    snippet: activity.snippet,
+                    created_at: activity.created_at
+                  } : undefined
+                };
+              });
           }
           break;
         }
