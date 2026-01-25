@@ -434,6 +434,86 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     };
   }, [place.id, place.google_place_id, locationDetails?.id, locationDetails?.google_place_id]);
 
+  // Listen for FriendActivityStack navigation events
+  useEffect(() => {
+    const currentPlaceId = place.id || locationDetails?.id;
+    const currentGooglePlaceId = place.google_place_id || locationDetails?.google_place_id;
+
+    const handleScrollToPost = (event: CustomEvent) => {
+      const { locationId, googlePlaceId: eventGooglePlaceId, postId } = event.detail;
+      
+      // Check if this event is for this location
+      const isMatch = (locationId && locationId === currentPlaceId) || 
+                      (eventGooglePlaceId && eventGooglePlaceId === currentGooglePlaceId);
+      
+      if (isMatch && postId) {
+        // 1. Expand the card
+        setIsExpanded(true);
+        // 2. Switch to posts tab
+        setActiveTab('posts');
+        // 3. After render, scroll to the post
+        setTimeout(() => {
+          const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+          if (postElement) {
+            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight effect
+            postElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+            setTimeout(() => {
+              postElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+            }, 2000);
+          }
+        }, 400);
+      }
+    };
+
+    const handleScrollToReview = (event: CustomEvent) => {
+      const { locationId, googlePlaceId: eventGooglePlaceId, userId } = event.detail;
+      
+      const isMatch = (locationId && locationId === currentPlaceId) || 
+                      (eventGooglePlaceId && eventGooglePlaceId === currentGooglePlaceId);
+      
+      if (isMatch && userId) {
+        // 1. Expand the card
+        setIsExpanded(true);
+        // 2. Switch to reviews tab
+        setActiveTab('reviews');
+        // 3. After render, scroll to the review
+        setTimeout(() => {
+          const reviewElement = document.querySelector(`[data-review-user="${userId}"]`);
+          if (reviewElement) {
+            reviewElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight effect
+            reviewElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+            setTimeout(() => {
+              reviewElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+            }, 2000);
+          }
+        }, 400);
+      }
+    };
+
+    const handleOpenSavedBy = (event: CustomEvent) => {
+      const { locationId, googlePlaceId: eventGooglePlaceId } = event.detail;
+      
+      const isMatch = (locationId && locationId === currentPlaceId) || 
+                      (eventGooglePlaceId && eventGooglePlaceId === currentGooglePlaceId);
+      
+      if (isMatch) {
+        setSavedByOpen(true);
+      }
+    };
+
+    window.addEventListener('pin-scroll-to-post', handleScrollToPost as EventListener);
+    window.addEventListener('pin-scroll-to-review', handleScrollToReview as EventListener);
+    window.addEventListener('pin-open-saved-by', handleOpenSavedBy as EventListener);
+    
+    return () => {
+      window.removeEventListener('pin-scroll-to-post', handleScrollToPost as EventListener);
+      window.removeEventListener('pin-scroll-to-review', handleScrollToReview as EventListener);
+      window.removeEventListener('pin-open-saved-by', handleOpenSavedBy as EventListener);
+    };
+  }, [place.id, place.google_place_id, locationDetails?.id, locationDetails?.google_place_id]);
+
   // Fetch location photos - use pre-loaded photos if available
   const { photos: locationPhotos, loading: photosLoading } = useLocationPhotos({
     locationId: locationIdForEngagement,
@@ -1619,7 +1699,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                           <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
                             {posts.map((post) => (
                               <button
-                                key={post.id} 
+                                key={post.id}
+                                data-post-id={post.id}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   document.body.setAttribute('data-modal-open', 'true');
@@ -1629,7 +1710,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                                     setSelectedPostId(post.id);
                                   }
                                 }}
-                                className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow will-change-transform"
+                                className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-all will-change-transform"
                               >
                                 <img 
                                   src={post.media_urls[0]} 
@@ -1685,7 +1766,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                       ) : (
                         <div className="space-y-4 pb-4">
                           {reviews.map((review) => (
-                            <div key={review.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                            <div key={review.id} data-review-user={review.user_id} className="flex gap-3 pb-4 border-b border-border last:border-0 transition-all rounded-lg">
                               <Avatar className="w-10 h-10 shrink-0">
                                 <AvatarImage src={review.avatar_url || ''} />
                                 <AvatarFallback className="bg-primary/10 text-primary">
