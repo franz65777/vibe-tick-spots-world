@@ -473,8 +473,22 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         // 3. After render, scroll to the post
         setTimeout(() => {
           const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-          if (postElement) {
-            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const cardElement = document.querySelector('[data-pin-detail-card="true"]');
+          
+          if (postElement && cardElement) {
+            const scrollableContent = cardElement.querySelector('.overflow-y-auto');
+            if (scrollableContent) {
+              // Calculate position with header offset to keep header visible
+              const headerOffset = 180;
+              const elementTop = postElement.getBoundingClientRect().top;
+              const containerTop = scrollableContent.getBoundingClientRect().top;
+              const scrollTop = scrollableContent.scrollTop + (elementTop - containerTop) - headerOffset;
+              
+              scrollableContent.scrollTo({
+                top: Math.max(0, scrollTop),
+                behavior: 'smooth'
+              });
+            }
             // Highlight effect
             postElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
             setTimeout(() => {
@@ -499,8 +513,22 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         // 3. After render, scroll to the review
         setTimeout(() => {
           const reviewElement = document.querySelector(`[data-review-user="${userId}"]`);
-          if (reviewElement) {
-            reviewElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const cardElement = document.querySelector('[data-pin-detail-card="true"]');
+          
+          if (reviewElement && cardElement) {
+            const scrollableContent = cardElement.querySelector('.overflow-y-auto');
+            if (scrollableContent) {
+              // Calculate position with header offset to keep header visible
+              const headerOffset = 180;
+              const elementTop = reviewElement.getBoundingClientRect().top;
+              const containerTop = scrollableContent.getBoundingClientRect().top;
+              const scrollTop = scrollableContent.scrollTop + (elementTop - containerTop) - headerOffset;
+              
+              scrollableContent.scrollTo({
+                top: Math.max(0, scrollTop),
+                behavior: 'smooth'
+              });
+            }
             // Highlight effect
             reviewElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
             setTimeout(() => {
@@ -1069,6 +1097,18 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 if (drawerContentRef.current) {
                   drawerContentRef.current.style.transform = `translateY(${nextTranslate}px)`;
                 }
+                
+                // Emit real-time height change for FriendActivityStack sync during drag
+                const viewportHeight = window.innerHeight;
+                const currentHeight = viewportHeight * (expandedHeight / 100) - nextTranslate;
+                
+                window.dispatchEvent(new CustomEvent('pin-card-height-change', {
+                  detail: { 
+                    height: Math.max(0, currentHeight), 
+                    visible: true,
+                    isDragging: true
+                  }
+                }));
               });
             }}
             onPointerUp={(e) => {
