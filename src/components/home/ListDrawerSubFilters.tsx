@@ -5,11 +5,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from 'react-i18next';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 
-// Import tag icons
+// Import icons
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
-import trendingIcon from '@/assets/trending-icon.png';
+import filterFriendsIcon from '@/assets/icons/filter-friends.png';
+
 interface FollowedUser {
   id: string;
   username: string;
@@ -58,21 +59,31 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
   if (activeFilter === 'following') {
     const allSelected = selectedFollowedUserIds.length === followedUsers.length && followedUsers.length > 0;
     return (
-      <div className="px-4">
-        <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pt-1 pb-1">
-          {/* All button - compact circle matching avatar style */}
+      <div className="px-4 -mt-1">
+        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-hide pt-1 pb-1">
+          {/* All button - using friends icon like avatars */}
           <button 
             onClick={onSelectAllUsers} 
-            className="flex-shrink-0 flex flex-col items-center gap-1 min-w-[48px]"
+            className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px]"
           >
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200",
+              "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 overflow-hidden",
               allSelected || selectedFollowedUserIds.length === 0 
-                ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1 ring-offset-background" 
-                : "bg-muted/80 text-muted-foreground"
+                ? "ring-2 ring-primary ring-offset-1 ring-offset-background" 
+                : "opacity-60"
+            )}>
+              <img 
+                src={filterFriendsIcon} 
+                alt={t('all', { ns: 'mapFilters' })} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className={cn(
+              "text-[10px] font-medium",
+              allSelected || selectedFollowedUserIds.length === 0 ? "text-primary" : "text-muted-foreground"
             )}>
               {t('all', { ns: 'mapFilters' })}
-            </div>
+            </span>
           </button>
 
           {/* User avatars */}
@@ -82,19 +93,19 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
               <button 
                 key={user.id} 
                 onClick={() => onToggleUser(user.id)} 
-                className="flex-shrink-0 flex flex-col items-center gap-1 min-w-[48px]"
+                className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px]"
               >
                 <Avatar className={cn(
                   "w-10 h-10 transition-all duration-200",
-                  isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""
+                  isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "opacity-60"
                 )}>
-                  <AvatarImage src={user.avatar_url || ''} />
+                  <AvatarImage src={user.avatar_url || ''} loading="lazy" />
                   <AvatarFallback className="text-sm font-medium bg-muted">
                     {user.username?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <span className={cn(
-                  "text-[10px] font-medium max-w-[48px] truncate",
+                  "text-[10px] font-medium max-w-[44px] truncate",
                   isSelected ? "text-primary" : "text-muted-foreground"
                 )}>
                   {user.username}
