@@ -273,6 +273,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [posts, setPosts] = useState<any[]>([]);
   const [showVisitedModal, setShowVisitedModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+
+  // Pre-cache avatar URL - user metadata is available immediately, profile loads async
+  const cachedAvatarUrl = useMemo(() => 
+    profile?.avatar_url || user?.user_metadata?.avatar_url || null,
+  [profile?.avatar_url, user?.user_metadata?.avatar_url]);
+  
+  const cachedAvatarFallback = useMemo(() => 
+    profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U',
+  [profile?.username, user?.email]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
@@ -1412,9 +1421,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   className="w-full flex items-center gap-3 py-2.5 px-3 rounded-xl border border-dashed border-muted-foreground/30"
                 >
                   <Avatar className="h-7 w-7 flex-shrink-0">
-                    <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                    <AvatarImage src={cachedAvatarUrl || undefined} />
                     <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                      {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                      {cachedAvatarFallback}
                     </AvatarFallback>
                   </Avatar>
                   <span className="flex-1 text-sm text-muted-foreground text-left">
