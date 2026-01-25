@@ -697,6 +697,11 @@ const LeafletMapSetup = ({
 
           const isSelected = selectedPlace?.id === place.id;
           const shouldShowLabel = zoom >= 14 || isSelected;
+          
+          // Determine if we're in friends filter mode
+          const isFriendsFilter = activeFilter === 'following';
+          const savedByUser = (place as any).savedByUser;
+          const latestActivity = (place as any).latestActivity;
 
           // Create config hash for incremental update change detection
           const markerConfigKey = JSON.stringify({
@@ -711,6 +716,10 @@ const LeafletMapSetup = ({
             isSelected,
             lat: place.coordinates.lat,
             lng: place.coordinates.lng,
+            // New: include friend filter data in config
+            friendsFilterMode: isFriendsFilter && !!savedByUser,
+            savedByUser: savedByUser ? JSON.stringify(savedByUser) : undefined,
+            latestActivity: latestActivity ? JSON.stringify(latestActivity) : undefined,
           });
 
           const existingMarker = markersRef.current.get(place.id);
@@ -733,6 +742,14 @@ const LeafletMapSetup = ({
             campaignType,
             sharedByUsers: sharedByUsers.length > 0 ? sharedByUsers : undefined,
             isSelected,
+            // New: friend filter mode data
+            friendsFilterMode: isFriendsFilter && !!savedByUser,
+            friendAvatar: savedByUser?.avatar_url,
+            friendUsername: savedByUser?.username,
+            friendAction: savedByUser?.action,
+            // New: activity data for selected pins
+            activitySnippet: isSelected && latestActivity ? latestActivity.snippet : undefined,
+            activityType: isSelected && latestActivity ? latestActivity.type : undefined,
           });
 
           if (existingMarker) {

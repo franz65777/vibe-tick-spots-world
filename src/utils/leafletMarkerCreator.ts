@@ -39,16 +39,236 @@ interface MarkerOptions {
   sharedByUsers?: Array<{ id: string; avatar_url: string | null; username: string }>;
   onSharersClick?: () => void;
   isSelected?: boolean;
+  // New: Friends filter mode - avatar as pin center
+  friendsFilterMode?: boolean;
+  friendAvatar?: string | null;
+  friendUsername?: string;
+  friendAction?: 'saved' | 'liked' | 'faved' | 'posted';
+  // New: Activity snippet for selected pins
+  activitySnippet?: string;
+  activityType?: 'review' | 'photo';
 }
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, name, isSaved, isRecommended, isDarkMode, hasCampaign, campaignType, sharedByUserAvatar, sharedByUsers, isSelected = false } = options;
+  const { 
+    category, name, isSaved, isRecommended, isDarkMode, hasCampaign, campaignType, 
+    sharedByUserAvatar, sharedByUsers, isSelected = false,
+    friendsFilterMode = false, friendAvatar, friendUsername, friendAction,
+    activitySnippet, activityType
+  } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
   
   // Get campaign icon based on type
   const campaignIcon = getCampaignIcon(campaignType);
+  
+  // ========== FRIENDS FILTER MODE ==========
+  // Show avatar as main pin with category badge at top-left
+  if (friendsFilterMode && friendAvatar && friendUsername) {
+    const size = isSelected ? 56 : 44;
+    const avatarSize = size;
+    const badgeSize = 20;
+    const bgColor = isDarkMode ? '#2a2a2a' : 'white';
+    const textColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+    
+    // Action label mapping
+    const actionLabels: Record<string, string> = {
+      'saved': 'saved',
+      'liked': 'liked', 
+      'faved': 'faved',
+      'posted': 'posted'
+    };
+    const actionLabel = actionLabels[friendAction || 'saved'] || 'saved';
+    
+    const markerHtml = `
+      <div class="friend-filter-marker" style="
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        ${isSelected ? 'filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));' : ''}
+      ">
+        <!-- Username tooltip above -->
+        <div style="
+          background: ${bgColor};
+          border-radius: 12px;
+          padding: 3px 8px;
+          margin-bottom: 4px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          white-space: nowrap;
+          max-width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">
+          <span style="
+            font-size: 10px;
+            font-weight: 600;
+            color: ${textColor};
+          ">@${friendUsername} ${actionLabel}</span>
+        </div>
+        
+        <!-- Avatar with category badge -->
+        <div style="position: relative;">
+          <!-- Main avatar -->
+          <div style="
+            width: ${avatarSize}px;
+            height: ${avatarSize}px;
+            border-radius: 50%;
+            border: 3px solid ${bgColor};
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            overflow: hidden;
+            background: #9333EA;
+          ">
+            <img 
+              src="${friendAvatar}" 
+              alt="${friendUsername}"
+              style="width: 100%; height: 100%; object-fit: cover;"
+              onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;\\'>${friendUsername[0]?.toUpperCase() || 'U'}</div>';"
+            />
+          </div>
+          
+          <!-- Category badge top-left -->
+          <div style="
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: ${badgeSize}px;
+            height: ${badgeSize}px;
+            border-radius: 50%;
+            background: ${bgColor};
+            border: 2px solid ${bgColor};
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+          ">
+            <img src="${categoryImg}" alt="${category}" style="width: 14px; height: 14px; object-fit: contain;" />
+          </div>
+        </div>
+      </div>
+    `;
+    
+    return L.divIcon({
+      html: markerHtml,
+      className: 'custom-leaflet-icon friend-mode',
+      iconSize: [avatarSize + 20, avatarSize + 36],
+      iconAnchor: [(avatarSize + 20) / 2, avatarSize + 30],
+      popupAnchor: [0, -avatarSize / 2],
+    });
+  }
+  
+  // ========== SELECTED MODE WITH ACTIVITY BUBBLE ==========
+  // Show activity snippet above the pin when selected and has activity
+  if (isSelected && (activitySnippet || activityType)) {
+    const size = 56;
+    const baseIconSize = 28;
+    const borderWidth = 3;
+    const bgColor = isDarkMode ? '#2a2a2a' : 'white';
+    const borderColor = isDarkMode ? '#ffffff' : '#1a1a1a';
+    const textColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+    
+    // Category-specific icon size
+    const categoryLower = category.toLowerCase();
+    let iconSizeMultiplier = 1;
+    if (categoryLower === 'restaurant' || categoryLower === 'food' || categoryLower === 'dining') {
+      iconSizeMultiplier = 1.4;
+    } else if (categoryLower === 'hotel' || categoryLower === 'accommodation' || categoryLower === 'lodging') {
+      iconSizeMultiplier = 1.15;
+    }
+    const iconSize = Math.round(baseIconSize * iconSizeMultiplier);
+    
+    // Activity bubble text
+    const bubbleText = activityType === 'photo' ? 'posted a photo' : (activitySnippet || 'reviewed this');
+    
+    const markerHtml = `
+      <div class="selected-activity-marker" style="
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+      ">
+        <!-- Activity bubble above -->
+        <div style="
+          background: ${bgColor};
+          border-radius: 12px;
+          padding: 4px 10px;
+          margin-bottom: 6px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          max-width: 130px;
+          position: relative;
+        ">
+          <span style="
+            font-size: 10px;
+            font-weight: 500;
+            color: ${textColor};
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          ">${bubbleText}</span>
+          <!-- Triangle pointer -->
+          <div style="
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid ${bgColor};
+          "></div>
+        </div>
+        
+        <!-- Main circular pin -->
+        <div style="
+          width: ${size}px;
+          height: ${size}px;
+          border-radius: 50%;
+          background: ${bgColor};
+          border: ${borderWidth}px solid ${borderColor};
+          box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 4px 8px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: scale(1.05);
+        ">
+          <img 
+            src="${categoryImg}" 
+            alt="${category}"
+            style="width: ${iconSize}px; height: ${iconSize}px; object-fit: contain;"
+          />
+        </div>
+        
+        <!-- Pointer -->
+        <div style="
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 10px solid ${bgColor};
+          filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
+        "></div>
+      </div>
+    `;
+    
+    return L.divIcon({
+      html: markerHtml,
+      className: 'custom-leaflet-icon selected-activity',
+      iconSize: [140, size + 50],
+      iconAnchor: [70, size + 44],
+      popupAnchor: [0, -size / 2],
+    });
+  }
+  
+  // ========== DEFAULT MODE ==========
   
   // Sizes based on selected state - like Forêt app
   const size = isSelected ? 56 : 40;

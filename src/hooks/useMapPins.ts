@@ -24,6 +24,18 @@ interface MapPin {
   hasPost?: boolean;
   postCount?: number;
   address?: string;
+  // For friend pins and activity display
+  savedByUser?: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    action: 'saved' | 'liked' | 'faved' | 'posted';
+  };
+  latestActivity?: {
+    type: 'review' | 'photo';
+    snippet?: string;
+    created_at: string;
+  };
 }
 
 interface UseMapPinsReturn {
@@ -129,6 +141,36 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
           profileMap.set(profile.id, profile);
         });
 
+        // Collect all location IDs and google place IDs for activity lookup
+        const internalLocationIds = (savedLocations || []).map(s => (s.locations as any)?.id).filter(Boolean);
+
+        // Fetch latest activity (posts) from followed users for these locations
+        let activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string; user_id: string }>();
+        
+        if (internalLocationIds.length > 0) {
+          // Query posts for internal locations (posts only have location_id, not google_place_id)
+          const { data: friendPosts } = await supabase
+            .from('posts')
+            .select('location_id, user_id, caption, rating, media_urls, created_at')
+            .in('user_id', followedUserIds)
+            .in('location_id', internalLocationIds)
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+          // Group by location, take the most recent
+          friendPosts?.forEach(post => {
+            const key = post.location_id;
+            if (key && !activityMap.has(key)) {
+              activityMap.set(key, {
+                type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                created_at: post.created_at,
+                user_id: post.user_id
+              });
+            }
+          });
+        }
+
         // Transform saved locations into MapPin format, deduplicate by google_place_id or id
         const locationMap = new Map();
         
@@ -136,6 +178,13 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
           const location = saved.locations as any;
           const locationKey = location.google_place_id || location.id;
           const userProfile = profileMap.get(saved.user_id);
+          const activity = activityMap.get(locationKey);
+          
+          // Determine user action based on activity
+          let userAction: 'saved' | 'liked' | 'faved' | 'posted' = 'saved';
+          if (activity && activity.user_id === saved.user_id) {
+            userAction = activity.type === 'review' ? 'faved' : 'posted';
+          }
           
           if (!locationMap.has(locationKey)) {
             locationMap.set(locationKey, {
@@ -159,7 +208,19 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
               distance: Math.random() * 10,
               totalSaves: 0,
               address: location.address || '',
-              google_place_id: location.google_place_id
+              google_place_id: location.google_place_id,
+              // New: friend activity data
+              savedByUser: userProfile ? {
+                id: userProfile.id,
+                username: userProfile.username || 'user',
+                avatar_url: userProfile.avatar_url,
+                action: userAction
+              } : undefined,
+              latestActivity: activity ? {
+                type: activity.type,
+                snippet: activity.snippet,
+                created_at: activity.created_at
+              } : undefined
             });
           }
         });
@@ -169,6 +230,14 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
           const coords = (sp.coordinates as any) || {};
           const key = sp.place_id;
           const userProfile = profileMap.get(sp.user_id);
+          const activity = activityMap.get(key);
+          
+          // Determine user action based on activity
+          let userAction: 'saved' | 'liked' | 'faved' | 'posted' = 'saved';
+          if (activity && activity.user_id === sp.user_id) {
+            userAction = activity.type === 'review' ? 'faved' : 'posted';
+          }
+          
           if (!locationMap.has(key)) {
             locationMap.set(key, {
               id: sp.place_id,
@@ -191,7 +260,19 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
               distance: Math.random() * 10,
               totalSaves: 0,
               address: '',
-              google_place_id: sp.place_id
+              google_place_id: sp.place_id,
+              // New: friend activity data
+              savedByUser: userProfile ? {
+                id: userProfile.id,
+                username: userProfile.username || 'user',
+                avatar_url: userProfile.avatar_url,
+                action: userAction
+              } : undefined,
+              latestActivity: activity ? {
+                type: activity.type,
+                snippet: activity.snippet,
+                created_at: activity.created_at
+              } : undefined
             });
           }
         });
