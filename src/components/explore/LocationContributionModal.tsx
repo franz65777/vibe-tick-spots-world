@@ -128,6 +128,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoScrollRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
 
   // State
   const [selectedPhotos, setSelectedPhotos] = useState<NearbyPhoto[]>([]);
@@ -200,9 +201,13 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
     }
   }, [user, isOpen]);
 
-  // Reset state when modal closes
+  // Reset state only on the OPEN -> CLOSED transition.
+  // This prevents "Maximum update depth" loops if clearPhotos changes identity.
   useEffect(() => {
-    if (!isOpen) {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+
+    if (wasOpen && !isOpen) {
       setSelectedPhotos([]);
       setDescriptionText('');
       setSelectedFolders(new Set());

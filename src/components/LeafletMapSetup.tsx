@@ -757,10 +757,16 @@ const LeafletMapSetup = ({
             // Update existing marker (only when config changed)
             existingMarker.setIcon(icon);
             existingMarker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
+            // Ensure selected pin (and its bubble) is always above other markers/clusters
+            existingMarker.setZIndexOffset(isSelected ? 5000 : 0);
             markerConfigsRef.current.set(place.id, markerConfigKey);
           } else {
             // Create new marker
-            const marker = L.marker([place.coordinates.lat, place.coordinates.lng], { icon });
+            const marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
+              icon,
+              // Ensure selected pin (and its bubble) is always above other markers/clusters
+              zIndexOffset: isSelected ? 5000 : 0,
+            });
             marker.on('click', (e) => {
               // Check if clicked on the sharers badge
               const target = (e.originalEvent as any).target;
@@ -1238,6 +1244,8 @@ const LeafletMapSetup = ({
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         .custom-leaflet-icon { background: transparent; border: none; }
+        /* Ensure divIcon content (activity bubble) is never clipped */
+        .leaflet-marker-icon.custom-leaflet-icon { overflow: visible !important; }
         .leaflet-control-attribution {
           background: rgba(255,255,255,0.9);
           padding: 4px 8px;
