@@ -63,25 +63,10 @@ export const useFriendLocationActivity = (
         const savedPlacesData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
         const likesData: Array<{ user_id: string; created_at: string }> = [];
 
-        // 2. Query posts from followed users (by location_id OR by google_place_id)
-        if (locationId && isValidUUID(locationId)) {
-          const { data: friendPosts } = await supabase
-            .from('posts')
-            .select('id, user_id, rating, caption, created_at')
-            .eq('location_id', locationId)
-            .in('user_id', followedUserIds)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-          friendPosts?.forEach((post) => {
-            allUserIds.add(post.user_id);
-            postsData.push(post);
-          });
-        }
+        // Resolve internal locationId from googlePlaceId if needed
+        let resolvedLocationId = locationId && isValidUUID(locationId) ? locationId : null;
         
-        // 2b. Also query posts by google_place_id (find location first, then get posts)
-        if (googlePlaceId && postsData.length === 0) {
-          // First find the location by google_place_id
+        if (!resolvedLocationId && googlePlaceId) {
           const { data: locationByGoogle } = await supabase
             .from('locations')
             .select('id')
@@ -90,70 +75,82 @@ export const useFriendLocationActivity = (
             .single();
           
           if (locationByGoogle?.id) {
-            const { data: friendPostsByGoogle } = await supabase
-              .from('posts')
-              .select('id, user_id, rating, caption, created_at')
-              .eq('location_id', locationByGoogle.id)
-              .in('user_id', followedUserIds)
-              .order('created_at', { ascending: false })
-              .limit(10);
-
-            friendPostsByGoogle?.forEach((post) => {
-              allUserIds.add(post.user_id);
-              postsData.push(post);
-            });
+            resolvedLocationId = locationByGoogle.id;
           }
         }
 
-        // 3. Query saved locations (NO join with profiles)
-        if (locationId && isValidUUID(locationId)) {
-          const { data: friendSavedLocations } = await supabase
-            .from('user_saved_locations')
-            .select('user_id, save_tag, created_at')
-            .eq('location_id', locationId)
-            .in('user_id', followedUserIds)
-            .order('created_at', { ascending: false })
-            .limit(10);
+        // 2. Execute all queries in PARALLEL for performance
+        const [postsResult, savedLocationsResult, savedPlacesResult, likesResult] = await Promise.all([
+          // Query posts
+          resolvedLocationId
+            ? supabase
+                .from('posts')
+                .select('id, user_id, rating, caption, created_at')
+                .eq('location_id', resolvedLocationId)
+                .in('user_id', followedUserIds)
+                .order('created_at', { ascending: false })
+                .limit(10)
+            : Promise.resolve({ data: null }),
+          
+          // Query saved locations
+          resolvedLocationId
+            ? supabase
+                .from('user_saved_locations')
+                .select('user_id, save_tag, created_at')
+                .eq('location_id', resolvedLocationId)
+                .in('user_id', followedUserIds)
+                .order('created_at', { ascending: false })
+                .limit(10)
+            : Promise.resolve({ data: null }),
+          
+          // Query saved places by google_place_id
+          googlePlaceId
+            ? supabase
+                .from('saved_places')
+                .select('user_id, save_tag, created_at')
+                .eq('place_id', googlePlaceId)
+                .in('user_id', followedUserIds)
+                .order('created_at', { ascending: false })
+                .limit(10)
+            : Promise.resolve({ data: null }),
+          
+          // Query location likes
+          resolvedLocationId
+            ? supabase
+                .from('location_likes')
+                .select('user_id, created_at')
+                .eq('location_id', resolvedLocationId)
+                .in('user_id', followedUserIds)
+                .order('created_at', { ascending: false })
+                .limit(5)
+            : Promise.resolve({ data: null }),
+        ]);
 
-          friendSavedLocations?.forEach((save) => {
-            allUserIds.add(save.user_id);
-            savedLocationsData.push(save);
-          });
-        }
+        // Process posts
+        postsResult.data?.forEach((post) => {
+          allUserIds.add(post.user_id);
+          postsData.push(post);
+        });
 
-        // 4. Query saved places by google_place_id (NO join with profiles)
-        if (googlePlaceId) {
-          const { data: friendSavedPlaces } = await supabase
-            .from('saved_places')
-            .select('user_id, save_tag, created_at')
-            .eq('place_id', googlePlaceId)
-            .in('user_id', followedUserIds)
-            .order('created_at', { ascending: false })
-            .limit(10);
+        // Process saved locations
+        savedLocationsResult.data?.forEach((save) => {
+          allUserIds.add(save.user_id);
+          savedLocationsData.push(save);
+        });
 
-          friendSavedPlaces?.forEach((save) => {
-            allUserIds.add(save.user_id);
-            savedPlacesData.push(save);
-          });
-        }
+        // Process saved places
+        savedPlacesResult.data?.forEach((save) => {
+          allUserIds.add(save.user_id);
+          savedPlacesData.push(save);
+        });
 
-        // 5. Query location likes (NO join with profiles)
-        if (locationId && isValidUUID(locationId)) {
-          const { data: friendLikes } = await supabase
-            .from('location_likes')
-            .select('user_id, created_at')
-            .eq('location_id', locationId)
-            .in('user_id', followedUserIds)
-            .order('created_at', { ascending: false })
-            .limit(5);
+        // Process likes
+        likesResult.data?.forEach((like) => {
+          allUserIds.add(like.user_id);
+          likesData.push(like);
+        });
 
-          friendLikes?.forEach((like) => {
-            allUserIds.add(like.user_id);
-            likesData.push(like);
-          });
-        }
-
-        // 6. If no activities found, return early
+        // 3. If no activities found, return early
         if (allUserIds.size === 0) {
           setActivities([]);
           setLoading(false);

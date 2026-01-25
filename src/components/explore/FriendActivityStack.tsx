@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFriendLocationActivity, FriendActivity } from '@/hooks/useFriendLocationActivity';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
@@ -34,6 +34,27 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
 }) => {
   const { activities, loading } = useFriendLocationActivity(locationId, googlePlaceId);
   const [showModal, setShowModal] = useState(false);
+  const [cardHeight, setCardHeight] = useState(window.innerHeight * 0.42);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Listen for card height changes
+  useEffect(() => {
+    const handleCardHeightChange = (e: CustomEvent) => {
+      setCardHeight(e.detail.height);
+      setIsVisible(e.detail.visible !== false);
+    };
+
+    window.addEventListener('pin-card-height-change', handleCardHeightChange as EventListener);
+    return () => {
+      window.removeEventListener('pin-card-height-change', handleCardHeightChange as EventListener);
+    };
+  }, []);
+
+  // Calculate bottom position based on card height
+  const bottomPosition = useMemo(() => {
+    if (!isVisible) return -100;
+    return cardHeight + 16;
+  }, [cardHeight, isVisible]);
 
   if (loading || activities.length === 0) {
     return null;
@@ -41,9 +62,6 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
 
   const visibleActivities = activities.slice(0, maxVisible);
   const remainingCount = activities.length - maxVisible;
-
-  // Get the first activity with a snippet (for the bubble)
-  const activityWithSnippet = visibleActivities.find(a => a.snippet);
 
   // Handle individual avatar click with conditional logic
   const handleAvatarClick = (activity: FriendActivity, e: React.MouseEvent) => {
@@ -82,32 +100,15 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
       <div 
         className="fixed left-4 z-[1999] flex items-center gap-1"
         style={{ 
-          bottom: 'calc(42vh + 16px)',
-          animation: 'friendStackEnter 0.5s ease-out forwards, friendStackFloat 3s ease-in-out 0.5s infinite'
+          bottom: `${bottomPosition}px`,
+          opacity: isVisible ? 1 : 0,
+          pointerEvents: isVisible ? 'auto' : 'none',
+          transition: 'bottom 0.3s ease-out, opacity 0.2s ease-out',
+          animation: isVisible ? 'friendStackFloat 3s ease-in-out infinite' : 'none'
         }}
       >
         {/* Avatar stack */}
         <div className="flex -space-x-2 relative">
-          {/* Speech bubble with snippet - shown above the first avatar */}
-          {activityWithSnippet && activityWithSnippet.snippet && (
-            <div 
-              className="absolute -top-14 left-0 z-10"
-              style={{ animation: 'bubbleFadeIn 0.6s ease-out 0.3s both' }}
-            >
-              <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg max-w-[120px] border border-border/50">
-                <span className="text-[10px] text-foreground leading-tight line-clamp-2">
-                  {activityWithSnippet.hasRealSnippet ? `"${activityWithSnippet.snippet}"` : activityWithSnippet.snippet}
-                </span>
-                {/* Triangle pointer */}
-                <div className="absolute -bottom-1.5 left-4 w-0 h-0 
-                  border-l-[6px] border-l-transparent 
-                  border-r-[6px] border-r-transparent 
-                  border-t-[6px] border-t-background/95" 
-                />
-              </div>
-            </div>
-          )}
-
           {visibleActivities.map((activity, index) => (
             <div 
               key={activity.userId}
@@ -118,6 +119,26 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
               }}
               onClick={(e) => handleAvatarClick(activity, e)}
             >
+              {/* Speech bubble - ONLY for first avatar with snippet */}
+              {index === 0 && activity.snippet && (
+                <div 
+                  className="absolute -top-14 left-1/2 -translate-x-1/2 z-10"
+                  style={{ animation: 'bubbleFadeIn 0.6s ease-out 0.3s both' }}
+                >
+                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg max-w-[120px] border border-border/50 whitespace-nowrap">
+                    <span className="text-[10px] text-foreground leading-tight line-clamp-2">
+                      {activity.hasRealSnippet ? `"${activity.snippet}"` : activity.snippet}
+                    </span>
+                    {/* Triangle pointer - centered */}
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 
+                      border-l-[6px] border-l-transparent 
+                      border-r-[6px] border-r-transparent 
+                      border-t-[6px] border-t-background/95" 
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Avatar */}
               <div className="w-10 h-10 rounded-full border-2 border-background shadow-lg overflow-hidden bg-muted">
                 {activity.avatarUrl ? (
@@ -125,6 +146,7 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
                     src={activity.avatarUrl} 
                     alt={activity.username}
                     className="w-full h-full object-cover"
+                    loading="eager"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '';
                       (e.target as HTMLImageElement).style.display = 'none';
@@ -173,17 +195,6 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
 
       {/* Inline keyframes for animations */}
       <style>{`
-        @keyframes friendStackEnter {
-          0% {
-            opacity: 0;
-            transform: translateY(20px) scale(0.9);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        
         @keyframes friendStackFloat {
           0%, 100% {
             transform: translateY(0);
@@ -210,11 +221,11 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
         @keyframes bubbleFadeIn {
           0% {
             opacity: 0;
-            transform: translateY(8px);
+            transform: translateX(-50%) translateY(8px);
           }
           100% {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
           }
         }
       `}</style>
