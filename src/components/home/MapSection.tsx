@@ -104,7 +104,7 @@ const MapSection = ({
   // Use global filter context - single source of truth
   const { activeFilter, selectedCategories, selectedFollowedUserIds, setSelectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, toggleSaveTag, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded, setCurrentCity } = useMapFilter();
 
-  // Fetch followed users for the drawer sub-filters
+  // Fetch followed users for the drawer sub-filters (only those with saved locations)
   useEffect(() => {
     const fetchFollowedUsers = async () => {
       if (!user?.id) return;
@@ -123,7 +123,21 @@ const MapSection = ({
         const users = followData
           .map((f: any) => f.profiles)
           .filter(Boolean) as FollowedUser[];
-        setFollowedUsers(users);
+        
+        // Filter to only show users who have saved locations
+        if (users.length > 0) {
+          const userIds = users.map(u => u.id);
+          const { data: usersWithSaves } = await supabase
+            .from('saved_places')
+            .select('user_id')
+            .in('user_id', userIds);
+          
+          const usersWithSavesSet = new Set(usersWithSaves?.map(u => u.user_id) || []);
+          const filteredUsers = users.filter(u => usersWithSavesSet.has(u.id));
+          setFollowedUsers(filteredUsers);
+        } else {
+          setFollowedUsers([]);
+        }
       }
     };
     
