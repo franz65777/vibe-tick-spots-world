@@ -449,14 +449,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             let activityMap = new Map<string, FriendActivity>();
             
             if (internalLocationIds.length > 0) {
-              // First: fetch posts from followed friends
-              const { data: friendPosts } = await supabase
-                .from('posts')
-                .select('location_id, user_id, caption, rating, media_urls, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', internalLocationIds)
-                .order('created_at', { ascending: false })
-                .limit(300);
+              // OPTIMIZED: Parallel fetch posts and saves from followed friends
+              const [friendPostsRes, friendSavedRes] = await Promise.all([
+                supabase
+                  .from('posts')
+                  .select('location_id, user_id, caption, rating, media_urls, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', internalLocationIds)
+                  .order('created_at', { ascending: false })
+                  .limit(300),
+                supabase
+                  .from('user_saved_locations')
+                  .select('location_id, user_id, save_tag, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', internalLocationIds)
+                  .order('created_at', { ascending: false })
+              ]);
+              
+              const friendPosts = friendPostsRes.data;
+              const friendSavedInternal = friendSavedRes.data;
 
               friendPosts?.forEach(post => {
                 if (post.location_id && !activityMap.has(post.location_id)) {
@@ -474,14 +485,6 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   }
                 }
               });
-              
-              // Second: fetch saved locations from followed friends (for save_tag and saved-only)
-              const { data: friendSavedInternal } = await supabase
-                .from('user_saved_locations')
-                .select('location_id, user_id, save_tag, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', internalLocationIds)
-                .order('created_at', { ascending: false });
               
               // Add saved activity only if no post activity exists for that location
               friendSavedInternal?.forEach(save => {
@@ -720,14 +723,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             let activityMap = new Map<string, FriendActivity>();
             
             if (internalLocationIds.length > 0) {
-              // First: fetch posts from followed friends
-              const { data: friendPosts } = await supabase
-                .from('posts')
-                .select('location_id, user_id, caption, rating, media_urls, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', internalLocationIds)
-                .order('created_at', { ascending: false })
-                .limit(300);
+              // OPTIMIZED: Parallel fetch posts and saves from followed friends
+              const [friendPostsRes, friendSavedRes] = await Promise.all([
+                supabase
+                  .from('posts')
+                  .select('location_id, user_id, caption, rating, media_urls, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', internalLocationIds)
+                  .order('created_at', { ascending: false })
+                  .limit(300),
+                supabase
+                  .from('user_saved_locations')
+                  .select('location_id, user_id, save_tag, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', internalLocationIds)
+                  .order('created_at', { ascending: false })
+              ]);
+              
+              const friendPosts = friendPostsRes.data;
+              const friendSavedInternal = friendSavedRes.data;
 
               friendPosts?.forEach(post => {
                 if (post.location_id && !activityMap.has(post.location_id)) {
@@ -745,14 +759,6 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   }
                 }
               });
-              
-              // Second: fetch saved locations from followed friends (for save_tag and saved-only)
-              const { data: friendSavedInternal } = await supabase
-                .from('user_saved_locations')
-                .select('location_id, user_id, save_tag, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', internalLocationIds)
-                .order('created_at', { ascending: false });
               
               // Add saved activity only if no post activity exists for that location
               friendSavedInternal?.forEach(save => {
@@ -1111,14 +1117,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               
               const activityMap = new Map<string, FriendActivity>();
               
-              // Fetch posts from followed friends
-              const { data: friendPosts } = await supabase
-                .from('posts')
-                .select('location_id, user_id, caption, rating, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', popularInternalIds)
-                .order('created_at', { ascending: false })
-                .limit(300);
+              // OPTIMIZED: Parallel fetch posts and saves from followed friends
+              const [friendPostsRes, friendSavesRes] = await Promise.all([
+                supabase
+                  .from('posts')
+                  .select('location_id, user_id, caption, rating, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', popularInternalIds)
+                  .order('created_at', { ascending: false })
+                  .limit(300),
+                supabase
+                  .from('user_saved_locations')
+                  .select('location_id, user_id, save_tag, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', popularInternalIds)
+                  .order('created_at', { ascending: false })
+              ]);
+              
+              const friendPosts = friendPostsRes.data;
+              const friendSaves = friendSavesRes.data;
               
               friendPosts?.forEach(post => {
                 if (post.location_id && !activityMap.has(post.location_id)) {
@@ -1137,14 +1154,6 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   }
                 }
               });
-              
-              // Fetch saves from followed friends
-              const { data: friendSaves } = await supabase
-                .from('user_saved_locations')
-                .select('location_id, user_id, save_tag, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', popularInternalIds)
-                .order('created_at', { ascending: false });
               
               friendSaves?.forEach(save => {
                 if (save.location_id && !activityMap.has(save.location_id)) {
@@ -1357,14 +1366,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               
               const activityMap = new Map<string, FriendActivity>();
               
-              // Fetch posts from followed friends
-              const { data: friendPosts } = await supabase
-                .from('posts')
-                .select('location_id, user_id, caption, rating, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', savedInternalIds)
-                .order('created_at', { ascending: false })
-                .limit(300);
+              // OPTIMIZED: Parallel fetch posts and saves from followed friends
+              const [friendPostsRes, friendSavesRes] = await Promise.all([
+                supabase
+                  .from('posts')
+                  .select('location_id, user_id, caption, rating, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', savedInternalIds)
+                  .order('created_at', { ascending: false })
+                  .limit(300),
+                supabase
+                  .from('user_saved_locations')
+                  .select('location_id, user_id, save_tag, created_at')
+                  .in('user_id', followedUserIds)
+                  .in('location_id', savedInternalIds)
+                  .order('created_at', { ascending: false })
+              ]);
+              
+              const friendPosts = friendPostsRes.data;
+              const friendSaves = friendSavesRes.data;
               
               friendPosts?.forEach(post => {
                 if (post.location_id && !activityMap.has(post.location_id)) {
@@ -1383,14 +1403,6 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   }
                 }
               });
-              
-              // Fetch saves from followed friends
-              const { data: friendSaves } = await supabase
-                .from('user_saved_locations')
-                .select('location_id, user_id, save_tag, created_at')
-                .in('user_id', followedUserIds)
-                .in('location_id', savedInternalIds)
-                .order('created_at', { ascending: false });
               
               friendSaves?.forEach(save => {
                 if (save.location_id && !activityMap.has(save.location_id)) {

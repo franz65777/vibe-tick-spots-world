@@ -338,15 +338,32 @@ serve(async (req) => {
     let cachedLocation: any = null;
 
     // Step 1: Check database cache and get existing google_place_id
+    // OPTIMIZED: Check by locationId first, then by googlePlaceId if no locationId provided
     if (locationId) {
       const { data } = await supabase
         .from('locations')
-        .select('opening_hours_data, opening_hours_fetched_at, opening_hours_source, google_place_id, name')
+        .select('id, opening_hours_data, opening_hours_fetched_at, opening_hours_source, google_place_id, name')
         .eq('id', locationId)
         .maybeSingle();
 
       cachedLocation = data;
-      console.log(`DB location: google_place_id=${cachedLocation?.google_place_id}, source=${cachedLocation?.opening_hours_source}`);
+      console.log(`DB location by ID: google_place_id=${cachedLocation?.google_place_id}, source=${cachedLocation?.opening_hours_source}`);
+    }
+    
+    // If no locationId but we have a valid googlePlaceId, search by that
+    if (!cachedLocation && isValidGooglePlaceId(requestedPlaceId)) {
+      const { data } = await supabase
+        .from('locations')
+        .select('id, opening_hours_data, opening_hours_fetched_at, opening_hours_source, google_place_id, name')
+        .eq('google_place_id', requestedPlaceId)
+        .maybeSingle();
+      
+      if (data) {
+        cachedLocation = data;
+        // Use the internal locationId for future database updates
+        locationId = data.id;
+        console.log(`DB location by google_place_id: id=${data.id}, source=${cachedLocation?.opening_hours_source}`);
+      }
     }
 
     // Step 2: Determine the best Google Place ID to use
