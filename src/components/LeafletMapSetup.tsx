@@ -750,6 +750,7 @@ const LeafletMapSetup = ({
             // New: activity data for selected pins
             activitySnippet: isSelected && latestActivity ? latestActivity.snippet : undefined,
             activityType: isSelected && latestActivity ? latestActivity.type : undefined,
+            postedPhotoLabel: t('explore:postedPhoto', 'posted a photo'),
           });
 
           if (existingMarker) {
