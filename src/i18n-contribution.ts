@@ -17,6 +17,7 @@ export const contributionTranslations = {
       auth_required: 'Please sign in to continue',
       createList: 'Create a list',
       noListsYet: "You don't have any lists yet",
+      postedPhoto: 'posted a photo',
     },
   },
   it: {
@@ -35,6 +36,7 @@ export const contributionTranslations = {
       auth_required: 'Accedi per continuare',
       createList: 'Crea una lista',
       noListsYet: 'Non hai ancora liste',
+      postedPhoto: 'ha postato una foto',
     },
   },
   es: {
@@ -53,6 +55,7 @@ export const contributionTranslations = {
       auth_required: 'Inicia sesión para continuar',
       createList: 'Crear una lista',
       noListsYet: 'Aún no tienes listas',
+      postedPhoto: 'publicó una foto',
     },
   },
   pt: {
@@ -71,6 +74,7 @@ export const contributionTranslations = {
       auth_required: 'Faça login para continuar',
       createList: 'Criar uma lista',
       noListsYet: 'Você ainda não tem listas',
+      postedPhoto: 'publicou uma foto',
     },
   },
   fr: {
@@ -89,6 +93,7 @@ export const contributionTranslations = {
       auth_required: 'Connectez-vous pour continuer',
       createList: 'Créer une liste',
       noListsYet: "Vous n'avez pas encore de listes",
+      postedPhoto: 'a publié une photo',
     },
   },
   de: {
@@ -107,6 +112,7 @@ export const contributionTranslations = {
       auth_required: 'Bitte anmelden, um fortzufahren',
       createList: 'Liste erstellen',
       noListsYet: 'Du hast noch keine Listen',
+      postedPhoto: 'hat ein Foto gepostet',
     },
   },
   ja: {
@@ -125,6 +131,7 @@ export const contributionTranslations = {
       auth_required: '続行するにはログインしてください',
       createList: 'リストを作成',
       noListsYet: 'まだリストがありません',
+      postedPhoto: '写真を投稿しました',
     },
   },
   ko: {
@@ -143,6 +150,7 @@ export const contributionTranslations = {
       auth_required: '계속하려면 로그인하세요',
       createList: '리스트 만들기',
       noListsYet: '아직 리스트가 없어요',
+      postedPhoto: '사진을 게시했습니다',
     },
   },
   ar: {
@@ -161,6 +169,7 @@ export const contributionTranslations = {
       auth_required: 'سجّل الدخول للمتابعة',
       createList: 'إنشاء قائمة',
       noListsYet: 'ليس لديك قوائم بعد',
+      postedPhoto: 'نشر صورة',
     },
   },
   hi: {
@@ -179,6 +188,7 @@ export const contributionTranslations = {
       auth_required: 'जारी रखने के लिए साइन इन करें',
       createList: 'सूची बनाएँ',
       noListsYet: 'आपके पास अभी कोई सूची नहीं है',
+      postedPhoto: 'एक फ़ोटो पोस्ट की',
     },
   },
   ru: {
@@ -197,6 +207,7 @@ export const contributionTranslations = {
       auth_required: 'Войдите, чтобы продолжить',
       createList: 'Создать список',
       noListsYet: 'У вас пока нет списков',
+      postedPhoto: 'опубликовал фото',
     },
   },
   'zh-CN': {
@@ -215,6 +226,7 @@ export const contributionTranslations = {
       auth_required: '请登录以继续',
       createList: '创建列表',
       noListsYet: '你还没有任何列表',
+      postedPhoto: '发布了一张照片',
     },
   },
   tr: {
@@ -233,6 +245,7 @@ export const contributionTranslations = {
       auth_required: 'Devam etmek için giriş yapın',
       createList: 'Liste oluştur',
       noListsYet: 'Henüz listen yok',
+      postedPhoto: 'bir fotoğraf paylaştı',
     },
   },
 } as const;

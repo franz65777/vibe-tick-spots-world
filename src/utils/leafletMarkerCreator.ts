@@ -47,6 +47,8 @@ interface MarkerOptions {
   // New: Activity snippet for selected pins
   activitySnippet?: string;
   activityType?: 'review' | 'photo';
+  // Localized label for "posted a photo"
+  postedPhotoLabel?: string;
 }
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
@@ -54,7 +56,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     category, name, isSaved, isRecommended, isDarkMode, hasCampaign, campaignType, 
     sharedByUserAvatar, sharedByUsers, isSelected = false,
     friendsFilterMode = false, friendAvatar, friendUsername, friendAction,
-    activitySnippet, activityType
+    activitySnippet, activityType, postedPhotoLabel = 'posted a photo'
   } = options;
   
   // Get category image
@@ -190,8 +192,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     }
     const iconSize = Math.round(baseIconSize * iconSizeMultiplier);
     
-    // Activity bubble text
-    const bubbleText = activityType === 'photo' ? 'posted a photo' : (activitySnippet || 'reviewed this');
+    // Activity bubble text - use localized label for photo posts
+    const bubbleText = activityType === 'photo' ? postedPhotoLabel : (activitySnippet || 'reviewed this');
     
     const markerHtml = `
       <div class="selected-activity-marker" style="
