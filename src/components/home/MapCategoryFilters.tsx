@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import SaveTagsFilter from './SaveTagsFilter';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 
@@ -247,8 +246,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         {!isFriendsDropdownOpen && !isFilterExpanded && !(showUserSearch && activeFilter === 'following') && (
           <div className="overflow-hidden rounded-full bg-background/20 backdrop-blur-md border border-border/5">
             <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-2 py-0.5">
-              {activeFilter === 'saved' && <SaveTagsFilter />}
-              
               {categoryConfig
                 .filter(category => availableCategories.includes(category.id))
                 .map((category) => {
