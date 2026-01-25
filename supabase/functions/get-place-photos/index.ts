@@ -103,65 +103,25 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
 
+    // SINGOLA creazione del client (FIX: era duplicato alla riga 144)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // ⚠️ BUDGET CHECK - Block if disabled or over budget
-    const budgetCheck = await checkBudgetAndKillSwitch(supabase);
-    if (!budgetCheck.allowed) {
-      console.log(`Budget blocked: ${budgetCheck.message}`);
-      // Return cached data if available, otherwise empty
-      if (locationId) {
-        const { data: cached } = await supabase
-          .from('locations')
-          .select('photos, photos_fetched_at')
-          .eq('id', locationId)
-          .single();
-        
-        if (cached?.photos?.length > 0) {
-          return new Response(
-            JSON.stringify({
-              photos: cached.photos,
-              source: 'cache',
-              fetched_at: cached.photos_fetched_at,
-              budget_blocked: true,
-              message: budgetCheck.message
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-      return new Response(
-        JSON.stringify({ 
-          photos: [], 
-          source: 'blocked', 
-          budget_blocked: true,
-          message: budgetCheck.message 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // ========== CACHE CHECK PRIORITARIO (prima del budget check!) ==========
+    let resolvedPlaceId = googlePlaceId;
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get location data if we have locationId
-    let location: any = null;
-    let placeId = googlePlaceId;
-
+    // Check 1: Se abbiamo locationId, cerca nel database
     if (locationId) {
-      const { data, error } = await supabase
+      const { data: location } = await supabase
         .from('locations')
-        .select('id, name, google_place_id, photos, photos_fetched_at')
+        .select('google_place_id, photos, photos_fetched_at')
         .eq('id', locationId)
         .single();
 
-      if (error) {
-        console.error('Error fetching location:', error);
-      } else {
-        location = data;
-        placeId = placeId || location.google_place_id;
-
-        // Check if we already have photos and don't need to refresh
-        if (!forceRefresh && location.photos && location.photos.length > 0) {
+      if (location) {
+        resolvedPlaceId = resolvedPlaceId || location.google_place_id;
+        
+        if (!forceRefresh && location.photos && Array.isArray(location.photos) && location.photos.length > 0) {
+          console.log(`✅ Cache HIT for locationId: ${locationId} - ${location.photos.length} photos`);
           return new Response(
             JSON.stringify({
               photos: location.photos,
@@ -174,7 +134,47 @@ serve(async (req) => {
       }
     }
 
-    if (!placeId) {
+    // Check 2: Se abbiamo googlePlaceId, cerca location con quel google_place_id (NUOVO FIX!)
+    if (resolvedPlaceId && !forceRefresh) {
+      const { data: locationByGoogle } = await supabase
+        .from('locations')
+        .select('id, photos, photos_fetched_at')
+        .eq('google_place_id', resolvedPlaceId)
+        .not('photos', 'is', null)
+        .limit(1)
+        .maybeSingle();
+
+      if (locationByGoogle?.photos && Array.isArray(locationByGoogle.photos) && locationByGoogle.photos.length > 0) {
+        console.log(`✅ Cache HIT for google_place_id: ${resolvedPlaceId} - ${locationByGoogle.photos.length} photos`);
+        return new Response(
+          JSON.stringify({
+            photos: locationByGoogle.photos,
+            source: 'cache',
+            fetched_at: locationByGoogle.photos_fetched_at
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // ========== BUDGET CHECK (solo dopo il cache check) ==========
+    const budgetCheck = await checkBudgetAndKillSwitch(supabase);
+    if (!budgetCheck.allowed) {
+      console.log(`⚠️ Budget blocked: ${budgetCheck.message}`);
+      return new Response(
+        JSON.stringify({ 
+          photos: [], 
+          source: 'blocked', 
+          budget_blocked: true,
+          message: budgetCheck.message 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ========== FETCH DA GOOGLE (solo se necessario) ==========
+    if (!resolvedPlaceId) {
+      console.log('❌ No Google Place ID available');
       return new Response(
         JSON.stringify({ error: 'No Google Place ID available', photos: [] }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -182,15 +182,17 @@ serve(async (req) => {
     }
 
     if (!googleApiKey) {
-      console.error('GOOGLE_MAPS_API_KEY not configured');
+      console.error('❌ GOOGLE_MAPS_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Google API key not configured', photos: [] }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log(`📸 Fetching NEW photos from Google for: ${resolvedPlaceId}`);
+
     // Fetch place details with photos from Google
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${googleApiKey}`;
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${resolvedPlaceId}&fields=photos&key=${googleApiKey}`;
     
     console.log(`Fetching photos for place: ${placeId}`);
     
