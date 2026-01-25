@@ -36,12 +36,14 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [cardHeight, setCardHeight] = useState(window.innerHeight * 0.42);
   const [isVisible, setIsVisible] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Listen for card height changes
   useEffect(() => {
     const handleCardHeightChange = (e: CustomEvent) => {
       setCardHeight(e.detail.height);
       setIsVisible(e.detail.visible !== false);
+      setIsDragging(e.detail.isDragging || false);
     };
 
     window.addEventListener('pin-card-height-change', handleCardHeightChange as EventListener);
@@ -103,8 +105,11 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
           bottom: `${bottomPosition}px`,
           opacity: isVisible ? 1 : 0,
           pointerEvents: isVisible ? 'auto' : 'none',
-          transition: 'bottom 0.3s ease-out, opacity 0.2s ease-out',
-          animation: isVisible ? 'friendStackFloat 3s ease-in-out infinite' : 'none'
+          transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+          transition: isDragging 
+            ? 'none' 
+            : 'bottom 0.3s ease-out, opacity 0.25s ease-out, transform 0.25s ease-out',
+          animation: isVisible && !isDragging ? 'friendStackFloat 3s ease-in-out infinite' : 'none'
         }}
       >
         {/* Avatar stack */}
@@ -115,18 +120,18 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
               className="relative cursor-pointer"
               style={{ 
                 zIndex: maxVisible - index,
-                animation: `avatarPop 0.4s ease-out ${0.1 * (index + 1)}s both`
+                animation: `avatarPop 0.25s ease-out ${0.05 * index}s both`
               }}
               onClick={(e) => handleAvatarClick(activity, e)}
             >
               {/* Speech bubble - ONLY for first avatar with snippet */}
               {index === 0 && activity.snippet && (
                 <div 
-                  className="absolute -top-14 left-1/2 -translate-x-1/2 z-10"
-                  style={{ animation: 'bubbleFadeIn 0.6s ease-out 0.3s both' }}
+                  className="absolute -top-16 left-1/2 -translate-x-1/2 z-10"
+                  style={{ animation: 'bubbleFadeIn 0.4s ease-out 0.2s both' }}
                 >
-                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg max-w-[120px] border border-border/50 whitespace-nowrap">
-                    <span className="text-[10px] text-foreground leading-tight line-clamp-2">
+                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50">
+                    <span className="text-[10px] text-foreground leading-tight block text-center" style={{ textWrap: 'balance' } as React.CSSProperties}>
                       {activity.hasRealSnippet ? `"${activity.snippet}"` : activity.snippet}
                     </span>
                     {/* Triangle pointer - centered */}
@@ -207,10 +212,7 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
         @keyframes avatarPop {
           0% {
             opacity: 0;
-            transform: scale(0.5);
-          }
-          70% {
-            transform: scale(1.1);
+            transform: scale(0.7);
           }
           100% {
             opacity: 1;
