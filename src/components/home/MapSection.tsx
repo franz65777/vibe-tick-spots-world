@@ -583,9 +583,9 @@ const MapSection = ({
             hideOverlay={true}
             className="h-[85vh] flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
           >
-            <DrawerHeader className="pb-2 flex-shrink-0 sticky top-0 z-10">
+            <DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10">
               {/* Title row with save tag filters inline */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mt-1">
                 <DrawerTitle className="text-xl font-bold flex items-center gap-2 flex-shrink-0">
                   {t('locationsTitle', { ns: 'mapFilters' })}
                   <Badge variant="secondary" className="text-sm font-medium">

@@ -2432,6 +2432,8 @@ const resources = {
       activeShares: 'Condivise',
       noLocations: 'Nessuna posizione trovata',
       tapToAdd: 'Tocca sulla mappa per aggiungere la tua prima posizione',
+      noActiveShares: 'Nessuna condivisione attiva',
+      friendsNotSharing: 'I tuoi amici non stanno condividendo la loro posizione',
     },
     categories: {
       restaurant: 'Ristorante',
