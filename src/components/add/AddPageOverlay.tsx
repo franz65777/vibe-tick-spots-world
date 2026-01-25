@@ -47,7 +47,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
     });
   }, [onLocationSelected]);
 
-  // Handle escape key to close
+  // Handle escape key to close and close other overlays when opening
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -59,6 +59,10 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
       window.addEventListener('keydown', handleKeyDown);
       // Hide bottom navigation
       window.dispatchEvent(new CustomEvent('ui:overlay-open'));
+      // Close other overlays to prevent stacking
+      window.dispatchEvent(new CustomEvent('close-search-drawer'));
+      window.dispatchEvent(new CustomEvent('close-filter-dropdown'));
+      window.dispatchEvent(new CustomEvent('close-city-selector'));
     }
 
     return () => {
@@ -71,27 +75,37 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
 
   const overlay = (
     <div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
-      {/* Header with Search */}
-      <div 
-        className="sticky top-0 z-10 px-4 py-4 bg-background/60 backdrop-blur-md border-b border-border/30"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)' }}
+      {/* Header with Search - matching homepage style */}
+      <header 
+        className="sticky top-0 z-10"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 px-3 py-2">
+          {/* Back button - glassmorphism circle style */}
           <button
             onClick={onClose}
-            className="p-2 hover:bg-muted rounded-xl transition-colors flex-shrink-0"
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center 
+                       bg-white/70 dark:bg-black/40 backdrop-blur-md 
+                       border border-border/30 rounded-full 
+                       text-foreground hover:bg-white/90 dark:hover:bg-black/60 
+                       transition-all duration-200 active:scale-95"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
+          
+          {/* Search bar - pill style matching homepage */}
           <div className="flex-1">
             <OpenStreetMapAutocomplete
               onPlaceSelect={handleLocationSelect}
               placeholder={t('searchForPlace', { ns: 'add' })}
-              className="w-full"
+              className="w-full [&_input]:h-10 [&_input]:rounded-full [&_input]:bg-black [&_input]:dark:bg-white/90 
+                         [&_input]:text-white [&_input]:dark:text-gray-900 
+                         [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
+                         [&_input]:border-0 [&_input]:pl-10"
             />
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Hero Content */}
       <div className="flex-1 overflow-y-auto">

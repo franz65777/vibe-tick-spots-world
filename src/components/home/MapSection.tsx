@@ -168,6 +168,16 @@ const MapSection = ({
   // Map bounds state for dynamic loading
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
 
+  // Listen for close-search-drawer event from AddPageOverlay
+  useEffect(() => {
+    const handleCloseSearchDrawer = () => {
+      setIsDrawerOpen(false);
+      closeDrawerRef.current?.();
+    };
+    window.addEventListener('close-search-drawer', handleCloseSearchDrawer);
+    return () => window.removeEventListener('close-search-drawer', handleCloseSearchDrawer);
+  }, []);
+
   // Dispatch events to hide/show bottom navigation when list view opens/closes
   useEffect(() => {
     if (isListViewOpen) {

@@ -47,6 +47,17 @@ const MapFilterDropdown = () => {
     favourite: saveTagFavourite,
   };
 
+  // Listen for close-filter-dropdown event from AddPageOverlay
+  useEffect(() => {
+    const handleCloseDropdown = () => {
+      setIsFriendsDropdownOpen(false);
+      setIsSavedDropdownOpen(false);
+      setIsFilterExpanded(false);
+    };
+    window.addEventListener('close-filter-dropdown', handleCloseDropdown);
+    return () => window.removeEventListener('close-filter-dropdown', handleCloseDropdown);
+  }, [setIsFriendsDropdownOpen, setIsSavedDropdownOpen, setIsFilterExpanded]);
+
   // Measure and report dropdown width and right edge position
   useEffect(() => {
     if (containerRef.current) {
