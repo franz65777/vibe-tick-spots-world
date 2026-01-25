@@ -15,9 +15,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import ActiveSharesListSheet from './ActiveSharesListSheet';
 import { LocationListItem, LocationListItemSkeleton, LocationListEmpty } from './LocationListItem';
+import ListDrawerSubFilters from './ListDrawerSubFilters';
 
 import { useTranslation } from 'react-i18next';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface FollowedUser {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -64,6 +73,7 @@ const MapSection = ({
   onMapCenterChange,
   registerReopenSearchDrawer,
 }: MapSectionProps) => {
+  const { user } = useAuth();
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   // Single source of truth for Home map overlays
   const [overlay, setOverlay] = useState<'map' | 'list' | 'pin'>('map');
@@ -74,6 +84,7 @@ const MapSection = ({
   const [activeSharesCount, setActiveSharesCount] = useState(0);
   const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
 
   // Track if pin was opened from list - survives across renders
   const openedFromListRef = useRef(false);
@@ -91,7 +102,33 @@ const MapSection = ({
   const { t } = useTranslation();
   
   // Use global filter context - single source of truth
-  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded, setCurrentCity } = useMapFilter();
+  const { activeFilter, selectedCategories, selectedFollowedUserIds, setSelectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, toggleSaveTag, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded, setCurrentCity } = useMapFilter();
+
+  // Fetch followed users for the drawer sub-filters
+  useEffect(() => {
+    const fetchFollowedUsers = async () => {
+      if (!user?.id) return;
+      
+      const { data: followData, error } = await supabase
+        .from('follows')
+        .select('following_id, profiles!follows_following_id_fkey(id, username, avatar_url)')
+        .eq('follower_id', user.id);
+      
+      if (error) {
+        console.error('Error fetching followed users:', error);
+        return;
+      }
+
+      if (followData) {
+        const users = followData
+          .map((f: any) => f.profiles)
+          .filter(Boolean) as FollowedUser[];
+        setFollowedUsers(users);
+      }
+    };
+    
+    fetchFollowedUsers();
+  }, [user?.id]);
 
   // Sync currentCity prop to context so MapFilterDropdown can access it
   useEffect(() => {
@@ -576,6 +613,32 @@ const MapSection = ({
                 </Button>
               </div>
             </DrawerHeader>
+            
+            {/* Sub-filters based on active filter */}
+            <ListDrawerSubFilters
+              activeFilter={activeFilter}
+              followedUsers={followedUsers}
+              selectedFollowedUserIds={selectedFollowedUserIds}
+              selectedSaveTags={selectedSaveTags}
+              onToggleUser={(userId) => {
+                if (selectedFollowedUserIds.includes(userId)) {
+                  setSelectedFollowedUserIds(selectedFollowedUserIds.filter(id => id !== userId));
+                } else {
+                  setSelectedFollowedUserIds([...selectedFollowedUserIds, userId]);
+                }
+              }}
+              onToggleSaveTag={toggleSaveTag}
+              onSelectAllUsers={() => {
+                const allSelected = selectedFollowedUserIds.length === followedUsers.length && followedUsers.length > 0;
+                if (allSelected) {
+                  setSelectedFollowedUserIds([]);
+                } else {
+                  setSelectedFollowedUserIds(followedUsers.map(u => u.id));
+                }
+              }}
+              locationCount={places.length}
+              currentCity={currentCity}
+            />
             
             <ScrollArea className="flex-1 -mx-6 px-6 [&>div]:!overflow-y-auto [&>div]:!scrollbar-none [&>div::-webkit-scrollbar]:hidden">
               <div className="space-y-1.5 py-1 pb-6">
