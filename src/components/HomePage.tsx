@@ -15,6 +15,8 @@ import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 import { Geolocation } from "@capacitor/geolocation";
 import { Capacitor } from '@capacitor/core';
 import { useHomePageState } from '@/hooks/useHomePageState';
+import AddPageOverlay from './add/AddPageOverlay';
+import LocationContributionModal from './explore/LocationContributionModal';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -84,6 +86,10 @@ const HomePage = memo(() => {
     showGuidedTour, setShowGuidedTour,
     guidedTourStep, setGuidedTourStep,
     showLogo, setShowLogo,
+    // Add overlay state
+    isAddOverlayOpen, setIsAddOverlayOpen,
+    addContributionLocation, setAddContributionLocation,
+    isAddContributionModalOpen, setIsAddContributionModalOpen,
     // Refs
     ignoreMoveEventRef,
     reopenSearchDrawerRef,
@@ -95,6 +101,16 @@ const HomePage = memo(() => {
     incrementRecenterToken,
     handleCenterStatusChange,
   } = useHomePageState();
+
+  // Listen for open-add-overlay event from bottom navigation
+  useEffect(() => {
+    const handleOpenAddOverlay = () => {
+      setIsAddOverlayOpen(true);
+    };
+    
+    window.addEventListener('open-add-overlay', handleOpenAddOverlay);
+    return () => window.removeEventListener('open-add-overlay', handleOpenAddOverlay);
+  }, [setIsAddOverlayOpen]);
 
   // Listen for full-screen modals (Post/Trip/List/etc.) via body data attribute
   useEffect(() => {
@@ -922,6 +938,33 @@ const HomePage = memo(() => {
 
       {/* Spott Logo on app launch */}
       <SpottLogo showOnMount={showLogo} duration={4000} />
+      
+      {/* Add Page Overlay */}
+      <AddPageOverlay
+        isOpen={isAddOverlayOpen}
+        onClose={() => setIsAddOverlayOpen(false)}
+        onLocationSelected={(loc) => {
+          setIsAddOverlayOpen(false);
+          setAddContributionLocation(loc);
+          setIsAddContributionModalOpen(true);
+        }}
+      />
+      
+      {/* Add Contribution Modal */}
+      {addContributionLocation && (
+        <LocationContributionModal
+          isOpen={isAddContributionModalOpen}
+          onClose={() => {
+            setIsAddContributionModalOpen(false);
+            setAddContributionLocation(null);
+          }}
+          location={addContributionLocation}
+          onSuccess={() => {
+            setIsAddContributionModalOpen(false);
+            setAddContributionLocation(null);
+          }}
+        />
+      )}
       </div>
     </MapFilterProvider>
   );
