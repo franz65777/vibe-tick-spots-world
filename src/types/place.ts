@@ -46,4 +46,17 @@ export interface Place {
   isTemporary?: boolean;
   streetName?: string;
   streetNumber?: string;
+  
+  // For friend pins and activity display
+  savedByUser?: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    action: 'saved' | 'liked' | 'faved' | 'posted';
+  };
+  latestActivity?: {
+    type: 'review' | 'photo';
+    snippet?: string;
+    created_at: string;
+  };
 }
