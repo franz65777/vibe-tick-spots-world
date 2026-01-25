@@ -7,6 +7,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { Place } from '@/types/place';
 import PinDetailCard from './explore/PinDetailCard';
 import { PostDetailModalMobile } from './explore/PostDetailModalMobile';
+import FriendActivityStack from './explore/FriendActivityStack';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { createCurrentLocationMarker, createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -742,18 +743,11 @@ const LeafletMapSetup = ({
             campaignType,
             sharedByUsers: sharedByUsers.length > 0 ? sharedByUsers : undefined,
             isSelected,
-            // New: friend filter mode data
+            // Friend filter mode data
             friendsFilterMode: isFriendsFilter && !!savedByUser,
             friendAvatar: savedByUser?.avatar_url,
             friendUsername: savedByUser?.username,
             friendAction: savedByUser?.action,
-            // New: activity data for selected pins (only shows for friend activity with author info)
-            activitySnippet: isSelected && latestActivity ? latestActivity.snippet : undefined,
-            activityType: isSelected && latestActivity ? latestActivity.type : undefined,
-            activityAuthorAvatar: isSelected && latestActivity ? latestActivity.authorAvatar : undefined,
-            activityAuthorUsername: isSelected && latestActivity ? latestActivity.authorUsername : undefined,
-            activitySaveTag: isSelected && latestActivity ? latestActivity.saveTag : undefined,
-            postedPhotoLabel: t('explore:postedPhoto', 'posted a photo'),
           });
 
           if (existingMarker) {
@@ -1264,6 +1258,14 @@ const LeafletMapSetup = ({
           filter: ${isDarkMode ? 'brightness(0.7) contrast(1.2) saturate(0.9) hue-rotate(180deg) invert(1)' : 'brightness(1.02) contrast(0.98)'};
         }
       `}</style>
+
+      {/* Friend Activity Stack - positioned above PinDetailCard */}
+      {selectedPlace && !selectedPostFromPin && (
+        <FriendActivityStack 
+          locationId={selectedPlace.id}
+          googlePlaceId={selectedPlace.google_place_id}
+        />
+      )}
 
       {/* Location detail card - hide when viewing post */}
       {selectedPlace && !selectedPostFromPin && (
