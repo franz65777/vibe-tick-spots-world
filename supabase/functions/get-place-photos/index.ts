@@ -103,8 +103,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
 
-    // SINGOLA creazione del client (FIX: era duplicato alla riga 144)
+    // Create Supabase client ONCE (avoid duplicate declarations that break deploy)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // NOTE: If you add more Supabase clients, use different variable names.
 
     // ========== CACHE CHECK PRIORITARIO (prima del budget check!) ==========
     let resolvedPlaceId = googlePlaceId;
@@ -194,7 +196,7 @@ serve(async (req) => {
     // Fetch place details with photos from Google
     const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${resolvedPlaceId}&fields=photos&key=${googleApiKey}`;
     
-    console.log(`Fetching photos for place: ${placeId}`);
+    console.log(`Fetching photos for place: ${resolvedPlaceId}`);
     
     const detailsResponse = await fetch(detailsUrl);
     const detailsData = await detailsResponse.json();
@@ -234,7 +236,7 @@ serve(async (req) => {
         const photoBytes = new Uint8Array(photoBuffer);
 
         // Generate filename
-        const targetId = locationId || placeId;
+        const targetId = locationId || resolvedPlaceId;
         const fileName = `${targetId}/photo-${i}.jpg`;
 
         // Upload to Supabase Storage
