@@ -1279,6 +1279,30 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             }
           });
 
+          // 3.5 Pre-fetch photos from locations table for saved_places (NUOVO: evita chiamate Google API)
+          const savedPlaceGoogleIds = (savedPlaces || [])
+            .map((sp: any) => sp.place_id)
+            .filter((id: string) => id && !googlePlaceIdsInLocations.has(id));
+          
+          const photosMapForSavedPlaces = new Map<string, string[]>();
+          if (savedPlaceGoogleIds.length > 0) {
+            const { data: locationsWithPhotos } = await supabase
+              .from('locations')
+              .select('google_place_id, photos')
+              .in('google_place_id', savedPlaceGoogleIds)
+              .not('photos', 'is', null);
+            
+            locationsWithPhotos?.forEach((loc: any) => {
+              if (loc.google_place_id && loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
+                photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+              }
+            });
+            
+            if (photosMapForSavedPlaces.size > 0) {
+              console.log(`✅ Saved filter: Pre-loaded photos for ${photosMapForSavedPlaces.size} saved_places from cache`);
+            }
+          }
+
           // 4. Add saved places ONLY if they don't duplicate a location (by google_place_id)
           (savedPlaces || []).forEach((sp: any) => {
             // Skip if this place_id matches a google_place_id already added from locations
@@ -1309,6 +1333,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
             const key = sp.place_id;
             if (key && !locationMap.has(key)) {
+              // Use pre-fetched photos if available
+              const cachedPhotos = photosMapForSavedPlaces.get(sp.place_id);
+              
               locationMap.set(key, {
                 id: sp.place_id,
                 name: sp.place_name || 'Unknown',
@@ -1316,6 +1343,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 address: undefined,
                 city: resolveCityDisplay(sp.city) || 'Unknown',
                 google_place_id: sp.place_id,
+                photos: cachedPhotos,
                 coordinates: { lat, lng },
                 isSaved: true,
                 user_id: sp.user_id,
