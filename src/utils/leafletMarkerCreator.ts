@@ -60,24 +60,17 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   const campaignIcon = getCampaignIcon(campaignType);
   
   // ========== FRIENDS FILTER MODE ==========
-  // Show avatar as main pin with category badge at top-left
+  // Show avatar with category badge, @username (italic) and location name below
   if (friendsFilterMode && friendUsername) {
-    const size = isSelected ? 56 : 44;
+    const size = isSelected ? 48 : 40;
     const avatarSize = size;
-    const badgeSize = 20;
+    const badgeSize = 18;
     const bgColor = isDarkMode ? '#2a2a2a' : 'white';
     const textColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+    const mutedTextColor = isDarkMode ? '#94a3b8' : '#6b7280';
     
-    // Action label mapping
-    const actionLabels: Record<string, string> = {
-      'saved': 'saved',
-      'liked': 'liked', 
-      'faved': 'faved',
-      'posted': 'posted'
-    };
-    const actionLabel = actionLabels[friendAction || 'saved'] || 'saved';
-    
-    // Fallback initial for users without avatar
+    // Location name for friends filter
+    const friendDisplayName = name && name.length > 25 ? name.substring(0, 22) + '...' : name;
     const initial = (friendUsername[0] || 'U').toUpperCase();
     const hasAvatar = !!friendAvatar;
     
@@ -85,31 +78,13 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       <div class="friend-filter-marker" style="
         position: relative;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
+        gap: 6px;
         ${isSelected ? 'filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));' : ''}
       ">
-        <!-- Username tooltip above -->
-        <div style="
-          background: ${bgColor};
-          border-radius: 12px;
-          padding: 3px 8px;
-          margin-bottom: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          white-space: nowrap;
-          max-width: 120px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        ">
-          <span style="
-            font-size: 10px;
-            font-weight: 600;
-            color: ${textColor};
-          ">@${friendUsername} ${actionLabel}</span>
-        </div>
-        
         <!-- Avatar with category badge -->
-        <div style="position: relative;">
+        <div style="position: relative; flex-shrink: 0;">
           <!-- Main avatar -->
           <div style="
             width: ${avatarSize}px;
@@ -130,16 +105,16 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
                   style="width: 100%; height: 100%; object-fit: cover;"
                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                 />
-                <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">${initial}</div>`
-              : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">${initial}</div>`
+                <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">${initial}</div>`
+              : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">${initial}</div>`
             }
           </div>
           
           <!-- Category badge top-left -->
           <div style="
             position: absolute;
-            top: -4px;
-            left: -4px;
+            top: -3px;
+            left: -3px;
             width: ${badgeSize}px;
             height: ${badgeSize}px;
             border-radius: 50%;
@@ -151,8 +126,51 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
             justify-content: center;
             z-index: 10;
           ">
-            <img src="${categoryImg}" alt="${category}" style="width: 14px; height: 14px; object-fit: contain;" />
+            <img src="${categoryImg}" alt="${category}" style="width: 12px; height: 12px; object-fit: contain;" />
           </div>
+        </div>
+        
+        <!-- Labels: @username (italic) + location name -->
+        <div style="
+          max-width: 100px;
+          pointer-events: none;
+          display: flex;
+          flex-direction: column;
+          gap: 0px;
+        ">
+          <span style="
+            font-size: 9px;
+            font-style: italic;
+            font-weight: 500;
+            color: ${mutedTextColor};
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 
+              -1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+              1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+              -1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+              1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'};
+          ">@${friendUsername}</span>
+          ${friendDisplayName ? `
+            <span style="
+              font-size: ${isSelected ? '11px' : '10px'};
+              font-weight: 700;
+              color: ${textColor};
+              line-height: 1.2;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              text-shadow: 
+                -1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+                1px -1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+                -1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+                1px 1px 0 ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)'},
+                0 0 4px ${isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.8)'};
+            ">${friendDisplayName}</span>
+          ` : ''}
         </div>
       </div>
     `;
@@ -160,8 +178,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     return L.divIcon({
       html: markerHtml,
       className: 'custom-leaflet-icon friend-mode',
-      iconSize: [avatarSize + 20, avatarSize + 36],
-      iconAnchor: [(avatarSize + 20) / 2, avatarSize + 30],
+      iconSize: [avatarSize + 110, avatarSize + 10],
+      iconAnchor: [avatarSize / 2, avatarSize / 2],
       popupAnchor: [0, -avatarSize / 2],
     });
   }
