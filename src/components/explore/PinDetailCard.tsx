@@ -341,6 +341,25 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     return () => cancelAnimationFrame(timer);
   }, []);
 
+  // Emit card height changes for FriendActivityStack positioning
+  useEffect(() => {
+    const viewportHeight = window.innerHeight;
+    const height = isExpanded 
+      ? viewportHeight * (expandedHeight / 100) 
+      : viewportHeight * (collapsedHeight / 100);
+    
+    window.dispatchEvent(new CustomEvent('pin-card-height-change', {
+      detail: { height, visible: true }
+    }));
+    
+    // On unmount, signal that card is hidden
+    return () => {
+      window.dispatchEvent(new CustomEvent('pin-card-height-change', {
+        detail: { height: 0, visible: false }
+      }));
+    };
+  }, [isExpanded, expandedHeight, collapsedHeight]);
+
 
   // Check if onboarding is active on map-guide step
   const [isOnboardingMapStep, setIsOnboardingMapStep] = useState(false);
