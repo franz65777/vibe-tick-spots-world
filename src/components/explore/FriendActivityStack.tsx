@@ -1,6 +1,8 @@
 import React from 'react';
 import { useFriendLocationActivity, FriendActivity } from '@/hooks/useFriendLocationActivity';
-import { MapPin, Eye, Star, ThumbsUp, Camera } from 'lucide-react';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
 
 interface FriendActivityStackProps {
   locationId: string | null;
@@ -9,43 +11,18 @@ interface FriendActivityStackProps {
   onPress?: () => void;
 }
 
-// Get the appropriate icon component based on action type
-const getActivityIcon = (activity: FriendActivity) => {
-  // For saves, use saveTag to determine icon
-  if (activity.actionType === 'saved' || activity.saveTag) {
-    switch (activity.saveTag) {
-      case 'favourite':
-        return <Star className="w-3 h-3 text-amber-400 fill-amber-400" />;
-      case 'been':
-        return <Eye className="w-3 h-3 text-blue-500" />;
-      case 'to_try':
-      default:
-        return <MapPin className="w-3 h-3 text-blue-500 fill-blue-500" />;
-    }
+// Get the appropriate icon based on action type
+const getActivityBadgeIcon = (activity: FriendActivity): string => {
+  // For review/favourite use star
+  if (activity.actionType === 'review' || activity.actionType === 'favourite' || activity.saveTag === 'favourite') {
+    return saveTagFavourite;
   }
-  
-  // For other action types
-  switch (activity.actionType) {
-    case 'favourite':
-    case 'review':
-      return <Star className="w-3 h-3 text-amber-400 fill-amber-400" />;
-    case 'been':
-      return <Eye className="w-3 h-3 text-blue-500" />;
-    case 'liked':
-      return <ThumbsUp className="w-3 h-3 text-blue-500 fill-blue-500" />;
-    case 'posted':
-      return <Camera className="w-3 h-3 text-blue-500" />;
-    default:
-      return <MapPin className="w-3 h-3 text-blue-500 fill-blue-500" />;
+  // For been use eyes
+  if (activity.actionType === 'been' || activity.saveTag === 'been') {
+    return saveTagToTry;
   }
-};
-
-// Get background color for badge based on action
-const getBadgeBackground = (activity: FriendActivity): string => {
-  if (activity.actionType === 'favourite' || activity.saveTag === 'favourite' || activity.actionType === 'review') {
-    return 'bg-amber-50 dark:bg-amber-900/30';
-  }
-  return 'bg-blue-50 dark:bg-blue-900/30';
+  // For saved/to_try/posted use pushpin
+  return saveTagBeen;
 };
 
 const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
@@ -63,6 +40,9 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   const visibleActivities = activities.slice(0, maxVisible);
   const remainingCount = activities.length - maxVisible;
 
+  // Get the first activity with a snippet (for the bubble)
+  const activityWithSnippet = visibleActivities.find(a => a.snippet);
+
   return (
     <div 
       className="fixed left-4 z-[1999] flex items-center gap-1 animate-in fade-in slide-in-from-bottom-2 duration-300"
@@ -72,7 +52,24 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
       onClick={onPress}
     >
       {/* Avatar stack */}
-      <div className="flex -space-x-2">
+      <div className="flex -space-x-2 relative">
+        {/* Speech bubble with snippet - shown above the first avatar */}
+        {activityWithSnippet && (
+          <div className="absolute -top-14 left-0 z-10">
+            <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg max-w-[120px] border border-border/50">
+              <span className="text-[10px] text-foreground leading-tight line-clamp-2">
+                "{activityWithSnippet.snippet}"
+              </span>
+              {/* Triangle pointer */}
+              <div className="absolute -bottom-1.5 left-4 w-0 h-0 
+                border-l-[6px] border-l-transparent 
+                border-r-[6px] border-r-transparent 
+                border-t-[6px] border-t-background/95" 
+              />
+            </div>
+          </div>
+        )}
+
         {visibleActivities.map((activity, index) => (
           <div 
             key={activity.userId}
@@ -98,22 +95,26 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
               )}
             </div>
             
-            {/* Action badge - bottom right of avatar */}
-            <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full ${getBadgeBackground(activity)} border-2 border-background shadow-sm flex items-center justify-center`}>
-              {getActivityIcon(activity)}
+            {/* Action badge - bottom right of avatar with PNG icon */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-background border border-border/30 shadow-sm flex items-center justify-center overflow-hidden">
+              <img 
+                src={getActivityBadgeIcon(activity)} 
+                alt="" 
+                className="w-3.5 h-3.5 object-contain"
+              />
             </div>
           </div>
         ))}
-      </div>
 
-      {/* "+N" indicator if there are more activities */}
-      {remainingCount > 0 && (
-        <div className="w-8 h-8 rounded-full bg-muted/80 backdrop-blur-sm border border-border/50 shadow-md flex items-center justify-center -ml-1">
-          <span className="text-xs font-semibold text-muted-foreground">
-            +{remainingCount}
-          </span>
-        </div>
-      )}
+        {/* "+N" indicator if there are more activities */}
+        {remainingCount > 0 && (
+          <div className="w-10 h-10 rounded-full bg-muted/90 backdrop-blur-sm border-2 border-background shadow-lg flex items-center justify-center">
+            <span className="text-xs font-semibold text-muted-foreground">
+              +{remainingCount}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

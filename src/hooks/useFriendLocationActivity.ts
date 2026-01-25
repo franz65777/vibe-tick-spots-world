@@ -9,6 +9,7 @@ export interface FriendActivity {
   actionType: 'saved' | 'been' | 'favourite' | 'liked' | 'posted' | 'review';
   saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
   createdAt: string;
+  snippet?: string;
 }
 
 interface UseFriendLocationActivityResult {
@@ -55,7 +56,7 @@ export const useFriendLocationActivity = (
         const allUserIds = new Set<string>();
         
         // Temporary storage for activities before profile merge
-        const postsData: Array<{ user_id: string; rating: number | null; created_at: string }> = [];
+        const postsData: Array<{ user_id: string; rating: number | null; caption: string | null; created_at: string }> = [];
         const savedLocationsData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
         const savedPlacesData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
         const likesData: Array<{ user_id: string; created_at: string }> = [];
@@ -64,7 +65,7 @@ export const useFriendLocationActivity = (
         if (locationId && isValidUUID(locationId)) {
           const { data: friendPosts } = await supabase
             .from('posts')
-            .select('user_id, rating, created_at')
+            .select('user_id, rating, caption, created_at')
             .eq('location_id', locationId)
             .in('user_id', followedUserIds)
             .order('created_at', { ascending: false })
@@ -155,7 +156,8 @@ export const useFriendLocationActivity = (
                 username: profile.username || 'User',
                 avatarUrl: profile.avatar_url,
                 actionType: hasReview ? 'review' : 'posted',
-                createdAt: post.created_at
+                createdAt: post.created_at,
+                snippet: post.caption?.slice(0, 60) || undefined
               });
             }
           }
@@ -213,9 +215,25 @@ export const useFriendLocationActivity = (
           }
         });
 
-        // Convert map to array, sorted by most recent
+        // Convert map to array, sorted by priority (post/review first) then by date
+        const priorityMap: Record<string, number> = {
+          'review': 1,
+          'posted': 2,
+          'favourite': 3,
+          'saved': 4,
+          'been': 5,
+          'liked': 6
+        };
+        
         const activitiesArray = Array.from(activityMap.values())
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          .sort((a, b) => {
+            const aPriority = priorityMap[a.actionType] || 99;
+            const bPriority = priorityMap[b.actionType] || 99;
+            if (aPriority !== bPriority) {
+              return aPriority - bPriority;
+            }
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
 
         setActivities(activitiesArray);
       } catch (error) {
