@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Camera, Plus, ChevronRight, Lock, FolderPlus, Link as LinkIcon } from 'lucide-react';
+import { X, Camera, Plus, ChevronRight, Lock, FolderPlus, Link as LinkIcon, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useNearbyPhotos, NearbyPhoto } from '@/hooks/useNearbyPhotos';
+import addPostButton from '@/assets/add-post-button.png';
 import { useNavigate } from 'react-router-dom';
 
 interface LocationContributionModalProps {
@@ -34,6 +35,88 @@ interface UserFolder {
   location_count?: number;
 }
 
+// Rating button with gradient colors
+const RatingButton = memo(({ 
+  value, 
+  isSelected, 
+  onClick 
+}: { 
+  value: number; 
+  isSelected: boolean; 
+  onClick: (value: number) => void;
+}) => {
+  const handleClick = useCallback(() => onClick(value), [value, onClick]);
+  
+  const getButtonGradient = () => {
+    if (!isSelected) return 'bg-muted text-muted-foreground hover:bg-muted/80';
+    if (value <= 2) return 'bg-red-500 text-white';
+    if (value <= 3) return 'bg-red-400 text-white';
+    if (value <= 4) return 'bg-orange-500 text-white';
+    if (value <= 5) return 'bg-orange-400 text-white';
+    if (value <= 6) return 'bg-amber-500 text-white';
+    if (value <= 7) return 'bg-yellow-500 text-black';
+    if (value <= 8) return 'bg-lime-500 text-black';
+    if (value <= 9) return 'bg-green-500 text-white';
+    return 'bg-green-600 text-white';
+  };
+  
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`w-8 h-8 rounded-lg font-semibold text-sm transition-all ${getButtonGradient()}`}
+    >
+      {value}
+    </button>
+  );
+});
+RatingButton.displayName = 'RatingButton';
+
+// Media preview item for horizontal scroll
+const MediaPreviewItem = memo(({ 
+  photo, 
+  onRemove 
+}: { 
+  photo: NearbyPhoto; 
+  onRemove: (photo: NearbyPhoto) => void;
+}) => {
+  const handleRemove = useCallback(() => onRemove(photo), [photo, onRemove]);
+  const isVideo = photo.file.type.startsWith('video/');
+  
+  return (
+    <div className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
+      {isVideo ? (
+        <video src={photo.url} className="w-full h-full object-cover" controls={false} />
+      ) : (
+        <img src={photo.url} alt="Preview" className="w-full h-full object-cover" />
+      )}
+      
+      {isVideo && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+            <Video className="w-4 h-4 text-white" />
+          </div>
+        </div>
+      )}
+      
+      {/* Distance badge for nearby photos */}
+      {photo.distance !== Infinity && photo.distance < 500 && (
+        <div className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+          {Math.round(photo.distance)}m
+        </div>
+      )}
+      
+      <button 
+        onClick={handleRemove} 
+        className="absolute top-1 right-1 w-6 h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors"
+      >
+        <X className="w-3.5 h-3.5 text-white" />
+      </button>
+    </div>
+  );
+});
+MediaPreviewItem.displayName = 'MediaPreviewItem';
+
 const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   isOpen,
   onClose,
@@ -44,6 +127,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoScrollRef = useRef<HTMLDivElement>(null);
 
   // State
   const [selectedPhotos, setSelectedPhotos] = useState<NearbyPhoto[]>([]);
@@ -54,6 +138,12 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [foldersLoading, setFoldersLoading] = useState(true);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [rating, setRating] = useState<number | undefined>(undefined);
+
+  // Pre-cached avatar URL (available immediately from user metadata)
+  const avatarUrl = useMemo(() => 
+    user?.user_metadata?.avatar_url || null,
+  [user?.user_metadata?.avatar_url]);
 
   // Nearby photos hook
   const {
@@ -118,9 +208,22 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       setSelectedFolders(new Set());
       setFolderNotes({});
       setShowAllPhotos(false);
+      setRating(undefined);
       clearPhotos();
     }
   }, [isOpen, clearPhotos]);
+
+  // Auto-scroll to show add button when new photo is added
+  useEffect(() => {
+    if (selectedPhotos.length >= 1 && photoScrollRef.current) {
+      setTimeout(() => {
+        photoScrollRef.current?.scrollTo({
+          left: photoScrollRef.current.scrollWidth,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+  }, [selectedPhotos.length]);
 
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,6 +234,25 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
     },
     [scanPhotos]
   );
+
+  // Add photo directly to selected (not toggle)
+  const addPhotoToSelection = useCallback((photo: NearbyPhoto) => {
+    setSelectedPhotos((prev) => {
+      // Avoid duplicates
+      if (prev.some((p) => p.url === photo.url)) return prev;
+      return [...prev, photo];
+    });
+  }, []);
+
+  // Remove photo from selection
+  const removePhoto = useCallback((photo: NearbyPhoto) => {
+    setSelectedPhotos((prev) => prev.filter((p) => p.url !== photo.url));
+  }, []);
+
+  // Handle rating change
+  const handleRatingClick = useCallback((value: number) => {
+    setRating((prev) => (prev === value ? undefined : value));
+  }, []);
 
   const togglePhotoSelection = (photo: NearbyPhoto) => {
     setSelectedPhotos((prev) => {
@@ -298,86 +420,97 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
             </span>
           </div>
 
-          {/* Photo Grid */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2">
-            {/* Add Photo Button */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 hover:bg-muted/20 transition-all flex-shrink-0"
-            >
-              <Plus className="w-6 h-6 text-muted-foreground" />
-            </button>
-
-            {/* Loading state */}
-            {photosLoading && (
-              <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {/* Photo Tiles */}
-            {displayPhotos.map((photo) => {
-              const isSelected = selectedPhotos.some((p) => p.url === photo.url);
-              return (
-                <button
-                  key={photo.url}
-                  onClick={() => togglePhotoSelection(photo)}
-                  className={cn(
-                    'relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 transition-all',
-                    isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                  )}
-                >
-                  <img
-                    src={photo.url}
-                    alt="Photo"
-                    className="w-full h-full object-cover"
+          {/* Selected Photos - Horizontal Scroll with Green + Button */}
+          {selectedPhotos.length > 0 ? (
+            <div ref={photoScrollRef} className="overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2">
+              <div className="flex gap-2 items-center">
+                {selectedPhotos.map((photo) => (
+                  <MediaPreviewItem
+                    key={photo.url}
+                    photo={photo}
+                    onRemove={removePhoto}
                   />
-                  {isSelected && (
-                    <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                  {/* Distance badge for nearby photos */}
-                  {photo.distance !== Infinity && photo.distance < 500 && (
-                    <div className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                      {Math.round(photo.distance)}m
-                    </div>
-                  )}
+                ))}
+                
+                {/* Green + Button to add more */}
+                {selectedPhotos.length < 5 && (
+                  <button onClick={() => fileInputRef.current?.click()} className="flex-shrink-0 ml-1">
+                    <img src={addPostButton} alt="Add" className="w-12 h-12 object-contain" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Empty state - show add button and nearby photos */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2">
+                {/* Add Photo Button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 hover:bg-muted/20 transition-all flex-shrink-0"
+                >
+                  <Plus className="w-6 h-6 text-muted-foreground" />
                 </button>
-              );
-            })}
-          </div>
 
-          {/* Show more photos button */}
-          {hiddenPhotosCount > 0 && !showAllPhotos && (
-            <button
-              onClick={() => setShowAllPhotos(true)}
-              className="flex items-center gap-2 mt-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-              <span>
-                {t('weFoundOtherPhotos', {
-                  ns: 'explore',
-                  count: hiddenPhotosCount,
-                  defaultValue: `we found ${hiddenPhotosCount} other photos`,
-                })}
-              </span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+                {/* Loading state */}
+                {photosLoading && (
+                  <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+
+                {/* Nearby Photo Tiles - tap to add */}
+                {displayPhotos.map((photo) => (
+                  <button
+                    key={photo.url}
+                    onClick={() => addPhotoToSelection(photo)}
+                    className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 transition-all hover:ring-2 hover:ring-primary/50"
+                  >
+                    <img
+                      src={photo.url}
+                      alt="Photo"
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Distance badge */}
+                    {photo.distance !== Infinity && photo.distance < 500 && (
+                      <div className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        {Math.round(photo.distance)}m
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Show more photos button */}
+              {hiddenPhotosCount > 0 && !showAllPhotos && (
+                <button
+                  onClick={() => setShowAllPhotos(true)}
+                  className="flex items-center gap-2 mt-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                  <span>
+                    {t('weFoundOtherPhotos', {
+                      ns: 'explore',
+                      count: hiddenPhotosCount,
+                      defaultValue: `we found ${hiddenPhotosCount} other photos`,
+                    })}
+                  </span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+            </>
           )}
 
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             multiple
             onChange={handleFileSelect}
             className="hidden"
           />
 
-          {/* Description box (replaces "what did you think") */}
+          {/* Description box */}
           <div className="mt-4">
             <div className="text-sm font-medium text-muted-foreground mb-2">
               {t('addDescription', { ns: 'explore', defaultValue: 'add a description (optional)' })}
@@ -389,6 +522,31 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
               className="w-full rounded-2xl bg-muted/30 border border-border/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[88px]"
               rows={3}
             />
+          </div>
+
+          {/* Rating Section - 1 to 10 with gradient */}
+          <div className="mt-4">
+            <div className="text-sm font-medium text-muted-foreground mb-2">
+              {t('rateThisPlace', { ns: 'explore', defaultValue: 'rate this place (optional)' })}
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+              {[...Array(10)].map((_, i) => {
+                const ratingNum = i + 1;
+                return (
+                  <RatingButton
+                    key={i}
+                    value={ratingNum}
+                    isSelected={rating !== undefined && rating >= ratingNum}
+                    onClick={handleRatingClick}
+                  />
+                );
+              })}
+            </div>
+            {rating && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {t('yourRating', { ns: 'explore', defaultValue: 'Your rating:' })} {rating}/10
+              </p>
+            )}
           </div>
         </div>
 
