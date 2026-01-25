@@ -46,9 +46,13 @@ interface MarkerOptions {
   friendAction?: 'saved' | 'liked' | 'faved' | 'posted';
   // New: Activity snippet for selected pins
   activitySnippet?: string;
-  activityType?: 'review' | 'photo';
+  activityType?: 'review' | 'photo' | 'saved';
   // Localized label for "posted a photo"
   postedPhotoLabel?: string;
+  // New: Friend activity author for avatar display in bubble
+  activityAuthorAvatar?: string | null;
+  activityAuthorUsername?: string;
+  activitySaveTag?: 'favourite' | 'been' | 'to_try' | 'general';
 }
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
@@ -56,7 +60,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     category, name, isSaved, isRecommended, isDarkMode, hasCampaign, campaignType, 
     sharedByUserAvatar, sharedByUsers, isSelected = false,
     friendsFilterMode = false, friendAvatar, friendUsername, friendAction,
-    activitySnippet, activityType, postedPhotoLabel = 'posted a photo'
+    activitySnippet, activityType, postedPhotoLabel = 'posted a photo',
+    activityAuthorAvatar, activityAuthorUsername, activitySaveTag
   } = options;
   
   // Get category image
@@ -173,8 +178,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   }
   
   // ========== SELECTED MODE WITH ACTIVITY BUBBLE ==========
-  // Show activity snippet above the pin when selected and has activity
-  if (isSelected && (activitySnippet || activityType)) {
+  // Show activity snippet above the pin when selected and has friend activity
+  // Only show bubble if there's author info (friend activity only)
+  if (isSelected && activityAuthorAvatar !== undefined && (activitySnippet || activityType || activitySaveTag)) {
     const size = 56;
     const baseIconSize = 28;
     const borderWidth = 3;
@@ -192,10 +198,72 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     }
     const iconSize = Math.round(baseIconSize * iconSizeMultiplier);
     
-    // Activity bubble text - prioritize snippet, fallback to localized label
+    // Get action icon based on activity type and save tag
+    const getActionIcon = (): string => {
+      if (activityType === 'review') return '⭐'; // star for faved/review
+      if (activityType === 'photo') return '📷'; // camera for posted photo
+      // For saved type: icon based on save_tag
+      switch (activitySaveTag) {
+        case 'favourite': return '⭐'; // star
+        case 'been': return '👁️'; // eye
+        case 'to_try': return '🔖'; // bookmark
+        default: return '📌'; // pin for general saved
+      }
+    };
+    
+    // Activity bubble text - prioritize snippet, fallback to localized label or empty for saved-only
     const bubbleText = (activitySnippet && activitySnippet.trim()) 
       ? activitySnippet 
-      : postedPhotoLabel;
+      : (activityType === 'photo' ? postedPhotoLabel : '');
+    
+    // Avatar HTML - show friend avatar with action icon overlay
+    const avatarHtml = activityAuthorAvatar ? `
+      <div style="
+        position: absolute;
+        left: 6px;
+        bottom: 6px;
+        width: 28px;
+        height: 28px;
+      ">
+        <img src="${activityAuthorAvatar}" 
+          alt="${activityAuthorUsername || 'friend'}"
+          style="
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          "
+          onerror="this.style.display='none'"
+        />
+        <!-- Action icon badge -->
+        <span style="
+          position: absolute;
+          bottom: -4px;
+          right: -4px;
+          font-size: 11px;
+          background: white;
+          border-radius: 50%;
+          padding: 2px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          line-height: 1;
+        ">${getActionIcon()}</span>
+      </div>
+    ` : `
+      <!-- Fallback: just show action icon if no avatar -->
+      <div style="
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        font-size: 16px;
+        background: white;
+        border-radius: 50%;
+        padding: 3px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        line-height: 1;
+      ">${getActionIcon()}</div>
+    `;
     
     const markerHtml = `
       <div class="selected-activity-marker" style="
@@ -205,25 +273,33 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         align-items: center;
         filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
       ">
-        <!-- Activity bubble above -->
+        <!-- Activity bubble above with avatar -->
         <div style="
           background: ${bgColor};
-          border-radius: 12px;
-          padding: 4px 10px;
+          border-radius: 14px;
+          padding: ${bubbleText ? '8px 12px 8px 42px' : '8px 12px 8px 42px'};
           margin-bottom: 6px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          max-width: 130px;
+          max-width: 160px;
+          min-width: 50px;
+          min-height: 36px;
           position: relative;
+          display: flex;
+          align-items: center;
         ">
-          <span style="
-            font-size: 10px;
-            font-weight: 500;
-            color: ${textColor};
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-          ">${bubbleText}</span>
+          ${avatarHtml}
+          ${bubbleText ? `
+            <span style="
+              font-size: 11px;
+              font-weight: 500;
+              color: ${textColor};
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              line-height: 1.3;
+            ">${bubbleText}</span>
+          ` : ''}
           <!-- Triangle pointer -->
           <div style="
             position: absolute;
@@ -277,8 +353,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     return L.divIcon({
       html: markerHtml,
       className: 'custom-leaflet-icon selected-activity',
-      iconSize: [140, size + 50],
-      iconAnchor: [70, size + 44],
+      iconSize: [160, size + 60],
+      iconAnchor: [80, size + 54],
       popupAnchor: [0, -size / 2],
     });
   }
