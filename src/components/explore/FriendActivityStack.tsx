@@ -4,6 +4,7 @@ import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import FriendActivityModal from './FriendActivityModal';
+import { haptics } from '@/utils/haptics';
 
 interface FriendActivityStackProps {
   locationId: string | null;
@@ -44,7 +45,34 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   // Get the first activity with a snippet (for the bubble)
   const activityWithSnippet = visibleActivities.find(a => a.snippet);
 
-  const handleStackClick = () => {
+  // Handle individual avatar click with conditional logic
+  const handleAvatarClick = (activity: FriendActivity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    haptics.impact('light');
+    
+    // If has post/review -> expand card and scroll to content
+    if (activity.actionType === 'posted' || activity.actionType === 'review') {
+      if (activity.actionType === 'review') {
+        window.dispatchEvent(new CustomEvent('pin-scroll-to-review', {
+          detail: { locationId, googlePlaceId, userId: activity.userId }
+        }));
+      } else if (activity.postId) {
+        window.dispatchEvent(new CustomEvent('pin-scroll-to-post', {
+          detail: { locationId, googlePlaceId, postId: activity.postId }
+        }));
+      }
+    } else {
+      // Saved/Been/Favourite/Liked -> Open SavedByModal
+      window.dispatchEvent(new CustomEvent('pin-open-saved-by', {
+        detail: { locationId, googlePlaceId }
+      }));
+    }
+  };
+
+  // Handle "+N" indicator click - opens full modal
+  const handleMoreClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    haptics.impact('light');
     setShowModal(true);
     onPress?.();
   };
@@ -52,12 +80,11 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   return (
     <>
       <div 
-        className="fixed left-4 z-[1999] flex items-center gap-1 cursor-pointer"
+        className="fixed left-4 z-[1999] flex items-center gap-1"
         style={{ 
           bottom: 'calc(42vh + 16px)',
           animation: 'friendStackEnter 0.5s ease-out forwards, friendStackFloat 3s ease-in-out 0.5s infinite'
         }}
-        onClick={handleStackClick}
       >
         {/* Avatar stack */}
         <div className="flex -space-x-2 relative">
@@ -69,7 +96,7 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
             >
               <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg max-w-[120px] border border-border/50">
                 <span className="text-[10px] text-foreground leading-tight line-clamp-2">
-                  "{activityWithSnippet.snippet}"
+                  {activityWithSnippet.hasRealSnippet ? `"${activityWithSnippet.snippet}"` : activityWithSnippet.snippet}
                 </span>
                 {/* Triangle pointer */}
                 <div className="absolute -bottom-1.5 left-4 w-0 h-0 
@@ -84,11 +111,12 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
           {visibleActivities.map((activity, index) => (
             <div 
               key={activity.userId}
-              className="relative"
+              className="relative cursor-pointer"
               style={{ 
                 zIndex: maxVisible - index,
                 animation: `avatarPop 0.4s ease-out ${0.1 * (index + 1)}s both`
               }}
+              onClick={(e) => handleAvatarClick(activity, e)}
             >
               {/* Avatar */}
               <div className="w-10 h-10 rounded-full border-2 border-background shadow-lg overflow-hidden bg-muted">
@@ -123,8 +151,9 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
           {/* "+N" indicator if there are more activities */}
           {remainingCount > 0 && (
             <div 
-              className="w-10 h-10 rounded-full bg-muted/90 backdrop-blur-sm border-2 border-background shadow-lg flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-muted/90 backdrop-blur-sm border-2 border-background shadow-lg flex items-center justify-center cursor-pointer"
               style={{ animation: 'avatarPop 0.4s ease-out 0.4s both' }}
+              onClick={handleMoreClick}
             >
               <span className="text-xs font-semibold text-muted-foreground">
                 +{remainingCount}

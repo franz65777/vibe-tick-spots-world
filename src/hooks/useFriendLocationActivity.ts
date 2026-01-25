@@ -10,6 +10,8 @@ export interface FriendActivity {
   saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
   createdAt: string;
   snippet?: string;
+  hasRealSnippet?: boolean; // true if snippet is from real caption
+  postId?: string; // ID of the post for navigation
 }
 
 interface UseFriendLocationActivityResult {
@@ -56,7 +58,7 @@ export const useFriendLocationActivity = (
         const allUserIds = new Set<string>();
         
         // Temporary storage for activities before profile merge
-        const postsData: Array<{ user_id: string; rating: number | null; caption: string | null; created_at: string }> = [];
+        const postsData: Array<{ id: string; user_id: string; rating: number | null; caption: string | null; created_at: string }> = [];
         const savedLocationsData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
         const savedPlacesData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
         const likesData: Array<{ user_id: string; created_at: string }> = [];
@@ -65,7 +67,7 @@ export const useFriendLocationActivity = (
         if (locationId && isValidUUID(locationId)) {
           const { data: friendPosts } = await supabase
             .from('posts')
-            .select('user_id, rating, caption, created_at')
+            .select('id, user_id, rating, caption, created_at')
             .eq('location_id', locationId)
             .in('user_id', followedUserIds)
             .order('created_at', { ascending: false })
@@ -90,7 +92,7 @@ export const useFriendLocationActivity = (
           if (locationByGoogle?.id) {
             const { data: friendPostsByGoogle } = await supabase
               .from('posts')
-              .select('user_id, rating, caption, created_at')
+              .select('id, user_id, rating, caption, created_at')
               .eq('location_id', locationByGoogle.id)
               .in('user_id', followedUserIds)
               .order('created_at', { ascending: false })
@@ -177,13 +179,21 @@ export const useFriendLocationActivity = (
             const profile = profileMap.get(post.user_id);
             if (profile) {
               const hasReview = post.rating && post.rating > 0;
+              const rawSnippet = post.caption?.slice(0, 60);
+              // Fallback snippet if no caption
+              const fallbackSnippet = hasReview 
+                ? 'ha lasciato una review' 
+                : 'ha postato una foto';
+              
               activityMap.set(post.user_id, {
                 userId: post.user_id,
                 username: profile.username || 'User',
                 avatarUrl: profile.avatar_url,
                 actionType: hasReview ? 'review' : 'posted',
                 createdAt: post.created_at,
-                snippet: post.caption?.slice(0, 60) || undefined
+                snippet: rawSnippet || fallbackSnippet,
+                hasRealSnippet: !!rawSnippet,
+                postId: post.id
               });
             }
           }
