@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ChevronRight, MapPin, Bookmark, Star } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useLocationStats } from '@/hooks/useLocationStats';
@@ -24,7 +25,8 @@ interface LocationListItemProps {
   onClick: () => void;
 }
 
-export const LocationListItem = ({ place, enrichedAddress, onClick }: LocationListItemProps) => {
+// Memoized for performance - prevents re-render when parent state changes
+export const LocationListItem = memo(({ place, enrichedAddress, onClick }: LocationListItemProps) => {
   const { stats } = useLocationStats(place.id, place.google_place_id);
   const { t } = useTranslation();
   
@@ -52,6 +54,8 @@ export const LocationListItem = ({ place, enrichedAddress, onClick }: LocationLi
             src={place.photos[0]} 
             alt={place.name}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <CategoryIcon 
@@ -123,7 +127,9 @@ export const LocationListItem = ({ place, enrichedAddress, onClick }: LocationLi
       </div>
     </div>
   );
-};
+});
+
+LocationListItem.displayName = 'LocationListItem';
 
 // Skeleton loader for list items
 export const LocationListItemSkeleton = () => (

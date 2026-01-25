@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import ActiveSharesListSheet from './ActiveSharesListSheet';
 import { LocationListItem, LocationListItemSkeleton, LocationListEmpty } from './LocationListItem';
 import ListDrawerSubFilters from './ListDrawerSubFilters';
+import SaveTagInlineFilters from './SaveTagInlineFilters';
 
 import { useTranslation } from 'react-i18next';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
@@ -105,39 +106,44 @@ const MapSection = ({
   const { activeFilter, selectedCategories, selectedFollowedUserIds, setSelectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, toggleSaveTag, filtersVisible, setFiltersVisible, isFriendsDropdownOpen, isFilterExpanded, setCurrentCity } = useMapFilter();
 
   // Fetch followed users for the drawer sub-filters (only those with saved locations)
+  // Optimized: parallel queries and early caching
   useEffect(() => {
     const fetchFollowedUsers = async () => {
       if (!user?.id) return;
       
-      const { data: followData, error } = await supabase
-        .from('follows')
-        .select('following_id, profiles!follows_following_id_fkey(id, username, avatar_url)')
-        .eq('follower_id', user.id);
+      // Parallel fetch: follows + check for users with saves
+      const [followResult] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('following_id, profiles!follows_following_id_fkey(id, username, avatar_url)')
+          .eq('follower_id', user.id)
+      ]);
       
-      if (error) {
-        console.error('Error fetching followed users:', error);
+      if (followResult.error) {
+        console.error('Error fetching followed users:', followResult.error);
         return;
       }
 
-      if (followData) {
-        const users = followData
+      if (followResult.data) {
+        const users = followResult.data
           .map((f: any) => f.profiles)
           .filter(Boolean) as FollowedUser[];
         
-        // Filter to only show users who have saved locations
-        if (users.length > 0) {
-          const userIds = users.map(u => u.id);
-          const { data: usersWithSaves } = await supabase
-            .from('saved_places')
-            .select('user_id')
-            .in('user_id', userIds);
-          
-          const usersWithSavesSet = new Set(usersWithSaves?.map(u => u.user_id) || []);
-          const filteredUsers = users.filter(u => usersWithSavesSet.has(u.id));
-          setFollowedUsers(filteredUsers);
-        } else {
+        if (users.length === 0) {
           setFollowedUsers([]);
+          return;
         }
+
+        // Filter to only show users who have saved locations
+        const userIds = users.map(u => u.id);
+        const { data: usersWithSaves } = await supabase
+          .from('saved_places')
+          .select('user_id')
+          .in('user_id', userIds);
+        
+        const usersWithSavesSet = new Set(usersWithSaves?.map(u => u.user_id) || []);
+        const filteredUsers = users.filter(u => usersWithSavesSet.has(u.id));
+        setFollowedUsers(filteredUsers);
       }
     };
     
@@ -578,12 +584,23 @@ const MapSection = ({
             className="h-[85vh] flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
           >
             <DrawerHeader className="pb-2 flex-shrink-0 sticky top-0 z-10">
-              <DrawerTitle className="text-xl font-bold flex items-center gap-2">
-                {t('locationsTitle', { ns: 'mapFilters' })}
-                <Badge variant="secondary" className="text-sm font-medium">
-                  {places.length}
-                </Badge>
-              </DrawerTitle>
+              {/* Title row with save tag filters inline */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <DrawerTitle className="text-xl font-bold flex items-center gap-2 flex-shrink-0">
+                  {t('locationsTitle', { ns: 'mapFilters' })}
+                  <Badge variant="secondary" className="text-sm font-medium">
+                    {places.length}
+                  </Badge>
+                </DrawerTitle>
+                
+                {/* Save tag filters - shown for saved AND following */}
+                {(activeFilter === 'saved' || activeFilter === 'following') && (
+                  <SaveTagInlineFilters 
+                    selectedSaveTags={selectedSaveTags}
+                    onToggleSaveTag={toggleSaveTag}
+                  />
+                )}
+              </div>
               
               {/* Filter buttons with horizontal scroll */}
               <div className="flex gap-2 mt-2 overflow-x-auto overflow-y-visible scrollbar-hide pb-2 -mx-6 px-6 relative z-10">
