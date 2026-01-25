@@ -39,11 +39,17 @@ interface MapLocation {
     avatar_url: string | null;
     action: 'saved' | 'liked' | 'faved' | 'posted';
   };
-  // For activity bubble above pins
+  // For activity bubble above pins (only shows for followed friends)
   latestActivity?: {
-    type: 'review' | 'photo';
+    type: 'review' | 'photo' | 'saved';
     snippet?: string;
     created_at: string;
+    // Friend activity author info
+    authorId?: string;
+    authorUsername?: string;
+    authorAvatar?: string | null;
+    // Save tag for icon (favourite=star, been=eye, to_try=bookmark)
+    saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
   };
 }
 
@@ -408,9 +414,22 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .filter(loc => loc.id && !loc.id.startsWith('ChIJ')) // Only internal UUIDs
               .map(loc => loc.id);
 
-            let activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string; user_id: string }>();
+            // Extended activity type to include author info and save tag
+            type FriendActivity = {
+              type: 'review' | 'photo' | 'saved';
+              snippet?: string;
+              created_at: string;
+              user_id: string;
+              authorId: string;
+              authorUsername: string;
+              authorAvatar: string | null;
+              saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
+            };
+            
+            let activityMap = new Map<string, FriendActivity>();
             
             if (internalLocationIds.length > 0) {
+              // First: fetch posts from followed friends
               const { data: friendPosts } = await supabase
                 .from('posts')
                 .select('location_id, user_id, caption, rating, media_urls, created_at')
@@ -421,17 +440,49 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
               friendPosts?.forEach(post => {
                 if (post.location_id && !activityMap.has(post.location_id)) {
-                  activityMap.set(post.location_id, {
-                    type: (post.rating && post.rating > 0) ? 'review' : 'photo',
-                    snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
-                    created_at: post.created_at,
-                    user_id: post.user_id
-                  });
+                  const authorProfile = profileMap.get(post.user_id);
+                  if (authorProfile) {
+                    activityMap.set(post.location_id, {
+                      type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                      snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                      created_at: post.created_at,
+                      user_id: post.user_id,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url
+                    });
+                  }
+                }
+              });
+              
+              // Second: fetch saved locations from followed friends (for save_tag and saved-only)
+              const { data: friendSavedInternal } = await supabase
+                .from('user_saved_locations')
+                .select('location_id, user_id, save_tag, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', internalLocationIds)
+                .order('created_at', { ascending: false });
+              
+              // Add saved activity only if no post activity exists for that location
+              friendSavedInternal?.forEach(save => {
+                if (save.location_id && !activityMap.has(save.location_id)) {
+                  const authorProfile = profileMap.get(save.user_id);
+                  if (authorProfile) {
+                    activityMap.set(save.location_id, {
+                      type: 'saved',
+                      created_at: save.created_at,
+                      user_id: save.user_id,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url,
+                      saveTag: (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general'
+                    });
+                  }
                 }
               });
             }
 
-            // Enrich locations with savedByUser and latestActivity
+            // Enrich locations with savedByUser and latestActivity (including author info)
             finalLocations = Array.from(locationMap.values())
               .filter((loc) => isCategoryAllowed(loc.category))
               .map(loc => {
@@ -455,7 +506,11 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   latestActivity: activity ? {
                     type: activity.type,
                     snippet: activity.snippet,
-                    created_at: activity.created_at
+                    created_at: activity.created_at,
+                    authorId: activity.authorId,
+                    authorUsername: activity.authorUsername,
+                    authorAvatar: activity.authorAvatar,
+                    saveTag: activity.saveTag
                   } : undefined
                 };
               });
@@ -630,9 +685,22 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .filter(loc => loc.id && !loc.id.startsWith('ChIJ')) // Only internal UUIDs
               .map(loc => loc.id);
 
-            let activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string; user_id: string }>();
+            // Extended activity type to include author info and save tag
+            type FriendActivity = {
+              type: 'review' | 'photo' | 'saved';
+              snippet?: string;
+              created_at: string;
+              user_id: string;
+              authorId: string;
+              authorUsername: string;
+              authorAvatar: string | null;
+              saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
+            };
+            
+            let activityMap = new Map<string, FriendActivity>();
             
             if (internalLocationIds.length > 0) {
+              // First: fetch posts from followed friends
               const { data: friendPosts } = await supabase
                 .from('posts')
                 .select('location_id, user_id, caption, rating, media_urls, created_at')
@@ -643,17 +711,49 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
               friendPosts?.forEach(post => {
                 if (post.location_id && !activityMap.has(post.location_id)) {
-                  activityMap.set(post.location_id, {
-                    type: (post.rating && post.rating > 0) ? 'review' : 'photo',
-                    snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
-                    created_at: post.created_at,
-                    user_id: post.user_id
-                  });
+                  const authorProfile = profileMap.get(post.user_id);
+                  if (authorProfile) {
+                    activityMap.set(post.location_id, {
+                      type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                      snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                      created_at: post.created_at,
+                      user_id: post.user_id,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url
+                    });
+                  }
+                }
+              });
+              
+              // Second: fetch saved locations from followed friends (for save_tag and saved-only)
+              const { data: friendSavedInternal } = await supabase
+                .from('user_saved_locations')
+                .select('location_id, user_id, save_tag, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', internalLocationIds)
+                .order('created_at', { ascending: false });
+              
+              // Add saved activity only if no post activity exists for that location
+              friendSavedInternal?.forEach(save => {
+                if (save.location_id && !activityMap.has(save.location_id)) {
+                  const authorProfile = profileMap.get(save.user_id);
+                  if (authorProfile) {
+                    activityMap.set(save.location_id, {
+                      type: 'saved',
+                      created_at: save.created_at,
+                      user_id: save.user_id,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url,
+                      saveTag: (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general'
+                    });
+                  }
                 }
               });
             }
 
-            // Enrich locations with savedByUser and latestActivity
+            // Enrich locations with savedByUser and latestActivity (including author info)
             finalLocations = Array.from(locationMap.values())
               .filter((loc) => isCategoryAllowed(loc.category))
               .map(loc => {
@@ -677,7 +777,11 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                   latestActivity: activity ? {
                     type: activity.type,
                     snippet: activity.snippet,
-                    created_at: activity.created_at
+                    created_at: activity.created_at,
+                    authorId: activity.authorId,
+                    authorUsername: activity.authorUsername,
+                    authorAvatar: activity.authorAvatar,
+                    saveTag: activity.saveTag
                   } : undefined
                 };
               });
@@ -928,36 +1032,109 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               return true;
             });
 
-          // Enrich with latestActivity (any user's most recent post)
+          // Enrich with latestActivity from FOLLOWED FRIENDS only (not global)
           const popularInternalIds = combinedLocations
             .filter(loc => loc.id && !loc.id.startsWith('ChIJ'))
             .map(loc => loc.id);
 
           if (popularInternalIds.length > 0) {
-            const { data: recentPosts } = await supabase
-              .from('posts')
-              .select('location_id, caption, rating, created_at')
-              .in('location_id', popularInternalIds)
-              .order('created_at', { ascending: false })
-              .limit(300);
+            // Get followed user IDs
+            const { data: followedUsers } = await supabase
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', user.id);
+            
+            const followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            
+            if (followedUserIds.length > 0) {
+              // Fetch profiles for followed users
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url')
+                .in('id', followedUserIds);
+              
+              const profileMap = new Map<string, { id: string; username: string; avatar_url: string | null }>();
+              profiles?.forEach(p => profileMap.set(p.id, { id: p.id, username: p.username || 'user', avatar_url: p.avatar_url }));
+              
+              type FriendActivity = {
+                type: 'review' | 'photo' | 'saved';
+                snippet?: string;
+                created_at: string;
+                authorId: string;
+                authorUsername: string;
+                authorAvatar: string | null;
+                saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
+              };
+              
+              const activityMap = new Map<string, FriendActivity>();
+              
+              // Fetch posts from followed friends
+              const { data: friendPosts } = await supabase
+                .from('posts')
+                .select('location_id, user_id, caption, rating, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', popularInternalIds)
+                .order('created_at', { ascending: false })
+                .limit(300);
+              
+              friendPosts?.forEach(post => {
+                if (post.location_id && !activityMap.has(post.location_id)) {
+                  const authorProfile = profileMap.get(post.user_id);
+                  if (authorProfile) {
+                    activityMap.set(post.location_id, {
+                      type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                      snippet: post.caption 
+                        ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '...' : '') 
+                        : undefined,
+                      created_at: post.created_at,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url
+                    });
+                  }
+                }
+              });
+              
+              // Fetch saves from followed friends
+              const { data: friendSaves } = await supabase
+                .from('user_saved_locations')
+                .select('location_id, user_id, save_tag, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', popularInternalIds)
+                .order('created_at', { ascending: false });
+              
+              friendSaves?.forEach(save => {
+                if (save.location_id && !activityMap.has(save.location_id)) {
+                  const authorProfile = profileMap.get(save.user_id);
+                  if (authorProfile) {
+                    activityMap.set(save.location_id, {
+                      type: 'saved',
+                      created_at: save.created_at,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url,
+                      saveTag: (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general'
+                    });
+                  }
+                }
+              });
 
-            const activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string }>();
-            recentPosts?.forEach(post => {
-              if (post.location_id && !activityMap.has(post.location_id)) {
-                activityMap.set(post.location_id, {
-                  type: (post.rating && post.rating > 0) ? 'review' : 'photo',
-                  snippet: post.caption 
-                    ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '...' : '') 
-                    : undefined,
-                  created_at: post.created_at
-                });
-              }
-            });
-
-            combinedLocations = combinedLocations.map(loc => {
-              const activity = activityMap.get(loc.id);
-              return activity ? { ...loc, latestActivity: activity } : loc;
-            });
+              combinedLocations = combinedLocations.map(loc => {
+                const activity = activityMap.get(loc.id);
+                return activity ? { 
+                  ...loc, 
+                  latestActivity: {
+                    type: activity.type,
+                    snippet: activity.snippet,
+                    created_at: activity.created_at,
+                    authorId: activity.authorId,
+                    authorUsername: activity.authorUsername,
+                    authorAvatar: activity.authorAvatar,
+                    saveTag: activity.saveTag
+                  }
+                } : loc;
+              });
+            }
           }
 
           finalLocations = combinedLocations;
@@ -1101,36 +1278,109 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               return true;
             });
 
-          // Enrich with latestActivity (any user's most recent post)
+          // Enrich with latestActivity from FOLLOWED FRIENDS only (not global)
           const savedInternalIds = savedFinalLocations
             .filter(loc => loc.id && !loc.id.startsWith('ChIJ'))
             .map(loc => loc.id);
 
           if (savedInternalIds.length > 0) {
-            const { data: recentPosts } = await supabase
-              .from('posts')
-              .select('location_id, caption, rating, created_at')
-              .in('location_id', savedInternalIds)
-              .order('created_at', { ascending: false })
-              .limit(300);
+            // Get followed user IDs
+            const { data: followedUsers } = await supabase
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', user.id);
+            
+            const followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            
+            if (followedUserIds.length > 0) {
+              // Fetch profiles for followed users
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url')
+                .in('id', followedUserIds);
+              
+              const profileMap = new Map<string, { id: string; username: string; avatar_url: string | null }>();
+              profiles?.forEach(p => profileMap.set(p.id, { id: p.id, username: p.username || 'user', avatar_url: p.avatar_url }));
+              
+              type FriendActivity = {
+                type: 'review' | 'photo' | 'saved';
+                snippet?: string;
+                created_at: string;
+                authorId: string;
+                authorUsername: string;
+                authorAvatar: string | null;
+                saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
+              };
+              
+              const activityMap = new Map<string, FriendActivity>();
+              
+              // Fetch posts from followed friends
+              const { data: friendPosts } = await supabase
+                .from('posts')
+                .select('location_id, user_id, caption, rating, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', savedInternalIds)
+                .order('created_at', { ascending: false })
+                .limit(300);
+              
+              friendPosts?.forEach(post => {
+                if (post.location_id && !activityMap.has(post.location_id)) {
+                  const authorProfile = profileMap.get(post.user_id);
+                  if (authorProfile) {
+                    activityMap.set(post.location_id, {
+                      type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                      snippet: post.caption 
+                        ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '...' : '') 
+                        : undefined,
+                      created_at: post.created_at,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url
+                    });
+                  }
+                }
+              });
+              
+              // Fetch saves from followed friends
+              const { data: friendSaves } = await supabase
+                .from('user_saved_locations')
+                .select('location_id, user_id, save_tag, created_at')
+                .in('user_id', followedUserIds)
+                .in('location_id', savedInternalIds)
+                .order('created_at', { ascending: false });
+              
+              friendSaves?.forEach(save => {
+                if (save.location_id && !activityMap.has(save.location_id)) {
+                  const authorProfile = profileMap.get(save.user_id);
+                  if (authorProfile) {
+                    activityMap.set(save.location_id, {
+                      type: 'saved',
+                      created_at: save.created_at,
+                      authorId: authorProfile.id,
+                      authorUsername: authorProfile.username,
+                      authorAvatar: authorProfile.avatar_url,
+                      saveTag: (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general'
+                    });
+                  }
+                }
+              });
 
-            const activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string }>();
-            recentPosts?.forEach(post => {
-              if (post.location_id && !activityMap.has(post.location_id)) {
-                activityMap.set(post.location_id, {
-                  type: (post.rating && post.rating > 0) ? 'review' : 'photo',
-                  snippet: post.caption 
-                    ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '...' : '') 
-                    : undefined,
-                  created_at: post.created_at
-                });
-              }
-            });
-
-            savedFinalLocations = savedFinalLocations.map(loc => {
-              const activity = activityMap.get(loc.id);
-              return activity ? { ...loc, latestActivity: activity } : loc;
-            });
+              savedFinalLocations = savedFinalLocations.map(loc => {
+                const activity = activityMap.get(loc.id);
+                return activity ? { 
+                  ...loc, 
+                  latestActivity: {
+                    type: activity.type,
+                    snippet: activity.snippet,
+                    created_at: activity.created_at,
+                    authorId: activity.authorId,
+                    authorUsername: activity.authorUsername,
+                    authorAvatar: activity.authorAvatar,
+                    saveTag: activity.saveTag
+                  }
+                } : loc;
+              });
+            }
           }
 
           finalLocations = savedFinalLocations;

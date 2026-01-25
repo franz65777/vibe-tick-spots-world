@@ -747,9 +747,12 @@ const LeafletMapSetup = ({
             friendAvatar: savedByUser?.avatar_url,
             friendUsername: savedByUser?.username,
             friendAction: savedByUser?.action,
-            // New: activity data for selected pins
+            // New: activity data for selected pins (only shows for friend activity with author info)
             activitySnippet: isSelected && latestActivity ? latestActivity.snippet : undefined,
             activityType: isSelected && latestActivity ? latestActivity.type : undefined,
+            activityAuthorAvatar: isSelected && latestActivity ? latestActivity.authorAvatar : undefined,
+            activityAuthorUsername: isSelected && latestActivity ? latestActivity.authorUsername : undefined,
+            activitySaveTag: isSelected && latestActivity ? latestActivity.saveTag : undefined,
             postedPhotoLabel: t('explore:postedPhoto', 'posted a photo'),
           });
 

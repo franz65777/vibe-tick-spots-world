@@ -55,8 +55,14 @@ export interface Place {
     action: 'saved' | 'liked' | 'faved' | 'posted';
   };
   latestActivity?: {
-    type: 'review' | 'photo';
+    type: 'review' | 'photo' | 'saved';
     snippet?: string;
     created_at: string;
+    // Friend activity author info for avatar display
+    authorId?: string;
+    authorUsername?: string;
+    authorAvatar?: string | null;
+    // Save tag for action icon (favourite=star, been=eye, to_try=bookmark)
+    saveTag?: 'favourite' | 'been' | 'to_try' | 'general';
   };
 }
