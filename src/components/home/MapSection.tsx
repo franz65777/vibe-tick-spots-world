@@ -178,6 +178,15 @@ const MapSection = ({
     return () => window.removeEventListener('close-search-drawer', handleCloseSearchDrawer);
   }, []);
 
+  // Listen for close-list-view event from AddPageOverlay
+  useEffect(() => {
+    const handleCloseListView = () => {
+      setOverlay('map');
+    };
+    window.addEventListener('close-list-view', handleCloseListView);
+    return () => window.removeEventListener('close-list-view', handleCloseListView);
+  }, []);
+
   // Dispatch events to hide/show bottom navigation when list view opens/closes
   useEffect(() => {
     if (isListViewOpen) {

@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft } from 'lucide-react';
+import { X } from 'lucide-react';
 import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
 import { useTranslation } from 'react-i18next';
 import addPageHero from '@/assets/add-hero-cards.png';
@@ -63,6 +63,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
       window.dispatchEvent(new CustomEvent('close-search-drawer'));
       window.dispatchEvent(new CustomEvent('close-filter-dropdown'));
       window.dispatchEvent(new CustomEvent('close-city-selector'));
+      window.dispatchEvent(new CustomEvent('close-list-view'));
     }
 
     return () => {
@@ -75,35 +76,37 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
 
   const overlay = (
     <div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
-      {/* Header with Search - matching homepage style */}
+      {/* Header - matching pin header style */}
       <header 
         className="sticky top-0 z-10"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
       >
         <div className="flex items-center gap-2 px-3 py-2">
-          {/* Back button - glassmorphism circle style */}
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center 
-                       bg-white/70 dark:bg-black/40 backdrop-blur-md 
-                       border border-border/30 rounded-full 
-                       text-foreground hover:bg-white/90 dark:hover:bg-black/60 
-                       transition-all duration-200 active:scale-95"
+          {/* Search pill button - like pin header */}
+          <div
+            className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-black dark:bg-white/90 backdrop-blur-md border border-border/10"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          {/* Search bar - pill style matching homepage */}
-          <div className="flex-1">
-            <OpenStreetMapAutocomplete
-              onPlaceSelect={handleLocationSelect}
-              placeholder={t('searchForPlace', { ns: 'add' })}
-              className="w-full [&_input]:h-10 [&_input]:rounded-full [&_input]:bg-black [&_input]:dark:bg-white/90 
-                         [&_input]:text-white [&_input]:dark:text-gray-900 
-                         [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
-                         [&_input]:border-0 [&_input]:pl-10"
-            />
+            <span className="text-lg leading-none">🔍</span>
+            <div className="flex-1">
+              <OpenStreetMapAutocomplete
+                onPlaceSelect={handleLocationSelect}
+                placeholder={t('searchForPlace', { ns: 'add' })}
+                className="w-full [&_input]:h-8 [&_input]:bg-transparent [&_input]:border-0 
+                           [&_input]:text-white [&_input]:dark:text-gray-900 
+                           [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
+                           [&_input]:p-0 [&_input]:focus-visible:ring-0 [&_.lucide]:hidden"
+              />
+            </div>
           </div>
+          
+          {/* Close button - circular X like pin header */}
+          <button 
+            onClick={onClose}
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-black/80 dark:bg-white/80 backdrop-blur-md border border-border/30 rounded-full text-white dark:text-gray-900 hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 active:scale-95"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
