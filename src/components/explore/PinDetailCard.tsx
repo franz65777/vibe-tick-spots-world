@@ -1441,7 +1441,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           </div>
 
           {/* Photo Gallery - Scroll-based collapse when expanded */}
-          {(locationPhotos.length > 0 || posts.length > 0 || photosLoading) && (
           <div 
             ref={photoSectionRef}
             className={cn(
@@ -1509,9 +1508,23 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   </button>
                 ))}
               </div>
-            ) : null}
+            ) : (
+              // Fallback placeholder with category icon when no photos available
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div
+                  className={cn(
+                    "rounded-xl flex-shrink-0 bg-muted/50 transition-all duration-300 flex items-center justify-center",
+                    isExpanded ? "w-[140px] h-[105px]" : "w-32 h-36"
+                  )}
+                >
+                  <CategoryIcon 
+                    category={place.category || 'restaurant'} 
+                    className="w-16 h-16 opacity-60" 
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          )}
 
 
           {/* Expanded Content - Only visible when drawer is expanded */}
