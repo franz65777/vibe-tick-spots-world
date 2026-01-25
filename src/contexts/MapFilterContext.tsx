@@ -23,6 +23,8 @@ interface MapFilterContextType {
   setFiltersVisible: (visible: boolean) => void;
   isFriendsDropdownOpen: boolean;
   setIsFriendsDropdownOpen: (open: boolean) => void;
+  isSavedDropdownOpen: boolean;
+  setIsSavedDropdownOpen: (open: boolean) => void;
   isFilterExpanded: boolean;
   setIsFilterExpanded: (expanded: boolean) => void;
   filterDropdownWidth: number;
@@ -42,6 +44,7 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedSaveTags, setSelectedSaveTags] = useState<SaveTagFilter[]>([]);
   const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
   const [isFriendsDropdownOpen, setIsFriendsDropdownOpen] = useState<boolean>(false);
+  const [isSavedDropdownOpen, setIsSavedDropdownOpen] = useState<boolean>(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false);
   const [filterDropdownWidth, setFilterDropdownWidth] = useState<number>(0);
   const [filterDropdownRightEdge, setFilterDropdownRightEdge] = useState<number>(0);
@@ -117,6 +120,8 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
         setFiltersVisible,
         isFriendsDropdownOpen,
         setIsFriendsDropdownOpen,
+        isSavedDropdownOpen,
+        setIsSavedDropdownOpen,
         isFilterExpanded,
         setIsFilterExpanded,
         filterDropdownWidth,

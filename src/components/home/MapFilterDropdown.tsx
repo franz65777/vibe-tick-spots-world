@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronRight, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMapFilter, MapFilter } from '@/contexts/MapFilterContext';
+import { useMapFilter, MapFilter, SaveTagFilter } from '@/contexts/MapFilterContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +9,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
+import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
 import filterEveryoneIcon from '@/assets/icons/filter-everyone.png';
 import filterSavedIcon from '@/assets/icons/filter-saved.png';
+import saveTagBeen from '@/assets/save-tag-been.png';
+import saveTagToTry from '@/assets/save-tag-to-try.png';
+import saveTagFavourite from '@/assets/save-tag-favourite.png';
 
 interface FollowedUser {
   id: string;
@@ -28,12 +32,20 @@ interface UserSavedStats {
 
 const MapFilterDropdown = () => {
   const { t } = useTranslation('mapFilters');
+  const { t: tSaveTags } = useTranslation('save_tags');
   const { user } = useAuth();
-  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth, setFilterDropdownRightEdge, currentCity } = useMapFilter();
+  const { activeFilter, setActiveFilter, selectedFollowedUserIds, setSelectedFollowedUserIds, isFriendsDropdownOpen, setIsFriendsDropdownOpen, isSavedDropdownOpen, setIsSavedDropdownOpen, isFilterExpanded, setIsFilterExpanded, setFilterDropdownWidth, setFilterDropdownRightEdge, currentCity, selectedSaveTags, toggleSaveTag } = useMapFilter();
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [userStats, setUserStats] = useState<Map<string, UserSavedStats>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Map tag values to imported icons
+  const TAG_ICONS: Record<string, string> = {
+    been: saveTagBeen,
+    to_try: saveTagToTry,
+    favourite: saveTagFavourite,
+  };
 
   // Measure and report dropdown width and right edge position
   useEffect(() => {
@@ -250,11 +262,13 @@ const MapFilterDropdown = () => {
   const handleFilterSelect = (filterId: MapFilter) => {
     setActiveFilter(filterId);
     setIsFilterExpanded(false);
+    setIsFriendsDropdownOpen(false);
+    setIsSavedDropdownOpen(false);
     
     if (filterId === 'following') {
       setIsFriendsDropdownOpen(true);
-    } else {
-      setIsFriendsDropdownOpen(false);
+    } else if (filterId === 'saved') {
+      setIsSavedDropdownOpen(true);
     }
   };
 
@@ -280,14 +294,29 @@ const MapFilterDropdown = () => {
     setIsFriendsDropdownOpen(false);
   };
 
+  const handleCloseSavedDropdown = () => {
+    setIsSavedDropdownOpen(false);
+  };
+
+  const handleSaveTagSelect = (tag: SaveTagFilter) => {
+    toggleSaveTag(tag);
+  };
+
   const handleMainButtonClick = () => {
     if (activeFilter === 'following') {
       // Toggle friends dropdown when friends filter is active
       setIsFriendsDropdownOpen(!isFriendsDropdownOpen);
+      setIsSavedDropdownOpen(false);
+      setIsFilterExpanded(false);
+    } else if (activeFilter === 'saved') {
+      // Toggle saved dropdown when saved filter is active
+      setIsSavedDropdownOpen(!isSavedDropdownOpen);
+      setIsFriendsDropdownOpen(false);
       setIsFilterExpanded(false);
     } else {
       setIsFilterExpanded(!isFilterExpanded);
       setIsFriendsDropdownOpen(false);
+      setIsSavedDropdownOpen(false);
     }
   };
 
@@ -375,6 +404,52 @@ const MapFilterDropdown = () => {
         </div>
       )}
 
+      {/* Saved tags dropdown - opens downward */}
+      {isSavedDropdownOpen && activeFilter === 'saved' && (
+        <div className="absolute top-full left-0 mt-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-2xl border border-border/30 shadow-lg min-w-[200px] z-50">
+          {/* Header */}
+          <div className="flex items-center justify-between p-3 border-b border-border/30">
+            <span className="text-sm font-medium text-foreground">{t('saved')}</span>
+            <button
+              onClick={handleCloseSavedDropdown}
+              className="p-1 hover:bg-background/50 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          
+          {/* Save tag options */}
+          <div className="p-2 flex flex-col gap-1">
+            {SAVE_TAG_OPTIONS.map((option) => {
+              const isSelected = selectedSaveTags.includes(option.value as SaveTagFilter);
+              const iconSrc = TAG_ICONS[option.value];
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleSaveTagSelect(option.value as SaveTagFilter)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors",
+                    isSelected ? "bg-primary/15" : "hover:bg-background/50"
+                  )}
+                >
+                  {iconSrc ? (
+                    <img src={iconSrc} alt="" className="w-6 h-6 object-contain" />
+                  ) : (
+                    <span className="text-xl leading-none">{option.emoji}</span>
+                  )}
+                  <span className="text-sm font-medium text-foreground">
+                    {tSaveTags(option.labelKey)}
+                  </span>
+                  {isSelected && (
+                    <div className="ml-auto w-2 h-2 rounded-full bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Active filter circle button */}
       <div
         className={cn(
@@ -421,6 +496,7 @@ const MapFilterDropdown = () => {
           onClick={() => {
             setIsFilterExpanded(!isFilterExpanded);
             setIsFriendsDropdownOpen(false);
+            setIsSavedDropdownOpen(false);
           }}
           className="p-0.5"
         >
