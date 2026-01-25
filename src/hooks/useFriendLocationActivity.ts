@@ -52,125 +52,166 @@ export const useFriendLocationActivity = (
         }
 
         const followedUserIds = follows.map(f => f.following_id);
-        const activityMap = new Map<string, FriendActivity>();
+        const allUserIds = new Set<string>();
+        
+        // Temporary storage for activities before profile merge
+        const postsData: Array<{ user_id: string; rating: number | null; created_at: string }> = [];
+        const savedLocationsData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
+        const savedPlacesData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
+        const likesData: Array<{ user_id: string; created_at: string }> = [];
 
-        // 2. Query posts from followed users for this location
+        // 2. Query posts from followed users (NO join with profiles)
         if (locationId && isValidUUID(locationId)) {
           const { data: friendPosts } = await supabase
             .from('posts')
-            .select(`
-              user_id,
-              caption,
-              rating,
-              created_at,
-              profiles!inner(id, username, avatar_url)
-            `)
+            .select('user_id, rating, created_at')
             .eq('location_id', locationId)
             .in('user_id', followedUserIds)
             .order('created_at', { ascending: false })
             .limit(10);
 
-          friendPosts?.forEach((post: any) => {
-            if (!activityMap.has(post.user_id)) {
-              const hasReview = post.rating && post.rating > 0;
-              activityMap.set(post.user_id, {
-                userId: post.user_id,
-                username: post.profiles.username || 'User',
-                avatarUrl: post.profiles.avatar_url,
-                actionType: hasReview ? 'review' : 'posted',
-                createdAt: post.created_at
-              });
-            }
+          friendPosts?.forEach((post) => {
+            allUserIds.add(post.user_id);
+            postsData.push(post);
           });
         }
 
-        // 3. Query saved locations from followed users
+        // 3. Query saved locations (NO join with profiles)
         if (locationId && isValidUUID(locationId)) {
           const { data: friendSavedLocations } = await supabase
             .from('user_saved_locations')
-            .select(`
-              user_id,
-              save_tag,
-              created_at,
-              profiles!inner(id, username, avatar_url)
-            `)
+            .select('user_id, save_tag, created_at')
             .eq('location_id', locationId)
             .in('user_id', followedUserIds)
             .order('created_at', { ascending: false })
             .limit(10);
 
-          friendSavedLocations?.forEach((save: any) => {
-            // Only add if this user doesn't already have a post activity
-            if (!activityMap.has(save.user_id)) {
-              const saveTag = (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general';
-              activityMap.set(save.user_id, {
-                userId: save.user_id,
-                username: save.profiles.username || 'User',
-                avatarUrl: save.profiles.avatar_url,
-                actionType: saveTag === 'favourite' ? 'favourite' : saveTag === 'been' ? 'been' : 'saved',
-                saveTag,
-                createdAt: save.created_at
-              });
-            }
+          friendSavedLocations?.forEach((save) => {
+            allUserIds.add(save.user_id);
+            savedLocationsData.push(save);
           });
         }
 
-        // 4. Query saved places by google_place_id if no internal location_id results
-        if (googlePlaceId && activityMap.size < 5) {
+        // 4. Query saved places by google_place_id (NO join with profiles)
+        if (googlePlaceId) {
           const { data: friendSavedPlaces } = await supabase
             .from('saved_places')
-            .select(`
-              user_id,
-              save_tag,
-              created_at,
-              profiles!inner(id, username, avatar_url)
-            `)
+            .select('user_id, save_tag, created_at')
             .eq('place_id', googlePlaceId)
             .in('user_id', followedUserIds)
             .order('created_at', { ascending: false })
             .limit(10);
 
-          friendSavedPlaces?.forEach((save: any) => {
-            if (!activityMap.has(save.user_id)) {
-              const saveTag = (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general';
-              activityMap.set(save.user_id, {
-                userId: save.user_id,
-                username: save.profiles.username || 'User',
-                avatarUrl: save.profiles.avatar_url,
-                actionType: saveTag === 'favourite' ? 'favourite' : saveTag === 'been' ? 'been' : 'saved',
-                saveTag,
-                createdAt: save.created_at
-              });
-            }
+          friendSavedPlaces?.forEach((save) => {
+            allUserIds.add(save.user_id);
+            savedPlacesData.push(save);
           });
         }
 
-        // 5. Query location likes from followed users
-        if (locationId && isValidUUID(locationId) && activityMap.size < 10) {
+        // 5. Query location likes (NO join with profiles)
+        if (locationId && isValidUUID(locationId)) {
           const { data: friendLikes } = await supabase
             .from('location_likes')
-            .select(`
-              user_id,
-              created_at,
-              profiles!inner(id, username, avatar_url)
-            `)
+            .select('user_id, created_at')
             .eq('location_id', locationId)
             .in('user_id', followedUserIds)
             .order('created_at', { ascending: false })
             .limit(5);
 
-          friendLikes?.forEach((like: any) => {
-            if (!activityMap.has(like.user_id)) {
+          friendLikes?.forEach((like) => {
+            allUserIds.add(like.user_id);
+            likesData.push(like);
+          });
+        }
+
+        // 6. If no activities found, return early
+        if (allUserIds.size === 0) {
+          setActivities([]);
+          setLoading(false);
+          return;
+        }
+
+        // 7. Fetch profiles separately for all users who have activities
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', Array.from(allUserIds));
+
+        // Create profile map for quick lookup
+        const profileMap = new Map<string, { username: string | null; avatar_url: string | null }>();
+        profiles?.forEach(p => profileMap.set(p.id, { username: p.username, avatar_url: p.avatar_url }));
+
+        // 8. Build activity map with profile data
+        const activityMap = new Map<string, FriendActivity>();
+
+        // Process posts (highest priority)
+        postsData.forEach((post) => {
+          if (!activityMap.has(post.user_id)) {
+            const profile = profileMap.get(post.user_id);
+            if (profile) {
+              const hasReview = post.rating && post.rating > 0;
+              activityMap.set(post.user_id, {
+                userId: post.user_id,
+                username: profile.username || 'User',
+                avatarUrl: profile.avatar_url,
+                actionType: hasReview ? 'review' : 'posted',
+                createdAt: post.created_at
+              });
+            }
+          }
+        });
+
+        // Process saved locations
+        savedLocationsData.forEach((save) => {
+          if (!activityMap.has(save.user_id)) {
+            const profile = profileMap.get(save.user_id);
+            if (profile) {
+              const saveTag = (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general';
+              activityMap.set(save.user_id, {
+                userId: save.user_id,
+                username: profile.username || 'User',
+                avatarUrl: profile.avatar_url,
+                actionType: saveTag === 'favourite' ? 'favourite' : saveTag === 'been' ? 'been' : 'saved',
+                saveTag,
+                createdAt: save.created_at
+              });
+            }
+          }
+        });
+
+        // Process saved places
+        savedPlacesData.forEach((save) => {
+          if (!activityMap.has(save.user_id)) {
+            const profile = profileMap.get(save.user_id);
+            if (profile) {
+              const saveTag = (save.save_tag as 'favourite' | 'been' | 'to_try' | 'general') || 'general';
+              activityMap.set(save.user_id, {
+                userId: save.user_id,
+                username: profile.username || 'User',
+                avatarUrl: profile.avatar_url,
+                actionType: saveTag === 'favourite' ? 'favourite' : saveTag === 'been' ? 'been' : 'saved',
+                saveTag,
+                createdAt: save.created_at
+              });
+            }
+          }
+        });
+
+        // Process likes (lowest priority)
+        likesData.forEach((like) => {
+          if (!activityMap.has(like.user_id)) {
+            const profile = profileMap.get(like.user_id);
+            if (profile) {
               activityMap.set(like.user_id, {
                 userId: like.user_id,
-                username: like.profiles.username || 'User',
-                avatarUrl: like.profiles.avatar_url,
+                username: profile.username || 'User',
+                avatarUrl: profile.avatar_url,
                 actionType: 'liked',
                 createdAt: like.created_at
               });
             }
-          });
-        }
+          }
+        });
 
         // Convert map to array, sorted by most recent
         const activitiesArray = Array.from(activityMap.values())
