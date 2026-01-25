@@ -27,6 +27,7 @@ import FolderDetailModal from '../profile/FolderDetailModal';
 import { useMarketingCampaign, MarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { formatDistanceToNow, Locale } from 'date-fns';
+import { formatPostDate } from '@/utils/dateFormatter';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { PostDetailModalMobile } from './PostDetailModalMobile';
 import { cn } from '@/lib/utils';
@@ -468,7 +469,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       if (isMatch && postId) {
         // 1. Expand the card
         setIsExpanded(true);
-        // 2. Switch to posts tab
+        // 2. Collapse Google photos
+        setPhotoScrollProgress(1);
+        // 3. Switch to posts tab
         setActiveTab('posts');
         // 3. After render, scroll to the post
         setTimeout(() => {
@@ -508,7 +511,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       if (isMatch && userId) {
         // 1. Expand the card
         setIsExpanded(true);
-        // 2. Switch to reviews tab
+        // 2. Collapse Google photos
+        setPhotoScrollProgress(1);
+        // 3. Switch to reviews tab
         setActiveTab('reviews');
         // 3. After render, scroll to the review
         setTimeout(() => {
@@ -1845,7 +1850,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                                   <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
                                 )}
                                 <p className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: currentLocale })}
+                                  {formatPostDate(review.created_at, t)}
                                 </p>
                               </div>
                             </div>

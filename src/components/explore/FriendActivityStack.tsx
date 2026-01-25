@@ -225,11 +225,11 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
         @keyframes bubbleFadeIn {
           0% {
             opacity: 0;
-            transform: translateX(-50%) translateY(8px);
+            transform: translateY(8px);
           }
           100% {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateY(0);
           }
         }
       `}</style>
