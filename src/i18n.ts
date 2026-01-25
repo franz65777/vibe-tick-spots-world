@@ -601,6 +601,7 @@ const resources = {
       skipTour: 'Skip',
       nextStep: 'Next',
       gotIt: 'Got it!',
+      searchToContribute: 'Search for a place to add photos, descriptions, or save to your lists',
     },
     settings: {
       title: 'Settings',
@@ -1616,6 +1617,7 @@ const resources = {
       skipTour: 'Omitir',
       nextStep: 'Siguiente',
       gotIt: '¡Entendido!',
+      searchToContribute: 'Busca un lugar para agregar fotos, descripciones o guardarlo en tus listas',
     },
     settings: {
       title: 'Configuración',
@@ -2633,6 +2635,7 @@ const resources = {
       skipTour: 'Salta',
       nextStep: 'Avanti',
       gotIt: 'Capito!',
+      searchToContribute: 'Cerca un posto per aggiungere foto, descrizioni o salvarlo nelle tue liste',
     },
     settings: {
       title: 'Impostazioni',

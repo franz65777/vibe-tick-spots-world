@@ -130,7 +130,11 @@ const NewBottomNavigation = () => {
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
       label: t('navigation:add'), 
-      path: '/add'
+      path: '/add',
+      customAction: () => {
+        haptics.impact('medium');
+        window.dispatchEvent(new CustomEvent('open-add-overlay'));
+      }
     },
     { 
       icon: <Activity size={24} strokeWidth={2} />, 
@@ -186,6 +190,8 @@ const NewBottomNavigation = () => {
                       } else if (isProfileTab && hasValidBusinessAccount) {
                         // Long press logic handled separately
                         return;
+                      } else if ((item as any).customAction) {
+                        (item as any).customAction();
                       } else {
                         handleNavClick(item.path, item.label);
                       }
