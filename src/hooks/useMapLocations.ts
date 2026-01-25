@@ -202,7 +202,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           }
           const dedupedShares = Array.from(uniqueSharesByUser.values());
 
-          finalLocations = dedupedShares.map(share => {
+          let sharedLocations = dedupedShares.map(share => {
             const resolvedCity = resolveCityDisplay(share.location?.city, share.location?.address);
             return {
               id: share.location_id || `share-${share.id}`,
@@ -224,6 +224,38 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             if (!isCategoryAllowed(loc.category)) return false;
             return true;
           });
+
+          // Enrich with latestActivity
+          const sharedInternalIds = sharedLocations
+            .filter(loc => loc.id && !loc.id.startsWith('ChIJ') && !loc.id.startsWith('share-'))
+            .map(loc => loc.id);
+
+          if (sharedInternalIds.length > 0) {
+            const { data: recentPosts } = await supabase
+              .from('posts')
+              .select('location_id, caption, rating, created_at')
+              .in('location_id', sharedInternalIds)
+              .order('created_at', { ascending: false })
+              .limit(100);
+
+            const activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string }>();
+            recentPosts?.forEach(post => {
+              if (post.location_id && !activityMap.has(post.location_id)) {
+                activityMap.set(post.location_id, {
+                  type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                  snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                  created_at: post.created_at
+                });
+              }
+            });
+
+            sharedLocations = sharedLocations.map(loc => {
+              const activity = activityMap.get(loc.id);
+              return activity ? { ...loc, latestActivity: activity } : loc;
+            });
+          }
+
+          finalLocations = sharedLocations;
           break;
         }
 
@@ -888,13 +920,45 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           });
 
           // Combine and sort
-          finalLocations = [...fromLocations, ...fromSavedPlaces]
+          let combinedLocations = [...fromLocations, ...fromSavedPlaces]
             .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
             .slice(0, 300)
             .filter(location => {
               if (!isCategoryAllowed(location.category)) return false;
               return true;
             });
+
+          // Enrich with latestActivity (any user's most recent post)
+          const popularInternalIds = combinedLocations
+            .filter(loc => loc.id && !loc.id.startsWith('ChIJ'))
+            .map(loc => loc.id);
+
+          if (popularInternalIds.length > 0) {
+            const { data: recentPosts } = await supabase
+              .from('posts')
+              .select('location_id, caption, rating, created_at')
+              .in('location_id', popularInternalIds)
+              .order('created_at', { ascending: false })
+              .limit(300);
+
+            const activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string }>();
+            recentPosts?.forEach(post => {
+              if (post.location_id && !activityMap.has(post.location_id)) {
+                activityMap.set(post.location_id, {
+                  type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                  snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                  created_at: post.created_at
+                });
+              }
+            });
+
+            combinedLocations = combinedLocations.map(loc => {
+              const activity = activityMap.get(loc.id);
+              return activity ? { ...loc, latestActivity: activity } : loc;
+            });
+          }
+
+          finalLocations = combinedLocations;
           
           console.log(`✅ Found ${finalLocations.length} popular locations (ALL global saves)`);
           break;
@@ -1029,11 +1093,43 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             }
           });
 
-          finalLocations = Array.from(locationMap.values())
+          let savedFinalLocations = Array.from(locationMap.values())
             .filter(location => {
               if (!isCategoryAllowed(location.category)) return false;
               return true;
             });
+
+          // Enrich with latestActivity (any user's most recent post)
+          const savedInternalIds = savedFinalLocations
+            .filter(loc => loc.id && !loc.id.startsWith('ChIJ'))
+            .map(loc => loc.id);
+
+          if (savedInternalIds.length > 0) {
+            const { data: recentPosts } = await supabase
+              .from('posts')
+              .select('location_id, caption, rating, created_at')
+              .in('location_id', savedInternalIds)
+              .order('created_at', { ascending: false })
+              .limit(300);
+
+            const activityMap = new Map<string, { type: 'review' | 'photo'; snippet?: string; created_at: string }>();
+            recentPosts?.forEach(post => {
+              if (post.location_id && !activityMap.has(post.location_id)) {
+                activityMap.set(post.location_id, {
+                  type: (post.rating && post.rating > 0) ? 'review' : 'photo',
+                  snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                  created_at: post.created_at
+                });
+              }
+            });
+
+            savedFinalLocations = savedFinalLocations.map(loc => {
+              const activity = activityMap.get(loc.id);
+              return activity ? { ...loc, latestActivity: activity } : loc;
+            });
+          }
+
+          finalLocations = savedFinalLocations;
           
           console.log(`✅ Merged saved locations: ${finalLocations.length} total (no duplicates via google_place_id)`);
           break;
