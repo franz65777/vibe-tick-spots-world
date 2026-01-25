@@ -578,7 +578,7 @@ const MapSection = ({
             </DrawerHeader>
             
             <ScrollArea className="flex-1 -mx-6 px-6 [&>div]:!overflow-y-auto [&>div]:!scrollbar-none [&>div::-webkit-scrollbar]:hidden">
-              <div className="space-y-2 py-2 pb-8">
+              <div className="space-y-1.5 py-1 pb-6">
                 {loading ? (
                   // Skeleton loaders
                   <>
