@@ -61,7 +61,7 @@ export const useFriendLocationActivity = (
         const savedPlacesData: Array<{ user_id: string; save_tag: string | null; created_at: string }> = [];
         const likesData: Array<{ user_id: string; created_at: string }> = [];
 
-        // 2. Query posts from followed users (NO join with profiles)
+        // 2. Query posts from followed users (by location_id OR by google_place_id)
         if (locationId && isValidUUID(locationId)) {
           const { data: friendPosts } = await supabase
             .from('posts')
@@ -75,6 +75,32 @@ export const useFriendLocationActivity = (
             allUserIds.add(post.user_id);
             postsData.push(post);
           });
+        }
+        
+        // 2b. Also query posts by google_place_id (find location first, then get posts)
+        if (googlePlaceId && postsData.length === 0) {
+          // First find the location by google_place_id
+          const { data: locationByGoogle } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', googlePlaceId)
+            .limit(1)
+            .single();
+          
+          if (locationByGoogle?.id) {
+            const { data: friendPostsByGoogle } = await supabase
+              .from('posts')
+              .select('user_id, rating, caption, created_at')
+              .eq('location_id', locationByGoogle.id)
+              .in('user_id', followedUserIds)
+              .order('created_at', { ascending: false })
+              .limit(10);
+
+            friendPostsByGoogle?.forEach((post) => {
+              allUserIds.add(post.user_id);
+              postsData.push(post);
+            });
+          }
         }
 
         // 3. Query saved locations (NO join with profiles)
