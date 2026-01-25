@@ -267,7 +267,10 @@ const MapSection = ({
     visitors: [],
     createdBy: location.user_id,
     createdAt: location.created_at,
-    sharedByUser: location.sharedByUser
+    sharedByUser: location.sharedByUser,
+    // New: friend filter mode data
+    savedByUser: location.savedByUser,
+    latestActivity: location.latestActivity
   }));
 
   // Enrich missing addresses using reverse geocoding
