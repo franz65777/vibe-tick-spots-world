@@ -140,6 +140,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const [foldersLoading, setFoldersLoading] = useState(true);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [rating, setRating] = useState<number | undefined>(undefined);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   // Pre-cached avatar URL (available immediately from user metadata)
   const avatarUrl = useMemo(() => 
@@ -332,8 +333,15 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       if (selectedPhotos.length > 0 || descriptionText.trim()) {
         const mediaUrls: string[] = [];
 
-        // Upload selected photos
-        for (const photo of selectedPhotos) {
+        // Upload selected photos with progress tracking
+        if (selectedPhotos.length > 0) {
+          setUploadProgress({ current: 0, total: selectedPhotos.length });
+        }
+
+        for (let i = 0; i < selectedPhotos.length; i++) {
+          const photo = selectedPhotos[i];
+          setUploadProgress({ current: i + 1, total: selectedPhotos.length });
+          
           const fileName = `${user.id}/${Date.now()}-${photo.file.name}`;
           const { error: uploadError } = await supabase.storage
             .from('media')
@@ -341,6 +349,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
 
           if (uploadError) {
             console.error('Upload error:', uploadError);
+            toast.error(t('photoUploadFailed', { ns: 'explore', defaultValue: 'Failed to upload photo' }));
             continue;
           }
 
@@ -385,6 +394,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       toast.error(t('saveFailed', { ns: 'explore', defaultValue: 'Failed to save. Please try again.' }));
     } finally {
       setLoading(false);
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
