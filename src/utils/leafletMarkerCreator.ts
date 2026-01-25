@@ -192,8 +192,10 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     }
     const iconSize = Math.round(baseIconSize * iconSizeMultiplier);
     
-    // Activity bubble text - use localized label for photo posts
-    const bubbleText = activityType === 'photo' ? postedPhotoLabel : (activitySnippet || 'reviewed this');
+    // Activity bubble text - prioritize snippet, fallback to localized label
+    const bubbleText = (activitySnippet && activitySnippet.trim()) 
+      ? activitySnippet 
+      : postedPhotoLabel;
     
     const markerHtml = `
       <div class="selected-activity-marker" style="

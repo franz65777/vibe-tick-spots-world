@@ -946,7 +946,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               if (post.location_id && !activityMap.has(post.location_id)) {
                 activityMap.set(post.location_id, {
                   type: (post.rating && post.rating > 0) ? 'review' : 'photo',
-                  snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                  snippet: post.caption 
+                    ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '...' : '') 
+                    : undefined,
                   created_at: post.created_at
                 });
               }
@@ -1117,7 +1119,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               if (post.location_id && !activityMap.has(post.location_id)) {
                 activityMap.set(post.location_id, {
                   type: (post.rating && post.rating > 0) ? 'review' : 'photo',
-                  snippet: post.caption?.slice(0, 40) + (post.caption && post.caption.length > 40 ? '...' : ''),
+                  snippet: post.caption 
+                    ? post.caption.slice(0, 40) + (post.caption.length > 40 ? '...' : '') 
+                    : undefined,
                   created_at: post.created_at
                 });
               }
