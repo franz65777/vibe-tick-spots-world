@@ -49,38 +49,9 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
     t: tSaveTags
   } = useTranslation('save_tags');
 
-  // Saved filter: Show save tag icons - aligned left with horizontal scroll
+  // Saved filter: No sub-filter needed (save tags moved to header)
   if (activeFilter === 'saved') {
-    return (
-      <div className="flex items-center gap-2 px-4 overflow-x-auto scrollbar-hide">
-        {SAVE_TAG_OPTIONS.map(option => {
-          const isSelected = selectedSaveTags.includes(option.value);
-          const iconSrc = TAG_ICONS[option.value];
-          return (
-            <button 
-              key={option.value} 
-              onClick={() => onToggleSaveTag(option.value)} 
-              className={cn(
-                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200",
-                "bg-white/60 dark:bg-slate-700/60 border",
-                isSelected 
-                  ? "border-primary/50 bg-primary/10 dark:bg-primary/20" 
-                  : "border-white/50 dark:border-slate-600/50 hover:bg-white/80 dark:hover:bg-slate-700/80"
-              )}
-            >
-              {iconSrc ? (
-                <img src={iconSrc} alt="" className="w-5 h-5 object-contain" />
-              ) : (
-                <span className="text-lg">{option.emoji}</span>
-              )}
-              <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>
-                {tSaveTags(option.labelKey)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    );
+    return null;
   }
 
   // Friends filter: Show scrollable avatar list
