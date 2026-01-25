@@ -104,7 +104,7 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   return (
     <>
       <div 
-        className="fixed left-5 z-[1999] flex items-center gap-1"
+        className="fixed left-4 z-[1999] flex flex-col items-start gap-1.5"
         style={{
           bottom: `${bottomPosition}px`,
           opacity: isVisible ? 1 : 0,
@@ -116,6 +116,24 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
           animation: isVisible && !isDragging ? 'friendStackFloat 3s ease-in-out infinite' : 'none'
         }}
       >
+        {/* Speech bubble - positioned ABOVE the avatar stack */}
+        {visibleActivities[0]?.snippet && (
+          <div 
+            className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50 relative"
+            style={{ animation: 'bubbleFadeIn 0.4s ease-out 0.2s both' }}
+          >
+            <span className="text-[10px] text-foreground leading-tight block text-left" style={{ textWrap: 'balance' } as React.CSSProperties}>
+              {visibleActivities[0].hasRealSnippet ? `"${visibleActivities[0].snippet}"` : visibleActivities[0].snippet}
+            </span>
+            {/* Triangle pointer - pointing down to first avatar */}
+            <div className="absolute -bottom-1.5 left-5 w-0 h-0 
+              border-l-[6px] border-l-transparent 
+              border-r-[6px] border-r-transparent 
+              border-t-[6px] border-t-background/95" 
+            />
+          </div>
+        )}
+
         {/* Avatar stack */}
         <div className="flex -space-x-2 relative">
           {visibleActivities.map((activity, index) => (
@@ -128,26 +146,6 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
               }}
               onClick={(e) => handleAvatarClick(activity, e)}
             >
-              {/* Speech bubble - ONLY for first avatar with snippet */}
-              {index === 0 && activity.snippet && (
-                <div 
-                  className="absolute bottom-full left-0 mb-1.5 z-10"
-                  style={{ animation: 'bubbleFadeIn 0.4s ease-out 0.2s both' }}
-                >
-                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50">
-                    <span className="text-[10px] text-foreground leading-tight block text-left" style={{ textWrap: 'balance' } as React.CSSProperties}>
-                      {activity.hasRealSnippet ? `"${activity.snippet}"` : activity.snippet}
-                    </span>
-                    {/* Triangle pointer - pointing down to avatar */}
-                    <div className="absolute -bottom-1.5 left-4 w-0 h-0 
-                      border-l-[6px] border-l-transparent 
-                      border-r-[6px] border-r-transparent 
-                      border-t-[6px] border-t-background/95" 
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Avatar */}
               <div className="w-10 h-10 rounded-full border-2 border-background shadow-lg overflow-hidden bg-muted">
                 {activity.avatarUrl ? (
