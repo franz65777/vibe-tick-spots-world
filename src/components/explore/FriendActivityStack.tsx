@@ -104,8 +104,8 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   return (
     <>
       <div 
-        className="fixed left-4 z-[1999] flex items-center gap-1"
-        style={{ 
+        className="fixed left-5 z-[1999] flex items-center gap-1"
+        style={{
           bottom: `${bottomPosition}px`,
           opacity: isVisible ? 1 : 0,
           pointerEvents: isVisible ? 'auto' : 'none',
@@ -131,14 +131,14 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
               {/* Speech bubble - ONLY for first avatar with snippet */}
               {index === 0 && activity.snippet && (
                 <div 
-                  className="absolute -bottom-1 left-0 -translate-y-full z-10"
+                  className="absolute bottom-full left-0 mb-1.5 z-10"
                   style={{ animation: 'bubbleFadeIn 0.4s ease-out 0.2s both' }}
                 >
-                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50 ml-1">
+                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50">
                     <span className="text-[10px] text-foreground leading-tight block text-left" style={{ textWrap: 'balance' } as React.CSSProperties}>
                       {activity.hasRealSnippet ? `"${activity.snippet}"` : activity.snippet}
                     </span>
-                    {/* Triangle pointer - left aligned above avatar */}
+                    {/* Triangle pointer - pointing down to avatar */}
                     <div className="absolute -bottom-1.5 left-4 w-0 h-0 
                       border-l-[6px] border-l-transparent 
                       border-r-[6px] border-r-transparent 
