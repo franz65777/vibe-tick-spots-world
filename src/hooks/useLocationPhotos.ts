@@ -46,7 +46,7 @@ export const useLocationPhotos = ({
     setError(null);
 
     try {
-      // First check if we have cached photos in the location record
+      // Check 1: cache per locationId
       if (locationId && !forceRefresh) {
         const { data: location } = await supabase
           .from('locations')
@@ -62,7 +62,26 @@ export const useLocationPhotos = ({
         }
       }
 
-      // Fetch from edge function
+      // Check 2: cache per googlePlaceId (NUOVO FIX!)
+      if (googlePlaceId && !forceRefresh) {
+        const { data: locationByGoogle } = await supabase
+          .from('locations')
+          .select('photos, photos_fetched_at')
+          .eq('google_place_id', googlePlaceId)
+          .not('photos', 'is', null)
+          .limit(1)
+          .maybeSingle();
+
+        if (locationByGoogle?.photos && Array.isArray(locationByGoogle.photos) && locationByGoogle.photos.length > 0) {
+          console.log(`✅ Photos cache hit for google_place_id: ${googlePlaceId}`);
+          setPhotos(locationByGoogle.photos as string[]);
+          setSource('cache');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Solo se non c'è cache, chiama la edge function
       const { data, error: fnError } = await supabase.functions.invoke('get-place-photos', {
         body: {
           locationId,

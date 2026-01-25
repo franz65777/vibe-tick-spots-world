@@ -382,7 +382,26 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
             });
 
-            // 3) saved_places
+            // 3) saved_places - NUOVO FIX: Pre-fetch photos from locations table
+            const savedPlaceGoogleIds = (savedPlaces || [])
+              .map((sp: any) => sp.place_id)
+              .filter((id: string) => id && !googlePlaceIdsInLocations.has(id));
+            
+            const photosMapForSavedPlaces = new Map<string, string[]>();
+            if (savedPlaceGoogleIds.length > 0) {
+              const { data: locationsWithPhotos } = await supabase
+                .from('locations')
+                .select('google_place_id, photos')
+                .in('google_place_id', savedPlaceGoogleIds)
+                .not('photos', 'is', null);
+              
+              locationsWithPhotos?.forEach((loc: any) => {
+                if (loc.google_place_id && loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
+                  photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+                }
+              });
+            }
+            
             (savedPlaces || []).forEach((sp: any) => {
               if (googlePlaceIdsInLocations.has(sp.place_id)) return;
               const coords = sp.coordinates as any || {};
@@ -393,6 +412,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 address: undefined,
                 city: sp.city || undefined,
                 google_place_id: sp.place_id,
+                photos: photosMapForSavedPlaces.get(sp.place_id), // Pre-load photos from cache!
                 coordinates: { lat: Number(coords.lat) || 0, lng: Number(coords.lng) || 0 },
                 isFollowing: true,
                 user_id: sp.user_id,
@@ -992,6 +1012,28 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             });
 
           // From saved_places that are NOT already in locations table AND not at same coordinates
+          // NUOVO FIX: Pre-fetch photos from locations table for saved_places google_place_ids
+          const savedPlaceGoogleIds = Array.from(savedPlacesMap.keys()).filter(id => !googlePlaceIdsFromLocations.has(id));
+          const photosMapForSavedPlaces = new Map<string, string[]>();
+          
+          if (savedPlaceGoogleIds.length > 0) {
+            const { data: locationsWithPhotos } = await supabase
+              .from('locations')
+              .select('google_place_id, photos')
+              .in('google_place_id', savedPlaceGoogleIds)
+              .not('photos', 'is', null);
+            
+            locationsWithPhotos?.forEach((loc: any) => {
+              if (loc.google_place_id && loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
+                photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+              }
+            });
+            
+            if (photosMapForSavedPlaces.size > 0) {
+              console.log(`✅ Pre-loaded photos for ${photosMapForSavedPlaces.size} saved_places from cache`);
+            }
+          }
+          
           const fromSavedPlaces: MapLocation[] = [];
           savedPlacesMap.forEach((sp, googlePlaceId) => {
             // Skip if already represented in locations
@@ -1016,6 +1058,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               address: undefined,
               city: resolvedCity,
               google_place_id: googlePlaceId,
+              photos: photosMapForSavedPlaces.get(googlePlaceId), // Pre-load photos from cache!
               coordinates: { lat, lng },
               user_id: sp.user_id,
               created_at: sp.created_at,
