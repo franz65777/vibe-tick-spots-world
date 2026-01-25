@@ -38,12 +38,15 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
   const [isVisible, setIsVisible] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
 
+  const [isCardExpanded, setIsCardExpanded] = useState(false);
+
   // Listen for card height changes
   useEffect(() => {
     const handleCardHeightChange = (e: CustomEvent) => {
       setCardHeight(e.detail.height);
       setIsVisible(e.detail.visible !== false);
       setIsDragging(e.detail.isDragging || false);
+      setIsCardExpanded(e.detail.isExpanded || false);
     };
 
     window.addEventListener('pin-card-height-change', handleCardHeightChange as EventListener);
@@ -58,7 +61,8 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
     return cardHeight + 16;
   }, [cardHeight, isVisible]);
 
-  if (loading || activities.length === 0) {
+  // Hide when loading, no activities, or card is fully expanded
+  if (loading || activities.length === 0 || isCardExpanded) {
     return null;
   }
 
@@ -127,15 +131,15 @@ const FriendActivityStack: React.FC<FriendActivityStackProps> = ({
               {/* Speech bubble - ONLY for first avatar with snippet */}
               {index === 0 && activity.snippet && (
                 <div 
-                  className="absolute -top-16 left-1/2 -translate-x-1/2 z-10"
+                  className="absolute -bottom-1 left-0 -translate-y-full z-10"
                   style={{ animation: 'bubbleFadeIn 0.4s ease-out 0.2s both' }}
                 >
-                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50">
-                    <span className="text-[10px] text-foreground leading-tight block text-center" style={{ textWrap: 'balance' } as React.CSSProperties}>
+                  <div className="bg-background/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg min-w-[80px] max-w-[140px] border border-border/50 ml-1">
+                    <span className="text-[10px] text-foreground leading-tight block text-left" style={{ textWrap: 'balance' } as React.CSSProperties}>
                       {activity.hasRealSnippet ? `"${activity.snippet}"` : activity.snippet}
                     </span>
-                    {/* Triangle pointer - centered */}
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 
+                    {/* Triangle pointer - left aligned above avatar */}
+                    <div className="absolute -bottom-1.5 left-4 w-0 h-0 
                       border-l-[6px] border-l-transparent 
                       border-r-[6px] border-r-transparent 
                       border-t-[6px] border-t-background/95" 

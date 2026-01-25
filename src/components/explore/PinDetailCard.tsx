@@ -349,7 +349,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       : viewportHeight * (collapsedHeight / 100);
     
     window.dispatchEvent(new CustomEvent('pin-card-height-change', {
-      detail: { height, visible: true }
+      detail: { height, visible: true, isExpanded }
     }));
     
     // On unmount, signal that card is hidden
@@ -1106,7 +1106,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   detail: { 
                     height: Math.max(0, currentHeight), 
                     visible: true,
-                    isDragging: true
+                    isDragging: true,
+                    isExpanded
                   }
                 }));
               });
