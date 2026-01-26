@@ -1,9 +1,10 @@
-import React, { memo, useCallback, useEffect } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
+import OptimizedPlacesAutocomplete from '@/components/OptimizedPlacesAutocomplete';
 import { useTranslation } from 'react-i18next';
 import addPageHero from '@/assets/add-hero-cards.png';
+import { Geolocation } from '@capacitor/geolocation';
 
 interface SelectedLocation {
   id?: string;
@@ -22,6 +23,26 @@ interface AddPageOverlayProps {
 
 const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOverlayProps) => {
   const { t } = useTranslation();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Get user location for better search results
+  useEffect(() => {
+    const getUserLocation = async () => {
+      try {
+        const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: false });
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      } catch (err) {
+        console.log('Could not get user location for search bias');
+      }
+    };
+    
+    if (isOpen) {
+      getUserLocation();
+    }
+  }, [isOpen]);
 
   // Handle location selection from search
   const handleLocationSelect = useCallback((place: {
@@ -88,13 +109,26 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
           >
             <span className="text-lg leading-none">🔍</span>
             <div className="flex-1">
-              <OpenStreetMapAutocomplete
-                onPlaceSelect={handleLocationSelect}
+              <OptimizedPlacesAutocomplete
+                onPlaceSelect={(place) => {
+                  // Don't allow cities to be selected
+                  if (place.isCity) return;
+                  
+                  onLocationSelected({
+                    name: place.name,
+                    latitude: place.coordinates.lat,
+                    longitude: place.coordinates.lng,
+                    category: place.category || 'place',
+                    google_place_id: place.google_place_id,
+                  });
+                }}
+                userLocation={userLocation}
                 placeholder={t('searchForPlace', { ns: 'add' })}
                 className="w-full [&_input]:h-8 [&_input]:bg-transparent [&_input]:border-0 
                            [&_input]:text-white [&_input]:dark:text-gray-900 
                            [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
-                           [&_input]:p-0 [&_input]:focus-visible:ring-0 [&_.lucide]:hidden"
+                           [&_input]:p-0 [&_input]:focus-visible:ring-0"
+                autoFocus
               />
             </div>
           </div>
