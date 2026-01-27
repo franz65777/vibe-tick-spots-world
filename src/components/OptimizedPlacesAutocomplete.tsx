@@ -220,8 +220,17 @@ const OptimizedPlacesAutocomplete = ({
           {googleResults.length > 0 && (
             <>
               <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30 flex items-center gap-2">
-                <Globe className="w-3 h-3" />
-                {t('suggestions', { ns: 'common', defaultValue: 'Suggerimenti' })}
+                {googleResults.some(r => r.isCity) ? (
+                  <>
+                    <Building2 className="w-3 h-3" />
+                    {t('cities', { ns: 'common', defaultValue: 'Città' })}
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-3 h-3" />
+                    {t('suggestions', { ns: 'common', defaultValue: 'Suggerimenti' })}
+                  </>
+                )}
               </div>
               {googleResults.map((result, index) => {
                 const globalIndex = databaseResults.length + index;
@@ -233,15 +242,18 @@ const OptimizedPlacesAutocomplete = ({
                       selectedIndex === globalIndex ? 'bg-muted' : ''
                     }`}
                   >
-                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-primary/10 rounded-lg">
+                    <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg ${
+                      result.isCity ? 'bg-blue-500/10' : 'bg-primary/10'
+                    }`}>
                       {result.isCity ? (
-                        <Building2 className="w-4 h-4 text-primary" />
+                        <Building2 className="w-4 h-4 text-blue-500" />
                       ) : (
                         <MapPin className="w-4 h-4 text-primary" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-foreground truncate flex items-center gap-2">
+                        {result.isCity && <span className="text-lg">🏙️</span>}
                         {result.name}
                         <SourceIcon source={result.source} />
                       </div>
