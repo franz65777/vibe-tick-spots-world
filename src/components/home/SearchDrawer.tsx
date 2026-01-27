@@ -12,12 +12,11 @@ import CityEngagementCard from '@/components/explore/CityEngagementCard';
 import PopularSpots from '@/components/home/PopularSpots';
 import { getCategoryImage, getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
-import { searchPhoton } from '@/lib/photonGeocoding';
-import { searchOverpass } from '@/lib/overpassGeocoding';
 import { resolveCityDisplay } from '@/utils/cityNormalization';
 import { searchNearbyByCategory, type NearbySearchResult, type NearbyPrompt as NearbyPromptType, promptToCategory } from '@/lib/nearbySearch';
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
+import { useOptimizedPlacesSearch, type SearchResult } from '@/hooks/useOptimizedPlacesSearch';
 
 interface PopularSpot {
   id: string;
@@ -41,7 +40,38 @@ interface LocationResult {
   lat: number;
   lng: number;
   category: AllowedCategory;
+  google_place_id?: string;
 }
+
+// Map Google place types to our categories
+const mapGoogleTypeToCategory = (types: string[]): AllowedCategory => {
+  const typeMapping: Record<string, AllowedCategory> = {
+    restaurant: 'restaurant',
+    food: 'restaurant',
+    meal_takeaway: 'restaurant',
+    meal_delivery: 'restaurant',
+    bar: 'bar',
+    night_club: 'nightclub',
+    cafe: 'cafe',
+    coffee_shop: 'cafe',
+    bakery: 'bakery',
+    hotel: 'hotel',
+    lodging: 'hotel',
+    resort: 'hotel',
+    museum: 'museum',
+    art_gallery: 'museum',
+    tourist_attraction: 'historical',
+    park: 'park',
+    natural_feature: 'park',
+  };
+
+  for (const type of types) {
+    if (typeMapping[type]) {
+      return typeMapping[type];
+    }
+  }
+  return 'restaurant';
+};
 
 interface SearchDrawerProps {
   searchQuery: string;
@@ -353,67 +383,85 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         }
       });
 
-      // If few results, search external APIs
+      // If few results, search using optimized Google API via edge function
       if (allCities.length === 0 || mappedLocations.length < 5) {
         const userLoc = location ? { lat: location.latitude, lng: location.longitude } : undefined;
 
-        const [nominatimResults, photonResults, overpassResults] = await Promise.all([
-          nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc).catch(() => []),
-          searchPhoton(queryLower, userLoc, 20).catch(() => []),
-          userLoc ? searchOverpass(queryLower, userLoc, 15).catch(() => []) : Promise.resolve([]),
-        ]);
+        try {
+          // Use Google Text Search (ID Only = FREE) via edge function
+          const response = await supabase.functions.invoke('google-places-search', {
+            body: {
+              action: 'search',
+              query: queryLower,
+              userLat: userLoc?.lat,
+              userLng: userLoc?.lng,
+            },
+          });
 
-        const existingCoords = new Set(mappedLocations.map((l) => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
-        const existingNames = new Set(mappedLocations.map((l) => l.name.toLowerCase().trim()));
+          const googleResults = response.data?.results || [];
+          
+          const existingCoords = new Set(mappedLocations.map((l) => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
+          const existingNames = new Set(mappedLocations.map((l) => l.name.toLowerCase().trim()));
 
-        const isNameDuplicate = (name: string) => {
-          const normalized = name.toLowerCase().trim();
-          if (existingNames.has(normalized)) return true;
-          for (const existing of existingNames) {
-            if (normalized.includes(existing) || existing.includes(normalized)) return true;
-          }
-          return false;
-        };
+          const isNameDuplicate = (name: string) => {
+            const normalized = name.toLowerCase().trim();
+            if (existingNames.has(normalized)) return true;
+            for (const existing of existingNames) {
+              if (normalized.includes(existing) || existing.includes(normalized)) return true;
+            }
+            return false;
+          };
 
-        // Add Photon results
-        photonResults.forEach((result) => {
-          const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
-          if (!existingCoords.has(coordKey) && !isNameDuplicate(result.name)) {
-            mappedLocations.push({
-              id: result.id,
-              name: result.name,
-              city: result.city,
-              address: result.displayAddress,
-              lat: result.lat,
-              lng: result.lng,
-              category: result.category,
-            });
-            existingCoords.add(coordKey);
-            existingNames.add(result.name.toLowerCase().trim());
-          }
-        });
+          // Add Google results (they don't have coordinates yet - need to get details on selection)
+          googleResults.forEach((result: any, index: number) => {
+            if (!isNameDuplicate(result.name)) {
+              mappedLocations.push({
+                id: `google-${index}-${result.place_id}`,
+                name: result.name,
+                city: result.formatted_address?.split(',').slice(-2, -1)[0]?.trim() || '',
+                address: result.formatted_address || '',
+                lat: 0, // Will be fetched on selection
+                lng: 0,
+                category: mapGoogleTypeToCategory(result.types || []) as AllowedCategory,
+                google_place_id: result.place_id,
+              });
+              existingNames.add(result.name.toLowerCase().trim());
+            }
+          });
+        } catch (err) {
+          console.warn('Google search failed, falling back to Nominatim:', err);
+          
+          // Fallback to Nominatim
+          const nominatimResults = await nominatimGeocoding.searchPlace(queryLower, i18n.language, userLoc).catch(() => []);
+          
+          const existingCoords = new Set(mappedLocations.map((l) => `${l.lat.toFixed(4)},${l.lng.toFixed(4)}`));
+          const existingNames = new Set(mappedLocations.map((l) => l.name.toLowerCase().trim()));
+          
+          nominatimResults.forEach((result, index) => {
+            const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
+            const normalized = result.displayName.split(',')[0].toLowerCase().trim();
+            if (!existingCoords.has(coordKey) && !existingNames.has(normalized)) {
+              mappedLocations.push({
+                id: `nominatim-${index}`,
+                name: result.displayName.split(',')[0],
+                city: result.city || '',
+                address: result.displayName,
+                lat: result.lat,
+                lng: result.lng,
+                category: (result.type || 'place') as AllowedCategory,
+              });
+              existingCoords.add(coordKey);
+              existingNames.add(normalized);
+            }
+          });
+        }
 
-        // Add Overpass results
-        overpassResults.forEach((result) => {
-          const coordKey = `${result.lat.toFixed(4)},${result.lng.toFixed(4)}`;
-          if (!existingCoords.has(coordKey) && !isNameDuplicate(result.name)) {
-            mappedLocations.push({
-              id: result.id,
-              name: result.name,
-              city: result.city,
-              address: result.address,
-              lat: result.lat,
-              lng: result.lng,
-              category: result.category,
-            });
-            existingCoords.add(coordKey);
-            existingNames.add(result.name.toLowerCase().trim());
-          }
-        });
-
-        // Re-sort by distance
+        // Re-sort by distance (only for results with coordinates)
         if (userLoc && mappedLocations.length > 1) {
           mappedLocations.sort((a, b) => {
+            // Google results without coords go to the end until selected
+            if (a.lat === 0 && a.lng === 0) return 1;
+            if (b.lat === 0 && b.lng === 0) return -1;
             const distA = calculateDistance(userLoc.lat, userLoc.lng, a.lat, a.lng);
             const distB = calculateDistance(userLoc.lat, userLoc.lng, b.lat, b.lng);
             return distA - distB;
@@ -741,7 +789,52 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
     handleClose();
   };
 
-  const handleLocationResultSelect = (loc: LocationResult) => {
+  const handleLocationResultSelect = async (loc: LocationResult) => {
+    // If this is a Google result without coordinates, fetch details first
+    if (loc.google_place_id && loc.lat === 0 && loc.lng === 0) {
+      setIsLoading(true);
+      try {
+        const response = await supabase.functions.invoke('google-places-search', {
+          body: {
+            action: 'details',
+            placeId: loc.google_place_id,
+          },
+        });
+
+        if (response.data?.details) {
+          const details = response.data.details;
+          const resolvedLoc: LocationResult = {
+            ...loc,
+            lat: details.geometry.location.lat,
+            lng: details.geometry.location.lng,
+            city: details.city || loc.city,
+            address: details.formatted_address || loc.address,
+            category: (details.category || loc.category) as AllowedCategory,
+          };
+          
+          onCitySelect(resolvedLoc.city, { lat: resolvedLoc.lat, lng: resolvedLoc.lng });
+          onSpotSelect?.({
+            id: resolvedLoc.id,
+            name: resolvedLoc.name,
+            category: resolvedLoc.category,
+            city: resolvedLoc.city,
+            address: resolvedLoc.address,
+            google_place_id: loc.google_place_id,
+            savesCount: 0,
+            coordinates: { lat: resolvedLoc.lat, lng: resolvedLoc.lng },
+          });
+          handleClose();
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to get place details:', err);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Normal location from database with coordinates
     onCitySelect(loc.city, { lat: loc.lat, lng: loc.lng });
     onSpotSelect?.({
       id: loc.id,
@@ -749,6 +842,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       category: loc.category,
       city: loc.city,
       address: loc.address,
+      google_place_id: loc.google_place_id,
       savesCount: 0,
       coordinates: { lat: loc.lat, lng: loc.lng },
     });
