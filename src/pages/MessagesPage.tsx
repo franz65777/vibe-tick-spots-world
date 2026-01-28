@@ -355,20 +355,65 @@ const MessagesPage = () => {
     if (!newMessage.trim() || !selectedThread || !user) return;
     const otherParticipant = getOtherParticipant(selectedThread);
     if (!otherParticipant) return;
+    
+    const messageContent = newMessage.trim();
+    const replyTo = replyingToMessage;
+    
+    // 1. Clear input immediately for instant feedback
+    setNewMessage('');
+    setReplyingToMessage(null);
+    
+    // 2. Create optimistic message with temporary ID
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: DirectMessage = {
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: otherParticipant.id,
+      content: messageContent,
+      message_type: 'text',
+      is_read: false,
+      created_at: new Date().toISOString(),
+      shared_content: replyTo ? {
+        reply_to_id: replyTo.id,
+        reply_to_content: replyTo.content || '',
+        reply_to_sender_id: replyTo.sender_id,
+        reply_to_message_type: replyTo.message_type,
+        reply_to_shared_content: replyTo.shared_content || null,
+      } : null,
+      sender: {
+        username: user.user_metadata?.username || 'You',
+        full_name: user.user_metadata?.full_name || '',
+        avatar_url: user.user_metadata?.avatar_url || ''
+      }
+    };
+    
+    // 3. Add to UI immediately (optimistic update)
+    setMessages(prev => [...prev, optimisticMessage]);
+    
+    // 4. Send to server in background (no loading state)
     try {
-      setSending(true);
-      // Pass replyingToMessage to sendTextMessage if present
-      await messageService.sendTextMessage(otherParticipant.id, newMessage.trim(), replyingToMessage || undefined);
-      setNewMessage('');
-      setReplyingToMessage(null); // Clear reply context after sending
-      await loadMessages(otherParticipant.id);
-      await loadThreads(); // Reload threads to update the list
+      const sentMessage = await messageService.sendTextMessage(
+        otherParticipant.id, 
+        messageContent, 
+        replyTo || undefined
+      );
+      
+      if (sentMessage) {
+        // Replace temp message with real one
+        setMessages(prev => 
+          prev.map(m => m.id === tempId ? sentMessage : m)
+        );
+      }
+      
+      // Update thread list in background (non-blocking)
+      loadThreads();
+      
     } catch (error) {
       console.error('Error sending message:', error);
-    } finally {
-      setSending(false);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     }
-  }, [newMessage, selectedThread, user, replyingToMessage, loadMessages, loadThreads]);
+  }, [newMessage, selectedThread, user, replyingToMessage, loadThreads]);
 
   const handleBack = useCallback(() => {
     if (view === 'chat') {
