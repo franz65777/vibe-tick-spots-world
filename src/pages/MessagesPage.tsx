@@ -689,10 +689,14 @@ const MessagesPage = () => {
             city: place.city,
             google_place_id: place.google_place_id,
             place_id: place.google_place_id,
+            latitude: place.latitude,
+            longitude: place.longitude,
             coordinates: {
               lat: place.latitude,
               lng: place.longitude
-            }
+            },
+            image_url: place.image_url || null,
+            photos: place.photos || null
           });
           // Optimistically add message to UI immediately
           if (sentMessage) {
@@ -720,10 +724,14 @@ const MessagesPage = () => {
         city: selectedPlaceToShare.city,
         google_place_id: selectedPlaceToShare.google_place_id,
         place_id: selectedPlaceToShare.google_place_id,
+        latitude: selectedPlaceToShare.latitude,
+        longitude: selectedPlaceToShare.longitude,
         coordinates: {
           lat: selectedPlaceToShare.latitude,
           lng: selectedPlaceToShare.longitude
-        }
+        },
+        image_url: selectedPlaceToShare.image_url || null,
+        photos: selectedPlaceToShare.photos || null
       });
       setShowUserSelectModal(false);
       setSelectedPlaceToShare(null);
@@ -965,17 +973,26 @@ const MessagesPage = () => {
               onDoubleTap={handleDoubleTap}
               onToggleReaction={toggleReaction}
               onViewPlace={(placeData, otherUserId) => {
+                // Extract latitude/longitude from coordinates or direct fields
+                const lat = placeData.latitude ?? placeData.coordinates?.lat ?? 0;
+                const lng = placeData.longitude ?? placeData.coordinates?.lng ?? 0;
+                const googlePlaceId = placeData.google_place_id || placeData.place_id || '';
+                
                 navigate('/', {
                   state: {
                     showLocationCard: true,
                     locationData: {
-                      id: placeData.id || placeData.place_id || placeData.google_place_id || '',
-                      google_place_id: placeData.google_place_id || placeData.place_id || '',
+                      id: placeData.id || googlePlaceId,
+                      google_place_id: googlePlaceId,
                       name: placeData.name || '',
                       category: placeData.category || 'place',
                       address: placeData.address || '',
                       city: placeData.city || '',
-                      coordinates: placeData.coordinates || { lat: 0, lng: 0 }
+                      latitude: lat,
+                      longitude: lng,
+                      coordinates: { lat, lng },
+                      image_url: placeData.image_url || placeData.image || null,
+                      photos: placeData.photos || null
                     },
                     fromMessages: true,
                     returnToUserId: otherUserId
