@@ -2,130 +2,188 @@
 
 ## Obiettivo
 
-Risolvere due problemi critici:
-1. **Chat che si apre all'inizio invece che all'ultimo messaggio** - priorità massima
-2. **Foto del luogo non mostrata nell'anteprima di risposta** - quando si risponde a un place_share
+Correggere due problemi critici nella visualizzazione delle risposte ai messaggi:
+1. **Messaggio di risposta allineato a sinistra invece che a destra** - deve essere allineato a destra perché è un messaggio inviato dall'utente corrente
+2. **Mostra "Contenuto condiviso" invece della card del contenuto** - quando si risponde a un luogo/post/profilo, deve mostrare la card completa (PlaceMessageCard, PostMessageCard, etc.)
 
 ---
 
-## Problema 1: Scroll della Chat
+## Analisi Root-Cause
 
-### Analisi Root-Cause
-Il `VirtualizedMessageList` usa un effetto per scrollare all'ultimo messaggio:
-```typescript
-useEffect(() => {
-  if (visibleMessages.length > 0 && parentRef.current) {
-    requestAnimationFrame(() => {
-      virtualizer.scrollToIndex(visibleMessages.length - 1, { align: 'end' });
-    });
-  }
-}, [visibleMessages.length]);
+### Problema 1: Allineamento sbagliato
+Nel file `VirtualizedMessageList.tsx`, il componente `MessageBubble` per i messaggi di testo con risposta (linee 247-260) usa:
+```tsx
+<div className="w-full" {...messageInteractionProps}>
+  {renderReplyContext()}
+  <div className={`... ${isOwn ? 'bg-primary' : 'bg-card'}`}>
 ```
 
-Il problema è che:
-- La dipendenza è `visibleMessages.length`
-- Se i messaggi vengono caricati tutti in una volta (es. 50 messaggi), l'effetto si triggera una sola volta
-- Ma a quel punto il virtualizer potrebbe non essere ancora pronto (il DOM non è completamente renderizzato)
-- `requestAnimationFrame` potrebbe non essere sufficiente
+Il wrapper esterno ha `className="w-full"` senza `isOwn ? 'ml-auto' : ''`, quindi non viene allineato a destra.
 
-### Soluzione
-Modificare l'effetto per essere più robusto:
-
-1. Aggiungere un ritardo per assicurarsi che il virtualizer sia pronto
-2. Usare `initialOffset` nel virtualizer per partire dalla fine
-3. Triggerare lo scroll anche al cambio di `messages` (non solo `length`)
-
+### Problema 2: Manca la card del contenuto
+Il `messageService.ts` quando salva la risposta (linee 175-180) memorizza solo:
 ```typescript
-// Scroll to bottom when messages change or on initial load
-useEffect(() => {
-  if (visibleMessages.length > 0 && parentRef.current) {
-    // Use setTimeout to ensure DOM is ready
-    const timer = setTimeout(() => {
-      virtualizer.scrollToIndex(visibleMessages.length - 1, { align: 'end' });
-    }, 50);
-    return () => clearTimeout(timer);
-  }
-}, [visibleMessages.length, virtualizer]);
+{
+  reply_to_id: replyToMessage.id,
+  reply_to_content: replyToMessage.content || '',  // vuoto per place_share!
+  reply_to_sender_id: replyToMessage.sender_id,
+  reply_to_message_type: replyToMessage.message_type,
+}
 ```
 
-Oppure usare la configurazione `initialOffset` del virtualizer per partire dall'ultimo elemento.
+**NON** salva `replyToMessage.shared_content` che contiene i dati del luogo/post/profilo.
 
-**File:** `src/components/messages/VirtualizedMessageList.tsx`
-
----
-
-## Problema 2: Foto del Luogo nell'Anteprima Risposta
-
-### Analisi Root-Cause
-Nel codice attuale (righe 1057-1059):
-```typescript
-case 'place_share':
-  thumbnailUrl = content.image_url || content.image || 
-    (content.photos?.[0]?.photo_reference ? `https://maps.googleapis.com/...` : null);
+Quindi nel `renderReplyContext()` (linee 238-240) mostra:
+```tsx
+<p>{replyContext.reply_to_content || t('sharedContent')}</p>
 ```
 
-La funzione `extractFirstPhotoUrl` (righe 29-42) è già definita nel file ma NON viene usata qui. Questa funzione gestisce correttamente:
-- URL diretti come stringhe
-- Oggetti con `url`, `photo_url`, o `src`
-
-Ma la logica nel Reply Preview cerca solo `photos[0].photo_reference` per l'API di Google Maps.
-
-### Soluzione
-Usare `extractFirstPhotoUrl` già esistente nel file:
-
-```typescript
-case 'place_share':
-  thumbnailUrl = content.image_url || content.image || extractFirstPhotoUrl(content.photos);
-  break;
-```
-
-**File:** `src/pages/MessagesPage.tsx`
+Siccome `reply_to_content` è vuoto, mostra "Contenuto condiviso".
 
 ---
 
 ## Piano di Implementazione
 
-### Fase 1: Fix Scroll Chat (PRIORITÀ MASSIMA)
+### Fase 1: Salvare shared_content del messaggio originale
 
-Modificare `VirtualizedMessageList.tsx`:
+**File:** `src/services/messageService.ts` (righe 175-180)
 
-1. Cambiare l'effetto di scroll per usare un timeout più affidabile
-2. Aggiungere un flag per tracciare se lo scroll iniziale è stato fatto
-3. Opzionalmente, usare `scrollToIndex` con `behavior: 'instant'` al primo mount
+Modificare per includere `reply_to_shared_content`:
 
 ```typescript
-const initialScrollDone = useRef(false);
-
-useEffect(() => {
-  if (visibleMessages.length > 0 && parentRef.current) {
-    const timer = setTimeout(() => {
-      virtualizer.scrollToIndex(visibleMessages.length - 1, { 
-        align: 'end',
-        behavior: initialScrollDone.current ? 'smooth' : 'auto'
-      });
-      initialScrollDone.current = true;
-    }, 100);
-    return () => clearTimeout(timer);
-  }
-}, [visibleMessages.length]);
+const sharedContent = replyToMessage ? {
+  reply_to_id: replyToMessage.id,
+  reply_to_content: replyToMessage.content || '',
+  reply_to_sender_id: replyToMessage.sender_id,
+  reply_to_message_type: replyToMessage.message_type,
+  reply_to_shared_content: replyToMessage.shared_content || null,  // AGGIUNTO
+} : null;
 ```
 
-### Fase 2: Fix Thumbnail Luogo
+### Fase 2: Aggiornare interfaccia replyContext
 
-Modificare `MessagesPage.tsx` (riga 1058-1059):
+**File:** `src/components/messages/VirtualizedMessageList.tsx` (righe 70-76)
 
-Prima:
+Aggiungere `reply_to_shared_content` al tipo:
+
 ```typescript
-case 'place_share':
-  thumbnailUrl = content.image_url || content.image || 
-    (content.photos?.[0]?.photo_reference ? `https://maps.googleapis.com/...` : null);
+const replyContext = message.shared_content as {
+  reply_to_id?: string;
+  reply_to_content?: string;
+  reply_to_sender_id?: string;
+  reply_to_message_type?: string;
+  reply_to_shared_content?: any;  // AGGIUNTO
+} | null;
 ```
 
-Dopo:
-```typescript
-case 'place_share':
-  thumbnailUrl = content.image_url || content.image || extractFirstPhotoUrl(content.photos);
-  break;
+### Fase 3: Correggere allineamento + mostrare card
+
+**File:** `src/components/messages/VirtualizedMessageList.tsx`
+
+Modificare la funzione `renderReplyContext()` (righe 226-244) per:
+1. Mostrare la card completa se `reply_to_message_type` è place_share/post_share/etc
+2. Aggiungere allineamento corretto
+
+Nuovo codice per `renderReplyContext()`:
+
+```tsx
+const renderReplyContext = () => {
+  if (!isReply || !replyContext) return null;
+  
+  const sharedContent = replyContext.reply_to_shared_content;
+  const messageType = replyContext.reply_to_message_type;
+  
+  // Render appropriate card based on message type
+  const renderSharedCard = () => {
+    if (!sharedContent) {
+      return (
+        <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
+          <p className="line-clamp-2 text-muted-foreground">
+            {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
+          </p>
+        </div>
+      );
+    }
+    
+    switch (messageType) {
+      case 'place_share':
+        return (
+          <div className="opacity-70 scale-90 origin-top-left">
+            <PlaceMessageCard 
+              placeData={sharedContent} 
+              onViewPlace={() => {}} 
+            />
+          </div>
+        );
+      case 'post_share':
+        return (
+          <div className="opacity-70 scale-90 origin-top-left">
+            <PostMessageCard postData={sharedContent} />
+          </div>
+        );
+      case 'profile_share':
+        return (
+          <div className="opacity-70 scale-90 origin-top-left">
+            <ProfileMessageCard 
+              profileData={sharedContent} 
+              currentChatUserId={otherParticipantId}
+            />
+          </div>
+        );
+      case 'story_share':
+      case 'story_reply':
+        return (
+          <div className="opacity-70 scale-90 origin-top-left">
+            <StoryMessageCard storyData={sharedContent} />
+          </div>
+        );
+      case 'folder_share':
+        return (
+          <div className="opacity-70 scale-90 origin-top-left">
+            <FolderMessageCard folderData={sharedContent} />
+          </div>
+        );
+      case 'trip_share':
+        return (
+          <div className="opacity-70 scale-90 origin-top-left">
+            <TripMessageCard tripData={sharedContent} />
+          </div>
+        );
+      default:
+        return (
+          <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
+            <p className="line-clamp-2 text-muted-foreground">
+              {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
+            </p>
+          </div>
+        );
+    }
+  };
+  
+  return (
+    <div className="mb-2">
+      <p className="text-xs text-muted-foreground mb-1">
+        {isOwn 
+          ? t('youReplied', { ns: 'messages' }) 
+          : t('theyReplied', { ns: 'messages', name: otherUserProfile?.username || 'User' })}
+      </p>
+      {renderSharedCard()}
+    </div>
+  );
+};
+```
+
+### Fase 4: Correggere wrapper per allineamento
+
+**File:** `src/components/messages/VirtualizedMessageList.tsx`
+
+Modificare il wrapper del default text message (riga 249) da:
+```tsx
+<div className="w-full" {...messageInteractionProps}>
+```
+a:
+```tsx
+<div className={`w-full ${isOwn ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} {...messageInteractionProps}>
 ```
 
 ---
@@ -134,13 +192,27 @@ case 'place_share':
 
 | File | Modifica |
 |------|----------|
-| `src/components/messages/VirtualizedMessageList.tsx` | Fix scroll iniziale con timeout e flag |
-| `src/pages/MessagesPage.tsx` | Usare extractFirstPhotoUrl per thumbnail luogo |
+| `src/services/messageService.ts` | Aggiungere `reply_to_shared_content` nel contesto di risposta |
+| `src/components/messages/VirtualizedMessageList.tsx` | Aggiornare interfaccia + renderReplyContext con card + fix allineamento |
 
 ---
 
 ## Risultato Atteso
 
-1. **Scroll Chat**: Aprendo una chat, questa si posiziona automaticamente sull'ultimo messaggio (il più recente)
-2. **Thumbnail Luogo**: Quando si risponde a un luogo condiviso, viene mostrata la foto del luogo nell'anteprima (40x40 px)
+**Prima:**
+- Messaggio di risposta allineato a sinistra
+- Mostra "Contenuto condiviso" come testo
+
+**Dopo:**
+- Messaggio di risposta allineato a destra (come messaggio inviato)
+- Mostra la card completa (PlaceMessageCard, PostMessageCard, etc.) con opacità 70% e scala 90%
+- Etichetta "Hai risposto" sopra la card
+
+---
+
+## Note Tecniche
+
+1. Le card vengono renderizzate con `opacity-70 scale-90` per distinguerle dal messaggio originale e mantenere una gerarchia visiva
+2. `origin-top-left` assicura che la scala avvenga dall'angolo corretto in base all'allineamento
+3. La logica è retrocompatibile: i messaggi esistenti senza `reply_to_shared_content` mostreranno il fallback testuale
 
