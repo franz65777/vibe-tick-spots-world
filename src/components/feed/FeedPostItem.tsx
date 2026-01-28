@@ -29,6 +29,32 @@ interface FeedPostItemProps {
   onToggleCaption: (postId: string) => void;
 }
 
+// Custom comparison to prevent unnecessary re-renders during feed scroll
+const arePropsEqual = (prev: FeedPostItemProps, next: FeedPostItemProps) => {
+  // Core data identity
+  if (prev.item.id !== next.item.id) return false;
+  if (prev.item.likes_count !== next.item.likes_count) return false;
+  if (prev.item.comments_count !== next.item.comments_count) return false;
+  if (prev.item.shares_count !== next.item.shares_count) return false;
+  
+  // Engagement state
+  if (prev.initialIsLiked !== next.initialIsLiked) return false;
+  if (prev.initialSaveTag !== next.initialSaveTag) return false;
+  
+  // UI state
+  if (prev.expandedCaptions.has(prev.item.id) !== next.expandedCaptions.has(next.item.id)) return false;
+  if (prev.userHasStory !== next.userHasStory) return false;
+  
+  // Profile data
+  if (prev.profile?.avatar_url !== next.profile?.avatar_url) return false;
+  if (prev.profile?.username !== next.profile?.username) return false;
+  
+  // Post likes (check reference since Map is rebuilt)
+  if (prev.postLikes.get(prev.item.id) !== next.postLikes.get(next.item.id)) return false;
+  
+  return true;
+};
+
 const FeedPostItem = memo((props: FeedPostItemProps) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -464,7 +490,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       </div>
     </article>
   );
-});
+}, arePropsEqual);
 
 FeedPostItem.displayName = 'FeedPostItem';
 

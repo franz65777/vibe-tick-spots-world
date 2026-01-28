@@ -709,24 +709,22 @@ const LeafletMapSetup = ({
           const savedByUser = (place as any).savedByUser;
           const latestActivity = (place as any).latestActivity;
 
-          // Create config hash for incremental update change detection
-          const markerConfigKey = JSON.stringify({
-            category: place.category,
-            name: shouldShowLabel ? place.name : undefined,
-            isSaved: place.isSaved,
-            isRecommended: place.isRecommended,
-            isDarkMode,
-            hasCampaign,
-            campaignType,
-            sharedByUsersCount: sharedByUsers.length,
-            isSelected,
-            lat: place.coordinates.lat,
-            lng: place.coordinates.lng,
-            // New: include friend filter data in config
-            friendsFilterMode: isFriendsFilter && !!savedByUser,
-            savedByUser: savedByUser ? JSON.stringify(savedByUser) : undefined,
-            latestActivity: latestActivity ? JSON.stringify(latestActivity) : undefined,
-          });
+          // Create config key using efficient string concatenation instead of JSON.stringify
+          // Format: category|name|flags|coords|friendData where flags is a bitfield-like string
+          const friendsFilterMode = isFriendsFilter && !!savedByUser;
+          const markerConfigKey = [
+            place.category,
+            shouldShowLabel ? place.name : '',
+            // Pack booleans into single string segment
+            `${place.isSaved ? '1' : '0'}${place.isRecommended ? '1' : '0'}${isDarkMode ? '1' : '0'}${hasCampaign ? '1' : '0'}${isSelected ? '1' : '0'}${friendsFilterMode ? '1' : '0'}`,
+            campaignType || '',
+            sharedByUsers.length,
+            place.coordinates.lat.toFixed(6),
+            place.coordinates.lng.toFixed(6),
+            // Friend activity data (use IDs for stable keys)
+            savedByUser?.username || '',
+            latestActivity?.post_id || latestActivity?.type || '',
+          ].join('|');
 
           const existingMarker = markersRef.current.get(place.id);
           const existingConfig = markerConfigsRef.current.get(place.id);
