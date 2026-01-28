@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare, Image, Trash2, Smile } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Trash2 } from 'lucide-react';
 import pinIcon from '@/assets/pin-icon.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,7 @@ const getLocationThumbnail = (location: any): string | null => {
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import VirtualizedThreadList from '@/components/messages/VirtualizedThreadList';
 import VirtualizedMessageList from '@/components/messages/VirtualizedMessageList';
+import MessageOptionsOverlay from '@/components/messages/MessageOptionsOverlay';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 const MessagesPage = () => {
@@ -110,6 +111,12 @@ const MessagesPage = () => {
     loading: suggestedLoading,
     refresh: refreshSuggested
   } = useSuggestedContacts(frequentContacts.map(c => c.id));
+
+  // Get the full selected message object for the overlay
+  const selectedMessage = useMemo(() => {
+    if (!selectedMessageId) return null;
+    return messages.find(m => m.id === selectedMessageId) || null;
+  }, [selectedMessageId, messages]);
   useEffect(() => {
     if (user) {
       loadThreads();
@@ -1064,42 +1071,22 @@ const MessagesPage = () => {
       });
     }} />}
 
-      {/* Message Options Bottom Sheet */}
-      <Sheet open={!!selectedMessageId} onOpenChange={open => !open && setSelectedMessageId(null)}>
-        <SheetContent side="bottom" className="rounded-t-[20px] bg-background border-t border-border">
-          <SheetHeader className="pb-2">
-            <SheetTitle className="text-center text-lg font-semibold">
-              {t('messageOptions', { ns: 'messages' })}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="flex flex-col gap-1.5 pt-2 pb-4">
-            <button
-              onClick={() => setShowEmojiPicker(true)}
-              className="w-full flex items-center gap-4 p-4 rounded-xl bg-accent/50 hover:bg-accent transition-colors active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Smile className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-base font-medium text-foreground">
-                {t('addReaction', { ns: 'messages' })}
-              </span>
-            </button>
-            <button
-              onClick={handleDeleteMessage}
-              className="w-full flex items-center gap-4 p-4 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 rounded-full bg-destructive/15 flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-destructive" />
-              </div>
-              <span className="text-base font-medium text-destructive">
-                {t('deleteMessage', { ns: 'messages' })}
-              </span>
-            </button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Instagram-style Message Options Overlay */}
+      <MessageOptionsOverlay
+        isOpen={!!selectedMessageId}
+        onClose={() => setSelectedMessageId(null)}
+        message={selectedMessage}
+        isOwnMessage={selectedMessage?.sender_id === user?.id}
+        onReaction={(emoji) => {
+          if (selectedMessageId) {
+            toggleReaction(selectedMessageId, emoji);
+          }
+        }}
+        onDelete={handleDeleteMessage}
+        onShowAllEmojis={() => setShowEmojiPicker(true)}
+      />
 
-      {/* Emoji Picker Bottom Sheet */}
+      {/* Extended Emoji Picker Bottom Sheet */}
       <Sheet open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
         <SheetContent side="bottom" className="rounded-t-[20px]">
           <SheetHeader>
