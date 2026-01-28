@@ -653,10 +653,12 @@ const FeedPage = memo(() => {
                 // Helper to render visited card with batch engagement data
                 const renderVisited = (entry: typeof mergedFeed[0], key: string) => {
                   const locationId = entry.data.location_id;
-                  const isSaved = locationId ? batchEngagement?.savedLocations.has(locationId) : false;
-                  const saveTag = locationId ? (batchEngagement?.savedLocations.get(locationId) ?? null) : null;
-                  const isLiked = locationId ? batchEngagement?.likedLocationIds.has(locationId) : false;
-                  const likeCount = locationId ? (batchEngagement?.locationLikeCounts.get(locationId) ?? 0) : 0;
+                  // Only pass batch data if it's loaded - otherwise let the card fetch its own data
+                  const hasBatchData = !!batchEngagement;
+                  const isSaved = hasBatchData && locationId ? batchEngagement.savedLocations.has(locationId) : undefined;
+                  const saveTag = hasBatchData && locationId ? (batchEngagement.savedLocations.get(locationId) ?? null) : undefined;
+                  const isLiked = hasBatchData && locationId ? batchEngagement.likedLocationIds.has(locationId) : undefined;
+                  const likeCount = hasBatchData && locationId ? (batchEngagement.locationLikeCounts.get(locationId) ?? 0) : undefined;
                   
                   return (
                     <div key={key} className="py-1">
