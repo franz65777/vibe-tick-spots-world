@@ -1023,7 +1023,7 @@ const MessagesPage = () => {
 
           {/* Reply Preview */}
           {replyingToMessage && (
-            <div className="shrink-0 border-t border-border bg-accent/30 px-4 py-2 flex items-center justify-between">
+            <div className="shrink-0 border-t border-border bg-accent/30 px-4 py-2 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">
                   {replyingToMessage.sender_id === user?.id 
@@ -1031,12 +1031,63 @@ const MessagesPage = () => {
                     : t('replyingTo', { ns: 'messages', name: otherUserProfile?.username })}
                 </p>
                 <p className="text-sm text-foreground truncate">
-                  {replyingToMessage.content || t('sharedContent', { ns: 'messages' })}
+                  {(() => {
+                    if (replyingToMessage.content) return replyingToMessage.content;
+                    const typeLabels: Record<string, string> = {
+                      'place_share': 'toAPlace',
+                      'post_share': 'toAPost',
+                      'profile_share': 'toAProfile',
+                      'story_share': 'toAStory',
+                      'story_reply': 'toAStory',
+                      'folder_share': 'toAFolder',
+                      'trip_share': 'toATrip',
+                      'audio': 'toAnAudio',
+                    };
+                    const key = typeLabels[replyingToMessage.message_type] || 'sharedContent';
+                    return t(key, { ns: 'messages' });
+                  })()}
                 </p>
               </div>
+              
+              {/* Thumbnail */}
+              {(() => {
+                const content = replyingToMessage.shared_content as Record<string, any> | null;
+                if (!content) return null;
+                let thumbnailUrl: string | null = null;
+                switch (replyingToMessage.message_type) {
+                  case 'place_share':
+                    thumbnailUrl = content.image_url || content.image || (content.photos?.[0]?.photo_reference ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photo_reference=${content.photos[0].photo_reference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}` : null);
+                    break;
+                  case 'post_share':
+                    thumbnailUrl = content.media_urls?.[0] || null;
+                    break;
+                  case 'profile_share':
+                    thumbnailUrl = content.avatar_url || null;
+                    break;
+                  case 'story_share':
+                  case 'story_reply':
+                    thumbnailUrl = content.media_url || null;
+                    break;
+                  case 'folder_share':
+                    thumbnailUrl = content.cover_image || content.cover_image_url || null;
+                    break;
+                  case 'trip_share':
+                    thumbnailUrl = content.cover_image || null;
+                    break;
+                }
+                if (!thumbnailUrl) return null;
+                return (
+                  <img 
+                    src={thumbnailUrl} 
+                    alt="Preview" 
+                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                  />
+                );
+              })()}
+              
               <button 
                 onClick={() => setReplyingToMessage(null)}
-                className="ml-3 p-1 hover:bg-accent rounded-full transition-colors"
+                className="p-1 hover:bg-accent rounded-full transition-colors flex-shrink-0"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
