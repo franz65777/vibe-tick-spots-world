@@ -1186,7 +1186,7 @@ const MobileNotificationItem = ({
               if (!swipedOpen) setTranslateX(0);
             }}
             className={`relative z-10 w-full ${swipedOpen ? '' : 'cursor-pointer active:bg-accent/50'} transition-colors ${
-              !notification.is_read ? 'bg-accent/20' : 'bg-background'
+              !notification.is_read ? 'bg-accent/20' : 'bg-transparent'
             }`}
             style={{ touchAction: 'pan-y', transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
           >
