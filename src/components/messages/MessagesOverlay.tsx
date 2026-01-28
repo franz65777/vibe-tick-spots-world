@@ -767,15 +767,6 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
                 </div>
               ) : null}
             </div>
-            
-            {/* Close button - circular X like AddPageOverlay */}
-            <button 
-              onClick={onClose}
-              className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-black/80 dark:bg-white/80 backdrop-blur-md border border-border/30 rounded-full text-white dark:text-gray-900 hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 active:scale-95"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
         </header>
 
