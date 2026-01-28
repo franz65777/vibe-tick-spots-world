@@ -526,35 +526,46 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1,
     <style>
       @keyframes user-drop-in {
         0% {
-          transform: scale(2.5) translateY(-20px);
+          transform: scale(3) translateY(-30px);
           opacity: 0;
+          filter: blur(4px);
         }
-        20% {
+        15% {
           opacity: 1;
+          filter: blur(2px);
         }
-        60% {
-          transform: scale(1.3) translateY(5px);
+        50% {
+          transform: scale(1.5) translateY(0);
+          filter: blur(0);
         }
-        80% {
-          transform: scale(0.95) translateY(-3px);
+        75% {
+          transform: scale(0.9) translateY(5px);
+        }
+        90% {
+          transform: scale(1.05) translateY(-2px);
         }
         100% {
           transform: scale(1) translateY(0);
+          filter: blur(0);
         }
       }
       
       @keyframes shadow-grow {
         0% {
           opacity: 0;
-          transform: translateX(-50%) scale(0.2);
+          transform: translateX(-50%) scale(0.1);
         }
-        50% {
+        40% {
+          opacity: 0.2;
+          transform: translateX(-50%) scale(0.5);
+        }
+        70% {
+          opacity: 0.5;
+          transform: translateX(-50%) scale(1.2);
+        }
+        85% {
           opacity: 0.4;
-          transform: translateX(-50%) scale(0.8);
-        }
-        80% {
-          opacity: 0.6;
-          transform: translateX(-50%) scale(1.1);
+          transform: translateX(-50%) scale(0.9);
         }
         100% {
           opacity: 0;
@@ -563,7 +574,7 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1,
       }
       
       .user-location-drop-in {
-        animation: user-drop-in 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        animation: user-drop-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       }
     </style>
   `;

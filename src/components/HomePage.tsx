@@ -18,10 +18,12 @@ import { useHomePageState } from '@/hooks/useHomePageState';
 import AddPageOverlay from './add/AddPageOverlay';
 import LocationContributionModal from './explore/LocationContributionModal';
 
-// Lazy load heavy components
+// Lazy load heavy components (except map which needs to render immediately)
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
 const HomeDiscoverSection = lazy(() => import('./home/HomeDiscoverSection'));
-const HomeMapContainer = lazy(() => import('./home/HomeMapContainer'));
+
+// Eager load map for instant render after splash
+import HomeMapContainer from './home/HomeMapContainer';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
