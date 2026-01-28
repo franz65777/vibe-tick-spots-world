@@ -1,7 +1,8 @@
-import React, { useRef, memo } from 'react';
+import React, { useRef, memo, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Heart, MessageCircle } from 'lucide-react';
 import deleteIcon from '@/assets/icon-delete.png';
+import { cn } from '@/lib/utils';
 
 interface Post {
   id: string;
@@ -25,7 +26,7 @@ interface VirtualizedPostGridProps {
  * Only renders visible rows + 2 overscan rows
  */
 
-// Memoized post item for optimal performance
+// Memoized post item with progressive image loading
 const PostItem = memo(({ 
   post, 
   isOwnProfile, 
@@ -38,61 +39,75 @@ const PostItem = memo(({
   deleting: boolean;
   onPostClick: (postId: string) => void;
   onDeletePost: (postId: string, event: React.MouseEvent) => void;
-}) => (
-  <div
-    className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-    onClick={() => onPostClick(post.id)}
-  >
-    <img
-      src={post.media_urls[0]}
-      alt={post.caption || 'Post'}
-      className="w-full h-full object-cover"
-      loading="lazy"
-      decoding="async"
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.src = '/placeholder.svg';
-      }}
-    />
-    {post.media_urls.length > 1 && (
-      <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-        <span className="text-xs text-white font-medium">
-          +{post.media_urls.length - 1}
-        </span>
-      </div>
-    )}
-    {isOwnProfile && (
-      <button
-        onClick={(e) => onDeletePost(post.id, e)}
-        disabled={deleting}
-        className="absolute top-2 left-2 w-7 h-9 bg-gray-500/90 hover:bg-gray-600 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-        title="Delete post"
-      >
-        {deleting ? (
-          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        ) : (
-          <img src={deleteIcon} alt="" className="w-4 h-5" />
+}) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <div
+      className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
+      onClick={() => onPostClick(post.id)}
+    >
+      {/* Skeleton placeholder - visible until image loads */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 bg-muted shimmer-skeleton" />
+      )}
+      
+      <img
+        src={post.media_urls[0]}
+        alt={post.caption || 'Post'}
+        className={cn(
+          "w-full h-full object-cover transition-all duration-300",
+          imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"
         )}
-      </button>
-    )}
-    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
-      <div className="p-3 w-full">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
-            <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-              <Heart className="w-3 h-3 text-white" />
-              <span className="text-xs text-white font-medium">{post.likes_count}</span>
-            </div>
-            <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-              <MessageCircle className="w-3 h-3 text-white" />
-              <span className="text-xs text-white font-medium">{post.comments_count}</span>
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setImageLoaded(true)}
+        onError={(e) => {
+          setImageLoaded(true);
+          const target = e.target as HTMLImageElement;
+          target.src = '/placeholder.svg';
+        }}
+      />
+      {post.media_urls.length > 1 && (
+        <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
+          <span className="text-xs text-white font-medium">
+            +{post.media_urls.length - 1}
+          </span>
+        </div>
+      )}
+      {isOwnProfile && (
+        <button
+          onClick={(e) => onDeletePost(post.id, e)}
+          disabled={deleting}
+          className="absolute top-2 left-2 w-7 h-9 bg-muted-foreground/70 hover:bg-muted-foreground/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+          title="Delete post"
+        >
+          {deleting ? (
+            <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <img src={deleteIcon} alt="" className="w-4 h-5" />
+          )}
+        </button>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
+        <div className="p-3 w-full">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                <Heart className="w-3 h-3 text-white" />
+                <span className="text-xs text-white font-medium">{post.likes_count}</span>
+              </div>
+              <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                <MessageCircle className="w-3 h-3 text-white" />
+                <span className="text-xs text-white font-medium">{post.comments_count}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-));
+  );
+});
 
 PostItem.displayName = 'PostItem';
 
