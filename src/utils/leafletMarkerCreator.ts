@@ -526,20 +526,20 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1,
     <style>
       @keyframes user-drop-in {
         0% {
-          transform: translateY(-100vh) scale(0.5);
+          transform: scale(2.5) translateY(-20px);
           opacity: 0;
         }
-        50% {
+        20% {
           opacity: 1;
         }
-        70% {
-          transform: translateY(10px) scale(1.1);
+        60% {
+          transform: scale(1.3) translateY(5px);
         }
-        85% {
-          transform: translateY(-5px) scale(0.95);
+        80% {
+          transform: scale(0.95) translateY(-3px);
         }
         100% {
-          transform: translateY(0) scale(1);
+          transform: scale(1) translateY(0);
         }
       }
       
@@ -548,9 +548,13 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1,
           opacity: 0;
           transform: translateX(-50%) scale(0.2);
         }
-        70% {
-          opacity: 0.5;
-          transform: translateX(-50%) scale(1.2);
+        50% {
+          opacity: 0.4;
+          transform: translateX(-50%) scale(0.8);
+        }
+        80% {
+          opacity: 0.6;
+          transform: translateX(-50%) scale(1.1);
         }
         100% {
           opacity: 0;
@@ -559,7 +563,7 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1,
       }
       
       .user-location-drop-in {
-        animation: user-drop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation: user-drop-in 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
       }
     </style>
   `;
