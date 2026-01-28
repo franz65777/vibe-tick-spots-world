@@ -17,6 +17,9 @@ import { useOptimizedPlacesSearch, SearchResult } from '@/hooks/useOptimizedPlac
 import { useTranslation } from 'react-i18next';
 import { getCategoryImage } from '@/utils/categoryIcons';
 
+// Re-export SearchResult for parent components
+export type { SearchResult } from '@/hooks/useOptimizedPlacesSearch';
+
 interface OptimizedPlacesAutocompleteProps {
   onPlaceSelect: (place: {
     name: string;
@@ -33,7 +36,61 @@ interface OptimizedPlacesAutocompleteProps {
   disabled?: boolean;
   autoFocus?: boolean;
   onResultsChange?: (hasResults: boolean, isSearching: boolean) => void;
+  hideDropdown?: boolean;
+  onResultsDataChange?: (data: {
+    query: string;
+    isLoading: boolean;
+    results: SearchResult[];
+    isSearching: boolean;
+  }) => void;
 }
+
+// Smart dedup function: prioritizes entries with images
+const mergeAndDedupResults = (results: SearchResult[]): SearchResult[] => {
+  const groups = new Map<string, SearchResult[]>();
+  
+  results.forEach(result => {
+    // Create a normalized key: prefer google_place_id, fallback to name+address
+    const key = result.google_place_id 
+      || `${result.name.toLowerCase().trim()}|${(result.address || '').toLowerCase().trim()}`.replace(/\s+/g, ' ');
+    
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(result);
+  });
+  
+  // For each group, pick the "best" entry
+  const merged: SearchResult[] = [];
+  groups.forEach(candidates => {
+    if (candidates.length === 1) {
+      merged.push(candidates[0]);
+      return;
+    }
+    
+    // Sort by priority: image_url > photos.length > source=database > first
+    candidates.sort((a, b) => {
+      // Priority A: image_url (business) wins
+      if (a.image_url && !b.image_url) return -1;
+      if (!a.image_url && b.image_url) return 1;
+      
+      // Priority B: more photos wins
+      const aPhotos = a.photos?.length || 0;
+      const bPhotos = b.photos?.length || 0;
+      if (aPhotos !== bPhotos) return bPhotos - aPhotos;
+      
+      // Priority C: database source preferred
+      if (a.source === 'database' && b.source !== 'database') return -1;
+      if (a.source !== 'database' && b.source === 'database') return 1;
+      
+      return 0;
+    });
+    
+    merged.push(candidates[0]);
+  });
+  
+  return merged;
+};
 
 const OptimizedPlacesAutocomplete = ({
   onPlaceSelect,
@@ -43,6 +100,8 @@ const OptimizedPlacesAutocomplete = ({
   disabled = false,
   autoFocus = false,
   onResultsChange,
+  hideDropdown = false,
+  onResultsDataChange,
 }: OptimizedPlacesAutocompleteProps) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,16 +138,29 @@ const OptimizedPlacesAutocomplete = ({
     return !matchesByName;
   });
 
-  const hasResults = filteredDatabaseResults.length > 0 || deduplicatedGoogleResults.length > 0;
-  const allResults = [...filteredDatabaseResults, ...deduplicatedGoogleResults];
+  const combinedResults = [...filteredDatabaseResults, ...deduplicatedGoogleResults];
+  const mergedResults = mergeAndDedupResults(combinedResults);
+  const hasResults = mergedResults.length > 0;
   const isSearching = query.length >= 2;
 
-  // Notify parent of results state
+  // Notify parent of results state (simple callback)
   useEffect(() => {
     if (onResultsChange) {
       onResultsChange(hasResults || isLoading, isSearching);
     }
   }, [hasResults, isLoading, isSearching, onResultsChange]);
+
+  // Notify parent of full results data (for external rendering)
+  useEffect(() => {
+    if (onResultsDataChange) {
+      onResultsDataChange({
+        query,
+        isLoading,
+        results: mergedResults,
+        isSearching,
+      });
+    }
+  }, [query, isLoading, mergedResults.length, isSearching, onResultsDataChange]);
 
   // Handle place selection
   const handleSelect = async (result: SearchResult) => {
@@ -144,12 +216,12 @@ const OptimizedPlacesAutocomplete = ({
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showResults || allResults.length === 0) return;
+    if (!showResults || mergedResults.length === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, allResults.length - 1));
+        setSelectedIndex(prev => Math.min(prev + 1, mergedResults.length - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
@@ -157,8 +229,8 @@ const OptimizedPlacesAutocomplete = ({
         break;
       case 'Enter':
         e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < allResults.length) {
-          handleSelect(allResults[selectedIndex]);
+        if (selectedIndex >= 0 && selectedIndex < mergedResults.length) {
+          handleSelect(mergedResults[selectedIndex]);
         }
         break;
       case 'Escape':
@@ -199,11 +271,10 @@ const OptimizedPlacesAutocomplete = ({
         )}
       </div>
 
-      {/* Results dropdown - Full width rows */}
-      {showResults && hasResults && (
+      {/* Results dropdown - Only render if hideDropdown is false */}
+      {!hideDropdown && showResults && hasResults && (
         <div className="absolute z-50 w-full mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide -mx-4 px-4" style={{ width: 'calc(100% + 2rem)', left: '-1rem' }}>
-          {allResults.map((result, index) => {
-            // Priority: 1. Business image (image_url), 2. First photo (photos[0]), 3. Category icon
+          {mergedResults.map((result, index) => {
             const displayImage = result.image_url 
               || (result.photos && result.photos[0]) 
               || getCategoryImage(result.category || 'restaurant');
@@ -219,7 +290,6 @@ const OptimizedPlacesAutocomplete = ({
                   selectedIndex === index ? 'bg-white/30 dark:bg-white/10' : ''
                 }`}
               >
-                {/* Image - 40px square with rounded corners */}
                 <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-muted/20">
                   <img 
                     src={displayImage}
@@ -228,8 +298,6 @@ const OptimizedPlacesAutocomplete = ({
                     loading="eager"
                   />
                 </div>
-                
-                {/* Content - Name and ADDRESS */}
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-base text-foreground truncate">
                     {result.name}
@@ -244,8 +312,8 @@ const OptimizedPlacesAutocomplete = ({
         </div>
       )}
 
-      {/* No results message */}
-      {showResults && !isLoading && query.length >= 2 && !hasResults && (
+      {/* No results message - Only render if hideDropdown is false */}
+      {!hideDropdown && showResults && !isLoading && query.length >= 2 && !hasResults && (
         <div className="absolute z-50 w-full mt-2 p-6 text-center">
           <MapPin className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
           <p className="text-sm text-muted-foreground">
