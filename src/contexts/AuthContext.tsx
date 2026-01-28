@@ -2,6 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+// Development-only logging to reduce console spam in production
+const isDev = import.meta.env.DEV;
+const devLog = (...args: any[]) => isDev && console.log(...args);
+const devWarn = (...args: any[]) => isDev && console.warn(...args);
+const devError = (...args: any[]) => console.error(...args); // Always log errors
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -27,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener...');
+    devLog('AuthProvider: Setting up auth state listener...');
     
     // Function to check and refresh token if needed
     const checkAndRefreshToken = async () => {
@@ -43,30 +49,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const fiveMinutes = 5 * 60 * 1000;
 
           if (expiryTime - now < fiveMinutes) {
-            console.log('AuthProvider: Token expired or expiring soon, refreshing...');
+            devLog('AuthProvider: Token expired or expiring soon, refreshing...');
             const { data, error } = await supabase.auth.refreshSession();
             if (error) {
-              console.error('AuthProvider: Error refreshing expired token:', error);
+              devError('AuthProvider: Error refreshing expired token:', error);
               await supabase.auth.signOut();
             } else {
-              console.log('AuthProvider: Token refreshed successfully');
+              devLog('AuthProvider: Token refreshed successfully');
               setSession(data.session);
               setUser(data.session?.user ?? null);
             }
           }
         }
       } catch (error) {
-        console.error('AuthProvider: Error checking token expiry:', error);
+        devError('AuthProvider: Error checking token expiry:', error);
       }
     };
 
     // Set up auth state listener (sync only to avoid deadlocks)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('AuthProvider: Auth state changed:', event, session?.user?.email);
+        devLog('AuthProvider: Auth state changed:', event, session?.user?.email);
         
         if (event === 'TOKEN_REFRESHED') {
-          console.log('AuthProvider: Token refreshed successfully');
+          devLog('AuthProvider: Token refreshed successfully');
         }
         
         if (event === 'SIGNED_OUT') {
@@ -79,28 +85,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // If user just signed in, defer profile creation to avoid async work in callback
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('AuthProvider: User signed in, scheduling profile ensure...');
+          devLog('AuthProvider: User signed in, scheduling profile ensure...');
           setTimeout(() => {
             ensureProfileExists(session.user!).catch((error) => {
-              console.warn('AuthProvider: Profile ensure failed (non-blocking):', error);
+              devWarn('AuthProvider: Profile ensure failed (non-blocking):', error);
             });
           }, 0);
         }
         
-        console.log('AuthProvider: Setting loading to false');
+        devLog('AuthProvider: Setting loading to false');
         setLoading(false);
       }
     );
 
     // Check for existing session and validate token
-    console.log('AuthProvider: Checking for existing session...');
+    devLog('AuthProvider: Checking for existing session...');
     Promise.race([
       supabase.auth.getSession(),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Session check timeout')), 3000)
       )
     ]).then(async ({ data: { session } }: any) => {
-      console.log('AuthProvider: Existing session:', session?.user?.email);
+      devLog('AuthProvider: Existing session:', session?.user?.email);
       
       // Check if token is expired
       if (session?.expires_at) {
@@ -110,23 +116,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // If token is expired or expiring within 5 minutes, refresh it
         if (expiryTime - now < fiveMinutes) {
-          console.log('AuthProvider: Token expired or expiring soon, forcing refresh...');
+          devLog('AuthProvider: Token expired or expiring soon, forcing refresh...');
           try {
             const { data, error } = await supabase.auth.refreshSession();
             if (error) {
-              console.error('AuthProvider: Error refreshing expired session, forcing logout:', error);
+              devError('AuthProvider: Error refreshing expired session, forcing logout:', error);
               await supabase.auth.signOut();
               setSession(null);
               setUser(null);
               setLoading(false);
               return;
             } else {
-              console.log('AuthProvider: Token refreshed successfully');
+              devLog('AuthProvider: Token refreshed successfully');
               setSession(data.session);
               setUser(data.session?.user ?? null);
             }
           } catch (err) {
-            console.error('AuthProvider: Exception during refresh, forcing logout:', err);
+            devError('AuthProvider: Exception during refresh, forcing logout:', err);
             await supabase.auth.signOut();
             setSession(null);
             setUser(null);
@@ -144,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setLoading(false);
     }).catch((error) => {
-      console.warn('AuthProvider: Session check failed or timed out, clearing session:', error);
+      devWarn('AuthProvider: Session check failed or timed out, clearing session:', error);
       setSession(null);
       setUser(null);
       setLoading(false);
@@ -153,7 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check token on visibility change (when user returns to tab)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('AuthProvider: Tab visible, checking token...');
+        devLog('AuthProvider: Tab visible, checking token...');
         checkAndRefreshToken();
       }
     };
@@ -163,10 +169,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const refreshInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log('AuthProvider: Periodic token refresh...');
+        devLog('AuthProvider: Periodic token refresh...');
         const { error } = await supabase.auth.refreshSession();
         if (error) {
-          console.error('AuthProvider: Error refreshing session, signing out:', error);
+          devError('AuthProvider: Error refreshing session, signing out:', error);
           await supabase.auth.signOut();
         }
       }
@@ -176,7 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAndRefreshToken();
 
     return () => {
-      console.log('AuthProvider: Cleaning up auth subscription');
+      devLog('AuthProvider: Cleaning up auth subscription');
       subscription.unsubscribe();
       clearInterval(refreshInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -185,7 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const ensureProfileExists = async (user: User) => {
     try {
-      console.log('AuthProvider: Checking if profile exists for user:', user.id);
+      devLog('AuthProvider: Checking if profile exists for user:', user.id);
       
       // Check if profile already exists
       const { data: existingProfile, error: fetchError } = await supabase
@@ -196,12 +202,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         // Error other than "not found"
-        console.error('AuthProvider: Error checking profile:', fetchError);
+        devError('AuthProvider: Error checking profile:', fetchError);
         return;
       }
 
       if (!existingProfile) {
-        console.log('AuthProvider: Profile does not exist, creating...');
+        devLog('AuthProvider: Profile does not exist, creating...');
         // Create profile if it doesn't exist
         const { error } = await supabase
           .from('profiles')
@@ -221,16 +227,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
         if (error) {
-          console.error('AuthProvider: Error creating profile:', error);
+          devError('AuthProvider: Error creating profile:', error);
           throw error;
         } else {
-          console.log('AuthProvider: Profile created successfully');
+          devLog('AuthProvider: Profile created successfully');
         }
       } else {
-        console.log('AuthProvider: Profile already exists');
+        devLog('AuthProvider: Profile already exists');
       }
     } catch (error) {
-      console.error('AuthProvider: Error checking/creating profile:', error);
+      devError('AuthProvider: Error checking/creating profile:', error);
       throw error;
     }
   };
@@ -257,32 +263,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Support email, phone, and username sign in
     let loginIdentifier = identifier;
     
-    console.log('SignIn attempt with identifier:', identifier);
+    devLog('SignIn attempt with identifier:', identifier);
     
     // Detect if identifier is email, phone, or username
     const isEmail = identifier.includes('@');
     const isPhone = identifier.startsWith('+') || /^\d+$/.test(identifier);
     
-    console.log('isEmail:', isEmail, 'isPhone:', isPhone);
+    devLog('isEmail:', isEmail, 'isPhone:', isPhone);
     
     // If it's not email or phone, treat it as username and look up the email
     if (!isEmail && !isPhone) {
-      console.log('Looking up username using security definer function...');
+      devLog('Looking up username using security definer function...');
       try {
         const { data: email, error: rpcError } = await supabase
           .rpc('get_email_from_username', { _username: identifier });
         
-        console.log('RPC result - email:', email, 'error:', rpcError);
+        devLog('RPC result - email:', email, 'error:', rpcError);
         
         if (rpcError || !email) {
-          console.error('Username not found:', rpcError);
+          devError('Username not found:', rpcError);
           return { error: { message: 'Invalid login credentials' } };
         }
         
         loginIdentifier = email;
-        console.log('Found email for username:', loginIdentifier);
+        devLog('Found email for username:', loginIdentifier);
       } catch (err) {
-        console.error('Exception during username lookup:', err);
+        devError('Exception during username lookup:', err);
         return { error: { message: 'Invalid login credentials' } };
       }
     }
@@ -310,7 +316,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (analyticsError) {
       // Don't block sign in if analytics fails
-      console.warn('Failed to track auth attempt:', analyticsError);
+      devWarn('Failed to track auth attempt:', analyticsError);
     }
 
     return { error };
@@ -329,7 +335,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
   };
 
-  console.log('AuthProvider: Rendering with loading:', loading, 'user:', user?.email);
+  devLog('AuthProvider: Rendering with loading:', loading, 'user:', user?.email);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
