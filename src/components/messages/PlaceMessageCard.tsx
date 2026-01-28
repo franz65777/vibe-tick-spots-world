@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
-import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
+import { translateCategory } from '@/utils/translateCategory';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -57,24 +57,9 @@ const PlaceMessageCard = ({ placeData, onViewPlace, overlayMode = false }: Place
   const categoryImage = getCategoryImage(placeData.category);
   const thumbnail = getLocationThumbnail(placeData);
   
-  // Normalize category for translation lookup (handles variants like "Park", "parks", "bar & pub")
-  // Use useMemo with i18n.language to ensure re-computation when language changes
+  // Use centralized translateCategory helper for consistent translation
   const translatedCategory = useMemo(() => {
-    const categoryKey =
-      normalizeCategoryToBase(placeData.category) ??
-      String(placeData.category ?? '').trim().toLowerCase();
-
-    if (!categoryKey) return placeData.category || 'Place';
-    
-    // Try to get translation - if key doesn't exist, i18next returns the key itself
-    const translated = t(`categories.${categoryKey}`);
-    
-    // If translation equals the key path, it means translation wasn't found - use original
-    if (translated === `categories.${categoryKey}`) {
-      return placeData.category || 'Place';
-    }
-    
-    return translated;
+    return translateCategory(placeData.category, t);
   }, [placeData.category, t, i18n.language]);
 
   const handleViewLocation = (e: React.MouseEvent) => {

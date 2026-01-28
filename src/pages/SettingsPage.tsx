@@ -42,8 +42,17 @@ const languages = [
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
 ];
 
-const normalizeLanguage = (lang: string) =>
-  lang === 'zh' || lang === 'zh_CN' || lang === 'zh-CN' ? 'zh-CN' : lang;
+// Normalize language codes: strip region suffix except for zh-CN
+const normalizeLanguage = (lang: string): string => {
+  if (!lang) return 'en';
+  // Keep Chinese as zh-CN
+  if (lang === 'zh' || lang === 'zh_CN' || lang === 'zh-CN' || lang.startsWith('zh-')) return 'zh-CN';
+  // Strip region for other languages (it-IT → it, en-US → en, etc.)
+  const base = lang.split('-')[0].split('_')[0].toLowerCase();
+  // Validate against supported languages
+  const supported = ['en', 'it', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'ar', 'hi', 'ru'];
+  return supported.includes(base) ? base : 'en';
+};
 
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();

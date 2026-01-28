@@ -9959,6 +9959,10 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
+    // Support regional codes (it-IT → it, en-US → en) properly
+    supportedLngs: ['en', 'it', 'es', 'fr', 'de', 'pt', 'zh-CN', 'ja', 'ko', 'ar', 'hi', 'ru'],
+    nonExplicitSupportedLngs: true, // it-IT will use 'it' resources
+    load: 'languageOnly', // Load only base language (strips region)
     ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour', 'save_tags'],
     defaultNS: 'common',
     interpolation: {
