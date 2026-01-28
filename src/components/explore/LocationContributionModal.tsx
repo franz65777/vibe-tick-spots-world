@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Camera, Plus, ChevronRight, Lock, FolderPlus, Link as LinkIcon, Video } from 'lucide-react';
+import { X, Camera, Plus, ChevronRight, ChevronDown, Lock, FolderPlus, Link as LinkIcon, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
@@ -142,6 +142,10 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [rating, setRating] = useState<number | undefined>(undefined);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [isListSectionCollapsed, setIsListSectionCollapsed] = useState(false);
+
+  // Determine if user is sharing public content (photos, description, or rating)
+  const isSharing = selectedPhotos.length > 0 || descriptionText.trim().length > 0 || rating !== undefined;
 
   // Pre-cached avatar URL (available immediately from user metadata)
   const avatarUrl = useMemo(() => 
@@ -632,9 +636,16 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
         {/* Add to List Section */}
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-muted-foreground">
-              {t('addToList', { ns: 'explore', defaultValue: 'add to a list' })}
-            </span>
+            <button 
+              onClick={() => setIsListSectionCollapsed(!isListSectionCollapsed)}
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span>{t('addToList', { ns: 'explore', defaultValue: 'add to a list' })}</span>
+              <ChevronDown className={cn(
+                "w-4 h-4 transition-transform duration-200",
+                isListSectionCollapsed && "-rotate-180"
+              )} />
+            </button>
             <button
               onClick={handleCreateList}
               className="w-8 h-8 rounded-full bg-muted hover:bg-accent flex items-center justify-center transition-colors"
@@ -643,96 +654,100 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
             </button>
           </div>
 
-          {/* Folders List */}
-          {foldersLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : userFolders.length === 0 ? (
-            <div className="py-6 text-center">
-              <p className="text-sm text-muted-foreground mb-3">
-                {t('noListsYet', { ns: 'explore', defaultValue: "You don't have any lists yet" })}
-              </p>
-              <Button variant="outline" size="sm" onClick={handleCreateList}>
-                <FolderPlus className="w-4 h-4 mr-2" />
-                {t('createList', { ns: 'explore', defaultValue: 'Create a list' })}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {userFolders.map((folder) => {
-                const isSelected = selectedFolders.has(folder.id);
-                return (
-                  <div
-                    key={folder.id}
-                    className={cn(
-                      'flex gap-3 p-3 rounded-2xl transition-all',
-                      isSelected
-                        ? 'bg-primary/10 border border-primary/30'
-                        : 'bg-muted/30 border border-border/30'
-                    )}
-                  >
-                    {/* Folder Cover */}
-                    <div
-                      className="w-16 h-20 rounded-xl overflow-hidden flex-shrink-0"
-                      style={{
-                        background: folder.cover_url
-                          ? `url(${folder.cover_url}) center/cover`
-                          : `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
-                              folder.color ? folder.color + '99' : '#60a5fa'
-                            })`,
-                      }}
-                    >
-                      <div className="w-full h-full bg-gradient-to-t from-black/50 p-2 flex flex-col justify-end">
-                        <span className="text-white text-[10px] font-medium line-clamp-2">
-                          {folder.name}
-                        </span>
-                        <span className="text-white/70 text-[9px]">
-                          {folder.location_count || 0} {t('places', { ns: 'common', defaultValue: 'places' })}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Folder Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                        {folder.is_private && <Lock className="w-3 h-3" />}
-                        <span>{folder.is_private ? t('private', { defaultValue: 'private' }) : t('public', { defaultValue: 'public' })}</span>
-                        {folder.hasLocation && (
-                          <span className="ml-1 text-primary">• {t('alreadyInList', { ns: 'explore', defaultValue: 'already in this list' })}</span>
+          {/* Folders List - Collapsible */}
+          {!isListSectionCollapsed && (
+            <>
+              {foldersLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : userFolders.length === 0 ? (
+                <div className="py-6 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t('noListsYet', { ns: 'explore', defaultValue: "You don't have any lists yet" })}
+                  </p>
+                  <Button variant="outline" size="sm" onClick={handleCreateList}>
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                    {t('createList', { ns: 'explore', defaultValue: 'Create a list' })}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {userFolders.map((folder) => {
+                    const isSelected = selectedFolders.has(folder.id);
+                    return (
+                      <div
+                        key={folder.id}
+                        className={cn(
+                          'flex gap-3 p-3 rounded-2xl transition-all',
+                          isSelected
+                            ? 'bg-primary/10 border border-primary/30'
+                            : 'bg-muted/30 border border-border/30'
                         )}
+                      >
+                        {/* Folder Cover */}
+                        <div
+                          className="w-16 h-20 rounded-xl overflow-hidden flex-shrink-0"
+                          style={{
+                            background: folder.cover_url
+                              ? `url(${folder.cover_url}) center/cover`
+                              : `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
+                                  folder.color ? folder.color + '99' : '#60a5fa'
+                                })`,
+                          }}
+                        >
+                          <div className="w-full h-full bg-gradient-to-t from-black/50 p-2 flex flex-col justify-end">
+                            <span className="text-white text-[10px] font-medium line-clamp-2">
+                              {folder.name}
+                            </span>
+                            <span className="text-white/70 text-[9px]">
+                              {folder.location_count || 0} {t('places', { ns: 'common', defaultValue: 'places' })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Folder Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                            {folder.is_private && <Lock className="w-3 h-3" />}
+                            <span>{folder.is_private ? t('private', { defaultValue: 'private' }) : t('public', { defaultValue: 'public' })}</span>
+                            {folder.hasLocation && (
+                              <span className="ml-1 text-primary">• {t('alreadyInList', { ns: 'explore', defaultValue: 'already in this list' })}</span>
+                            )}
+                          </div>
+
+                          <input
+                            placeholder={t('addANote', { ns: 'explore', defaultValue: 'add a note' })}
+                            value={folderNotes[folder.id] || ''}
+                            onChange={(e) =>
+                              setFolderNotes((prev) => ({
+                                ...prev,
+                                [folder.id]: e.target.value,
+                              }))
+                            }
+                            className="w-full text-sm bg-transparent border-b border-border/50 py-1 outline-none placeholder:text-muted-foreground/50"
+                          />
+
+                          <button className="flex items-center gap-1 text-xs text-muted-foreground mt-2 hover:text-foreground transition-colors">
+                            <LinkIcon className="w-3 h-3" />
+                            <span>{t('addLink', { defaultValue: 'add a link' })}</span>
+                          </button>
+                        </div>
+
+                        {/* Checkbox */}
+                        <div className="flex items-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleFolderSelection(folder.id)}
+                            className="w-5 h-5"
+                          />
+                        </div>
                       </div>
-
-                      <input
-                        placeholder={t('addANote', { ns: 'explore', defaultValue: 'add a note' })}
-                        value={folderNotes[folder.id] || ''}
-                        onChange={(e) =>
-                          setFolderNotes((prev) => ({
-                            ...prev,
-                            [folder.id]: e.target.value,
-                          }))
-                        }
-                        className="w-full text-sm bg-transparent border-b border-border/50 py-1 outline-none placeholder:text-muted-foreground/50"
-                      />
-
-                      <button className="flex items-center gap-1 text-xs text-muted-foreground mt-2 hover:text-foreground transition-colors">
-                        <LinkIcon className="w-3 h-3" />
-                        <span>{t('addLink', { defaultValue: 'add a link' })}</span>
-                      </button>
-                    </div>
-
-                    {/* Checkbox */}
-                    <div className="flex items-center">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleFolderSelection(folder.id)}
-                        className="w-5 h-5"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -747,7 +762,9 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            t('save', { ns: 'common', defaultValue: 'save' })
+            isSharing 
+              ? t('share', { ns: 'explore', defaultValue: 'share' })
+              : t('save', { ns: 'common', defaultValue: 'save' })
           )}
         </Button>
       </div>
