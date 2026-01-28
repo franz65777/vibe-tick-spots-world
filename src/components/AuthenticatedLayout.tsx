@@ -23,6 +23,7 @@ const AuthenticatedLayoutContent: React.FC = () => {
   const [isPhotoSelection, setIsPhotoSelection] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isSplashOpen, setIsSplashOpen] = useState(() => document.body.getAttribute('data-splash-open') === 'true');
 
   // Monitor DOM for map expansion state on home page
   useEffect(() => {
@@ -106,9 +107,24 @@ const AuthenticatedLayoutContent: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Monitor splash screen state
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const splashOpen = document.body.getAttribute('data-splash-open') === 'true';
+      setIsSplashOpen(splashOpen);
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-splash-open']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const shouldHideNav = isDiscoverRoute || isSettingsRoute || isPrivacySettingsRoute || isEditProfileRoute || 
     isCreateTripRoute || isCreateListRoute || isSaveLocationRoute || isShareLocationRoute ||
-    isUserPlacesRoute || isRewardsRoute || isMapExpanded || isPhotoSelection || isFolderModalOpen || isOnboardingOpen || isShareProfileOpen;
+    isUserPlacesRoute || isRewardsRoute || isMapExpanded || isPhotoSelection || isFolderModalOpen || isOnboardingOpen || isShareProfileOpen || isSplashOpen;
 
   return (
     <div className="min-h-screen bg-background">

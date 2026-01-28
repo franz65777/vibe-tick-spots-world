@@ -14,6 +14,19 @@ const Index = () => {
   const previousUserRef = useRef<string | null>(null);
   const initialCheckDoneRef = useRef(false);
 
+  // Manage data-splash-open attribute for hiding nav during splash/initialization
+  useEffect(() => {
+    if (showSplash || !initialized || loading) {
+      document.body.setAttribute('data-splash-open', 'true');
+    } else {
+      document.body.removeAttribute('data-splash-open');
+    }
+    
+    return () => {
+      document.body.removeAttribute('data-splash-open');
+    };
+  }, [showSplash, initialized, loading]);
+
   // Handle splash screen logic - MUST complete before rendering anything else
   useEffect(() => {
     if (loading) return;
