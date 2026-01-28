@@ -427,12 +427,23 @@ const VirtualizedMessageList = ({
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
   const initialScrollDone = useRef(false);
+  const lastMessageCount = useRef(0);
+  const lastOtherParticipantId = useRef<string | undefined>(undefined);
   
   // Filter out hidden messages
   const visibleMessages = useMemo(
     () => messages.filter(m => !hiddenMessageIds.includes(m.id)),
     [messages, hiddenMessageIds]
   );
+
+  // Reset scroll tracking when chat changes
+  useEffect(() => {
+    if (otherParticipantId !== lastOtherParticipantId.current) {
+      initialScrollDone.current = false;
+      lastMessageCount.current = 0;
+      lastOtherParticipantId.current = otherParticipantId;
+    }
+  }, [otherParticipantId]);
 
   const virtualizer = useVirtualizer({
     count: visibleMessages.length,
@@ -441,22 +452,35 @@ const VirtualizedMessageList = ({
     overscan: 10,
   });
 
-  // Scroll to bottom when messages change or on initial load
+  // Scroll to bottom - reliable multi-attempt strategy
   useEffect(() => {
-    if (visibleMessages.length > 0 && parentRef.current) {
-      // Use setTimeout to ensure DOM and virtualizer are ready
-      const timer = setTimeout(() => {
+    if (visibleMessages.length === 0 || !parentRef.current) return;
+    
+    const isNewMessage = visibleMessages.length > lastMessageCount.current;
+    const needsInitialScroll = !initialScrollDone.current;
+    
+    if (needsInitialScroll || isNewMessage) {
+      const scrollToEnd = () => {
         virtualizer.scrollToIndex(visibleMessages.length - 1, { 
           align: 'end',
           behavior: initialScrollDone.current ? 'smooth' : 'auto'
         });
-        initialScrollDone.current = true;
-      }, 100);
-      return () => clearTimeout(timer);
+      };
+      
+      // Multiple attempts to ensure scroll works after virtualizer stabilizes
+      scrollToEnd();
+      requestAnimationFrame(scrollToEnd);
+      setTimeout(scrollToEnd, 50);
+      setTimeout(scrollToEnd, 150);
+      
+      initialScrollDone.current = true;
     }
-  }, [visibleMessages.length]);
+    
+    lastMessageCount.current = visibleMessages.length;
+  }, [visibleMessages, virtualizer]);
 
-  if (loading) {
+  // Only show spinner if loading AND no messages yet (prevents virtualizer destruction)
+  if (loading && visibleMessages.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />

@@ -161,20 +161,21 @@ const MessagesPage = () => {
     if (selectedThread && view === 'chat') {
       const otherParticipant = getOtherParticipant(selectedThread);
       if (otherParticipant) {
-        loadMessages(otherParticipant.id);
-        loadHiddenMessages();
+        // Execute all loading in parallel for faster init
+        Promise.all([
+          loadMessages(otherParticipant.id),
+          loadHiddenMessages(),
+          loadOtherUserProfile(otherParticipant.id),
+        ]);
         setupRealtimeSubscription();
-        loadOtherUserProfile(otherParticipant.id);
-        setTimeout(() => scrollToBottom('auto'), 50);
+        // Scroll is now handled by VirtualizedMessageList
       }
     } else if (view === 'threads') {
       // Refresh threads and unread counts when returning to threads view
       loadThreads();
     }
   }, [selectedThread, view]);
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Removed legacy scrollToBottom effect - VirtualizedMessageList handles scroll
   useEffect(() => {
     if (view === 'search') {
       // Refresh contacts when entering search view
@@ -276,36 +277,31 @@ const MessagesPage = () => {
 
   const loadMessages = useCallback(async (otherUserId: string) => {
     try {
-      setLoading(true);
+      // Only show loading spinner if we have NO messages yet (first load)
+      // This prevents destroying the virtualizer on subsequent loads
+      const isFirstLoad = messages.length === 0;
+      if (isFirstLoad) {
+        setLoading(true);
+      }
+      
       const data = await messageService.getMessagesInThread(otherUserId);
       setMessages(data || []);
 
-      // Mark messages as read
+      // Mark messages as read in background (non-blocking)
       if (user && data && data.length > 0) {
-        await messageService.markMessagesAsRead(otherUserId);
-        // Update local unread count
+        messageService.markMessagesAsRead(otherUserId); // No await - background
         setUnreadCounts(prev => ({
           ...prev,
           [otherUserId]: 0
         }));
       }
-
-      // Scroll to last unread message or bottom
-      setTimeout(() => {
-        const firstUnreadIndex = data?.findIndex(m => !m.is_read && m.receiver_id === user?.id);
-        if (firstUnreadIndex && firstUnreadIndex > 0) {
-          // Scroll to first unread message
-          scrollToBottom('auto');
-        } else {
-          scrollToBottom('auto');
-        }
-      }, 100);
+      // Scroll is handled by VirtualizedMessageList
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
       setLoading(false);
     }
-  }, [user, scrollToBottom]);
+  }, [user, messages.length]);
 
   // Use centralized realtime for messages - reduces connections by 80%+
   const selectedThreadIdRef = useRef<string | null>(null);
