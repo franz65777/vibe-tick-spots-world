@@ -119,10 +119,10 @@ const NotificationsPage = () => {
 
   return (
     <SwipeBackWrapper onBack={() => navigate('/')}>
-    <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-background/40 backdrop-blur-xl flex flex-col overflow-hidden">
       {/* Header */}
       <header 
-        className="shrink-0 bg-background w-full"
+        className="shrink-0 bg-background/60 backdrop-blur-md w-full"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
       >
         <div className="py-3 flex items-center justify-between px-4">
