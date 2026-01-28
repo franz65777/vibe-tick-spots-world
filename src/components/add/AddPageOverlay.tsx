@@ -128,7 +128,6 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
                            [&_input]:text-white [&_input]:dark:text-gray-900 
                            [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
                            [&_input]:p-0 [&_input]:focus-visible:ring-0"
-                autoFocus
               />
             </div>
           </div>
