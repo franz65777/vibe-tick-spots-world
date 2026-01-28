@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, X } from 'lucide-react';
+import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationData } from '@/hooks/useNotificationData';
@@ -175,7 +175,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
         className="sticky top-0 z-10"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
       >
-        <div className="py-3 flex items-center justify-between px-4">
+        <div className="py-3 flex items-center px-4">
           <div className="flex items-center gap-3">
             <Button
               onClick={onClose}
@@ -188,14 +188,6 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
             </Button>
             <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
           </div>
-          {/* Close button - circular X like AddPageOverlay */}
-          <button 
-            onClick={onClose}
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-black/80 dark:bg-white/80 backdrop-blur-md border border-border/30 rounded-full text-white dark:text-gray-900 hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 active:scale-95"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
       </header>
 
