@@ -1056,7 +1056,7 @@ const MessagesPage = () => {
                 let thumbnailUrl: string | null = null;
                 switch (replyingToMessage.message_type) {
                   case 'place_share':
-                    thumbnailUrl = content.image_url || content.image || (content.photos?.[0]?.photo_reference ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photo_reference=${content.photos[0].photo_reference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}` : null);
+                    thumbnailUrl = content.image_url || content.image || extractFirstPhotoUrl(content.photos);
                     break;
                   case 'post_share':
                     thumbnailUrl = content.media_urls?.[0] || null;
