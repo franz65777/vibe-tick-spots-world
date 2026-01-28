@@ -33,6 +33,7 @@ interface UserFolder {
   is_private: boolean;
   cover_url?: string;
   location_count?: number;
+  hasLocation?: boolean; // Whether the current location is already in this folder
 }
 
 // Rating button with gradient colors
@@ -160,7 +161,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
     radiusMeters: 500,
   });
 
-  // Fetch user's folders
+  // Fetch user's folders and check which already contain this location
   useEffect(() => {
     const fetchFolders = async () => {
       if (!user) return;
@@ -174,22 +175,64 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
 
         if (error) throw error;
         
-        // Get location counts for each folder
+        // Get the internal location_id if we have a google_place_id
+        let internalLocationId = location.id;
+        if (!internalLocationId && location.google_place_id) {
+          const { data: locationData } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', location.google_place_id)
+            .maybeSingle();
+          if (locationData) {
+            internalLocationId = locationData.id;
+          }
+        }
+
+        // Get location counts and check if current location is in each folder
         const foldersWithCounts = await Promise.all(
           (data || []).map(async (folder) => {
             const { count } = await supabase
               .from('folder_locations')
               .select('*', { count: 'exact', head: true })
               .eq('folder_id', folder.id);
+            
+            // Check if this location is already in this folder
+            let hasLocation = false;
+            if (internalLocationId) {
+              const { data: existingEntry } = await supabase
+                .from('folder_locations')
+                .select('id')
+                .eq('folder_id', folder.id)
+                .eq('location_id', internalLocationId)
+                .maybeSingle();
+              hasLocation = !!existingEntry;
+            }
+
             return { 
               ...folder, 
               cover_url: folder.cover_image_url,
-              location_count: count || 0 
+              location_count: count || 0,
+              hasLocation,
             };
           })
         );
 
-        setUserFolders(foldersWithCounts);
+        // Sort: folders with location first, then others
+        const sortedFolders = foldersWithCounts.sort((a, b) => {
+          if (a.hasLocation && !b.hasLocation) return -1;
+          if (!a.hasLocation && b.hasLocation) return 1;
+          return 0;
+        });
+
+        setUserFolders(sortedFolders);
+        
+        // Pre-select folders that already have the location
+        const alreadyInFolders = sortedFolders
+          .filter(f => f.hasLocation)
+          .map(f => f.id);
+        if (alreadyInFolders.length > 0) {
+          setSelectedFolders(new Set(alreadyInFolders));
+        }
       } catch (error) {
         console.error('Error fetching folders:', error);
       } finally {
@@ -200,7 +243,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
     if (isOpen) {
       fetchFolders();
     }
-  }, [user, isOpen]);
+  }, [user, isOpen, location.id, location.google_place_id]);
 
   // Reset state only on the OPEN -> CLOSED transition.
   // This prevents "Maximum update depth" loops if clearPhotos changes identity.
@@ -586,11 +629,11 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           </div>
         </div>
 
-        {/* Add to Curation Section */}
+        {/* Add to List Section */}
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-muted-foreground">
-              {t('addToCuration', { ns: 'explore', defaultValue: 'add to a curation' })}
+              {t('addToList', { ns: 'explore', defaultValue: 'add to a list' })}
             </span>
             <button
               onClick={handleCreateList}
@@ -655,6 +698,9 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                         {folder.is_private && <Lock className="w-3 h-3" />}
                         <span>{folder.is_private ? t('private', { defaultValue: 'private' }) : t('public', { defaultValue: 'public' })}</span>
+                        {folder.hasLocation && (
+                          <span className="ml-1 text-primary">• {t('alreadyInList', { ns: 'explore', defaultValue: 'already in this list' })}</span>
+                        )}
                       </div>
 
                       <input
