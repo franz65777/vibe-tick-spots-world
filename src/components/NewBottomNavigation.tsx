@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { haptics } from '@/utils/haptics';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ const NewBottomNavigation = () => {
   const { profile, refetch: refetchProfile } = useOptimizedProfile();
   const { trackEvent } = useAnalytics();
   const { hasValidBusinessAccount } = useBusinessProfile();
+  const queryClient = useQueryClient();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
@@ -53,6 +56,28 @@ const NewBottomNavigation = () => {
     location.pathname === '/notifications' || 
     location.pathname === '/share-location' || 
     location.pathname === '/leaderboard';
+
+  // Prefetch profile data when hovering/focusing on Profile tab
+  // This ensures instant loading when user clicks Profile
+  const handleProfilePrefetch = useCallback(() => {
+    if (user?.id) {
+      // Prefetch the aggregated profile data
+      queryClient.prefetchQuery({
+        queryKey: ['profile-aggregated', user.id],
+        queryFn: async () => {
+          const [profileRes, followersRes, followingRes, savedLocationsRes, savedPlacesRes] = await Promise.all([
+            supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+            supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user.id),
+            supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id),
+            supabase.from('user_saved_locations').select('location_id, save_tag, locations(city)').eq('user_id', user.id),
+            supabase.from('saved_places').select('id, city, save_tag').eq('user_id', user.id),
+          ]);
+          return { profile: profileRes.data, followers: followersRes.count, following: followingRes.count };
+        },
+        staleTime: 2 * 60 * 1000,
+      });
+    }
+  }, [user?.id, queryClient]);
 
   const handleNavClick = (path: string, label: string) => {
     haptics.selection();
@@ -196,6 +221,8 @@ const NewBottomNavigation = () => {
                         handleNavClick(item.path, item.label);
                       }
                     }}
+                    onMouseEnter={isProfileTab ? handleProfilePrefetch : undefined}
+                    onFocus={isProfileTab ? handleProfilePrefetch : undefined}
                     onMouseDown={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
                       undefined
@@ -210,6 +237,7 @@ const NewBottomNavigation = () => {
                     }
                     onTouchStart={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
+                      isProfileTab ? handleProfilePrefetch :
                       undefined
                     }
                     onTouchEnd={

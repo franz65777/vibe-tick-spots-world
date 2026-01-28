@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { getCategoryIcon, getCategoryImage } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { translateCityName } from '@/utils/cityTranslations';
+import VirtualizedPostGrid from './VirtualizedPostGrid';
 
 interface Post {
   id: string;
@@ -261,67 +262,21 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
         </div>
       ) : (
         postFilter === 'photos' ? (
-          <div className="grid grid-cols-2 gap-3 w-full">
-            {displayedPosts.map((post) => (
-              <div
-                key={post.id}
-                className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-                onClick={() => handlePostClick(post.id)}
-              >
-                {/* Photo Post */}
-                <>
-                  <img
-                    src={post.media_urls[0]}
-                    alt={post.caption || 'Post'}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/placeholder.svg';
-                    }}
-                  />
-                  {post.media_urls.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                      <span className="text-xs text-white font-medium">
-                        +{post.media_urls.length - 1}
-                      </span>
-                    </div>
-                  )}
-                  {isOwnProfile && (
-                    <button
-                      onClick={(e) => handleDeletePost(post.id, e)}
-                      disabled={deleting}
-                      className="absolute top-2 left-2 w-7 h-9 bg-gray-500/90 hover:bg-gray-600 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                      title="Delete post"
-                    >
-                      {deleting ? (
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <img src={deleteIcon} alt="" className="w-4 h-5" />
-                      )}
-                    </button>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
-                    <div className="p-3 w-full">
-                      <div className="flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                            <Heart className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{post.likes_count}</span>
-                          </div>
-                          <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{post.comments_count}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              </div>
-            ))}
-          </div>
+          <>
+            <VirtualizedPostGrid
+              posts={displayedPosts}
+              isOwnProfile={isOwnProfile}
+              deleting={deleting}
+              onPostClick={handlePostClick}
+              onDeletePost={handleDeletePost}
+            />
+            {/* Infinite scroll trigger */}
+            <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+              {isFetchingNextPage && (
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              )}
+            </div>
+          </>
         ) : (
           <div className="w-full space-y-3">
             {displayedPosts.map((post) => {
