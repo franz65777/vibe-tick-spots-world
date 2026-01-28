@@ -237,12 +237,18 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       if (!files || files.length === 0) return;
 
       // Create NearbyPhoto objects directly and add to selectedPhotos
-      const newPhotos: NearbyPhoto[] = Array.from(files).map(file => ({
-        file,
-        url: URL.createObjectURL(file),
-        distance: Infinity, // No distance badge for manual uploads
-        timestamp: undefined,
-      }));
+      const newPhotos: NearbyPhoto[] = Array.from(files).map(file => {
+        const blobUrl = URL.createObjectURL(file);
+        console.log('[PhotoUpload] Created blob URL:', blobUrl, 'for file:', file.name, 'type:', file.type);
+        return {
+          file,
+          url: blobUrl,
+          distance: Infinity, // No distance badge for manual uploads
+          timestamp: undefined,
+        };
+      });
+
+      console.log('[PhotoUpload] Adding photos to selection:', newPhotos.length);
 
       // Add directly to selectedPhotos (max 5 total)
       setSelectedPhotos(prev => {
