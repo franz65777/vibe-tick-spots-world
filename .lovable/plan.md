@@ -1,83 +1,165 @@
 
 ## Obiettivo
-Far funzionare davvero la traduzione delle categorie (es. “Park” → “Parco”) in **/messages** sia:
-- nella **Place card** dentro la chat
-- nella **lista “Condividi luogo salvato”** (bottom sheet)
 
-Dai tuoi input: la lingua in Settings è Italiano e “cambia tutto tranne le categorie”. Questo è un forte indizio che:
-- la lingua reale di i18next potrebbe essere qualcosa tipo **it-IT** / **en-US** (o non “pulita”), quindi i18next fa fallback a EN per le chiavi senza `defaultValue`
-- molte UI sembrano italiane perché in tanti punti usiamo `defaultValue` in italiano, mentre le categorie dipendono da chiavi reali (`common.categories.*`) e quindi restano in inglese quando il fallback scatta.
+Risolvere tre problemi nella sezione messaggi:
+1. **Traduzione categorie** ancora in inglese (es. "Park" invece di "Parco")
+2. **Testo "Replying to..."** fisso in inglese - deve essere tradotto (es. "Stai rispondendo a sartoriz")
+3. **Visualizzazione risposta**: dopo aver risposto, mostrare "Hai risposto" sopra il messaggio originale con effetto fade
 
 ---
 
-## 1) Correzione “root cause”: normalizzare e supportare i codici lingua (it-IT → it)
-### Modifica in `src/i18n.ts`
-Aggiorneremo la configurazione di i18next per gestire correttamente lingue “con regione”:
+## Analisi Root-Cause
 
-- aggiungere `supportedLngs` (l’elenco dei codici effettivamente presenti: `en, it, es, fr, de, pt, zh-CN, ja, ko, ar, hi, ru`)
-- aggiungere `nonExplicitSupportedLngs: true` (così `it-IT` usa `it`)
-- aggiungere `load: 'languageOnly'` e/o `cleanCode: true` (per tagliare la regione e pulire i codici)
+### Problema 1: Categorie in inglese
+Le modifiche precedenti a `i18n.ts` sono corrette (supportedLngs, nonExplicitSupportedLngs, load: 'languageOnly'), ma il problema persiste perché:
+- Il `LanguageDetector` potrebbe inizializzare i18n con `it-IT` prima che `App.tsx` normalizzi a `it`
+- Il cambio lingua in `App.tsx` avviene DOPO che i18n è già inizializzato
+- Soluzione: forzare la normalizzazione del codice lingua nella funzione di lookup del detector stesso
 
-Risultato: anche se per qualunque motivo arriva `it-IT`, i18next userà le risorse `it` e le categorie diventeranno “Parco, Ristorante, …”.
+### Problema 2: Testo "Replying to" fisso in inglese
+Le chiavi di traduzione usate nel codice (`replyingTo`, `replyingToYourself`, `typeReply`, `sharedContent`) **non esistono** nel namespace `messages` di `i18n.ts`. Il codice usa `defaultValue` in inglese come fallback.
 
-### Modifica in `src/pages/SettingsPage.tsx` (e punti simili)
-L’attuale `normalizeLanguage` gestisce solo zh. La estenderemo per:
-- trasformare `it-IT` → `it`, `en-US` → `en`, ecc.
-- mantenere eccezioni come `zh-CN` correttamente
-
-Così quando salvi e applichi la lingua, la apposta sempre in formato compatibile con le risorse.
-
-### Modifica in `src/App.tsx`
-L’effetto che carica la lingua da `profiles.language` fa `i18n.changeLanguage(lang)` senza `await`, e il `try/catch` non intercetta eventuali errori async.
-Lo renderemo robusto:
-- normalizzare `lang` prima di applicarlo
-- `await i18n.changeLanguage(normalizedLang)`
-- aggiornare `localStorage i18nextLng` con il valore normalizzato
-
-Questo evita stati “a metà” dove la UI sembra in IT per i `defaultValue`, ma i18next rimane in EN per le chiavi reali.
+### Problema 3: Manca visualizzazione "Hai risposto"
+Attualmente quando si invia una risposta, non viene mostrato nessun indicatore visivo nella lista messaggi. Serve mostrare:
+- "Hai risposto" (o "X ha risposto") sopra il messaggio
+- Il messaggio originale a cui si è risposto con effetto fade
 
 ---
 
-## 2) Correzione “symptom”: traduzione categoria sempre normalizzata (Park / parks / Bar & Pub)
-Anche risolvendo la lingua, nel bottom sheet di /messages oggi viene fatto:
-```ts
-t(`categories.${place.category}`, { ns: 'common', defaultValue: ... })
+## Piano di Implementazione
+
+### Fase 1: Aggiungere chiavi di traduzione mancanti in `i18n.ts`
+
+Nel namespace `messages` di ogni lingua, aggiungere:
+
+**Inglese (en):**
+- `replyingTo: 'Replying to {{name}}'`
+- `replyingToYourself: 'Replying to yourself'`
+- `typeReply: 'Type a reply...'`
+- `sharedContent: 'Shared content'`
+- `youReplied: 'You replied'`
+- `theyReplied: '{{name}} replied'`
+- `reply: 'Reply'`
+- `delete: 'Delete'`
+
+**Italiano (it):**
+- `replyingTo: 'Stai rispondendo a {{name}}'`
+- `replyingToYourself: 'Stai rispondendo a te stesso'`
+- `typeReply: 'Scrivi una risposta...'`
+- `sharedContent: 'Contenuto condiviso'`
+- `youReplied: 'Hai risposto'`
+- `theyReplied: '{{name}} ha risposto'`
+- `reply: 'Rispondi'`
+- `delete: 'Elimina'`
+
+Stesso pattern per le altre 10 lingue (es, fr, de, pt, zh-CN, ja, ko, ar, hi, ru).
+
+### Fase 2: Correggere normalizzazione lingua in `i18n.ts`
+
+Modificare la configurazione del LanguageDetector per normalizzare i codici lingua direttamente nel lookup:
+
+```typescript
+detection: {
+  order: ['localStorage', 'navigator'],
+  caches: ['localStorage'],
+  lookupLocalStorage: 'i18nextLng',
+  convertDetectedLanguage: (lng) => {
+    // Normalizza it-IT → it, en-US → en, ma mantieni zh-CN
+    if (lng.startsWith('zh')) return 'zh-CN';
+    if (lng.includes('-') || lng.includes('_')) {
+      return lng.split('-')[0].split('_')[0].toLowerCase();
+    }
+    return lng.toLowerCase();
+  }
+}
 ```
-Se `place.category` è “Park” (capitalizzata), la chiave diventa `categories.Park` (non esiste).
 
-### Modifica in `src/pages/MessagesPage.tsx`
-Nella sezione “Saved Places Modal” sostituiremo la logica con la funzione già presente `translateCategory(...)` (che normalizza con `normalizeCategoryToBase` + lowercase fallback).
-Obiettivo: sempre `categories.park` (lowercase e base-key coerente).
+### Fase 3: Supporto risposte nel database
 
-### Modifica in `src/components/messages/PlaceMessageCard.tsx`
-Per ridurre difformità e casi limite, allineeremo anche qui la resa usando **lo stesso helper** `translateCategory(category, t)` invece di avere logica duplicata.
-Risultato: stesso comportamento ovunque in /messages.
+Il database `direct_messages` non ha attualmente un campo per tracciare a quale messaggio si sta rispondendo. Dovremo:
+
+**Opzione A (consigliata)**: Usare il campo esistente `shared_content` per memorizzare il messaggio citato quando `message_type = 'text'` e c'è una risposta.
+
+Quando si invia una risposta:
+```typescript
+{
+  message_type: 'text',
+  content: 'Nuovo messaggio',
+  shared_content: {
+    reply_to_id: 'uuid-del-messaggio-originale',
+    reply_to_content: 'Testo del messaggio originale',
+    reply_to_sender_id: 'uuid-del-mittente'
+  }
+}
+```
+
+### Fase 4: Modificare `messageService.ts`
+
+Aggiornare `sendTextMessage` per accettare un parametro opzionale `replyToMessage`:
+
+```typescript
+async sendTextMessage(
+  receiverId: string, 
+  content: string, 
+  replyToMessage?: DirectMessage
+): Promise<DirectMessage | null>
+```
+
+Se `replyToMessage` è presente, popolare `shared_content` con i dati della risposta.
+
+### Fase 5: Modificare `MessagesPage.tsx`
+
+1. **Aggiornare `handleSendMessage`** per passare `replyingToMessage` a `sendTextMessage`
+2. **Rimuovere defaultValue** dalle chiamate `t()` ora che le chiavi esistono
+3. **Tradurre il menu azioni** (Reply → Rispondi, Delete → Elimina)
+
+### Fase 6: Modificare `VirtualizedMessageList.tsx` per mostrare risposte
+
+Nel `MessageBubble` component, aggiungere logica per renderizzare il contesto della risposta:
+
+```tsx
+{message.shared_content?.reply_to_id && (
+  <div className="mb-2">
+    <p className="text-xs text-muted-foreground">
+      {isOwn 
+        ? t('youReplied', { ns: 'messages' }) 
+        : t('theyReplied', { ns: 'messages', name: otherUserProfile?.username })}
+    </p>
+    <div className="bg-muted/50 rounded-lg px-3 py-2 text-sm opacity-60">
+      {message.shared_content.reply_to_content}
+    </div>
+  </div>
+)}
+```
+
+### Fase 7: Aggiungere effetto fade al messaggio citato
+
+Applicare stile CSS con gradiente o opacità ridotta al messaggio originale citato:
+
+```css
+.reply-context {
+  opacity: 0.6;
+  background: linear-gradient(to bottom, var(--muted) 0%, transparent 100%);
+}
+```
 
 ---
 
-## 3) Verifica mirata (per confermare il fix)
-Dopo le modifiche:
-1) Vai in **Settings → Language → Italiano**
-2) Torna in **/messages**
-3) Controlla:
-   - nella card condivisa: “Parco” invece di “Park”
-   - nel bottom sheet “Condividi luogo salvato”: “Parco” invece di “Park”
+## Struttura file da modificare
 
-Se ancora non cambia, aggiungeremo (temporaneamente) un piccolo debug visivo non invasivo (solo in dev) per stampare `i18n.resolvedLanguage` dentro /messages, così vediamo al 100% che lingua sta usando i18next.
-
----
-
-## File coinvolti (previsti)
-- `src/i18n.ts` (config i18next: supportedLngs / nonExplicitSupportedLngs / load languageOnly / cleanCode)
-- `src/App.tsx` (apply language robusto: normalize + await changeLanguage)
-- `src/pages/SettingsPage.tsx` (normalizeLanguage estesa)
-- `src/pages/MessagesPage.tsx` (categoria nel Saved Places sheet via `translateCategory`)
-- `src/components/messages/PlaceMessageCard.tsx` (categoria via `translateCategory` per coerenza)
+| File | Modifica |
+|------|----------|
+| `src/i18n.ts` | Aggiungere chiavi traduzione mancanti + convertDetectedLanguage |
+| `src/services/messageService.ts` | Supporto parametro replyToMessage in sendTextMessage |
+| `src/pages/MessagesPage.tsx` | Passare reply context, rimuovere defaultValue |
+| `src/components/messages/VirtualizedMessageList.tsx` | Renderizzare contesto risposta con fade |
+| `src/components/messages/MessageOptionsOverlay.tsx` | Tradurre etichette menu (Reply/Delete) |
 
 ---
 
-## Note tecniche (perché succede “solo categorie”)
-- Molti testi UI passano `defaultValue` (spesso in italiano). Quindi anche se i18next sta in EN, quei testi “sembrano” tradotti.
-- Le categorie invece devono trovare davvero `common.categories.park` dentro la lingua corrente: se la lingua effettiva è `it-IT` e non è mappata, i18next fa fallback su EN → “Park”.
+## Riepilogo tecnico
 
-Questa patch sistema la radice (lingua) e anche le key (Park → park) nel punto critico /messages.
+1. **12 lingue** da aggiornare con 8 nuove chiavi nel namespace `messages`
+2. **Nessuna migrazione database** richiesta - usiamo `shared_content` esistente
+3. **Retrocompatibile** - messaggi esistenti continuano a funzionare
+4. **Effetto visivo** come Instagram/iMessage per le risposte
