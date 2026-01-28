@@ -1,170 +1,148 @@
 
 
-# Piano: Fix MessageOptionsOverlay Layout + PlaceMessageCard Styling
+# Piano: Fix MessageOptionsOverlay e PlaceMessageCard
 
 ## Problemi Identificati
 
-1. **Città e categoria non visibili**: Il testo è troppo scuro sullo sfondo scuro dell'overlay
-2. **Ordine errato**: Emoji bar sotto il post invece che sopra
-3. **Categorie non tradotte**: `PlaceMessageCard` usa `t('categories.restaurant')` senza specificare il namespace `common`
+1. **Categoria ancora in inglese ("Restaurant")**: La traduzione non funziona nonostante il codice corretto
+2. **Post centrato invece che sotto gli emoji**: `justify-center` causa il centraggio verticale
+3. **Testo bianco sempre visibile**: Il colore bianco deve apparire SOLO nell'overlay, non nella chat normale
 
 ---
 
-## Modifiche Necessarie
+## Analisi Dettagliata
 
-### 1. MessageOptionsOverlay.tsx - Nuovo Layout
+### Problema 1: Traduzione Categoria
 
-Riorganizzare l'ordine verticale:
+La struttura i18n è corretta - `it.common.categories.restaurant = 'Ristorante'` esiste nel file `src/i18n.ts` (righe 2440-2451).
 
-```text
-+------------------------------------------+
-|         SFONDO BLUR/SCURO                |
-|                                          |
-|  [EMOJI BAR - FISSA IN ALTO]             |
-|  ❤️ 😋 🤤 😍 🪩 🎉 📍 🥇                   |
-|                                          |
-|  [POST/MESSAGGIO - PIÙ IN BASSO]         |
-|                                          |
-|  [RISPONDI + ELIMINA - SOTTO IL POST]    |
-|                                          |
-+------------------------------------------+
+Il problema potrebbe essere:
+- Il valore `placeData.category` potrebbe essere in formato diverso (maiuscolo, con spazi, ecc.)
+- Esempio: se il database contiene `"Restaurant"` (con R maiuscola), il lookup `categories.Restaurant` fallisce perché la chiave è `categories.restaurant` (minuscolo)
+
+**Soluzione**: Normalizzare la categoria a lowercase prima del lookup:
+
+```tsx
+const categoryKey = placeData.category?.toLowerCase() || '';
+const translatedCategory = t(`categories.${categoryKey}`, { 
+  ns: 'common',
+  defaultValue: placeData.category || 'Place' 
+});
 ```
 
-**Nuovo ordine nel JSX:**
-1. **TOP**: Emoji bar (fissa, subito sotto safe area)
-2. **MIDDLE**: Post/Message card (centrato verticalmente o più in basso)
-3. **BOTTOM**: Menu azioni (Rispondi, Elimina) subito sotto il post
+### Problema 2: Layout - Post Non Allineato Sotto Emoji
 
-### 2. PlaceMessageCard.tsx - Fix Visibilità e Traduzioni
+Attualmente l'overlay usa `justify-center` che centra verticalmente il contenuto. 
 
-#### Problema Visibilità
-Il testo città/categoria usa `text-muted-foreground` che è troppo scuro sull'overlay nero.
+**Soluzione**: Cambiare da `justify-center` a `justify-start` con un `mt-6` per posizionare il post appena sotto gli emoji:
 
-**Soluzione**: Aggiungere prop `variant` per overlay context:
+```tsx
+// PRIMA
+<div className={`flex-1 flex flex-col ${...} justify-center gap-4 px-2`}>
+
+// DOPO  
+<div className={`flex-1 flex flex-col ${...} justify-start gap-4 px-2 mt-6`}>
+```
+
+### Problema 3: Testo Bianco Solo in Overlay Mode
+
+Il `PlaceMessageCard` ora usa sempre `text-white/80` ma questo dovrebbe essere applicato SOLO quando è mostrato nell'overlay delle opzioni messaggio, non nella lista messaggi normale.
+
+**Soluzione**: Aggiungere una prop `overlayMode` al componente:
+
 ```tsx
 interface PlaceMessageCardProps {
-  // ...existing props
-  overlayMode?: boolean; // When true, use white text for visibility
+  placeData: {...};
+  onViewPlace: (place: any) => void;
+  overlayMode?: boolean; // NEW - quando true, usa testo bianco
 }
 ```
 
-Oppure applicare direttamente `text-white` per le info nell'overlay.
-
-#### Problema Traduzione Categorie
-Il codice attuale:
-```tsx
-const translatedCategory = t(`categories.${placeData.category}`, { 
-  defaultValue: placeData.category || 'Place' 
-});
-```
-
-Manca il namespace. Correggere in:
-```tsx
-const translatedCategory = t(`categories.${placeData.category}`, { 
-  ns: 'common',
-  defaultValue: placeData.category || 'Place' 
-});
-```
-
----
-
-## Dettaglio Implementazione
-
-### MessageOptionsOverlay.tsx
+E applicare condizionalmente il colore:
 
 ```tsx
-return (
-  <div 
-    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col p-6"
-    onClick={onClose}
-  >
-    {/* === 1. EMOJI BAR - FIXED AT TOP === */}
-    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} pt-safe mt-4`}>
-      <div 
-        className="bg-card/90 backdrop-blur-lg rounded-full px-4 py-2.5 flex items-center gap-2 shadow-xl border border-border/30"
-        onClick={e => e.stopPropagation()}
-      >
-        {QUICK_EMOJIS.map(emoji => (
-          <button
-            key={emoji}
-            onClick={() => handleReaction(emoji)}
-            className="text-xl sm:text-2xl hover:scale-125 active:scale-90 transition-transform"
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-    </div>
-
-    {/* === 2. MESSAGE/CARD - CENTERED === */}
-    <div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-center`}>
-      <div className="mb-4">
-        {renderMessageOrCard()}
-      </div>
-
-      {/* === 3. ACTIONS MENU - DIRECTLY BELOW MESSAGE === */}
-      <div 
-        className="bg-card/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl border border-border/20 min-w-[200px]"
-        onClick={e => e.stopPropagation()}
-      >
-        <button onClick={handleReply} className="...">
-          <Reply /> Rispondi
-        </button>
-        <button onClick={handleDelete} className="...">
-          <Trash2 /> Elimina Messaggio
-        </button>
-      </div>
-    </div>
-  </div>
-);
-```
-
-### PlaceMessageCard.tsx - Fix Categoria Tradotta
-
-Aggiornare la riga 59:
-```tsx
-// PRIMA
-const translatedCategory = t(`categories.${placeData.category}`, { 
-  defaultValue: placeData.category || 'Place' 
-});
-
-// DOPO
-const translatedCategory = t(`categories.${placeData.category}`, { 
-  ns: 'common',
-  defaultValue: placeData.category || 'Place' 
-});
-```
-
-### PlaceMessageCard.tsx - Fix Visibilità Testo
-
-Per garantire visibilità su sfondo scuro dell'overlay, modificare le classi del testo città/categoria.
-
-Opzione 1 - Prop condizionale:
-```tsx
-// Aggiungere prop overlayMode
-<div className={`text-xs ${overlayMode ? 'text-white/90' : 'text-muted-foreground'}`}>
-```
-
-Opzione 2 - Usare colori più visibili di default:
-```tsx
-// Usare text-white direttamente dato che la card ha sfondo scuro
-<div className="text-xs text-white/80">
+<div className={`flex items-center gap-1.5 text-xs ${
+  overlayMode ? 'text-white/80' : 'text-muted-foreground'
+} mt-0.5`}>
 ```
 
 ---
 
 ## File da Modificare
 
-| File | Modifiche |
-|------|-----------|
-| `src/components/messages/MessageOptionsOverlay.tsx` | Riordinare: Emoji TOP → Post MIDDLE → Actions BOTTOM |
-| `src/components/messages/PlaceMessageCard.tsx` | 1. Fix namespace categoria `ns: 'common'` 2. Testo bianco per visibilità |
+### 1. `src/components/messages/PlaceMessageCard.tsx`
+
+**Modifiche:**
+1. Aggiungere prop `overlayMode?: boolean`
+2. Normalizzare la categoria a lowercase per la traduzione
+3. Applicare colore testo condizionale basato su `overlayMode`
+
+```tsx
+interface PlaceMessageCardProps {
+  placeData: {...};
+  onViewPlace: (place: any) => void;
+  overlayMode?: boolean; // NEW
+}
+
+const PlaceMessageCard = ({ placeData, onViewPlace, overlayMode = false }: PlaceMessageCardProps) => {
+  // Normalize category to lowercase for translation lookup
+  const categoryKey = placeData.category?.toLowerCase() || '';
+  const translatedCategory = t(`categories.${categoryKey}`, { 
+    ns: 'common',
+    defaultValue: placeData.category || 'Place' 
+  });
+  
+  // ... render
+  <div className={`flex items-center gap-1.5 text-xs ${
+    overlayMode ? 'text-white/80' : 'text-muted-foreground'
+  } mt-0.5`}>
+    {/* City */}
+    <span className={overlayMode ? 'text-white/50' : 'text-muted-foreground/50'}>•</span>
+    {/* Category */}
+  </div>
+}
+```
+
+### 2. `src/components/messages/MessageOptionsOverlay.tsx`
+
+**Modifiche:**
+1. Cambiare layout da `justify-center` a `justify-start` con margin-top
+2. Passare `overlayMode={true}` a `PlaceMessageCard`
+
+```tsx
+// Nel renderMessageOrCard()
+if (message.message_type === 'place_share' && sharedContent) {
+  return (
+    <div onClick={e => e.stopPropagation()}>
+      <PlaceMessageCard 
+        placeData={sharedContent} 
+        onViewPlace={() => {}}
+        overlayMode={true}  // NEW - abilita testo bianco
+      />
+    </div>
+  );
+}
+
+// Nel layout principale
+<div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-start gap-4 px-2 mt-6`}>
+  {/* Post card + Actions menu */}
+</div>
+```
+
+---
+
+## Riepilogo Modifiche
+
+| File | Modifica |
+|------|----------|
+| `PlaceMessageCard.tsx` | 1. Aggiungere prop `overlayMode` 2. Lowercase category per traduzione 3. Colori condizionali |
+| `MessageOptionsOverlay.tsx` | 1. Layout `justify-start` + `mt-6` 2. Passare `overlayMode={true}` |
 
 ---
 
 ## Risultato Atteso
 
-1. **Layout corretto**: Emoji bar in alto → Post al centro → Rispondi/Elimina sotto il post
-2. **Città/categoria visibili**: Testo bianco/chiaro su sfondo scuro
-3. **Categorie tradotte**: "Restaurant" → "Ristorante" in italiano
+1. **Categoria tradotta**: "Restaurant" → "Ristorante" (perché normalizziamo a lowercase)
+2. **Layout corretto**: Il post appare subito sotto la barra emoji, non centrato
+3. **Colori appropriati**: Testo bianco solo nell'overlay, colori normali nella chat
 
