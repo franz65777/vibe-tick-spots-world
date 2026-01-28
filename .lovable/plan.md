@@ -1,91 +1,79 @@
 
 
-## Implementazione Swipe-to-Back su Mobile per Messaggi
+## Applicare Sfondo Blur alle Pagine Notifiche e Messaggi
 
-### Stato Attuale
-
-Ho analizzato il codice e la situazione è la seguente:
-
-| Pagina | SwipeBackWrapper | Stato |
-|--------|------------------|-------|
-| `MessagesPage.tsx` | ✅ Presente (riga 839) | Funzionante |
-| `BusinessMessagesPage.tsx` | ❌ Mancante | Da aggiungere |
-
-### Come Funziona lo Swipe Attuale
-
-Il sistema di swipe-to-back è già implementato e funziona così:
-- **Zona attiva**: Bordo sinistro dello schermo (30px)
-- **Soglia di attivazione**: 80px di trascinamento
-- **Feedback visivo**: Icona chevron che appare progressivamente + leggero spostamento del contenuto
-
-Nella `MessagesPage`, il `handleBack` gestisce già correttamente tutti i casi:
-- **Vista Chat** → Torna alla lista thread
-- **Vista Search** → Torna alla lista thread
-- **Vista Threads** → Torna alla home
+### Obiettivo
+Applicare lo stesso effetto glassmorphism dell'AddPageOverlay (`bg-background/40 backdrop-blur-xl`) alle pagine di notifiche e messaggi per una UI più moderna e coerente.
 
 ---
 
-## Modifiche da Implementare
+### Analisi dello Stile AddPageOverlay
 
-### 1. Aggiungere SwipeBackWrapper a BusinessMessagesPage
-
-La pagina messaggi business non ha lo swipe-to-back. Aggiungerò il wrapper:
-
+L'AddPageOverlay (riga 131) usa:
 ```tsx
-// src/pages/business/BusinessMessagesPage.tsx
-import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
-
-const BusinessMessagesPage = () => {
-  // ...
-  
-  return (
-    <SwipeBackWrapper onBack={() => navigate('/business')}>
-      <div className="min-h-screen bg-background pb-24">
-        {/* contenuto esistente */}
-      </div>
-    </SwipeBackWrapper>
-  );
-};
+<div className="fixed inset-0 z-[...] flex flex-col bg-background/40 backdrop-blur-xl">
 ```
 
-### 2. Limitare lo Swipe solo a Mobile (Opzionale)
+Questo crea un effetto vetro smerigliato che lascia intravedere il contenuto sottostante.
 
-Attualmente lo swipe funziona su tutti i dispositivi. Se vuoi limitarlo solo a mobile, posso modificare il `SwipeBackWrapper` per usare `useIsMobile()`:
+---
 
+### Modifiche da Implementare
+
+#### 1. NotificationsPage.tsx
+
+**Attuale (riga 122):**
 ```tsx
-// src/components/common/SwipeBackWrapper.tsx
-import { useIsMobile } from '@/hooks/use-mobile';
+<div className="h-screen w-full bg-background flex flex-col overflow-hidden">
+```
 
-export const SwipeBackWrapper = ({ children, onBack, enabled = true }) => {
-  const isMobile = useIsMobile();
-  
-  // Disabilita swipe su desktop
-  const isEnabled = enabled && isMobile;
-  
-  const { containerRef, isSwipingBack, swipeProgress } = useSwipeBack(onBack, {
-    enabled: isEnabled,
-    edgeWidth: 30,
-    threshold: 80
-  });
-  
-  // ...
-};
+**Nuovo:**
+```tsx
+<div className="h-screen w-full bg-background/40 backdrop-blur-xl flex flex-col overflow-hidden">
+```
+
+**Header (riga 125):**
+```tsx
+className="shrink-0 bg-background w-full"
+```
+→ Cambiare in:
+```tsx
+className="shrink-0 bg-background/60 backdrop-blur-md w-full"
 ```
 
 ---
 
-## Riepilogo File da Modificare
+#### 2. MessagesPage.tsx
+
+**Container principale** - Aggiungere lo sfondo blur al wrapper principale.
+
+**Header threads** e **header chat** - Adattare con effetto blur semi-trasparente per coerenza.
+
+**Nota**: La struttura di MessagesPage è più complessa (view threads/chat/search), quindi l'effetto va applicato in modo che funzioni per tutte le viste.
+
+---
+
+### File da Modificare
 
 | File | Modifica |
 |------|----------|
-| `src/pages/business/BusinessMessagesPage.tsx` | Aggiungere `SwipeBackWrapper` |
-| `src/components/common/SwipeBackWrapper.tsx` | (Opzionale) Aggiungere controllo mobile-only |
+| `src/pages/NotificationsPage.tsx` | Applicare `bg-background/40 backdrop-blur-xl` al container, header con blur |
+| `src/pages/MessagesPage.tsx` | Applicare stesso stile al container principale e headers |
 
 ---
 
-## Note
+### Risultato Visivo Atteso
 
-- Lo swipe nella `MessagesPage` è già completamente funzionante per tutte le viste (threads, chat, search)
-- Il feedback visivo (chevron + trascinamento contenuto) offre una UX nativa iOS-like
-- L'edge zone di 30px è sufficientemente piccola da non interferire con altri gesti (come lo swipe-to-reply sui messaggi)
+- **Prima**: Sfondo bianco/nero solido (piatto)
+- **Dopo**: Sfondo vetro smerigliato con blur che lascia intravedere la mappa/contenuto sottostante
+- Coerenza visiva con AddPageOverlay e altre modali dell'app
+
+---
+
+### Considerazioni Tecniche
+
+1. **Performance**: `backdrop-blur-xl` è GPU-accelerato su iOS/Chrome, non impatta le performance
+2. **Safe area**: Il padding `safe-area-inset-top` resta invariato
+3. **SwipeBackWrapper**: Il wrapper esterno non viene modificato, solo il contenuto interno
+4. **Dark mode**: `bg-background/40` funziona automaticamente in entrambi i temi
 
