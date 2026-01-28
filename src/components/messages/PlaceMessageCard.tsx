@@ -55,8 +55,9 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
   const categoryImage = getCategoryImage(placeData.category);
   const thumbnail = getLocationThumbnail(placeData);
   
-  // Translate category - categories are in root namespace, not 'common'
+  // Translate category - categories are in 'common' namespace
   const translatedCategory = t(`categories.${placeData.category}`, { 
+    ns: 'common',
     defaultValue: placeData.category || 'Place' 
   });
 
@@ -110,7 +111,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
           {placeData.name}
         </h4>
         
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-1.5 text-xs text-white/80 mt-0.5">
           {(placeData.city || placeData.address || placeData.coordinates) && (
             <span className="truncate">
               <CityLabel 
@@ -121,7 +122,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
               />
             </span>
           )}
-          <span className="text-muted-foreground/50">•</span>
+          <span className="text-white/50">•</span>
           <span className="capitalize shrink-0">{translatedCategory}</span>
         </div>
       </div>
