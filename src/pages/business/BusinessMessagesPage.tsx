@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { messageService, MessageThread } from '@/services/messageService';
 import StoriesViewer from '@/components/StoriesViewer';
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 
 interface Message {
   id: string;
@@ -182,8 +183,8 @@ const BusinessMessagesPage = () => {
   const unreadCount = messages.filter(m => !m.is_read).length;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      
+    <SwipeBackWrapper onBack={() => navigate('/business')}>
+      <div className="min-h-screen bg-background pb-24">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-3 p-4 pb-2">
@@ -298,19 +299,20 @@ const BusinessMessagesPage = () => {
           )}
       </div>
 
-      {/* Stories Viewer */}
-      {showStories && currentUserStories.length > 0 && (
-        <StoriesViewer
-          stories={currentUserStories}
-          initialStoryIndex={0}
-          onClose={() => {
-            setShowStories(false);
-            setCurrentUserStories([]);
-          }}
-          onStoryViewed={() => {}}
-        />
-      )}
-    </div>
+        {/* Stories Viewer */}
+        {showStories && currentUserStories.length > 0 && (
+          <StoriesViewer
+            stories={currentUserStories}
+            initialStoryIndex={0}
+            onClose={() => {
+              setShowStories(false);
+              setCurrentUserStories([]);
+            }}
+            onStoryViewed={() => {}}
+          />
+        )}
+      </div>
+    </SwipeBackWrapper>
   );
 };
 
