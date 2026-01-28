@@ -181,16 +181,11 @@ const OptimizedPlacesAutocomplete = ({
         )}
       </div>
 
-      {/* Results dropdown - Home page style with 3D icons */}
+      {/* Results dropdown - Clean row style like reference */}
       {showResults && hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-card/95 backdrop-blur-lg border border-border/40 rounded-2xl shadow-2xl max-h-[360px] overflow-y-auto scrollbar-hide">
-          {/* Header */}
-          <div className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/30">
-            {t('locations', { ns: 'common', defaultValue: 'Posizioni' })}
-          </div>
-
-          {/* Combined results list */}
-          <div className="py-1">
+        <div className="absolute z-50 w-full mt-2 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl max-h-[400px] overflow-y-auto scrollbar-hide">
+          {/* Results list - simple rows with dividers */}
+          <div className="divide-y divide-border/30">
             {allResults.map((result, index) => {
               const categoryImage = getCategoryImage(result.category || 'restaurant');
               
@@ -198,40 +193,29 @@ const OptimizedPlacesAutocomplete = ({
                 <button
                   key={result.id}
                   onClick={() => handleSelect(result)}
-                  className={`w-full px-4 py-3 flex items-center gap-3.5 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${
-                    selectedIndex === index ? 'bg-muted/50' : ''
+                  className={`w-full px-4 py-4 flex items-center gap-4 hover:bg-muted/40 active:bg-muted/60 transition-colors text-left ${
+                    selectedIndex === index ? 'bg-muted/40' : ''
                   }`}
                 >
-                  {/* 3D Category Icon */}
-                  <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-muted/40 rounded-xl overflow-hidden">
+                  {/* Category Image */}
+                  <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-muted/30">
                     <img 
                       src={categoryImage}
                       alt={result.category || 'place'}
-                      className="w-9 h-9 object-contain"
+                      className="w-full h-full object-cover"
                       loading="eager"
                     />
                   </div>
                   
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-foreground truncate">
+                    <div className="font-semibold text-base text-foreground truncate">
                       {result.name}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate mt-0.5">
-                      {result.city && result.address 
-                        ? `${result.city} • ${result.address.split(',')[0]}`
-                        : result.address || result.city}
+                    <div className="text-sm text-muted-foreground truncate mt-0.5">
+                      {result.category || result.city || result.address?.split(',')[0]}
                     </div>
                   </div>
-
-                  {/* Source indicator dot */}
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    result.source === 'database' 
-                      ? 'bg-green-500' 
-                      : result.source === 'google' 
-                        ? 'bg-blue-500' 
-                        : 'bg-orange-500'
-                  }`} />
                 </button>
               );
             })}
