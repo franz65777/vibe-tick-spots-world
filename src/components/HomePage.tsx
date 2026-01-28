@@ -769,7 +769,8 @@ const HomePage = memo(() => {
                       navigate(`/user-places/${returnToState.userPlacesUserId}`, {
                         state: { 
                           restoreScroll: returnToState.scrollY,
-                          filterCategory: returnToState.filterCategory 
+                          filterCategory: returnToState.filterCategory,
+                          selectedCity: returnToState.selectedCity
                         },
                         replace: true
                       });
