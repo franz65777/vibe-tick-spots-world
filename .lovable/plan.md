@@ -1,166 +1,140 @@
 
-
-## Piano: Sincronizzazione in Tempo Reale del Salvataggio Location
+## Piano: Unificare la Ricerca Add Page con Home Page
 
 ### Problema Identificato
 
-Quando salvi una location aperta dalla ricerca:
+1. **Ricerca inconsistente**: "Osteria da Gemma" viene trovata nella home page ma non nell'Add page
+   - L'hook `useOptimizedPlacesSearch` usa `isCitySearch()` che classifica erroneamente "osteria da gemma" come ricerca di città (3 parole, nessuna keyword)
+   - Viene usato Nominatim (fallback) invece di Google Text Search
 
-1. **PinDetailCard** crea la location nel database e aggiorna `place.id` con il nuovo UUID
-2. L'evento `location-save-changed` viene emesso 
-3. Il marker temporaneo mostra l'icona "salvato" ✓
-4. **MA** il realtime refresh (dopo 1 secondo) causa il re-fetch delle locations
-5. Lo stato `selectedPlace` in `MapSection` punta ancora all'oggetto vecchio (con ID temporaneo)
-6. La cache viene invalidata e il pin "scompare" perché l'ID non corrisponde più
+2. **Categorie non filtrate**: L'Add page mostra locations fuori dalle 10 categorie consentite (restaurant, bar, cafe, bakery, hotel, museum, entertainment, park, historical, nightclub)
+
+3. **UI dropdown brutta**: Il dropdown attuale usa icone piccole e stile diverso dalla home page
+
+---
 
 ### Soluzione
 
-Modificare il flusso per **propagare l'ID aggiornato** al componente padre e **preservare il pin selezionato** durante i refresh.
+Replicare la logica di ricerca della Home page (`SearchDrawer`) nell'Add page, rimuovendo le città e migliorando la UI.
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. Aggiornare l'evento `location-save-changed` con il nuovo ID
+#### 1. Rimuovere la logica `isCitySearch` e usare sempre Google
 
-**File**: `src/components/explore/PinDetailCard.tsx`
+**File**: `src/hooks/useOptimizedPlacesSearch.ts`
 
-Aggiungere un nuovo campo `newLocationId` all'evento per permettere ai componenti di aggiornare i loro riferimenti:
+Il problema è che `isCitySearch()` classifica "osteria da gemma" come città. La soluzione è:
+- Rimuovere la detection city/place
+- Usare sempre la stessa strategia: DB first → Google Text Search → Nominatim fallback
+- Filtrare i risultati Google per escludere città e categorie non consentite
 
 ```typescript
-// In handleSaveWithTag, dopo il salvataggio:
-window.dispatchEvent(new CustomEvent('location-save-changed', {
-  detail: { 
-    locationId: locationId, 
-    isSaved: true, 
-    saveTag: tag,
-    newLocationId: locationId,  // NUOVO: ID interno della location creata
-    oldLocationId: originalPlaceId, // NUOVO: ID originale (temporaneo/google)
-    coordinates: place.coordinates  // NUOVO: per matching alternativo
+// RIMUOVERE la funzione isCitySearch() e la logica di branching
+
+// MODIFICARE performSearch per:
+// 1. Cercare sempre nel database
+// 2. Chiamare sempre Google Text Search se db ha pochi risultati
+// 3. Fallback a Nominatim solo se Google fallisce
+// 4. Filtrare città e categorie non consentite
+```
+
+#### 2. Aggiungere filtro categorie consentite
+
+**File**: `src/hooks/useOptimizedPlacesSearch.ts`
+
+Importare e usare `isAllowedNominatimType` e `mapGooglePlaceTypeToCategory`:
+
+```typescript
+import { 
+  isAllowedNominatimType, 
+  mapGooglePlaceTypeToCategory,
+  isAllowedCategory 
+} from '@/utils/allowedCategories';
+
+// Filtrare risultati Google per categorie consentite
+const filteredGoogleResults = results.filter((place: any) => {
+  // Escludere città
+  if (place.types?.some((t: string) => ['locality', 'administrative_area_level_3'].includes(t))) {
+    return false;
   }
-}));
+  // Verificare categoria consentita
+  const category = mapGooglePlaceTypeToCategory(place.types || []);
+  return isAllowedCategory(category);
+});
+
+// Filtrare risultati Nominatim
+const filteredNominatimResults = results.filter(r => {
+  if (['city', 'town', 'village'].includes(r.type || '')) return false;
+  return isAllowedNominatimType(r.type, r.class);
+});
 ```
 
-#### 2. Aggiornare `selectedPlace` quando l'ID cambia
+#### 3. Ridisegnare il dropdown con stile Home Page
 
-**File**: `src/components/home/MapSection.tsx`
+**File**: `src/components/OptimizedPlacesAutocomplete.tsx`
 
-Aggiungere un listener per aggiornare `selectedPlace` quando la location viene salvata:
+Usare le stesse dimensioni e 3D icons della home page:
 
 ```typescript
-// Nuovo useEffect per sincronizzare selectedPlace dopo il salvataggio
-useEffect(() => {
-  const handleSaveChanged = (event: CustomEvent) => {
-    const { isSaved, newLocationId, oldLocationId, coordinates } = event.detail;
-    
-    // Se abbiamo un pin selezionato e questo evento riguarda quel pin
-    if (selectedPlace && isSaved && newLocationId) {
-      const isMatchingPlace = 
-        selectedPlace.id === oldLocationId ||
-        selectedPlace.id === newLocationId ||
-        selectedPlace.isTemporary ||
-        (selectedPlace.coordinates?.lat === coordinates?.lat && 
-         selectedPlace.coordinates?.lng === coordinates?.lng);
-      
-      if (isMatchingPlace) {
-        // Aggiorna selectedPlace con il nuovo ID interno
-        setSelectedPlace(prev => prev ? {
-          ...prev,
-          id: newLocationId,
-          isTemporary: false,
-          isSaved: true
-        } : null);
-      }
-    }
-  };
-  
-  window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
-  return () => window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
-}, [selectedPlace]);
+import { getCategoryImage } from '@/utils/categoryIcons';
+
+// Nel dropdown:
+<button className="w-full px-4 py-3 flex items-center gap-3 bg-muted/30 
+                   hover:bg-muted/50 transition-colors rounded-xl text-left">
+  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center 
+                  justify-center flex-shrink-0">
+    <img 
+      src={getCategoryImage(result.category || 'restaurant')} 
+      alt={result.category} 
+      className="w-8 h-8 object-contain" 
+    />
+  </div>
+  <div className="flex-1 min-w-0">
+    <div className="font-medium text-foreground truncate">{result.name}</div>
+    <div className="text-sm text-muted-foreground truncate">{result.address}</div>
+  </div>
+</button>
 ```
 
-#### 3. Preservare il pin durante i refresh realtime
+#### 4. Nascondere hero content quando ci sono risultati
 
-**File**: `src/hooks/useMapLocations.ts`
+**File**: `src/components/add/AddPageOverlay.tsx`
 
-Aggiungere un meccanismo per evitare che il refresh causi la scomparsa del pin:
-
-```typescript
-// In debouncedRefresh, aggiungere un flag per preservare lo stato
-const debouncedRefresh = useCallback((preserveSelection = true) => {
-  if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-  refreshTimeoutRef.current = setTimeout(() => {
-    console.log('🔄 Map data changed via centralized realtime, refreshing...');
-    // Fetch senza invalidare la selezione corrente
-    fetchLocations();
-  }, 1000);
-}, []);
-```
-
-#### 4. Aggiornare il marker temporaneo correttamente
-
-**File**: `src/components/LeafletMapSetup.tsx`
-
-Migliorare il listener `location-save-changed` per gestire il cambio di ID:
+Passare lo stato `hasResults` e `isSearching` al componente per nascondere l'hero:
 
 ```typescript
-// In useEffect per location-save-changed (linea ~813)
-const handleSaveChange = (e: CustomEvent) => {
-  const { locationId, isSaved, newLocationId, oldLocationId, coordinates } = e.detail;
-  const map = mapRef.current;
-  if (!map || !tempMarkerRef.current || !selectedPlace) return;
-  
-  // Check se questo evento riguarda il nostro temp marker
-  const isForTempLocation = 
-    selectedPlace.id === locationId ||
-    selectedPlace.id === oldLocationId ||
-    selectedPlace.isTemporary ||
-    (coordinates && 
-     Math.abs(selectedPlace.coordinates?.lat - coordinates.lat) < 0.0001 &&
-     Math.abs(selectedPlace.coordinates?.lng - coordinates.lng) < 0.0001);
-  
-  if (isForTempLocation && isSaved) {
-    tempMarkerSavedRef.current = true;
-    
-    // Aggiorna l'icona per mostrare che è salvato
-    const newIcon = createLeafletCustomMarker({
-      category: selectedPlace.category || 'attraction',
-      name: selectedPlace.name,
-      isSaved: true,
-      // ... resto dei parametri
-    });
-    
-    tempMarkerRef.current.setIcon(newIcon);
-  }
-};
+// Aggiungere stato per tracciare se ci sono risultati
+const [hasSearchResults, setHasSearchResults] = useState(false);
+
+// Passare callback a OptimizedPlacesAutocomplete
+<OptimizedPlacesAutocomplete
+  onResultsChange={(hasResults, isSearching) => {
+    setHasSearchResults(hasResults && isSearching);
+  }}
+  ...
+/>
+
+// Nascondere hero quando ci sono risultati
+{!hasSearchResults && (
+  <div className="flex-1 overflow-y-auto">
+    {/* Hero content */}
+  </div>
+)}
 ```
 
 ---
 
-### Flusso Dopo la Modifica
+### UI Comparison
 
-```
-1. Utente apre location dalla ricerca
-   └─> selectedPlace = { id: 'ChIJ...', isTemporary: true, ... }
-
-2. Utente salva la location
-   └─> PinDetailCard crea location con UUID 'abc-123'
-   └─> Emette evento: { oldLocationId: 'ChIJ...', newLocationId: 'abc-123' }
-
-3. MapSection riceve evento
-   └─> Aggiorna selectedPlace.id = 'abc-123'
-   └─> selectedPlace.isTemporary = false
-
-4. LeafletMapSetup riceve evento
-   └─> tempMarkerSavedRef = true (marker non viene rimosso)
-   └─> Icona aggiornata con stato "salvato"
-
-5. Realtime refresh (dopo 1 secondo)
-   └─> useMapLocations ricarica la lista
-   └─> Nuova location con id 'abc-123' è nella lista
-   └─> selectedPlace.id === location.id ✓ (match corretto)
-   └─> Pin rimane visibile ✓
-```
+| Aspetto | Prima (Add) | Dopo (Unificato) |
+|---------|-------------|------------------|
+| Icone | 36px, Lucide icons | 48px, 3D images |
+| Stile risultato | `bg-accent/50` hover | `bg-muted/30` con `rounded-xl` |
+| Sezioni | "Salvati" / "Suggerimenti" | "POSIZIONI" (unica lista) |
+| Hero visibility | Sempre visibile | Nascosto durante ricerca |
+| No results | Overlay su hero | Messaggio centrato pulito |
 
 ---
 
@@ -168,16 +142,16 @@ const handleSaveChange = (e: CustomEvent) => {
 
 | File | Modifica |
 |------|----------|
-| `src/components/explore/PinDetailCard.tsx` | Aggiungere `newLocationId` e `oldLocationId` all'evento `location-save-changed` |
-| `src/components/home/MapSection.tsx` | Aggiungere listener per aggiornare `selectedPlace` dopo il salvataggio |
-| `src/components/LeafletMapSetup.tsx` | Migliorare il matching dell'evento `location-save-changed` |
+| `src/hooks/useOptimizedPlacesSearch.ts` | Rimuovere `isCitySearch`, usare sempre Google, filtrare categorie |
+| `src/components/OptimizedPlacesAutocomplete.tsx` | UI dropdown come home, callback per risultati |
+| `src/components/add/AddPageOverlay.tsx` | Nascondere hero durante ricerca attiva |
 
 ---
 
-### Vantaggi
+### Risultato Atteso
 
-1. **Pin rimane visibile** - Non scompare più dopo il salvataggio
-2. **ID sincronizzato** - selectedPlace ha sempre l'ID corretto
-3. **Nessuna chiamata API extra** - Sfrutta gli eventi già esistenti
-4. **Retrocompatibile** - Non rompe altri componenti che usano l'evento
-
+1. "Osteria da Gemma" sarà trovata nell'Add page esattamente come nella Home page
+2. Solo locations nelle 10 categorie consentite saranno mostrate
+3. Nessuna città nei risultati dell'Add page
+4. Dropdown con stile identico alla Home page (icone 3D, rounded-xl, spacing corretto)
+5. Hero content nascosto durante la ricerca per non interferire con i risultati
