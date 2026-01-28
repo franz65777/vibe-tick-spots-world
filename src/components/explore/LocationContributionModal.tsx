@@ -232,13 +232,28 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   }, [selectedPhotos.length]);
 
   const handleFileSelect = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      await scanPhotos(files);
+      // Create NearbyPhoto objects directly and add to selectedPhotos
+      const newPhotos: NearbyPhoto[] = Array.from(files).map(file => ({
+        file,
+        url: URL.createObjectURL(file),
+        distance: Infinity, // No distance badge for manual uploads
+        timestamp: undefined,
+      }));
+
+      // Add directly to selectedPhotos (max 5 total)
+      setSelectedPhotos(prev => {
+        const combined = [...prev, ...newPhotos];
+        return combined.slice(0, 5);
+      });
+
+      // Reset input to allow re-selecting same file
+      e.target.value = '';
     },
-    [scanPhotos]
+    []
   );
 
   // Add photo directly to selected (not toggle)
