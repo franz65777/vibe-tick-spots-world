@@ -91,6 +91,9 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
     };
 
     if (isOpen) {
+      // Hide home page header/search bar
+      document.body.setAttribute('data-modal-open', 'true');
+      
       window.addEventListener('keydown', handleKeyDown);
       // Hide bottom navigation
       window.dispatchEvent(new CustomEvent('ui:overlay-open'));
@@ -103,6 +106,8 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      // Restore home page header
+      document.body.removeAttribute('data-modal-open');
       window.dispatchEvent(new CustomEvent('ui:overlay-close'));
     };
   }, [isOpen, onClose]);

@@ -44,20 +44,20 @@ export const AddOverlayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const openAddOverlay = useCallback(() => {
     // Store the current path before opening
     originPathRef.current = location.pathname;
-    setIsAddOverlayOpen(true);
-  }, [location.pathname]);
-
-  const closeAddOverlay = useCallback(() => {
-    setIsAddOverlayOpen(false);
     
-    // If opened from a page other than home, navigate to home
-    if (originPathRef.current !== '/') {
+    // Navigate to home first if not already there (loads home in background)
+    if (location.pathname !== '/') {
       navigate('/', { replace: true });
     }
     
-    // Reset origin
+    setIsAddOverlayOpen(true);
+  }, [location.pathname, navigate]);
+
+  const closeAddOverlay = useCallback(() => {
+    setIsAddOverlayOpen(false);
+    // Already on home (navigated in openAddOverlay), just reset origin
     originPathRef.current = '/';
-  }, [navigate]);
+  }, []);
 
   // Listen for open-add-overlay event from bottom navigation
   useEffect(() => {
@@ -73,15 +73,9 @@ export const AddOverlayProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const handleCloseContributionModal = useCallback(() => {
     setIsAddContributionModalOpen(false);
     setAddContributionLocation(null);
-    
-    // If opened from a page other than home, navigate to home
-    if (originPathRef.current !== '/') {
-      navigate('/', { replace: true });
-    }
-    
-    // Reset origin
+    // Already on home (navigated in openAddOverlay), just reset origin
     originPathRef.current = '/';
-  }, [navigate]);
+  }, []);
 
   return (
     <AddOverlayContext.Provider
