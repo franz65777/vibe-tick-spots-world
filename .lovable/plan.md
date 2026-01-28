@@ -1,180 +1,226 @@
 
-# Piano: Fix Pagina Messaggi - Immagini, Traduzioni Categorie e UI
+# Piano: Correzione Bug Dati Posizione + Redesign Card Luoghi nei Messaggi
 
 ## Panoramica
 
-Tre problemi da risolvere nella pagina dei messaggi (modal "Condividi Luogo Salvato"):
+Due problemi principali da risolvere:
 
-1. **Immagini mancanti**: Mostrare foto reali (business account o Google Photos) invece di solo icone categoria
-2. **Categorie in inglese**: "Restaurant", "Bar & Pub" devono essere tradotte nella lingua dell'utente
-3. **UI da migliorare**: Rendere la lista piu elegante e moderna
+1. **BUG CRITICO**: Cliccando su una posizione condivisa nei messaggi, il PinDetailCard mostra dati errati (foto mancanti, stato salvataggio sbagliato)
+2. **UI Design**: La card dei luoghi condivisi e troppo grande verticalmente e necessita di miglioramenti estetici
 
 ---
 
-## Analisi Attuale
+## Problema 1: Bug Dati Errati nel PinDetailCard
 
-### Problema 1: Immagini
+### Analisi Tecnica
 
-Il codice attuale (linee 1089-1092):
-```tsx
-{place.image_url ? 
-  <img src={place.image_url} ... /> : 
-  <div><img src={getCategoryImage(place.category)} ... /></div>
+Quando una posizione viene condivisa, i dati vengono salvati cosi:
+```typescript
+{
+  name, category, address, city,
+  google_place_id,  // Google Place ID
+  place_id,         // Duplicato del google_place_id
+  latitude, longitude,
+  image_url, photos
 }
 ```
 
-**Problema**: Manca il fallback a `photos` (JSONB array dalla tabella locations). L'ordine dovrebbe essere:
-1. `image_url` (business account photo)
-2. `photos[0]` (Google-saved photos)
-3. Icona categoria (fallback)
-
-### Problema 2: Traduzioni Categorie
-
-Il codice attuale (linea 1098):
-```tsx
-{categoryDisplayNames[place.category as AllowedCategory] || place.category || 'Place'}
+Il bug si manifesta nella navigazione (MessagesPage linee 984-985):
+```typescript
+id: placeData.id || googlePlaceId,  // <-- PROBLEMA!
+google_place_id: googlePlaceId,
 ```
 
-**Problema**: `categoryDisplayNames` e un oggetto statico in inglese. Esiste gia il pattern corretto:
-```tsx
-t(`categories.${cat}`, { ns: 'common' })
+**Se `placeData.id` e undefined**, viene usato `googlePlaceId` come `id`. Ma il PinDetailCard usa `place.id` per:
+- `locationInteractionService.isLocationSaved(place.id)` - controlla stato salvataggio
+- `locationInteractionService.isLocationLiked(place.id)` - controlla stato like
+- Query sui posts con `location_id`
+
+Il service `isLocationSaved` ha gia un fallback per gestire `google_place_id`, ma il problema e che viene passato un ID inconsistente.
+
+### Soluzione
+
+1. **Rimuovere il fallback problematico**: Non usare `googlePlaceId` come `id`
+2. **Mantenere `id` vuoto se non disponibile**: PinDetailCard gestisce gia questo caso
+3. **Aggiungere l'id interno dalla query originale**: La query su `user_saved_locations` gia restituisce `locations.id`
+
+**Modifiche a `MessagesPage.tsx` (onViewPlace handler, linee 975-1001)**:
+
+```typescript
+onViewPlace={(placeData, otherUserId) => {
+  const lat = placeData.latitude ?? placeData.coordinates?.lat ?? 0;
+  const lng = placeData.longitude ?? placeData.coordinates?.lng ?? 0;
+  const googlePlaceId = placeData.google_place_id || placeData.place_id || '';
+  
+  navigate('/', {
+    state: {
+      showLocationCard: true,
+      locationData: {
+        // IMPORTANTE: Usa solo l'ID interno se presente, altrimenti lascia che PinDetailCard lo risolva
+        id: placeData.id && placeData.id !== googlePlaceId ? placeData.id : undefined,
+        google_place_id: googlePlaceId,
+        name: placeData.name || '',
+        category: placeData.category || 'place',
+        address: placeData.address || '',
+        city: placeData.city || '',
+        latitude: lat,
+        longitude: lng,
+        coordinates: { lat, lng },
+        image_url: placeData.image_url || placeData.image || null,
+        photos: placeData.photos || null
+      },
+      fromMessages: true,
+      returnToUserId: otherUserId
+    }
+  });
+}}
 ```
 
-### Problema 3: UI
+**Modifiche a `HomePage.tsx` (handling locationData, linee 237-270)**:
 
-L'UI attuale e funzionale ma puo essere migliorata con:
-- Bordi arrotondati piu pronunciati
-- Effetti hover piu eleganti
-- Piccola icona categoria overlay quando c'e una foto reale
-- Spaziatura migliore
+```typescript
+if (state?.showLocationCard && state?.locationData) {
+  const locData = state.locationData;
+  
+  // Se non abbiamo un ID interno ma abbiamo google_place_id, risolvi prima
+  let internalId = locData.id;
+  if (!internalId && locData.google_place_id) {
+    // Il PinDetailCard risolve l'ID internamente, ma possiamo pre-risolvere qui
+    const { data: locationRow } = await supabase
+      .from('locations')
+      .select('id')
+      .eq('google_place_id', locData.google_place_id)
+      .maybeSingle();
+    
+    if (locationRow) {
+      internalId = locationRow.id;
+    }
+  }
+  
+  const placeToShow: Place = {
+    id: internalId || locData.google_place_id || '', // Fallback a google_place_id per display
+    google_place_id: locData.google_place_id,
+    name: locData.name,
+    // ... resto invariato
+  };
+  // ...
+}
+```
 
 ---
 
-## Soluzione
+## Problema 2: Redesign PlaceMessageCard
 
-### 1. Helper per Estrarre Foto (stesso pattern usato altrove)
+### Requisiti
+- Rimuovere icona categoria dalla foto (gia presente nel testo)
+- Ridurre altezza verticale della card
+- Rimuovere bottone "Vedi Posizione"
+- Migliorare UI (cambiare lo sfondo bianco)
 
-Aggiungere in cima al file la funzione esistente (copiata da SavedLocationsList):
+### Nuovo Design
 
-```tsx
-// Helper to extract the first photo URL from the locations.photos JSONB column
-const extractFirstPhotoUrl = (photos: unknown): string | null => {
-  if (!photos) return null;
-  const arr = Array.isArray(photos) ? photos : null;
-  if (!arr) return null;
-  for (const item of arr) {
-    if (typeof item === 'string' && item.trim()) return item;
-    if (item && typeof item === 'object') {
-      const anyItem = item as any;
-      const url = anyItem.url || anyItem.photo_url || anyItem.src;
-      if (typeof url === 'string' && url.trim()) return url;
-    }
-  }
-  return null;
-};
+Layout compatto e moderno:
+- Foto orizzontale con aspect ratio 16:9 (ridotta da h-36 a h-24)
+- Gradiente overlay sottile per leggibilita
+- Padding ridotto
+- Sfondo con leggero colore/blur invece di bianco puro
+- Click su tutta la card per vedere la posizione
 
-// Determine which thumbnail to show: 1) business photo  2) Google photo  3) null (fallback to icon)
-const getLocationThumbnail = (location: any): string | null => {
-  if (location.image_url) return location.image_url;
-  const googlePhoto = extractFirstPhotoUrl(location.photos);
-  if (googlePhoto) return googlePhoto;
-  return null;
-};
-```
-
-### 2. Query Modificata per Includere Photos
-
-Modificare `loadSavedPlaces()` per includere il campo `photos`:
+**Modifiche a `PlaceMessageCard.tsx`**:
 
 ```tsx
-// In loadSavedPlaces, aggiungere photos alla select
-supabase.from('user_saved_locations').select(`
-  location_id,
-  locations (
-    id,
-    name,
-    category,
-    city,
-    address,
-    image_url,
-    photos,        // <-- Aggiungere questo
-    google_place_id,
-    latitude,
-    longitude
-  )
-`)
-```
-
-### 3. UI Migliorata con Traduzioni
-
-Sostituire il rendering della lista (linee 1089-1101) con:
-
-```tsx
-{savedPlaces.map(place => {
-  const thumbnail = getLocationThumbnail(place);
-  const translatedCategory = t(`categories.${place.category}`, { 
-    ns: 'common', 
-    defaultValue: place.category || 'Place' 
-  });
+const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const categoryImage = getCategoryImage(placeData.category);
+  const thumbnail = getLocationThumbnail(placeData);
   
+  const translatedCategory = t(`categories.${placeData.category}`, { 
+    ns: 'common', 
+    defaultValue: placeData.category || 'Place' 
+  });
+
+  const handleViewLocation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onViewPlace) {
+      onViewPlace(placeData);
+      return;
+    }
+    navigate('/', { 
+      state: { 
+        showLocationCard: true,
+        locationData: placeData,
+        fromMessages: true
+      } 
+    });
+  };
+
   return (
-    <button 
-      key={place.id} 
-      onClick={() => handlePlaceClick(place)} 
-      className="w-full flex items-center gap-4 p-3.5 hover:bg-accent/50 active:scale-[0.98] transition-all rounded-2xl group"
+    <div 
+      onClick={handleViewLocation}
+      className="bg-accent/40 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer 
+                 hover:bg-accent/60 transition-all duration-200 active:scale-[0.98] max-w-[260px]"
     >
-      {/* Thumbnail con overlay categoria se c'e foto */}
-      <div className="relative w-14 h-14 shrink-0">
+      {/* Foto compatta */}
+      <div className="relative w-full h-24 bg-muted overflow-hidden">
         {thumbnail ? (
           <>
             <img 
               src={thumbnail} 
-              alt={place.name} 
-              className="w-full h-full rounded-xl object-cover shadow-sm"
+              alt={placeData.name}
+              className="w-full h-full object-cover"
             />
-            {/* Badge categoria in basso a destra */}
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-background shadow-md flex items-center justify-center">
-              <img 
-                src={getCategoryImage(place.category)} 
-                alt={place.category} 
-                className="w-5 h-5 object-contain"
-              />
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           </>
         ) : (
-          <div className="w-full h-full rounded-xl bg-muted flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
             <img 
-              src={getCategoryImage(place.category)} 
-              alt={place.category} 
-              className={`object-contain ${
-                place.category === 'restaurant' || place.category === 'hotel' 
-                  ? 'w-11 h-11' 
-                  : 'w-9 h-9'
-              }`}
+              src={categoryImage} 
+              alt={placeData.category}
+              className="w-12 h-12 object-contain opacity-70"
             />
           </div>
         )}
       </div>
-
-      {/* Info luogo */}
-      <div className="flex-1 text-left min-w-0">
-        <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-          {place.name || t('location', { ns: 'common', defaultValue: 'Location' })}
-        </p>
-        <p className="text-sm text-muted-foreground truncate mt-0.5">
-          <CityLabel 
-            id={place.google_place_id || place.id} 
-            city={place.city} 
-            name={place.name} 
-            address={place.address} 
-            coordinates={place.coordinates} 
-          /> • {translatedCategory}
-        </p>
+      
+      {/* Info compatte */}
+      <div className="p-2.5">
+        <h4 className="font-semibold text-sm text-foreground leading-tight line-clamp-1">
+          {placeData.name}
+        </h4>
+        
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+          {(placeData.city || placeData.address || placeData.coordinates) && (
+            <span className="truncate">
+              <CityLabel 
+                id={placeData.google_place_id || placeData.id}
+                city={placeData.city}
+                address={placeData.address}
+                coordinates={placeData.coordinates}
+              />
+            </span>
+          )}
+          <span className="text-muted-foreground/50">•</span>
+          <span className="capitalize shrink-0">{translatedCategory}</span>
+        </div>
       </div>
-    </button>
+    </div>
   );
-})}
+};
 ```
+
+### Differenze Chiave
+
+| Elemento | Prima | Dopo |
+|----------|-------|------|
+| Altezza foto | h-36 (144px) | h-24 (96px) |
+| Badge categoria su foto | Si | Rimosso |
+| Bottone "Vedi Posizione" | Si | Rimosso |
+| Sfondo card | bg-card (bianco) | bg-accent/40 backdrop-blur |
+| Padding contenuto | p-3.5 | p-2.5 |
+| Linee nome | line-clamp-2 | line-clamp-1 |
+| Larghezza max | 280px | 260px |
+| Margine citta-categoria | mb-3 | mt-0.5 |
 
 ---
 
@@ -182,28 +228,21 @@ Sostituire il rendering della lista (linee 1089-1101) con:
 
 | File | Modifica |
 |------|----------|
-| `src/pages/MessagesPage.tsx` | Aggiungere helper functions, modificare query, aggiornare UI |
-
----
-
-## Dettaglio Modifiche per Linea
-
-| Sezione | Linee | Modifica |
-|---------|-------|----------|
-| Imports | ~27 | Rimuovere import `categoryDisplayNames` (non piu necessario) |
-| Helpers | ~32 | Aggiungere `extractFirstPhotoUrl` e `getLocationThumbnail` |
-| Query | ~600-612 | Aggiungere `photos` alla select |
-| UI | ~1089-1101 | Sostituire con nuovo rendering migliorato |
+| `src/pages/MessagesPage.tsx` | Fix onViewPlace handler per passare dati corretti |
+| `src/components/HomePage.tsx` | Pre-risolvere internal ID da google_place_id |
+| `src/components/messages/PlaceMessageCard.tsx` | Redesign completo della card |
 
 ---
 
 ## Risultato Atteso
 
-1. **Foto reali visibili**: Business images o Google photos quando disponibili
-2. **Categorie tradotte**: "Ristorante", "Bar", "Caffè" invece di "Restaurant", "Bar & Pub", "Café"
-3. **UI moderna**:
-   - Thumbnail con angoli arrotondati e ombra
-   - Badge categoria sovrapposto per foto reali
-   - Hover effect elegante con colore primary
-   - Spaziatura migliorata
+1. **Bug Risolto**: Cliccando su una posizione condivisa, il PinDetailCard mostrera:
+   - Foto corrette (business o Google)
+   - Stato salvataggio corretto
+   - Post e recensioni della location giusta
 
+2. **UI Migliorata**: Card compatta con:
+   - Altezza ridotta del 40%
+   - Sfondo elegante semi-trasparente
+   - Nessun bottone ridondante
+   - Click su tutta la card per navigare
