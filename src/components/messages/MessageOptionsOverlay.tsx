@@ -120,14 +120,8 @@ const MessageOptionsOverlay = ({
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col p-6 animate-fade-in"
       onClick={onClose}
     >
-      {/* MESSAGE/CARD at TOP - positioned left (received) or right (sent) */}
+      {/* === 1. EMOJI BAR - FIXED AT TOP === */}
       <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} pt-safe mt-4`}>
-        {renderMessageOrCard()}
-      </div>
-
-      {/* EMOJI BAR + ACTIONS MENU - aligned with message position */}
-      <div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-center gap-4 px-2`}>
-        {/* Emoji Bar */}
         <div 
           className="bg-card/90 backdrop-blur-lg rounded-full px-4 py-2.5 flex items-center gap-2 shadow-xl border border-border/30"
           onClick={e => e.stopPropagation()}
@@ -142,8 +136,16 @@ const MessageOptionsOverlay = ({
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Actions Menu */}
+      {/* === 2. MESSAGE/CARD - CENTERED + 3. ACTIONS BELOW === */}
+      <div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-center gap-4 px-2`}>
+        {/* Message/Card */}
+        <div onClick={e => e.stopPropagation()}>
+          {renderMessageOrCard()}
+        </div>
+
+        {/* Actions Menu - Directly below message */}
         <div 
           className="bg-card/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl border border-border/20 min-w-[200px]"
           onClick={e => e.stopPropagation()}
