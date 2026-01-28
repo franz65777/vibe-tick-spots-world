@@ -177,6 +177,7 @@ class MessageService {
         reply_to_content: replyToMessage.content || '',
         reply_to_sender_id: replyToMessage.sender_id,
         reply_to_message_type: replyToMessage.message_type,
+        reply_to_shared_content: replyToMessage.shared_content || null,
       } : null;
 
       const { data, error } = await supabase

@@ -73,6 +73,7 @@ const MessageBubble = memo(({
     reply_to_content?: string;
     reply_to_sender_id?: string;
     reply_to_message_type?: string;
+    reply_to_shared_content?: any;
   } | null;
   const messageInteractionProps = {
     onTouchStart: onLongPressStart,
@@ -222,11 +223,79 @@ const MessageBubble = memo(({
   // Check if this is a reply (has reply_to_id in shared_content but message_type is 'text')
   const isReply = message.message_type === 'text' && replyContext?.reply_to_id;
 
-  // Render the reply context header
+  // Render the reply context header with full content cards
   const renderReplyContext = () => {
     if (!isReply || !replyContext) return null;
     
-    const repliedToSelf = replyContext.reply_to_sender_id === userId;
+    const sharedContent = replyContext.reply_to_shared_content;
+    const messageType = replyContext.reply_to_message_type;
+    
+    // Render appropriate card based on message type
+    const renderSharedCard = () => {
+      if (!sharedContent) {
+        return (
+          <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
+            <p className="line-clamp-2 text-muted-foreground">
+              {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
+            </p>
+          </div>
+        );
+      }
+      
+      switch (messageType) {
+        case 'place_share':
+          return (
+            <div className="opacity-70 scale-90 origin-top-right max-w-[180px]">
+              <PlaceMessageCard 
+                placeData={sharedContent} 
+                onViewPlace={() => {}} 
+              />
+            </div>
+          );
+        case 'post_share':
+          return (
+            <div className="opacity-70 scale-90 origin-top-right max-w-[180px]">
+              <PostMessageCard postData={sharedContent} />
+            </div>
+          );
+        case 'profile_share':
+          return (
+            <div className="opacity-70 scale-90 origin-top-right max-w-[180px]">
+              <ProfileMessageCard 
+                profileData={sharedContent} 
+                currentChatUserId={otherParticipantId}
+              />
+            </div>
+          );
+        case 'story_share':
+        case 'story_reply':
+          return (
+            <div className="opacity-70 scale-90 origin-top-right max-w-[180px]">
+              <StoryMessageCard storyData={sharedContent} />
+            </div>
+          );
+        case 'folder_share':
+          return (
+            <div className="opacity-70 scale-90 origin-top-right max-w-[180px]">
+              <FolderMessageCard folderData={sharedContent} />
+            </div>
+          );
+        case 'trip_share':
+          return (
+            <div className="opacity-70 scale-90 origin-top-right max-w-[180px]">
+              <TripMessageCard tripData={sharedContent} />
+            </div>
+          );
+        default:
+          return (
+            <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
+              <p className="line-clamp-2 text-muted-foreground">
+                {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
+              </p>
+            </div>
+          );
+      }
+    };
     
     return (
       <div className="mb-2">
@@ -235,18 +304,14 @@ const MessageBubble = memo(({
             ? t('youReplied', { ns: 'messages' }) 
             : t('theyReplied', { ns: 'messages', name: otherUserProfile?.username || 'User' })}
         </p>
-        <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
-          <p className="line-clamp-2 text-muted-foreground">
-            {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
-          </p>
-        </div>
+        {renderSharedCard()}
       </div>
     );
   };
 
-  // Default text message
+  // Default text message - align based on sender
   return (
-    <div className="w-full" {...messageInteractionProps}>
+    <div className={`w-full ${isOwn ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} {...messageInteractionProps}>
       {renderReplyContext()}
       <div 
         className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`}
