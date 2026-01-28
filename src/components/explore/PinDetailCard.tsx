@@ -815,6 +815,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
   const handleSaveWithTag = async (tag: SaveTag) => {
     setLoading(true);
+    // Capture original ID before any changes for event propagation
+    const originalPlaceId = place.id;
     try {
       let locationId = place.id;
       let locationData = {
@@ -902,13 +904,27 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       setCurrentSaveTag(tag);
       toast.success(t('locationSaved'));
       
-      // Dispatch global event to sync other components (map, lists, etc.)
+      // Dispatch global event with both old and new IDs for proper synchronization
       window.dispatchEvent(new CustomEvent('location-save-changed', {
-        detail: { locationId: locationId, isSaved: true, saveTag: tag }
+        detail: { 
+          locationId: locationId, 
+          isSaved: true, 
+          saveTag: tag,
+          newLocationId: locationId,
+          oldLocationId: originalPlaceId,
+          coordinates: place.coordinates
+        }
       }));
       if (place.google_place_id) {
         window.dispatchEvent(new CustomEvent('location-save-changed', {
-          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+          detail: { 
+            locationId: place.google_place_id, 
+            isSaved: true, 
+            saveTag: tag,
+            newLocationId: locationId,
+            oldLocationId: originalPlaceId,
+            coordinates: place.coordinates
+          }
         }));
       }
     } catch (error) {

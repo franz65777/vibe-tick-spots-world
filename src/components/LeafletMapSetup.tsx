@@ -811,16 +811,30 @@ const LeafletMapSetup = ({
   
   // Listen for location save events to update temp marker
   useEffect(() => {
-    const handleSaveChange = (e: CustomEvent<{ locationId: string; isSaved: boolean; saveTag?: string }>) => {
+    const handleSaveChange = (e: CustomEvent<{ 
+      locationId: string; 
+      isSaved: boolean; 
+      saveTag?: string;
+      newLocationId?: string;
+      oldLocationId?: string;
+      coordinates?: { lat: number; lng: number };
+    }>) => {
       const map = mapRef.current;
       if (!map || !tempMarkerRef.current || !selectedPlace) return;
       
-      // Check if this save event is for our temp location
-      const isForTempLocation = 
-        selectedPlace.id === e.detail.locationId ||
-        selectedPlace.isTemporary;
+      const { locationId, isSaved, newLocationId, oldLocationId, coordinates } = e.detail;
       
-      if (isForTempLocation && e.detail.isSaved) {
+      // Check if this save event is for our temp location using multiple matching strategies
+      const isForTempLocation = 
+        selectedPlace.id === locationId ||
+        selectedPlace.id === oldLocationId ||
+        selectedPlace.id === newLocationId ||
+        selectedPlace.isTemporary ||
+        (coordinates && selectedPlace.coordinates &&
+         Math.abs(selectedPlace.coordinates.lat - coordinates.lat) < 0.0001 &&
+         Math.abs(selectedPlace.coordinates.lng - coordinates.lng) < 0.0001);
+      
+      if (isForTempLocation && isSaved) {
         tempMarkerSavedRef.current = true;
         
         // Update the temp marker icon to show it's saved
