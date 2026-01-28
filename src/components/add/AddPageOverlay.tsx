@@ -87,7 +87,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
         <div className="flex items-center gap-2 px-3 py-2">
           {/* Search pill button - like pin header */}
           <div
-            className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-black dark:bg-white/90 backdrop-blur-md border border-border/10"
+            className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-black dark:bg-white/90 backdrop-blur-md"
           >
             <span className="text-lg leading-none">🔍</span>
             <div className="flex-1">
