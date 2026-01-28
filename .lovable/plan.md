@@ -1,84 +1,124 @@
 
-## Piano: Correzione UI Add Page Search
+## Piano: Fix Search Bar Border e Dropdown UI
 
 ### Problemi Identificati
 
-Confrontando l'immagine attuale (Photo 1) con il riferimento desiderato (Photo 2):
+1. **Cerchio bianco attorno alla search bar**: L'Input component ha `rounded-2xl border border-input` e `focus-visible:ring-2` come stili di default. Gli override CSS con `[&_input]` non funzionano completamente perché l'Input usa `cn()` per merge delle classi.
 
-1. **Bordo bianco sulla search bar**: L'Input component ha stili di default (`border border-input`, `focus-visible:ring-2`) che non vengono completamente sovrascritti
-2. **Dropdown con card/container**: Attualmente il dropdown ha `bg-background/98 rounded-2xl shadow-2xl` che crea una "scatola" attorno ai risultati
-3. **Design dei risultati**: La Photo 2 mostra righe semplici direttamente sullo sfondo della pagina, senza container
+2. **Dropdown non usa tutto lo spazio orizzontale**: I risultati hanno padding eccessivo (px-4) e margini.
+
+3. **Icone troppo grandi**: Attualmente `w-14 h-14` (56px), dovrebbe essere più piccolo.
+
+4. **Seconda riga mostra categoria invece di indirizzo**: Deve mostrare l'indirizzo.
+
+5. **Immagini dal database non usate**: I risultati dal database hanno `image_url` (business account) e `photos[]` disponibili ma non vengono mostrati.
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. Rimuovere completamente il bordo dall'input
-
-**File**: `src/components/add/AddPageOverlay.tsx`
-
-Aggiungere override CSS più aggressivi per rimuovere tutti i bordi e ring:
-
-```typescript
-className="w-full [&_input]:h-8 [&_input]:bg-transparent [&_input]:border-none 
-           [&_input]:text-white [&_input]:dark:text-gray-900 
-           [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
-           [&_input]:p-0 [&_input]:focus-visible:ring-0 [&_input]:focus-visible:ring-offset-0
-           [&_input]:shadow-none [&_input]:outline-none"
-```
-
-#### 2. Rimuovere container dal dropdown
+#### 1. Rimuovere il cerchio bianco dall'Input
 
 **File**: `src/components/OptimizedPlacesAutocomplete.tsx`
 
-Cambiare il dropdown da un container con ombre a righe semplici:
+Passare direttamente le classi override all'Input invece di usare i child selectors:
 
-**Prima:**
 ```typescript
-<div className="absolute z-50 w-full mt-2 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl ...">
+<Input
+  ...
+  className="pr-10 !border-none !ring-0 !ring-offset-0 !shadow-none !outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0"
+/>
 ```
 
-**Dopo:**
+Oppure usare `style` prop per forzare:
 ```typescript
-<div className="absolute z-50 w-full mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
+style={{ border: 'none', boxShadow: 'none', outline: 'none' }}
 ```
 
-#### 3. Stile righe come Photo 2
+#### 2. Aggiornare SearchResult per includere immagini
 
-Ogni riga deve essere:
-- Sfondo trasparente/leggero
-- Divider sottile tra le righe
-- Immagine quadrata 56x56px con angoli arrotondati
-- Testo: nome bold, categoria/descrizione grigia sotto
+**File**: `src/hooks/useOptimizedPlacesSearch.ts`
+
+Aggiungere `image_url` e `photos` alla query del database:
 
 ```typescript
-<button className="w-full px-4 py-3.5 flex items-center gap-4 hover:bg-white/40 
-                   dark:hover:bg-white/10 active:bg-white/60 transition-colors text-left
-                   border-b border-black/5 dark:border-white/10">
-  {/* Immagine */}
-  <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-muted/20">
-    <img src={categoryImage} className="w-full h-full object-cover" />
+const { data: locations } = await supabase
+  .from('locations')
+  .select('id, name, address, city, latitude, longitude, category, google_place_id, image_url, photos')
+  ...
+```
+
+E al tipo `SearchResult`:
+```typescript
+export interface SearchResult {
+  ...
+  image_url?: string;    // Business account image (priority)
+  photos?: string[];     // User photos array
+}
+```
+
+#### 3. Ridisegnare il Dropdown
+
+**File**: `src/components/OptimizedPlacesAutocomplete.tsx`
+
+```typescript
+{/* Results dropdown - Full width rows */}
+{showResults && hasResults && (
+  <div className="absolute z-50 w-full left-0 right-0 mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
+    {allResults.map((result, index) => {
+      // Priorità immagine: 1. Business (image_url), 2. Prima foto (photos[0]), 3. Categoria icon
+      const displayImage = result.image_url 
+        || (result.photos && result.photos[0]) 
+        || getCategoryImage(result.category || 'restaurant');
+      const isRealPhoto = result.image_url || (result.photos && result.photos.length > 0);
+      
+      return (
+        <button
+          key={result.id}
+          onClick={() => handleSelect(result)}
+          className={`w-full px-3 py-3 flex items-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 
+                     active:bg-white/60 dark:active:bg-white/20 transition-colors text-left
+                     border-b border-black/5 dark:border-white/10 ${
+            selectedIndex === index ? 'bg-white/30 dark:bg-white/10' : ''
+          }`}
+        >
+          {/* Image - Smaller (40px), square with rounded corners */}
+          <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-muted/20">
+            <img 
+              src={displayImage}
+              alt={result.category || 'place'}
+              className={`w-full h-full ${isRealPhoto ? 'object-cover' : 'object-contain p-1'}`}
+              loading="eager"
+            />
+          </div>
+          
+          {/* Content - Name and ADDRESS */}
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-base text-foreground truncate">
+              {result.name}
+            </div>
+            <div className="text-sm text-muted-foreground truncate">
+              {result.address || result.city || ''}
+            </div>
+          </div>
+        </button>
+      );
+    })}
   </div>
-  
-  {/* Testo */}
-  <div className="flex-1 min-w-0">
-    <div className="font-bold text-lg text-foreground truncate">{result.name}</div>
-    <div className="text-sm text-muted-foreground truncate">{result.category}</div>
-  </div>
-</button>
+)}
 ```
 
 ---
 
-### Differenze Visive
+### Modifiche Dettagliate
 
-| Elemento | Prima | Dopo (come Photo 2) |
-|----------|-------|---------------------|
-| Search bar | Bordo bianco visibile | Nessun bordo, solo sfondo nero |
-| Dropdown container | `rounded-2xl shadow-2xl bg-background/98` | Nessun container, righe dirette |
-| Righe risultati | Padding e hover con bg | Divider sottili, sfondo trasparente |
-| Font nome | `text-base font-semibold` | `text-lg font-bold` |
-| Spaziatura | `py-4 gap-4` | `py-3.5 gap-4` |
+| Aspetto | Prima | Dopo |
+|---------|-------|------|
+| Search bar border | Cerchio bianco visibile | Nessun bordo (stile forzato) |
+| Icona dimensione | `w-14 h-14` (56px) | `w-10 h-10` (40px) |
+| Seconda riga | Categoria | Indirizzo |
+| Immagine fonte | Solo categoria icon | Business image → Foto → Icon |
+| Padding riga | `px-4 py-3.5` | `px-3 py-3` |
 
 ---
 
@@ -86,13 +126,15 @@ Ogni riga deve essere:
 
 | File | Modifica |
 |------|----------|
-| `src/components/add/AddPageOverlay.tsx` | Override CSS più completi per input (border-none, ring-offset-0, shadow-none, outline-none) |
-| `src/components/OptimizedPlacesAutocomplete.tsx` | Rimuovere container dropdown, usare righe con divider sottili |
+| `src/hooks/useOptimizedPlacesSearch.ts` | Aggiungere `image_url, photos` alla select e al tipo |
+| `src/components/OptimizedPlacesAutocomplete.tsx` | Input senza bordo, dropdown compatto, mostra indirizzo |
 
 ---
 
 ### Risultato Atteso
 
-1. Search bar completamente nera senza bordi bianchi
-2. Risultati mostrati come lista semplice senza "card" attorno
-3. UI identica alla Photo 2 di riferimento
+1. Search bar completamente nera senza cerchio/bordo bianco
+2. Ogni riga usa tutto lo spazio orizzontale disponibile
+3. Icone più piccole (40px)
+4. Mostra foto reale del locale se disponibile (business > user photos > icon)
+5. Seconda riga mostra l'indirizzo invece della categoria
