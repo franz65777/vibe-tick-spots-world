@@ -361,6 +361,7 @@ const VirtualizedMessageList = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
+  const initialScrollDone = useRef(false);
   
   // Filter out hidden messages
   const visibleMessages = useMemo(
@@ -375,12 +376,18 @@ const VirtualizedMessageList = ({
     overscan: 10,
   });
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change or on initial load
   useEffect(() => {
     if (visibleMessages.length > 0 && parentRef.current) {
-      requestAnimationFrame(() => {
-        virtualizer.scrollToIndex(visibleMessages.length - 1, { align: 'end' });
-      });
+      // Use setTimeout to ensure DOM and virtualizer are ready
+      const timer = setTimeout(() => {
+        virtualizer.scrollToIndex(visibleMessages.length - 1, { 
+          align: 'end',
+          behavior: initialScrollDone.current ? 'smooth' : 'auto'
+        });
+        initialScrollDone.current = true;
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [visibleMessages.length]);
 
