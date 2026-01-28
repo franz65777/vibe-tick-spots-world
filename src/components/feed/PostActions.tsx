@@ -27,6 +27,9 @@ interface PostActionsProps {
   sharesCount: number;
   locationId?: string;
   locationName?: string;
+  // Pre-loaded states from batch fetch (optional - falls back to individual queries)
+  initialIsLiked?: boolean;
+  initialSaveTag?: SaveTag | null;
   onCommentClick: () => void;
   onShareClick: () => void;
   onCountsUpdate?: (updates: any) => void;
@@ -39,6 +42,8 @@ export const PostActions = ({
   sharesCount,
   locationId,
   locationName,
+  initialIsLiked,
+  initialSaveTag,
   onCommentClick,
   onShareClick,
   onCountsUpdate,
@@ -73,7 +78,15 @@ export const PostActions = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Load location save status and Google Place ID
+  // Skip individual queries if we have pre-loaded states from batch fetch
   useEffect(() => {
+    // If we have pre-loaded save state, use it and skip individual queries
+    if (initialSaveTag !== undefined) {
+      setIsLocationSaved(initialSaveTag !== null);
+      if (initialSaveTag) setCurrentSaveTag(initialSaveTag);
+      return;
+    }
+
     const loadStatus = async () => {
       if (!locationId || !user) return;
 
@@ -117,7 +130,7 @@ export const PostActions = ({
     };
 
     loadStatus();
-  }, [locationId, user]);
+  }, [locationId, user, initialSaveTag]);
 
   // Use centralized realtime for internal saves - NO individual channel!
   useRealtimeEvent(['saved_location_insert', 'saved_location_delete'], (payload) => {
