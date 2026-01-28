@@ -200,103 +200,133 @@ export const useSavedPlaces = () => {
           }
         }
 
-        // Reverse geocode places with missing city data
+        // Reverse geocode places with missing city data - chunked to avoid blocking UI
         console.log(`useSavedPlaces: ${placesNeedingGeocode.length} places need reverse geocoding`);
         
-        for (const { place, source } of placesNeedingGeocode) {
-          try {
-            let lat, lng, placeId, locationId;
-            
-            if (source === 'saved_places') {
-              const coords = place.coordinates as any;
-              lat = coords?.lat;
-              lng = coords?.lng;
-              placeId = place.place_id;
-            } else {
-              lat = place.latitude;
-              lng = place.longitude;
-              locationId = place.id;
-            }
-            
-            if (!lat || !lng) continue;
-            
-            const geocodeResult = await reverseGeocode(lat, lng);
-            
-            if (geocodeResult && geocodeResult.city && geocodeResult.city !== 'Unknown') {
-              const newCity = geocodeResult.city;
+        // Helper to chunk array for parallel processing
+        const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+          const chunks: T[][] = [];
+          for (let i = 0; i < arr.length; i += size) {
+            chunks.push(arr.slice(i, i + size));
+          }
+          return chunks;
+        };
+        
+        // Process geocoding in chunks of 3 for parallelization
+        const geocodeChunks = chunkArray(placesNeedingGeocode, 3);
+        for (const chunk of geocodeChunks) {
+          await Promise.all(chunk.map(async ({ place, source }) => {
+            try {
+              let lat, lng, placeId, locationId;
               
-              // Update database
               if (source === 'saved_places') {
-                await supabase
-                  .from('saved_places')
-                  .update({ city: newCity })
-                  .eq('place_id', placeId)
-                  .eq('user_id', user.id);
-              } else if (locationId) {
-                await supabase
-                  .from('locations')
-                  .update({ city: newCity })
-                  .eq('id', locationId);
+                const coords = place.coordinates as any;
+                lat = coords?.lat;
+                lng = coords?.lng;
+                placeId = place.place_id;
+              } else {
+                lat = place.latitude;
+                lng = place.longitude;
+                locationId = place.id;
               }
               
-              // Update local state
-              const oldCity = 'Unknown';
-              if (groupedByCity[oldCity]) {
-                const placeIndex = groupedByCity[oldCity].findIndex(p => 
-                  p.id === (placeId || locationId)
-                );
+              if (!lat || !lng) return;
+              
+              const geocodeResult = await reverseGeocode(lat, lng);
+              
+              if (geocodeResult && geocodeResult.city && geocodeResult.city !== 'Unknown') {
+                const newCity = geocodeResult.city;
                 
-                if (placeIndex !== -1) {
-                  const updatedPlace = { ...groupedByCity[oldCity][placeIndex], city: newCity };
-                  groupedByCity[oldCity].splice(placeIndex, 1);
+                // Update database
+                if (source === 'saved_places') {
+                  await supabase
+                    .from('saved_places')
+                    .update({ city: newCity })
+                    .eq('place_id', placeId)
+                    .eq('user_id', user.id);
+                } else if (locationId) {
+                  await supabase
+                    .from('locations')
+                    .update({ city: newCity })
+                    .eq('id', locationId);
+                }
+                
+                // Update local state
+                const oldCity = 'Unknown';
+                if (groupedByCity[oldCity]) {
+                  const placeIndex = groupedByCity[oldCity].findIndex(p => 
+                    p.id === (placeId || locationId)
+                  );
                   
-                  if (!groupedByCity[newCity]) {
-                    groupedByCity[newCity] = [];
-                  }
-                  groupedByCity[newCity].push(updatedPlace);
-                  
-                  // Remove empty "Unknown" city
-                  if (groupedByCity[oldCity].length === 0) {
-                    delete groupedByCity[oldCity];
+                  if (placeIndex !== -1) {
+                    const updatedPlace = { ...groupedByCity[oldCity][placeIndex], city: newCity };
+                    groupedByCity[oldCity].splice(placeIndex, 1);
+                    
+                    if (!groupedByCity[newCity]) {
+                      groupedByCity[newCity] = [];
+                    }
+                    groupedByCity[newCity].push(updatedPlace);
+                    
+                    // Remove empty "Unknown" city
+                    if (groupedByCity[oldCity].length === 0) {
+                      delete groupedByCity[oldCity];
+                    }
                   }
                 }
+                
+                console.log(`✅ Updated ${place.place_name || place.name} with city: ${newCity}`);
               }
-              
-              console.log(`✅ Updated ${place.place_name || place.name} with city: ${newCity}`);
+            } catch (error) {
+              console.error('Error reverse geocoding place:', error);
             }
-            
-            // Rate limiting - wait 200ms between requests
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
-          } catch (error) {
-            console.error('Error reverse geocoding place:', error);
-          }
+          }));
         }
 
-        // Fetch posts count for all locations
-        // We need to query by internal location UUIDs, not Google Place IDs
-        const internalLocationIds: string[] = [];
-        const googlePlaceIdMap = new Map<string, string>(); // Map google_place_id to display id
+        // Fetch posts count for all locations - BATCHED to avoid N+1
+        // First, collect all google_place_ids that need resolution
+        const allGooglePlaceIds: string[] = [];
+        const directUUIDs: string[] = [];
         
         for (const places of Object.values(groupedByCity)) {
           for (const place of places) {
-            // Try to find the internal location ID
             if (place.google_place_id) {
-              // Query to get internal location ID from google_place_id
-              const { data: locationData } = await supabase
-                .from('locations')
-                .select('id')
-                .eq('google_place_id', place.google_place_id)
-                .maybeSingle();
-              
-              if (locationData?.id) {
-                internalLocationIds.push(locationData.id);
-                googlePlaceIdMap.set(locationData.id, place.id);
-              }
+              allGooglePlaceIds.push(place.google_place_id);
             } else if (place.id && place.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-              // It's already a UUID
-              internalLocationIds.push(place.id);
-              googlePlaceIdMap.set(place.id, place.id);
+              directUUIDs.push(place.id);
+            }
+          }
+        }
+
+        // BATCH query: resolve all google_place_ids to internal location IDs in ONE query
+        const googlePlaceIdMap = new Map<string, string>();
+        if (allGooglePlaceIds.length > 0) {
+          const { data: locationsByGoogleId } = await supabase
+            .from('locations')
+            .select('id, google_place_id')
+            .in('google_place_id', allGooglePlaceIds);
+          
+          locationsByGoogleId?.forEach(loc => {
+            if (loc.google_place_id) {
+              googlePlaceIdMap.set(loc.google_place_id, loc.id);
+            }
+          });
+        }
+
+        // Build final internalLocationIds array
+        const internalLocationIds: string[] = [...directUUIDs];
+        
+        // Map google_place_ids to their resolved internal IDs
+        const displayIdMap = new Map<string, string>();
+        directUUIDs.forEach(id => displayIdMap.set(id, id));
+        
+        for (const places of Object.values(groupedByCity)) {
+          for (const place of places) {
+            if (place.google_place_id) {
+              const internalId = googlePlaceIdMap.get(place.google_place_id);
+              if (internalId) {
+                internalLocationIds.push(internalId);
+                displayIdMap.set(internalId, place.id);
+              }
             }
           }
         }

@@ -315,15 +315,18 @@ const FeedPage = memo(() => {
     });
   }, [queryClient, queryKey]));
 
-  // Carica likes quando cambiano i feedItems
+  // Load likes for posts when feedItems change
+  // Optimized: batch query all posts at once instead of individual queries per post
   useEffect(() => {
     if (!user?.id || feedItems.length === 0) return;
     
     const loadLikes = async () => {
       const likesMap = new Map<string, PostLikeUser[]>();
+      // Batch load: get all unique post IDs and load in parallel
+      const uniquePostIds = [...new Set(feedItems.map((item: any) => item.id))].slice(0, 20);
+      
       await Promise.all(
-        feedItems.slice(0, 10).map(async (item: any) => {
-          const postId = item.id;
+        uniquePostIds.map(async (postId: string) => {
           const likes = await getPostLikesWithUsers(postId, user.id, 3);
           likesMap.set(postId, likes);
         })

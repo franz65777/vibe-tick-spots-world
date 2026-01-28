@@ -657,35 +657,16 @@ const LeafletMapSetup = ({
 
     const placesToRender = visiblePlaces;
 
-    // Fetch active campaigns for locations to render
-    const fetchCampaigns = async () => {
-      const locationIds = placesToRender.map(p => p.id).filter(Boolean);
-      if (locationIds.length === 0) {
-        // No places, render empty markers
-        return;
-      }
-
-      try {
-        const { data: campaigns } = await supabase
-          .from('marketing_campaigns')
-          .select('location_id, campaign_type')
-          .in('location_id', locationIds)
-          .eq('is_active', true)
-          .gt('end_date', new Date().toISOString());
-
-        // Create a map of location_id -> campaign_type
-        const campaignMap = new Map<string, string>();
-        campaigns?.forEach(c => {
-          if (c.location_id) {
-            campaignMap.set(c.location_id, c.campaign_type);
-          }
-        });
-
+    // Use cached campaignMap from useCampaignLocations hook instead of fetching inline
+    // This eliminates redundant campaign queries on every map render
+    const renderMarkers = () => {
         // Add / update markers
         const usedFallbackShareIds = new Set<string>();
         placesToRender.forEach((place) => {
           if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
+          // Use campaignMap from useCampaignLocations hook (defined at line 100)
+          // campaignMap is Map<string, string> where value is the campaign_type
           const hasCampaign = campaignMap.has(place.id);
           const campaignType = campaignMap.get(place.id);
 
@@ -819,13 +800,10 @@ const LeafletMapSetup = ({
             markerConfigsRef.current.set(place.id, markerConfigKey);
           }
         });
-      } catch (error) {
-        console.error('Error fetching campaigns:', error);
-      }
     };
 
-    fetchCampaigns();
-  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id, currentZoom, campaignLocationIds]);
+    renderMarkers();
+  }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id, currentZoom, campaignMap]);
 
   // Keep selected marker visible outside clusters
   const selectedMarkerRef = useRef<L.Marker | null>(null);

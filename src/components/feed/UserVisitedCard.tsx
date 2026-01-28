@@ -456,6 +456,15 @@ const UserVisitedCard = memo(({
       </div>
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison for performance - only re-render when essential props change
+  return (
+    prevProps.activity.id === nextProps.activity.id &&
+    prevProps.initialIsLiked === nextProps.initialIsLiked &&
+    prevProps.initialIsSaved === nextProps.initialIsSaved &&
+    prevProps.initialSaveTag === nextProps.initialSaveTag &&
+    prevProps.initialLikeCount === nextProps.initialLikeCount
+  );
 });
 
 UserVisitedCard.displayName = 'UserVisitedCard';

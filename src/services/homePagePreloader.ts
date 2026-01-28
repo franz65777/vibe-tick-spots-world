@@ -120,7 +120,7 @@ export async function preloadHomePageData(userId: string | null): Promise<Preloa
  */
 export async function preloadWithTimeout(
   userId: string | null, 
-  timeoutMs: number = 5000
+  timeoutMs: number = 3000 // Aligned with splash screen duration
 ): Promise<PreloadResult> {
   return Promise.race([
     preloadHomePageData(userId),
