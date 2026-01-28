@@ -356,15 +356,21 @@ const HomePage = memo(() => {
   // Get user's current location on component mount
   
   useEffect(() => {
-    // If we already have a persisted map center, do not recenter to the user's location on mount.
+    // Check for fresh session flag - if set, force GPS centering
+    const isFreshSession = sessionStorage.getItem('freshSession') === 'true';
+    
+    // If we already have a persisted map center AND it's not a fresh session, 
+    // do not recenter to the user's location on mount.
     // This prevents "snap back to my position" when HomePage remounts after closing cards.
-    try {
-      const saved = localStorage.getItem('lastMapCenter');
-      if (saved) {
-        hasInitializedLocation.current = true;
+    if (!isFreshSession) {
+      try {
+        const saved = localStorage.getItem('lastMapCenter');
+        if (saved) {
+          hasInitializedLocation.current = true;
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     const getCurrentLocation = (updateMapCenter: boolean) => {
@@ -374,15 +380,28 @@ const HomePage = memo(() => {
             const { latitude, longitude } = position.coords;
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
-            // Only update mapCenter on initial load when we don't already have a saved center
-            if (updateMapCenter && !hasInitializedLocation.current) {
+            
+            // For fresh session: ALWAYS center on current GPS position
+            // For regular load: only update if we don't have a saved center
+            const shouldCenter = isFreshSession || (updateMapCenter && !hasInitializedLocation.current);
+            
+            if (shouldCenter) {
               hasInitializedLocation.current = true;
               setMapCenter(location);
+              setRecenterToken((v) => v + 1);
+              
+              // Clear the fresh session flag after centering
+              if (isFreshSession) {
+                sessionStorage.removeItem('freshSession');
+              }
             }
           },
           (error) => {
             console.warn('Error getting user location:', error);
-            // Keep existing center; do not override with fallback
+            // Clear fresh session flag even on error to prevent infinite retries
+            if (isFreshSession) {
+              sessionStorage.removeItem('freshSession');
+            }
           },
           {
             enableHighAccuracy: true,
@@ -392,6 +411,9 @@ const HomePage = memo(() => {
         );
       } else {
         console.warn('Geolocation is not supported by this browser');
+        if (isFreshSession) {
+          sessionStorage.removeItem('freshSession');
+        }
       }
     };
 

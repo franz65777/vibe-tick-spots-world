@@ -432,6 +432,7 @@ const LeafletMapSetup = ({
 
   // Current location marker with device orientation support
   const headingRef = useRef<number>(0);
+  const hasPlayedDropAnimationRef = useRef<boolean>(false);
   
   useEffect(() => {
     const map = mapRef.current;
@@ -450,7 +451,11 @@ const LeafletMapSetup = ({
       
       const zoom = map.getZoom();
       const scale = getScaleForZoom(zoom);
-      const icon = createCurrentLocationMarker(heading ?? headingRef.current, scale);
+      
+      // Check if we should play the drop-in animation (first render after splash)
+      const shouldAnimate = sessionStorage.getItem('shouldAnimateUserMarker') === 'true' && !hasPlayedDropAnimationRef.current;
+      
+      const icon = createCurrentLocationMarker(heading ?? headingRef.current, scale, shouldAnimate);
       
       if (currentLocationMarkerRef.current) {
         currentLocationMarkerRef.current.setLatLng([location.latitude, location.longitude]);
@@ -462,6 +467,14 @@ const LeafletMapSetup = ({
           pane: 'markerPane',
         }).addTo(map);
         currentLocationMarkerRef.current.setZIndexOffset(3000);
+        
+        // If we played the animation, clear the flag after animation completes
+        if (shouldAnimate) {
+          hasPlayedDropAnimationRef.current = true;
+          setTimeout(() => {
+            sessionStorage.removeItem('shouldAnimateUserMarker');
+          }, 1000); // Animation is 0.8s, so clear after 1s
+        }
       }
     };
 

@@ -447,7 +447,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   });
 };
 
-export const createCurrentLocationMarker = (heading?: number, scale: number = 1): L.DivIcon => {
+export const createCurrentLocationMarker = (heading?: number, scale: number = 1, animate: boolean = false): L.DivIcon => {
   // Default heading to 0 (north) if not provided
   const rotation = heading ?? 0;
   
@@ -464,8 +464,26 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
   const personTop = baseConeHeight - coneOverlap;
   const personCenterY = personTop + (basePersonSize / 2);
   
+  // Animation class for drop-in effect
+  const animationClass = animate ? 'user-location-drop-in' : '';
+  
   const markerHtml = `
-    <div style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
+    <div class="${animationClass}" style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
+      <!-- Landing shadow - only visible during animation -->
+      ${animate ? `
+        <div class="landing-shadow" style="
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: ${basePersonSize * 0.8}px;
+          height: ${basePersonSize * 0.3}px;
+          background: radial-gradient(ellipse, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 70%);
+          border-radius: 50%;
+          animation: shadow-grow 0.8s ease-out forwards;
+        "></div>
+      ` : ''}
+      
       <!-- Direction cone - wide at top (away from person), narrows to point at bottom (near person) -->
       <!-- Solid at bottom near person, fades to transparent at the wide end -->
       <div class="direction-cone" style="
@@ -504,6 +522,46 @@ export const createCurrentLocationMarker = (heading?: number, scale: number = 1)
         />
       </div>
     </div>
+    
+    <style>
+      @keyframes user-drop-in {
+        0% {
+          transform: translateY(-100vh) scale(0.5);
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        70% {
+          transform: translateY(10px) scale(1.1);
+        }
+        85% {
+          transform: translateY(-5px) scale(0.95);
+        }
+        100% {
+          transform: translateY(0) scale(1);
+        }
+      }
+      
+      @keyframes shadow-grow {
+        0% {
+          opacity: 0;
+          transform: translateX(-50%) scale(0.2);
+        }
+        70% {
+          opacity: 0.5;
+          transform: translateX(-50%) scale(1.2);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(-50%) scale(1);
+        }
+      }
+      
+      .user-location-drop-in {
+        animation: user-drop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+    </style>
   `;
   
   return L.divIcon({

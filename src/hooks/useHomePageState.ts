@@ -82,6 +82,13 @@ export function useHomePageState() {
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(() => {
+    // Check for fresh session flag - if set, ignore localStorage
+    const isFreshSession = sessionStorage.getItem('freshSession') === 'true';
+    if (isFreshSession) {
+      // Return default; GPS will update this shortly
+      return { lat: 37.7749, lng: -122.4194 };
+    }
+    
     try {
       const saved = localStorage.getItem('lastMapCenter');
       if (saved) return JSON.parse(saved);
