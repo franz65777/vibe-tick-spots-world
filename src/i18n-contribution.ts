@@ -22,6 +22,7 @@ export const contributionTranslations = {
       rateThisPlace: 'rate this place (optional)',
       yourRating: 'Your rating:',
       alreadyInList: 'already in this list',
+      share: 'share',
     },
   },
   it: {
@@ -45,6 +46,7 @@ export const contributionTranslations = {
       rateThisPlace: 'valuta questo posto (opzionale)',
       yourRating: 'La tua valutazione:',
       alreadyInList: 'già in questa lista',
+      share: 'condividi',
     },
   },
   es: {
@@ -68,6 +70,7 @@ export const contributionTranslations = {
       rateThisPlace: 'valora este lugar (opcional)',
       yourRating: 'Tu valoración:',
       alreadyInList: 'ya en esta lista',
+      share: 'compartir',
     },
   },
   pt: {
@@ -91,6 +94,7 @@ export const contributionTranslations = {
       rateThisPlace: 'avalie este lugar (opcional)',
       yourRating: 'Sua avaliação:',
       alreadyInList: 'já nesta lista',
+      share: 'compartilhar',
     },
   },
   fr: {
@@ -114,6 +118,7 @@ export const contributionTranslations = {
       rateThisPlace: 'notez ce lieu (facultatif)',
       yourRating: 'Votre note :',
       alreadyInList: 'déjà dans cette liste',
+      share: 'partager',
     },
   },
   de: {
@@ -137,6 +142,7 @@ export const contributionTranslations = {
       rateThisPlace: 'bewerte diesen Ort (optional)',
       yourRating: 'Deine Bewertung:',
       alreadyInList: 'bereits in dieser Liste',
+      share: 'teilen',
     },
   },
   ja: {
@@ -160,6 +166,7 @@ export const contributionTranslations = {
       rateThisPlace: 'この場所を評価（任意）',
       yourRating: 'あなたの評価:',
       alreadyInList: 'このリストに登録済み',
+      share: 'シェア',
     },
   },
   ko: {
@@ -183,6 +190,7 @@ export const contributionTranslations = {
       rateThisPlace: '이 장소 평가(선택)',
       yourRating: '내 평점:',
       alreadyInList: '이 리스트에 이미 있음',
+      share: '공유',
     },
   },
   ar: {
@@ -206,6 +214,7 @@ export const contributionTranslations = {
       rateThisPlace: 'قيّم هذا المكان (اختياري)',
       yourRating: 'تقييمك:',
       alreadyInList: 'موجود في هذه القائمة',
+      share: 'مشاركة',
     },
   },
   hi: {
@@ -229,6 +238,7 @@ export const contributionTranslations = {
       rateThisPlace: 'इस जगह को रेट करें (वैकल्पिक)',
       yourRating: 'आपकी रेटिंग:',
       alreadyInList: 'इस सूची में पहले से है',
+      share: 'साझा करें',
     },
   },
   ru: {
@@ -252,6 +262,7 @@ export const contributionTranslations = {
       rateThisPlace: 'оцените это место (необязательно)',
       yourRating: 'Ваша оценка:',
       alreadyInList: 'уже в этом списке',
+      share: 'поделиться',
     },
   },
   'zh-CN': {
@@ -275,6 +286,7 @@ export const contributionTranslations = {
       rateThisPlace: '评价这个地方（可选）',
       yourRating: '你的评分:',
       alreadyInList: '已在此列表中',
+      share: '分享',
     },
   },
   tr: {
@@ -298,6 +310,7 @@ export const contributionTranslations = {
       rateThisPlace: 'bu yeri değerlendir (isteğe bağlı)',
       yourRating: 'Senin puanın:',
       alreadyInList: 'bu listede zaten var',
+      share: 'paylaş',
     },
   },
 } as const;
