@@ -1064,29 +1064,37 @@ const MessagesPage = () => {
       });
     }} />}
 
-      {/* Delete Message Bottom Sheet */}
+      {/* Message Options Bottom Sheet */}
       <Sheet open={!!selectedMessageId} onOpenChange={open => !open && setSelectedMessageId(null)}>
-        <SheetContent side="bottom" className="rounded-t-[20px]">
-          <SheetHeader>
-            <SheetTitle className="text-center">{t('messageOptions', {
-              ns: 'messages'
-            })}</SheetTitle>
+        <SheetContent side="bottom" className="rounded-t-[20px] bg-background border-t border-border">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="text-center text-lg font-semibold">
+              {t('messageOptions', { ns: 'messages' })}
+            </SheetTitle>
           </SheetHeader>
-          <div className="flex flex-col gap-2 pt-4">
-            <Button variant="ghost" className="w-full justify-start text-left h-12 text-base" onClick={() => {
-            setShowEmojiPicker(true);
-          }}>
-              <Smile className="w-5 h-5 mr-3" />
-              {t('addReaction', {
-              ns: 'messages'
-            })}
-            </Button>
-            <Button variant="ghost" className="w-full justify-start text-left h-12 text-base text-destructive hover:text-destructive" onClick={handleDeleteMessage}>
-              <Trash2 className="w-5 h-5 mr-3" />
-              {t('deleteMessage', {
-              ns: 'messages'
-            })}
-            </Button>
+          <div className="flex flex-col gap-1.5 pt-2 pb-4">
+            <button
+              onClick={() => setShowEmojiPicker(true)}
+              className="w-full flex items-center gap-4 p-4 rounded-xl bg-accent/50 hover:bg-accent transition-colors active:scale-[0.98]"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Smile className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-base font-medium text-foreground">
+                {t('addReaction', { ns: 'messages' })}
+              </span>
+            </button>
+            <button
+              onClick={handleDeleteMessage}
+              className="w-full flex items-center gap-4 p-4 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors active:scale-[0.98]"
+            >
+              <div className="w-10 h-10 rounded-full bg-destructive/15 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </div>
+              <span className="text-base font-medium text-destructive">
+                {t('deleteMessage', { ns: 'messages' })}
+              </span>
+            </button>
           </div>
         </SheetContent>
       </Sheet>
