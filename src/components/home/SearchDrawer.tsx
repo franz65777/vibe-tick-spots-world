@@ -150,6 +150,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   type DrawerMode = 'closed' | 'trending' | 'search';
   const TRENDING_PROGRESS = 0.28;
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('closed');
+  const [isHiddenByModal, setIsHiddenByModal] = useState(false);
   const isSearchOpen = drawerMode === 'search';
   const isDrawerVisible = drawerMode !== 'closed';
 
@@ -185,6 +186,20 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setIsInitialRender(false);
     });
     return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Hide drawer when a modal (like AddPageOverlay) is open
+  useEffect(() => {
+    const checkModalOpen = () => {
+      setIsHiddenByModal(document.body.hasAttribute('data-modal-open'));
+    };
+    
+    checkModalOpen();
+    
+    const observer = new MutationObserver(checkModalOpen);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-modal-open'] });
+    
+    return () => observer.disconnect();
   }, []);
 
   // Register the reopen function for parent to call
@@ -935,6 +950,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
   const isSearching = internalQuery.trim().length > 0;
   const hasResults = cityResults.length > 0 || locationResults.length > 0;
+
+  // Hide drawer when modal (like Add overlay) is open
+  if (isHiddenByModal) {
+    return null;
+  }
 
   return (
     <div
