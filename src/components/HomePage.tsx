@@ -766,7 +766,7 @@ const HomePage = memo(() => {
                     }
                     // If we have returnToState with userPlacesUserId, navigate to user places
                     else if (returnToState?.userPlacesUserId) {
-                      navigate(`/user/${returnToState.userPlacesUserId}/places`, {
+                      navigate(`/user-places/${returnToState.userPlacesUserId}`, {
                         state: { 
                           restoreScroll: returnToState.scrollY,
                           filterCategory: returnToState.filterCategory 

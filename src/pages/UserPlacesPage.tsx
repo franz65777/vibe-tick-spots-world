@@ -326,9 +326,9 @@ const UserPlacesPage = () => {
           city: place.city,
           google_place_id: (place as any).google_place_id
         },
-        returnTo: `/user/${userId}/places`,
+        returnTo: `/user-places/${userId}`,
         returnToState: {
-          from: `/user/${userId}/places`,
+          from: `/user-places/${userId}`,
           scrollY: window.scrollY,
           userPlacesUserId: userId,
           filterCategory: filterCategory
