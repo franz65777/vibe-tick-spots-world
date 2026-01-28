@@ -51,8 +51,12 @@ const OptimizedPlacesAutocomplete = ({
     getPlaceDetails,
   } = useOptimizedPlacesSearch({ userLocation, debounceMs: 150 });
 
-  const hasResults = databaseResults.length > 0 || googleResults.length > 0;
-  const allResults = [...databaseResults, ...googleResults];
+  // Filter out cities - only show specific locations/places
+  const filteredDatabaseResults = databaseResults.filter(r => !r.isCity);
+  const filteredGoogleResults = googleResults.filter(r => !r.isCity);
+
+  const hasResults = filteredDatabaseResults.length > 0 || filteredGoogleResults.length > 0;
+  const allResults = [...filteredDatabaseResults, ...filteredGoogleResults];
 
   // Handle place selection
   const handleSelect = async (result: SearchResult) => {
@@ -174,41 +178,37 @@ const OptimizedPlacesAutocomplete = ({
         )}
       </div>
 
-      {/* Results dropdown */}
+      {/* Results dropdown - Clean minimal design */}
       {showResults && hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg max-h-[350px] overflow-y-auto scrollbar-hide">
+        <div className="absolute z-50 w-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl max-h-[320px] overflow-y-auto scrollbar-hide">
           {/* Database results section */}
-          {databaseResults.length > 0 && (
+          {filteredDatabaseResults.length > 0 && (
             <>
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30 flex items-center gap-2">
+              <div className="px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b border-border/30">
                 <Database className="w-3 h-3" />
                 {t('savedPlaces', { ns: 'common', defaultValue: 'Luoghi salvati' })}
               </div>
-              {databaseResults.map((result, index) => (
+              {filteredDatabaseResults.map((result, index) => (
                 <button
                   key={result.id}
                   onClick={() => handleSelect(result)}
-                  className={`w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border/50 ${
-                    selectedIndex === index ? 'bg-muted' : ''
-                  }`}
+                  className={`w-full px-3 py-2.5 flex items-center gap-2.5 hover:bg-accent/50 active:bg-accent transition-colors text-left ${
+                    selectedIndex === index ? 'bg-accent/50' : ''
+                  } ${index < filteredDatabaseResults.length - 1 ? 'border-b border-border/20' : ''}`}
                 >
-                  {result.category ? (
-                    <div className="w-8 h-8 flex-shrink-0">
-                      <CategoryIcon category={result.category} className="w-full h-full" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-green-500/10 rounded-lg">
-                      <MapPin className="w-4 h-4 text-green-500" />
-                    </div>
-                  )}
+                  <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-primary/10 rounded-lg">
+                    {result.category ? (
+                      <CategoryIcon category={result.category} className="w-5 h-5" />
+                    ) : (
+                      <MapPin className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground truncate flex items-center gap-2">
+                    <div className="font-medium text-sm text-foreground truncate">
                       {result.name}
                     </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {result.city && <span>{result.city}</span>}
-                      {result.city && result.address && <span className="mx-1">•</span>}
-                      <span>{result.address}</span>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {result.city}{result.city && result.address ? ' • ' : ''}{result.address}
                     </div>
                   </div>
                 </button>
@@ -216,48 +216,31 @@ const OptimizedPlacesAutocomplete = ({
             </>
           )}
 
-          {/* Google/External results section */}
-          {googleResults.length > 0 && (
+          {/* External results section */}
+          {filteredGoogleResults.length > 0 && (
             <>
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30 flex items-center gap-2">
-                {googleResults.some(r => r.isCity) ? (
-                  <>
-                    <Building2 className="w-3 h-3" />
-                    {t('cities', { ns: 'common', defaultValue: 'Città' })}
-                  </>
-                ) : (
-                  <>
-                    <Globe className="w-3 h-3" />
-                    {t('suggestions', { ns: 'common', defaultValue: 'Suggerimenti' })}
-                  </>
-                )}
+              <div className="px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b border-border/30 bg-muted/20">
+                <Globe className="w-3 h-3" />
+                {t('suggestions', { ns: 'common', defaultValue: 'Suggerimenti' })}
               </div>
-              {googleResults.map((result, index) => {
-                const globalIndex = databaseResults.length + index;
+              {filteredGoogleResults.map((result, index) => {
+                const globalIndex = filteredDatabaseResults.length + index;
                 return (
                   <button
                     key={result.id}
                     onClick={() => handleSelect(result)}
-                    className={`w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border/50 last:border-0 ${
-                      selectedIndex === globalIndex ? 'bg-muted' : ''
-                    }`}
+                    className={`w-full px-3 py-2.5 flex items-center gap-2.5 hover:bg-accent/50 active:bg-accent transition-colors text-left ${
+                      selectedIndex === globalIndex ? 'bg-accent/50' : ''
+                    } ${index < filteredGoogleResults.length - 1 ? 'border-b border-border/20' : ''}`}
                   >
-                    <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg ${
-                      result.isCity ? 'bg-blue-500/10' : 'bg-primary/10'
-                    }`}>
-                      {result.isCity ? (
-                        <Building2 className="w-4 h-4 text-blue-500" />
-                      ) : (
-                        <MapPin className="w-4 h-4 text-primary" />
-                      )}
+                    <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-lg">
+                      <MapPin className="w-4 h-4 text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate flex items-center gap-2">
-                        {result.isCity && <span className="text-lg">🏙️</span>}
+                      <div className="font-medium text-sm text-foreground truncate">
                         {result.name}
-                        <SourceIcon source={result.source} />
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="text-xs text-muted-foreground truncate">
                         {result.address}
                       </div>
                     </div>
