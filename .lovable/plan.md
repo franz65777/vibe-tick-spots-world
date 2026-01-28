@@ -1,142 +1,165 @@
 
-# Piano: Abilitare il Tasto Add da Explore, Feed e Profile
+# Piano: Correzioni Add Page Overlay - Background e Visibilità
 
-## Problema Attuale
-Il tasto "Add" nella barra di navigazione funziona **solo dalla home page** perché:
-1. Il tasto emette un evento `CustomEvent('open-add-overlay')`
-2. Il listener per questo evento esiste **solo in `HomePage.tsx`**
-3. Quando l'utente è su `/explore`, `/feed`, o `/profile`, la `HomePage` non è montata
-4. Quindi l'evento non viene mai ricevuto
+## Problemi Identificati
 
-## Soluzione
-Spostare la gestione dell'Add overlay a livello di `AuthenticatedLayout` (che è sempre montato per tutte le pagine autenticate). Quando l'overlay si apre da una pagina diversa dalla home:
-1. L'overlay si apre normalmente
-2. La home viene precaricata in background
-3. Alla chiusura, l'utente viene reindirizzato alla home
+### Problema 1: Barra di ricerca visibile in background
+Quando l'Add overlay si apre sulla home page, la barra di ricerca (MapFilterDropdown) nell'Header rimane visibile dietro l'overlay semi-trasparente (`bg-background/40`), creando un contrasto visivo fastidioso.
+
+**Causa tecnica**: L'Header.tsx controlla la visibilità tramite l'attributo `data-modal-open` sul body, ma AddPageOverlay non imposta questo attributo quando si apre.
+
+### Problema 2: Pagina di provenienza visibile invece della home
+Quando l'Add overlay si apre da `/feed`, `/explore` o `/profile`, la pagina corrente rimane visibile in background (es. feed con le card). La navigazione alla home (`navigate('/')`) avviene solo alla **chiusura** dell'overlay, causando un caricamento visibile della home in quel momento.
+
+**Causa tecnica**: L'`openAddOverlay` memorizza solo il pathname ma non naviga immediatamente. L'overlay mostra quindi la pagina corrente dietro di sé.
 
 ---
 
-## Modifiche Richieste
+## Soluzione Proposta
 
-### 1. Creare un nuovo Context per l'Add Overlay
-**Nuovo file:** `src/contexts/AddOverlayContext.tsx`
-
-Questo context gestirà:
-- `isAddOverlayOpen` / `setIsAddOverlayOpen`
-- `addContributionLocation` / `setAddContributionLocation`  
-- `isAddContributionModalOpen` / `setIsAddContributionModalOpen`
-- `originPath` - per tracciare da dove è stato aperto
+### Fix 1: Nascondere la barra di ricerca
+Quando AddPageOverlay si apre, impostare `data-modal-open` sul body per nascondere automaticamente l'Header della home (che già reagisce a questo attributo).
 
 ```text
-┌─────────────────────────────────────┐
-│         AddOverlayProvider          │
-│  (wraps AuthenticatedLayout)        │
-│                                     │
-│  ┌───────────────┐ ┌─────────────┐  │
-│  │  Add Overlay  │ │ Contribution│  │
-│  │    Portal     │ │    Modal    │  │
-│  └───────────────┘ └─────────────┘  │
-│                                     │
-│  ┌───────────────────────────────┐  │
-│  │         <Outlet />            │  │
-│  │  (HomePage/ExplorePage/etc)   │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
+AddPageOverlay opens
+       │
+       ▼
+document.body.setAttribute('data-modal-open', 'true')
+       │
+       ▼
+Header detects change → returns null → hidden
 ```
 
-### 2. Modificare `AuthenticatedLayout.tsx`
-- Importare e usare `AddOverlayProvider`
-- Aggiungere i componenti `AddPageOverlay` e `LocationContributionModal` a questo livello
-- Ascoltare l'evento `open-add-overlay` qui invece che in HomePage
-
-### 3. Modificare `HomePage.tsx`
-- Rimuovere la gestione locale di Add overlay (listener evento, stato, componenti)
-- Questi sono ora gestiti a livello superiore
-
-### 4. Aggiornare `NewBottomNavigation.tsx`
-- Modificare la `customAction` per l'Add button
-- Includere il pathname corrente nell'evento per tracciare l'origine
-- Se non siamo sulla home, navigare alla home dopo aver aperto l'overlay
-
-### 5. Gestione della Chiusura
-Quando l'overlay viene chiuso:
-- Se originPath era "/" (home) → comportamento attuale (resta sulla home)
-- Se originPath era altro → naviga alla home
-
----
-
-## Dettagli Tecnici
-
-### AddOverlayContext
-```tsx
-interface AddOverlayContextType {
-  isAddOverlayOpen: boolean;
-  openAddOverlay: (fromPath: string) => void;
-  closeAddOverlay: () => void;
-  addContributionLocation: SelectedLocation | null;
-  setAddContributionLocation: (loc: SelectedLocation | null) => void;
-  isAddContributionModalOpen: boolean;
-  setIsAddContributionModalOpen: (open: boolean) => void;
-}
-```
-
-### Flusso di Navigazione
+### Fix 2: Navigare alla home prima di aprire l'overlay
+Quando l'overlay viene aperto da una pagina diversa dalla home, prima navigare alla home (in background), poi aprire l'overlay. Questo garantisce che:
+1. La home sia già caricata e visibile dietro l'overlay
+2. Alla chiusura, l'utente sia già sulla home (transizione istantanea)
 
 ```text
 User on /feed → clicks Add
          │
          ▼
-┌─────────────────────────┐
-│  open-add-overlay event │
-│  with originPath='/feed'│
-└───────────┬─────────────┘
+┌─────────────────────────────┐
+│ Check: pathname !== '/'?   │
+│        YES                  │
+└───────────┬─────────────────┘
             │
             ▼
-┌─────────────────────────┐
-│  AuthenticatedLayout    │
-│  catches event          │
-│  - opens AddPageOverlay │
-│  - stores originPath    │
-└───────────┬─────────────┘
+┌─────────────────────────────┐
+│ 1. navigate('/', {replace}) │
+│ 2. Open overlay             │
+└───────────┬─────────────────┘
             │
             ▼
-┌─────────────────────────┐
-│  User searches & selects│
-│  a location             │
-└───────────┬─────────────┘
+┌─────────────────────────────┐
+│ Home page loads behind      │
+│ Add overlay (blurred)       │
+└───────────┬─────────────────┘
             │
             ▼
-┌─────────────────────────┐
-│  LocationContribution   │
-│  Modal opens            │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│  User saves/closes      │
-│  modal closes           │
-│  navigate('/')          │◄── Goes to home
-└─────────────────────────┘
+┌─────────────────────────────┐
+│ User closes overlay         │
+│ → Already on home           │
+│ → Instant, no loading       │
+└─────────────────────────────┘
 ```
+
+---
+
+## Modifiche Tecniche
+
+### File 1: `src/components/add/AddPageOverlay.tsx`
+**Aggiungere**: Impostazione attributo `data-modal-open` quando l'overlay si apre
+
+```tsx
+// Nell'useEffect esistente (linea 86-108)
+useEffect(() => {
+  if (isOpen) {
+    // NUOVO: Nascondere header/search bar
+    document.body.setAttribute('data-modal-open', 'true');
+    
+    // ... codice esistente ...
+  }
+
+  return () => {
+    // NUOVO: Rimuovere attributo alla chiusura
+    document.body.removeAttribute('data-modal-open');
+    // ... codice esistente ...
+  };
+}, [isOpen, onClose]);
+```
+
+### File 2: `src/contexts/AddOverlayContext.tsx`
+**Modificare `openAddOverlay`**: Navigare alla home prima di aprire l'overlay
+
+```tsx
+const openAddOverlay = useCallback(() => {
+  // Store the current path before opening
+  originPathRef.current = location.pathname;
+  
+  // NUOVO: Se non siamo sulla home, navigare prima alla home
+  if (location.pathname !== '/') {
+    // Navigate to home first, then open overlay
+    navigate('/', { replace: true });
+  }
+  
+  setIsAddOverlayOpen(true);
+}, [location.pathname, navigate]);
+```
+
+**Modificare `closeAddOverlay`**: Rimuovere la navigazione (ora non più necessaria)
+
+```tsx
+const closeAddOverlay = useCallback(() => {
+  setIsAddOverlayOpen(false);
+  // La navigazione è già avvenuta in openAddOverlay
+  // Reset origin
+  originPathRef.current = '/';
+}, []);
+```
+
+**Nota**: Lo stesso per `handleCloseContributionModal`.
 
 ---
 
 ## File da Modificare
 
-| File | Azione |
-|------|--------|
-| `src/contexts/AddOverlayContext.tsx` | **Nuovo** - Context per gestione stato Add |
-| `src/components/AuthenticatedLayout.tsx` | Aggiungere AddOverlayProvider, AddPageOverlay, LocationContributionModal |
-| `src/components/HomePage.tsx` | Rimuovere gestione locale Add overlay |
-| `src/components/NewBottomNavigation.tsx` | Modificare evento per includere originPath |
-| `src/hooks/useHomePageState.ts` | Rimuovere stati Add overlay (opzionale, per pulizia) |
+| File | Modifica |
+|------|----------|
+| `src/components/add/AddPageOverlay.tsx` | Aggiungere `data-modal-open` attribute |
+| `src/contexts/AddOverlayContext.tsx` | Navigare alla home in `openAddOverlay` |
+
+---
+
+## Flusso Risultante
+
+```text
+Scenario A: Add button cliccato dalla Home (/)
+┌────────────────────────────────────────────┐
+│ 1. originPathRef = '/'                     │
+│ 2. pathname === '/' → no navigation        │
+│ 3. setIsAddOverlayOpen(true)               │
+│ 4. Overlay opens with home behind          │
+│ 5. Header hidden via data-modal-open       │
+│ 6. Close → stay on home                    │
+└────────────────────────────────────────────┘
+
+Scenario B: Add button cliccato da Feed (/feed)
+┌────────────────────────────────────────────┐
+│ 1. originPathRef = '/feed'                 │
+│ 2. pathname !== '/' → navigate('/')        │
+│ 3. setIsAddOverlayOpen(true)               │
+│ 4. Home loads behind overlay               │
+│ 5. Header hidden via data-modal-open       │
+│ 6. Close → already on home (instant)       │
+└────────────────────────────────────────────┘
+```
 
 ---
 
 ## Risultato Atteso
 
-1. **Tasto Add funziona ovunque**: Da home, explore, feed e profile
-2. **Transizione fluida**: Overlay si apre sopra la pagina corrente
-3. **Ritorno alla home**: Dopo la chiusura, l'utente si trova sulla home con la mappa visibile
-4. **Nessuna perdita di funzionalità**: Tutto il comportamento esistente (ricerca luoghi, selezione, upload foto, rating, liste) rimane invariato
-5. **Preload efficiente**: La home è già precaricata grazie all'architettura esistente con `useTabPrefetch`
+1. **Nessun contrasto visivo**: La barra di ricerca della home scompare quando l'Add overlay è aperto
+2. **Home sempre in background**: Aprendo da qualsiasi pagina, la home è visibile (sfocata) dietro l'overlay
+3. **Chiusura istantanea**: Alla chiusura dell'overlay, l'utente è già sulla home - nessun caricamento visibile
+4. **Comportamento consistente**: L'esperienza è identica sia aprendo dalla home che da altre pagine
