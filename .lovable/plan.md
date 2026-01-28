@@ -1,248 +1,281 @@
 
-# Piano: Correzione Bug Dati Posizione + Redesign Card Luoghi nei Messaggi
+# Piano: UI Opzioni Messaggio Stile Instagram
 
 ## Panoramica
 
-Due problemi principali da risolvere:
+Trasformare l'attuale bottom sheet delle opzioni messaggio in un'esperienza simile a Instagram:
 
-1. **BUG CRITICO**: Cliccando su una posizione condivisa nei messaggi, il PinDetailCard mostra dati errati (foto mancanti, stato salvataggio sbagliato)
-2. **UI Design**: La card dei luoghi condivisi e troppo grande verticalmente e necessita di miglioramenti estetici
-
----
-
-## Problema 1: Bug Dati Errati nel PinDetailCard
-
-### Analisi Tecnica
-
-Quando una posizione viene condivisa, i dati vengono salvati cosi:
-```typescript
-{
-  name, category, address, city,
-  google_place_id,  // Google Place ID
-  place_id,         // Duplicato del google_place_id
-  latitude, longitude,
-  image_url, photos
-}
-```
-
-Il bug si manifesta nella navigazione (MessagesPage linee 984-985):
-```typescript
-id: placeData.id || googlePlaceId,  // <-- PROBLEMA!
-google_place_id: googlePlaceId,
-```
-
-**Se `placeData.id` e undefined**, viene usato `googlePlaceId` come `id`. Ma il PinDetailCard usa `place.id` per:
-- `locationInteractionService.isLocationSaved(place.id)` - controlla stato salvataggio
-- `locationInteractionService.isLocationLiked(place.id)` - controlla stato like
-- Query sui posts con `location_id`
-
-Il service `isLocationSaved` ha gia un fallback per gestire `google_place_id`, ma il problema e che viene passato un ID inconsistente.
-
-### Soluzione
-
-1. **Rimuovere il fallback problematico**: Non usare `googlePlaceId` come `id`
-2. **Mantenere `id` vuoto se non disponibile**: PinDetailCard gestisce gia questo caso
-3. **Aggiungere l'id interno dalla query originale**: La query su `user_saved_locations` gia restituisce `locations.id`
-
-**Modifiche a `MessagesPage.tsx` (onViewPlace handler, linee 975-1001)**:
-
-```typescript
-onViewPlace={(placeData, otherUserId) => {
-  const lat = placeData.latitude ?? placeData.coordinates?.lat ?? 0;
-  const lng = placeData.longitude ?? placeData.coordinates?.lng ?? 0;
-  const googlePlaceId = placeData.google_place_id || placeData.place_id || '';
-  
-  navigate('/', {
-    state: {
-      showLocationCard: true,
-      locationData: {
-        // IMPORTANTE: Usa solo l'ID interno se presente, altrimenti lascia che PinDetailCard lo risolva
-        id: placeData.id && placeData.id !== googlePlaceId ? placeData.id : undefined,
-        google_place_id: googlePlaceId,
-        name: placeData.name || '',
-        category: placeData.category || 'place',
-        address: placeData.address || '',
-        city: placeData.city || '',
-        latitude: lat,
-        longitude: lng,
-        coordinates: { lat, lng },
-        image_url: placeData.image_url || placeData.image || null,
-        photos: placeData.photos || null
-      },
-      fromMessages: true,
-      returnToUserId: otherUserId
-    }
-  });
-}}
-```
-
-**Modifiche a `HomePage.tsx` (handling locationData, linee 237-270)**:
-
-```typescript
-if (state?.showLocationCard && state?.locationData) {
-  const locData = state.locationData;
-  
-  // Se non abbiamo un ID interno ma abbiamo google_place_id, risolvi prima
-  let internalId = locData.id;
-  if (!internalId && locData.google_place_id) {
-    // Il PinDetailCard risolve l'ID internamente, ma possiamo pre-risolvere qui
-    const { data: locationRow } = await supabase
-      .from('locations')
-      .select('id')
-      .eq('google_place_id', locData.google_place_id)
-      .maybeSingle();
-    
-    if (locationRow) {
-      internalId = locationRow.id;
-    }
-  }
-  
-  const placeToShow: Place = {
-    id: internalId || locData.google_place_id || '', // Fallback a google_place_id per display
-    google_place_id: locData.google_place_id,
-    name: locData.name,
-    // ... resto invariato
-  };
-  // ...
-}
-```
+1. **Sfondo sfumato/blur** con il messaggio selezionato evidenziato
+2. **Barra emoji** fluttuante sopra il messaggio (cuore, risata, sorpreso, triste, arrabbiato, pollice, +)
+3. **Menu azioni** arrotondato sotto il messaggio con opzioni: Rispondi, Elimina
 
 ---
 
-## Problema 2: Redesign PlaceMessageCard
+## Analisi dell'immagine Instagram
 
-### Requisiti
-- Rimuovere icona categoria dalla foto (gia presente nel testo)
-- Ridurre altezza verticale della card
-- Rimuovere bottone "Vedi Posizione"
-- Migliorare UI (cambiare lo sfondo bianco)
+L'UI di Instagram mostra:
+- Sfondo con blur/overlay scuro
+- Messaggio "evidenziato" (non nascosto)
+- Barra emoji in alto con bordi arrotondati bianchi contenente: heart, laugh, surprised, crying, angry, thumbs_up, plus
+- Testo "Tocca e tieni premuto per aggiungere una super reazione"
+- Menu azioni sotto il messaggio con bordi molto arrotondati, sfondo chiaro/rosa con:
+  - Rispondi (freccia)
+  - Aggiungi adesivo (sticker icon)
+  - Inoltra (send icon)
+  - Elimina per te (trash)
+  - Segnala (warning - rosso)
+  - Altro (dots)
 
-### Nuovo Design
+---
 
-Layout compatto e moderno:
-- Foto orizzontale con aspect ratio 16:9 (ridotta da h-36 a h-24)
-- Gradiente overlay sottile per leggibilita
-- Padding ridotto
-- Sfondo con leggero colore/blur invece di bianco puro
-- Click su tutta la card per vedere la posizione
+## Soluzione Proposta
 
-**Modifiche a `PlaceMessageCard.tsx`**:
+### Nuova Architettura
+
+Invece di un `Sheet` bottom, creare un **overlay full-screen** che:
+
+1. Mostra uno sfondo scuro semi-trasparente con blur
+2. Posiziona il messaggio selezionato al centro (o nella sua posizione originale)
+3. Mostra la barra emoji sopra il messaggio
+4. Mostra il menu azioni sotto il messaggio
+
+### Componente: MessageOptionsOverlay
+
+Creare un nuovo componente che gestisce l'intera esperienza:
 
 ```tsx
-const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const categoryImage = getCategoryImage(placeData.category);
-  const thumbnail = getLocationThumbnail(placeData);
-  
-  const translatedCategory = t(`categories.${placeData.category}`, { 
-    ns: 'common', 
-    defaultValue: placeData.category || 'Place' 
-  });
+interface MessageOptionsOverlayProps {
+  isOpen: boolean;
+  onClose: () => void;
+  message: DirectMessage | null;
+  isOwnMessage: boolean;
+  onReaction: (emoji: string) => void;
+  onReply: () => void;
+  onDelete: () => void;
+}
+```
 
-  const handleViewLocation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onViewPlace) {
-      onViewPlace(placeData);
-      return;
-    }
-    navigate('/', { 
-      state: { 
-        showLocationCard: true,
-        locationData: placeData,
-        fromMessages: true
-      } 
-    });
-  };
+### Layout Overlay
+
+```text
++------------------------------------------+
+|         SFONDO BLUR/SCURO                |
+|                                          |
+|   +----------------------------------+   |
+|   | Emoji Bar (rounded pill)          |   |
+|   | [❤️] [😂] [😮] [😢] [😡] [👍] [+] |   |
+|   +----------------------------------+   |
+|                                          |
+|      +------------------------+          |
+|      |   MESSAGGIO BUBBLE     |          |
+|      |   "Testo messaggio"    |          |
+|      +------------------------+          |
+|                                          |
+|   +----------------------------------+   |
+|   |  Menu Azioni (rounded card)      |   |
+|   |                                  |   |
+|   |  ← Rispondi                      |   |
+|   |  🗑 Elimina                       |   |
+|   +----------------------------------+   |
+|                                          |
++------------------------------------------+
+```
+
+### Stili Chiave
+
+**Sfondo Overlay:**
+```tsx
+className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center"
+```
+
+**Barra Emoji:**
+```tsx
+className="bg-card/95 backdrop-blur-sm rounded-full px-4 py-3 flex items-center gap-3 shadow-lg border border-border/50"
+```
+
+**Singolo Emoji:**
+```tsx
+className="text-3xl hover:scale-125 active:scale-95 transition-transform cursor-pointer"
+```
+
+**Messaggio Evidenziato:**
+- Stesso stile del bubble originale ma con shadow piu pronunciato
+- `shadow-xl ring-2 ring-primary/20`
+
+**Menu Azioni:**
+```tsx
+className="bg-card/95 backdrop-blur-sm rounded-3xl overflow-hidden shadow-lg border border-border/30 min-w-[200px]"
+```
+
+**Singola Azione:**
+```tsx
+className="w-full flex items-center gap-4 px-5 py-4 hover:bg-accent/50 transition-colors"
+```
+
+---
+
+## Modifiche ai File
+
+### 1. Creare nuovo componente: `src/components/messages/MessageOptionsOverlay.tsx`
+
+Componente dedicato che renderizza:
+- Overlay full-screen con blur
+- Barra emoji con 6 emoji + bottone "+"
+- Il messaggio selezionato (ricostruito dal contenuto)
+- Menu azioni con Rispondi e Elimina
+
+### 2. Modificare: `src/pages/MessagesPage.tsx`
+
+- Rimuovere il `Sheet` delle opzioni messaggio (linee 1067-1100)
+- Rimuovere il `Sheet` dell'emoji picker (linee 1102-1123)
+- Aggiungere il nuovo `MessageOptionsOverlay`
+- Passare il messaggio selezionato al nuovo componente
+- Aggiungere stato per gestire "reply" (opzionale per ora)
+
+---
+
+## Dettaglio Implementazione
+
+### MessageOptionsOverlay.tsx
+
+```tsx
+import { useTranslation } from 'react-i18next';
+import { X, Reply, Trash2, Plus } from 'lucide-react';
+import { DirectMessage } from '@/services/messageService';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const QUICK_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍'];
+
+const MessageOptionsOverlay = ({
+  isOpen,
+  onClose,
+  message,
+  isOwnMessage,
+  onReaction,
+  onReply,
+  onDelete,
+  onShowAllEmojis
+}: Props) => {
+  if (!isOpen || !message) return null;
 
   return (
     <div 
-      onClick={handleViewLocation}
-      className="bg-accent/40 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer 
-                 hover:bg-accent/60 transition-all duration-200 active:scale-[0.98] max-w-[260px]"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-6"
+      onClick={onClose}
     >
-      {/* Foto compatta */}
-      <div className="relative w-full h-24 bg-muted overflow-hidden">
-        {thumbnail ? (
-          <>
-            <img 
-              src={thumbnail} 
-              alt={placeData.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <img 
-              src={categoryImage} 
-              alt={placeData.category}
-              className="w-12 h-12 object-contain opacity-70"
-            />
-          </div>
-        )}
+      {/* Emoji Bar */}
+      <div 
+        className="bg-card/95 backdrop-blur-sm rounded-full px-5 py-3 flex items-center gap-4 shadow-xl border border-border/40 mb-4"
+        onClick={e => e.stopPropagation()}
+      >
+        {QUICK_EMOJIS.map(emoji => (
+          <button
+            key={emoji}
+            onClick={() => onReaction(emoji)}
+            className="text-3xl hover:scale-125 active:scale-90 transition-transform"
+          >
+            {emoji}
+          </button>
+        ))}
+        <button
+          onClick={onShowAllEmojis}
+          className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+        >
+          <Plus className="w-5 h-5 text-muted-foreground" />
+        </button>
       </div>
-      
-      {/* Info compatte */}
-      <div className="p-2.5">
-        <h4 className="font-semibold text-sm text-foreground leading-tight line-clamp-1">
-          {placeData.name}
-        </h4>
+
+      {/* Message Preview */}
+      <div 
+        className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-xl mb-4 ${
+          isOwnMessage 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-card text-card-foreground border border-border'
+        }`}
+        onClick={e => e.stopPropagation()}
+      >
+        <p className="text-sm">{message.content}</p>
+      </div>
+
+      {/* Actions Menu */}
+      <div 
+        className="bg-card/95 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl border border-border/40 min-w-[220px]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Reply option - for future */}
+        {/* <button className="w-full flex items-center gap-4 px-5 py-4 hover:bg-accent/50">
+          <Reply className="w-5 h-5" />
+          <span>{t('reply', { ns: 'messages' })}</span>
+        </button> */}
         
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-          {(placeData.city || placeData.address || placeData.coordinates) && (
-            <span className="truncate">
-              <CityLabel 
-                id={placeData.google_place_id || placeData.id}
-                city={placeData.city}
-                address={placeData.address}
-                coordinates={placeData.coordinates}
-              />
-            </span>
-          )}
-          <span className="text-muted-foreground/50">•</span>
-          <span className="capitalize shrink-0">{translatedCategory}</span>
-        </div>
+        <button 
+          onClick={onDelete}
+          className="w-full flex items-center gap-4 px-5 py-4 hover:bg-destructive/10 text-destructive"
+        >
+          <Trash2 className="w-5 h-5" />
+          <span className="font-medium">{t('deleteMessage', { ns: 'messages' })}</span>
+        </button>
       </div>
     </div>
   );
 };
 ```
 
-### Differenze Chiave
+### Modifiche a MessagesPage.tsx
 
-| Elemento | Prima | Dopo |
-|----------|-------|------|
-| Altezza foto | h-36 (144px) | h-24 (96px) |
-| Badge categoria su foto | Si | Rimosso |
-| Bottone "Vedi Posizione" | Si | Rimosso |
-| Sfondo card | bg-card (bianco) | bg-accent/40 backdrop-blur |
-| Padding contenuto | p-3.5 | p-2.5 |
-| Linee nome | line-clamp-2 | line-clamp-1 |
-| Larghezza max | 280px | 260px |
-| Margine citta-categoria | mb-3 | mt-0.5 |
+1. **Import nuovo componente**
+2. **Aggiungere stato per messaggio completo selezionato:**
+```tsx
+const selectedMessage = useMemo(() => {
+  if (!selectedMessageId) return null;
+  return messages.find(m => m.id === selectedMessageId) || null;
+}, [selectedMessageId, messages]);
+```
 
----
-
-## File da Modificare
-
-| File | Modifica |
-|------|----------|
-| `src/pages/MessagesPage.tsx` | Fix onViewPlace handler per passare dati corretti |
-| `src/components/HomePage.tsx` | Pre-risolvere internal ID da google_place_id |
-| `src/components/messages/PlaceMessageCard.tsx` | Redesign completo della card |
+3. **Sostituire Sheet con MessageOptionsOverlay:**
+```tsx
+<MessageOptionsOverlay
+  isOpen={!!selectedMessageId}
+  onClose={() => setSelectedMessageId(null)}
+  message={selectedMessage}
+  isOwnMessage={selectedMessage?.sender_id === user?.id}
+  onReaction={(emoji) => {
+    toggleReaction(selectedMessageId!, emoji);
+    setSelectedMessageId(null);
+  }}
+  onDelete={handleDeleteMessage}
+  onShowAllEmojis={() => setShowEmojiPicker(true)}
+/>
+```
 
 ---
 
 ## Risultato Atteso
 
-1. **Bug Risolto**: Cliccando su una posizione condivisa, il PinDetailCard mostrera:
-   - Foto corrette (business o Google)
-   - Stato salvataggio corretto
-   - Post e recensioni della location giusta
+1. **UX moderna stile Instagram**: Long press su messaggio apre overlay full-screen
+2. **Emoji rapide**: 6 emoji piu usate + bottone "+" per tutti gli emoji
+3. **Messaggio evidenziato**: Il messaggio e visibile al centro con sfondo blur
+4. **Menu elegante**: Azioni in card arrotondata sotto il messaggio
+5. **Chiusura facile**: Tap fuori dall'area chiude l'overlay
 
-2. **UI Migliorata**: Card compatta con:
-   - Altezza ridotta del 40%
-   - Sfondo elegante semi-trasparente
-   - Nessun bottone ridondante
-   - Click su tutta la card per navigare
+---
+
+## File da Creare/Modificare
+
+| File | Azione |
+|------|--------|
+| `src/components/messages/MessageOptionsOverlay.tsx` | **NUOVO** - Componente overlay |
+| `src/pages/MessagesPage.tsx` | **MODIFICA** - Integrare nuovo componente, rimuovere vecchi Sheet |
+
+---
+
+## Traduzioni Necessarie
+
+Le traduzioni esistono gia:
+- `messageOptions` - "Opzioni Messaggio"
+- `addReaction` - "Aggiungi Reazione"
+- `deleteMessage` - "Elimina Messaggio"
+- `selectEmoji` - "Seleziona Emoji"
+
+Se si vuole aggiungere "Rispondi" in futuro:
+- `reply` - da aggiungere
