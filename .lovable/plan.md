@@ -1,130 +1,154 @@
 
-# Intro Video & Home Page Preloading Optimization
+# Map Centering & User Avatar Drop-in Animation
 
 ## Overview
 
-This plan addresses two key UX improvements:
-1. **Instant video playback** - The intro video must play immediately when the app opens, with no loading delay or "start" button
-2. **Seamless transition to home** - The home page content must be fully preloaded during video playback so users see zero loading after the video ends
+This plan addresses two user requests:
+1. **Fresh session centering** - When opening the app from closed, center the map on the user's current GPS position (not a previously saved position)
+2. **Drop-in animation** - Add a visually engaging animation where the user's location marker "drops" from the top of the screen to their position on the map after the intro video ends
 
-## Current Architecture Analysis
+## Problem Analysis
 
-### Video Loading Flow
-- `SplashScreen.tsx` imports the video as a static asset (`intro_finale.mp4`)
-- Video uses `autoPlay`, `muted`, and `playsInline` attributes
-- The video should auto-play, but browser restrictions and asset loading can cause delays
+### Current Map Centering Behavior
+The app currently persists the last map center to localStorage and restores it on app open:
+- `useHomePageState.ts` line 84-90: Reads `lastMapCenter` from localStorage as initial state
+- `HomePage.tsx` line 362-367: Checks localStorage and sets `hasInitializedLocation = true` to prevent overwriting
+- This causes the map to show the *previous* location instead of the user's *current* position
 
-### Home Page Data Dependencies
-The following data must be ready when the splash ends:
-1. **Authentication state** - Already handled by `AuthContext`, resolves during video
-2. **Map locations** - Fetched by `useMapLocations` hook
-3. **Stories** - Fetched via coalesced fetcher (`fetchStoriesCoalesced`)
-4. **User profile** - For onboarding check (`fetchOnboardingStatus`)
-5. **Feed data** - Pre-cached for instant tab switching
-
-### Current Preloading
-`SplashScreen.tsx` preloads page **code** via lazy imports but does NOT preload:
-- Actual database queries (map pins, stories, etc.)
-- Critical images and assets
+### Current Location Marker
+- Created via `createCurrentLocationMarker()` in `leafletMarkerCreator.ts`
+- Displays the `/images/location-person.png` image with a direction cone
+- No entrance animation currently exists
 
 ---
 
 ## Implementation Plan
 
-### Task 1: Ensure Video Instant Playback
+### Task 1: Fresh Session Map Centering
 
-**File:** `src/components/SplashScreen.tsx`
+**Concept**: Clear the saved map center when the app loads fresh so the map always centers on the user's GPS position on app open.
 
-Changes:
-- Add `preload="auto"` attribute to the video element for eager buffering
-- Ensure video container has a solid background to prevent flash-of-content
-- Add a loading state that shows the app background color until video can play (`onCanPlay`)
-- This prevents any visual "loading" indicator or blank screen before video starts
-
-### Task 2: Create Data Preloading Service
-
-**New File:** `src/services/homePagePreloader.ts`
-
-Purpose: Centralized preloading of all home page data during splash screen
-
-Functions:
-- `preloadHomePageData(userId)` - Master function that orchestrates all preloads in parallel
-- Fetches: onboarding status, stories, user profile, initial map locations, feed data
-- Writes results directly to React Query cache using `queryClient.setQueryData()`
-- This ensures data is instantly available when `HomePage` mounts
-
-### Task 3: Integrate Preloading into Splash Screen
-
-**File:** `src/components/SplashScreen.tsx`
+**File**: `src/pages/Index.tsx`
 
 Changes:
-- Import and call `preloadHomePageData()` as soon as splash mounts (parallel with video)
-- Track preload completion state alongside video completion
-- The splash only completes when BOTH video ends AND data is ready
-- Add a fallback timeout (e.g., 5 seconds) to prevent infinite loading if network is slow
+- When splash screen is about to show (fresh app open), clear `lastMapCenter` from localStorage
+- This ensures `useHomePageState` falls back to the default position initially
+- The geolocation effect in HomePage will then update to the fresh GPS location
 
-### Task 4: Warm the React Query Cache
-
-**File:** `src/lib/queryClient.ts`
+**File**: `src/hooks/useHomePageState.ts`
 
 Changes:
-- Export a utility function to pre-populate cache keys from preloaded data
-- Ensure `staleTime` is sufficient so cached data isn't immediately refetched
+- Check for a `freshSession` flag in sessionStorage
+- If set, ignore localStorage and wait for fresh GPS
 
-### Task 5: Preload Video Asset at App Startup
-
-**File:** `src/main.tsx`
+**File**: `src/components/HomePage.tsx`
 
 Changes:
-- Add video preload using `<link rel="preload">` in the document head dynamically
-- This starts buffering the video before the React app even mounts
-- Alternatively, use `new Audio()` / `fetch()` to warm the browser cache
+- When `freshSession` flag is detected, force-fetch GPS and center map on that position
+- Clear the flag after centering
+
+### Task 2: User Location Drop-in Animation
+
+**Concept**: When the home page first loads after splash, the user location marker should animate from above the viewport down to its actual position, creating a "parachuting in" effect.
+
+**File**: `src/utils/leafletMarkerCreator.ts`
+
+Changes:
+- Add an optional `animate` parameter to `createCurrentLocationMarker()`
+- When `animate = true`, add CSS keyframe animation for drop-in effect:
+  - Start position: translateY(-100vh) (off-screen top)
+  - End position: translateY(0) (final position)
+  - Add a subtle bounce at the end
+  - Include a small "landing shadow" that grows as the marker drops
+
+**File**: `src/components/LeafletMapSetup.tsx`
+
+Changes:
+- Track if this is the first render after splash via a ref or sessionStorage flag
+- Pass `animate: true` to `createCurrentLocationMarker()` on first render only
+- Clear the flag so subsequent renders don't re-animate
+
+**File**: `src/pages/Index.tsx`
+
+Changes:
+- Set a sessionStorage flag `shouldAnimateUserMarker: true` just before splash completes
+- This signals to the map component to play the drop-in animation
 
 ---
 
 ## Technical Details
 
-### Video Preloading Strategy
+### Animation Keyframes
+
+The drop-in animation will include:
+1. **Fall phase** (0-70%): Marker drops from above screen with acceleration
+2. **Bounce phase** (70-85%): Small overshoot past final position
+3. **Settle phase** (85-100%): Returns to exact final position with easing
+
 ```text
-1. main.tsx loads → injects <link rel="preload" as="video" href="intro.mp4">
-2. React mounts → SplashScreen renders with video already cached
-3. Video plays instantly (no buffering delay)
+@keyframes user-drop-in {
+  0% {
+    transform: translateY(-100vh) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(10px) scale(1.1);
+  }
+  85% {
+    transform: translateY(-5px) scale(0.95);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
 ```
 
-### Data Preloading Strategy
-```text
-1. SplashScreen mounts → calls preloadHomePageData(userId)
-2. Parallel fetches: stories, locations, profile, feed
-3. Results written to queryClient cache
-4. When HomePage mounts, useQuery hooks return cached data instantly
-```
+### Shadow/Impact Effect
 
-### Completion Logic
+A subtle expanding circle under the marker during landing:
+- Starts at 0% opacity and 0 size when marker is high
+- Grows and becomes visible as marker approaches ground
+- Fades away after landing
+
+### Session Detection Logic
+
 ```text
-SplashScreen completes when:
-- Video has ended (onEnded event)
-- minDisplayTime has elapsed (2.5s)
-- Data preload is complete (or timeout reached)
+Index.tsx (on splash start):
+  - sessionStorage.set('freshSession', 'true')
+  - sessionStorage.set('shouldAnimateUserMarker', 'true')
+  - localStorage.remove('lastMapCenter')
+
+HomePage.tsx (on mount):
+  - Check 'freshSession' flag
+  - If true: wait for GPS, center map, clear flag
+
+LeafletMapSetup.tsx (on location marker creation):
+  - Check 'shouldAnimateUserMarker' flag  
+  - If true: create marker with drop animation
+  - Clear flag after animation completes (~1s)
 ```
 
 ---
 
 ## Expected Results
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Video start delay | 200-500ms | 0ms (preloaded) |
-| Home page loading spinner | Visible for 1-2s | Never visible |
-| Time to interactive | ~3.5s after splash | ~0.1s after splash |
+| Scenario | Before | After |
+|----------|--------|-------|
+| App opened fresh | Shows last viewed location | Centers on current GPS position |
+| Location marker appearance | Instant/static | Drops from top with bounce animation |
+| Subsequent map views | No animation | No animation (only plays once per session) |
 
 ---
 
-## Files to Create/Modify
+## Files to Modify
 
-| File | Action |
-|------|--------|
-| `src/services/homePagePreloader.ts` | Create |
-| `src/components/SplashScreen.tsx` | Modify |
-| `src/main.tsx` | Modify |
-| `src/lib/queryClient.ts` | Minor update |
-
+| File | Changes |
+|------|---------|
+| `src/pages/Index.tsx` | Set session flags, clear saved map center |
+| `src/hooks/useHomePageState.ts` | Detect fresh session, ignore stale localStorage |
+| `src/components/HomePage.tsx` | Force GPS centering on fresh session |
+| `src/utils/leafletMarkerCreator.ts` | Add drop-in animation CSS and parameter |
+| `src/components/LeafletMapSetup.tsx` | Trigger animation on first location marker render |
