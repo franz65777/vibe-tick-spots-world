@@ -2,6 +2,7 @@ import React from 'react';
 
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
+import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -56,12 +57,14 @@ const PlaceMessageCard = ({ placeData, onViewPlace, overlayMode = false }: Place
   const categoryImage = getCategoryImage(placeData.category);
   const thumbnail = getLocationThumbnail(placeData);
   
-  // Normalize category to lowercase for translation lookup
-  const categoryKey = placeData.category?.toLowerCase() || '';
-  const translatedCategory = t(`categories.${categoryKey}`, { 
-    ns: 'common',
-    defaultValue: placeData.category || 'Place' 
-  });
+  // Normalize category for translation lookup (handles variants like "Park", "parks", "bar & pub")
+  const categoryKey =
+    normalizeCategoryToBase(placeData.category) ??
+    String(placeData.category ?? '').trim().toLowerCase();
+
+  const translatedCategory = categoryKey
+    ? t(`categories.${categoryKey}`, { defaultValue: placeData.category || 'Place' })
+    : (placeData.category || 'Place');
 
   const handleViewLocation = (e: React.MouseEvent) => {
     e.stopPropagation();
