@@ -38,3 +38,18 @@ export const prefetchFeed = async () => {
     staleTime: 2 * 60 * 1000,
   });
 };
+
+/**
+ * Pre-populate cache with data from preloader service.
+ * Used during splash screen to warm the cache.
+ */
+export const setCacheData = <T>(queryKey: unknown[], data: T) => {
+  queryClient.setQueryData(queryKey, data);
+};
+
+/**
+ * Check if data exists in cache (for conditional fetching).
+ */
+export const hasCacheData = (queryKey: unknown[]): boolean => {
+  return queryClient.getQueryData(queryKey) !== undefined;
+};

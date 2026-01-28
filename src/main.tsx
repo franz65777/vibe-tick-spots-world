@@ -14,6 +14,18 @@ console.log('🚀 Starting full app with dependencies fixed...');
 // Preload category images for faster rendering
 preloadCategoryImages();
 
+// Preload intro video asset BEFORE React mounts for instant playback
+// This starts buffering the video while JS is still loading
+const preloadVideoLink = document.createElement('link');
+preloadVideoLink.rel = 'preload';
+preloadVideoLink.as = 'video';
+preloadVideoLink.type = 'video/mp4';
+// Dynamic import path - Vite will replace this at build time
+import introVideoPath from './assets/intro_finale.mp4';
+preloadVideoLink.href = introVideoPath;
+document.head.appendChild(preloadVideoLink);
+console.log('📹 Video preload link injected');
+
 // Dark mode system preference handler
 const DarkModeHandler = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
