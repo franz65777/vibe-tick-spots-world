@@ -684,7 +684,7 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
   if (!isOpen) return null;
 
   const overlay = (
-    <div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
       <div className="h-screen w-full flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
         {/* Header */}
         <header className="shrink-0 w-full">
