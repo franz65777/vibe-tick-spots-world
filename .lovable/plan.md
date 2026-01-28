@@ -1,87 +1,97 @@
 
-# Piano: Fix Photo Upload - Separare Upload Manuali da Foto Vicine
+# Piano: Pulsante Minimizza Lista + Tasto Save/Condividi Dinamico
 
-## Problema Attuale
+## Panoramica
 
-Quando l'utente clicca il bottone `+` e seleziona una foto:
-1. La foto viene processata da `scanPhotos()` per analizzare i dati GPS
-2. La foto finisce nell'array `nearbyPhotos` o `allPhotos`
-3. Queste foto appaiono nella sezione "abbiamo trovato X foto" in basso
-4. L'utente deve cliccare DI NUOVO sulla foto per aggiungerla a `selectedPhotos`
+Due miglioramenti UX richiesti:
+1. **Minimizzare la sezione "aggiungi a una lista"** per dare risalto alla parte superiore (foto, descrizione, valutazione)
+2. **Tasto dinamico Save → Condividi** quando l'utente contribuisce contenuti pubblici (foto, descrizione, valutazione)
 
-Questo e sbagliato! Le foto uploadate manualmente devono apparire immediatamente nella preview principale.
+---
 
-## Comportamento Corretto
+## Logica del Tasto Dinamico
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    ADD PHOTOS SECTION                       │
-├─────────────────────────────────────────────────────────────┤
-│  [FOTO 1] [FOTO 2] [+]   ←── Foto uploadate manualmente    │
-│                               (selectedPhotos)              │
-├─────────────────────────────────────────────────────────────┤
-│  • abbiamo trovato 3 foto vicine >                         │
-│                                                             │
-│  Questa sezione mostra foto dal rullino del dispositivo    │
-│  che hanno GPS vicino alla location selezionata.           │
-│  NON le foto appena uploadate.                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Soluzione
-
-### Modificare `handleFileSelect` in `LocationContributionModal.tsx`
-
-Invece di chiamare `scanPhotos()`, creare direttamente oggetti `NearbyPhoto` e aggiungerli a `selectedPhotos`:
-
-```tsx
-const handleFileSelect = useCallback(
-  async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    // Creare NearbyPhoto objects per ogni file selezionato
-    const newPhotos: NearbyPhoto[] = Array.from(files).map(file => ({
-      file,
-      url: URL.createObjectURL(file),
-      distance: Infinity, // Non mostrare badge distanza
-      timestamp: undefined,
-    }));
-
-    // Aggiungerli direttamente a selectedPhotos (max 5 totali)
-    setSelectedPhotos(prev => {
-      const combined = [...prev, ...newPhotos];
-      return combined.slice(0, 5); // Max 5 foto
-    });
-    
-    // Reset input per permettere riselection
-    e.target.value = '';
-  },
-  []
-);
-```
-
-### La sezione "abbiamo trovato X foto" (Nearby Photos)
-
-Questa sezione dovrebbe mostrare foto rilevate automaticamente dal rullino del dispositivo, non le foto appena uploadate.
-
-Per ora, la logica `useNearbyPhotos` resta disponibile ma non viene piu chiamata durante l'upload manuale. La sezione "nearby photos" apparira vuota finche non viene implementata la scansione del rullino (funzionalita nativa con Capacitor).
+| Azione Utente | Tipo Contenuto | Tasto |
+|---------------|----------------|-------|
+| Solo salva in liste | Privato | **Salva** |
+| Carica foto | Pubblico (review) | **Condividi** |
+| Aggiunge descrizione | Pubblico (review) | **Condividi** |
+| Valuta il posto | Pubblico (review) | **Condividi** |
+| Combinazione dei precedenti | Pubblico | **Condividi** |
 
 ---
 
 ## Modifiche Tecniche
 
-### File: `src/components/explore/LocationContributionModal.tsx`
+### 1. Nuovo Stato per Collasso Lista
 
-**1. Modificare `handleFileSelect`** (linee 234-242):
-- NON chiamare `scanPhotos(files)`
-- Creare direttamente `NearbyPhoto` objects
-- Aggiungerli subito a `selectedPhotos`
-- Reset del file input
+```tsx
+const [isListSectionCollapsed, setIsListSectionCollapsed] = useState(false);
+```
 
-**2. La UI esistente e gia corretta**:
-- `selectedPhotos.length > 0` mostra le preview in alto con il bottone `+` verde
-- `displayPhotos` (nearbyPhotos/allPhotos) mostra foto rilevate automaticamente sotto
+### 2. Header Sezione Lista con Pulsante Minimizza
+
+Aggiungere un'icona ChevronDown/ChevronUp che collassa la sezione:
+
+```tsx
+<div className="flex items-center justify-between mb-3">
+  <button 
+    onClick={() => setIsListSectionCollapsed(!isListSectionCollapsed)}
+    className="flex items-center gap-2"
+  >
+    <span className="text-sm font-medium text-muted-foreground">
+      {t('addToList', ...)}
+    </span>
+    <ChevronDown className={cn(
+      "w-4 h-4 transition-transform",
+      isListSectionCollapsed && "rotate-180"
+    )} />
+  </button>
+  {/* Create list button */}
+</div>
+
+{/* Contenuto collassabile */}
+{!isListSectionCollapsed && (
+  <div className="space-y-3">
+    {/* Folders list */}
+  </div>
+)}
+```
+
+### 3. Logica Tasto Dinamico
+
+```tsx
+// Determina se l'utente sta condividendo contenuti pubblici
+const isSharing = selectedPhotos.length > 0 || 
+                  descriptionText.trim().length > 0 || 
+                  rating !== undefined;
+
+// Nel bottone:
+{isSharing 
+  ? t('share', { ns: 'common', defaultValue: 'share' })
+  : t('save', { ns: 'common', defaultValue: 'save' })
+}
+```
+
+### 4. Nuove Traduzioni per "share"
+
+Aggiungere la chiave `share` in `src/i18n-contribution.ts` per tutte le 13 lingue:
+
+| Lingua | Traduzione |
+|--------|------------|
+| en | share |
+| it | condividi |
+| es | compartir |
+| pt | compartilhar |
+| fr | partager |
+| de | teilen |
+| ja | シェア |
+| ko | 공유 |
+| ar | مشاركة |
+| hi | साझा करें |
+| ru | поделиться |
+| zh-CN | 分享 |
+| tr | paylaş |
 
 ---
 
@@ -89,13 +99,28 @@ Per ora, la logica `useNearbyPhotos` resta disponibile ma non viene piu chiamata
 
 | File | Modifica |
 |------|----------|
-| `src/components/explore/LocationContributionModal.tsx` | Modificare `handleFileSelect` per aggiungere direttamente a `selectedPhotos` |
+| `src/components/explore/LocationContributionModal.tsx` | Aggiungere stato collasso, pulsante minimize, logica tasto dinamico |
+| `src/i18n-contribution.ts` | Aggiungere chiave `share` in tutte le 13 lingue |
+
+---
+
+## Dettaglio UI
+
+### Sezione Lista Collassata
+Quando minimizzata:
+- Mostra solo l'header con "aggiungi a una lista" e icona chevron su
+- Nasconde la lista delle cartelle
+- L'utente può riaprire cliccando sull'header
+
+### Tasto Save/Condividi
+- **Stile invariato** (stesso colore, dimensione)
+- **Testo cambia dinamicamente** in base al contenuto
+- Il cambio avviene in tempo reale mentre l'utente interagisce
 
 ---
 
 ## Risultato Atteso
 
-1. **Upload immediato**: Le foto selezionate appaiono subito nella preview principale (in alto)
-2. **Nessuna confusione**: La sezione "abbiamo trovato foto" rimane separata (per future implementazioni di scansione rullino)
-3. **UX fluida**: Nessun doppio click richiesto - la foto appare dove l'utente si aspetta
-4. **Max 5 foto**: Il limite viene rispettato correttamente
+1. **Sezione liste minimizzabile**: L'utente può collassare la sezione per concentrarsi su foto/descrizione/valutazione
+2. **Feedback visivo chiaro**: Il tasto "Condividi" comunica che il contenuto sarà pubblico
+3. **Localizzazione completa**: Tutte le 13 lingue supportate per la nuova chiave "share"
