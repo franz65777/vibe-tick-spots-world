@@ -1,69 +1,34 @@
 
 
-# Piano: Fix MessageOptionsOverlay e PlaceMessageCard
+# Piano: Fix Traduzione Categoria + Bubble Testo Tagliata
 
 ## Problemi Identificati
 
-1. **Categoria ancora in inglese ("Restaurant")**: La traduzione non funziona nonostante il codice corretto
-2. **Post centrato invece che sotto gli emoji**: `justify-center` causa il centraggio verticale
-3. **Testo bianco sempre visibile**: Il colore bianco deve apparire SOLO nell'overlay, non nella chat normale
+### 1. Categoria non tradotta ("Restaurant" invece di "Ristorante")
 
----
-
-## Analisi Dettagliata
-
-### Problema 1: Traduzione Categoria
-
-La struttura i18n è corretta - `it.common.categories.restaurant = 'Ristorante'` esiste nel file `src/i18n.ts` (righe 2440-2451).
-
-Il problema potrebbe essere:
-- Il valore `placeData.category` potrebbe essere in formato diverso (maiuscolo, con spazi, ecc.)
-- Esempio: se il database contiene `"Restaurant"` (con R maiuscola), il lookup `categories.Restaurant` fallisce perché la chiave è `categories.restaurant` (minuscolo)
-
-**Soluzione**: Normalizzare la categoria a lowercase prima del lookup:
+**Causa**: In `PlaceMessageCard.tsx`, il componente usa `useTranslation()` senza specificare il namespace di default:
 
 ```tsx
-const categoryKey = placeData.category?.toLowerCase() || '';
-const translatedCategory = t(`categories.${categoryKey}`, { 
-  ns: 'common',
-  defaultValue: placeData.category || 'Place' 
-});
+const { t } = useTranslation(); // ❌ Non specifica 'common'
 ```
 
-### Problema 2: Layout - Post Non Allineato Sotto Emoji
+Anche se passiamo `ns: 'common'` nella chiamata `t()`, questo non funziona correttamente in tutti i casi perche' il namespace primario non e' impostato.
 
-Attualmente l'overlay usa `justify-center` che centra verticalmente il contenuto. 
-
-**Soluzione**: Cambiare da `justify-center` a `justify-start` con un `mt-6` per posizionare il post appena sotto gli emoji:
+**Soluzione**: Usare `useTranslation('common')` direttamente:
 
 ```tsx
-// PRIMA
-<div className={`flex-1 flex flex-col ${...} justify-center gap-4 px-2`}>
-
-// DOPO  
-<div className={`flex-1 flex flex-col ${...} justify-start gap-4 px-2 mt-6`}>
+const { t } = useTranslation('common'); // ✅ Specifica il namespace
 ```
 
-### Problema 3: Testo Bianco Solo in Overlay Mode
+### 2. Bubble di testo "tagliata" nell'overlay
 
-Il `PlaceMessageCard` ora usa sempre `text-white/80` ma questo dovrebbe essere applicato SOLO quando è mostrato nell'overlay delle opzioni messaggio, non nella lista messaggi normale.
+**Causa**: Il testo breve come "weila" appare troppo stretto perche' la bubble ha solo `max-w-[80%]` ma nessuna larghezza minima. Su testi corti, la bubble collassa.
 
-**Soluzione**: Aggiungere una prop `overlayMode` al componente:
-
-```tsx
-interface PlaceMessageCardProps {
-  placeData: {...};
-  onViewPlace: (place: any) => void;
-  overlayMode?: boolean; // NEW - quando true, usa testo bianco
-}
-```
-
-E applicare condizionalmente il colore:
+**Soluzione**: Aggiungere un padding adeguato e assicurarsi che il contenitore non limiti la larghezza:
 
 ```tsx
-<div className={`flex items-center gap-1.5 text-xs ${
-  overlayMode ? 'text-white/80' : 'text-muted-foreground'
-} mt-0.5`}>
+// Rimuovere max-w-[80%] per permettere alla bubble di avere la sua larghezza naturale
+<div className="rounded-2xl px-4 py-3 shadow-2xl ring-2 ring-white/10 ...">
 ```
 
 ---
@@ -72,61 +37,30 @@ E applicare condizionalmente il colore:
 
 ### 1. `src/components/messages/PlaceMessageCard.tsx`
 
-**Modifiche:**
-1. Aggiungere prop `overlayMode?: boolean`
-2. Normalizzare la categoria a lowercase per la traduzione
-3. Applicare colore testo condizionale basato su `overlayMode`
-
+Cambiare la riga 54 da:
 ```tsx
-interface PlaceMessageCardProps {
-  placeData: {...};
-  onViewPlace: (place: any) => void;
-  overlayMode?: boolean; // NEW
-}
-
-const PlaceMessageCard = ({ placeData, onViewPlace, overlayMode = false }: PlaceMessageCardProps) => {
-  // Normalize category to lowercase for translation lookup
-  const categoryKey = placeData.category?.toLowerCase() || '';
-  const translatedCategory = t(`categories.${categoryKey}`, { 
-    ns: 'common',
-    defaultValue: placeData.category || 'Place' 
-  });
-  
-  // ... render
-  <div className={`flex items-center gap-1.5 text-xs ${
-    overlayMode ? 'text-white/80' : 'text-muted-foreground'
-  } mt-0.5`}>
-    {/* City */}
-    <span className={overlayMode ? 'text-white/50' : 'text-muted-foreground/50'}>•</span>
-    {/* Category */}
-  </div>
-}
+const { t } = useTranslation();
 ```
+
+A:
+```tsx
+const { t } = useTranslation('common');
+```
+
+Questo assicura che `t('categories.restaurant')` cerchi direttamente in `common.categories.restaurant` e trovi "Ristorante" per l'italiano.
 
 ### 2. `src/components/messages/MessageOptionsOverlay.tsx`
 
-**Modifiche:**
-1. Cambiare layout da `justify-center` a `justify-start` con margin-top
-2. Passare `overlayMode={true}` a `PlaceMessageCard`
+Modificare il rendering della text bubble (righe 105-116):
+- Rimuovere `max-w-[80%]` che limita troppo la larghezza
+- La bubble si adattera' naturalmente al contenuto
 
 ```tsx
-// Nel renderMessageOrCard()
-if (message.message_type === 'place_share' && sharedContent) {
-  return (
-    <div onClick={e => e.stopPropagation()}>
-      <PlaceMessageCard 
-        placeData={sharedContent} 
-        onViewPlace={() => {}}
-        overlayMode={true}  // NEW - abilita testo bianco
-      />
-    </div>
-  );
-}
+// PRIMA
+<div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-2xl ring-2 ring-white/10 ...`}>
 
-// Nel layout principale
-<div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-start gap-4 px-2 mt-6`}>
-  {/* Post card + Actions menu */}
-</div>
+// DOPO  
+<div className={`rounded-2xl px-4 py-3 shadow-2xl ring-2 ring-white/10 ...`}>
 ```
 
 ---
@@ -135,14 +69,13 @@ if (message.message_type === 'place_share' && sharedContent) {
 
 | File | Modifica |
 |------|----------|
-| `PlaceMessageCard.tsx` | 1. Aggiungere prop `overlayMode` 2. Lowercase category per traduzione 3. Colori condizionali |
-| `MessageOptionsOverlay.tsx` | 1. Layout `justify-start` + `mt-6` 2. Passare `overlayMode={true}` |
+| `PlaceMessageCard.tsx` | `useTranslation()` -> `useTranslation('common')` |
+| `MessageOptionsOverlay.tsx` | Rimuovere `max-w-[80%]` dalla text bubble |
 
 ---
 
 ## Risultato Atteso
 
-1. **Categoria tradotta**: "Restaurant" → "Ristorante" (perché normalizziamo a lowercase)
-2. **Layout corretto**: Il post appare subito sotto la barra emoji, non centrato
-3. **Colori appropriati**: Testo bianco solo nell'overlay, colori normali nella chat
+1. **Categoria tradotta**: "Restaurant" -> "Ristorante", "park" -> "Parco", ecc.
+2. **Bubble non tagliata**: Il testo "weila" appara' con la sua larghezza naturale, non compresso
 
