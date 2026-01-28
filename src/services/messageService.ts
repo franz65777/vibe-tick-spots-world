@@ -166,10 +166,18 @@ class MessageService {
     }
   }
 
-  async sendTextMessage(receiverId: string, content: string): Promise<DirectMessage | null> {
+  async sendTextMessage(receiverId: string, content: string, replyToMessage?: DirectMessage): Promise<DirectMessage | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+
+      // Build shared_content for reply context if replying to a message
+      const sharedContent = replyToMessage ? {
+        reply_to_id: replyToMessage.id,
+        reply_to_content: replyToMessage.content || '',
+        reply_to_sender_id: replyToMessage.sender_id,
+        reply_to_message_type: replyToMessage.message_type,
+      } : null;
 
       const { data, error } = await supabase
         .from('direct_messages')
@@ -177,7 +185,8 @@ class MessageService {
           sender_id: user.id,
           receiver_id: receiverId,
           message_type: 'text' as const,
-          content
+          content,
+          shared_content: sharedContent
         })
         .select('*')
         .single();
