@@ -84,7 +84,7 @@ const MediaPreviewItem = memo(({
   const isVideo = photo.file.type.startsWith('video/');
   
   return (
-    <div className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
+    <div className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
       {isVideo ? (
         <video src={photo.url} className="w-full h-full object-cover" controls={false} />
       ) : (
@@ -93,24 +93,24 @@ const MediaPreviewItem = memo(({
       
       {isVideo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
-            <Video className="w-4 h-4 text-white" />
+          <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+            <Video className="w-5 h-5 text-white" />
           </div>
         </div>
       )}
       
       {/* Distance badge for nearby photos */}
       {photo.distance !== Infinity && photo.distance < 500 && (
-        <div className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+        <div className="absolute bottom-1.5 left-1.5 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
           {Math.round(photo.distance)}m
         </div>
       )}
       
       <button 
         onClick={handleRemove} 
-        className="absolute top-1 right-1 w-6 h-6 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors"
+        className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black rounded-full flex items-center justify-center transition-colors"
       >
-        <X className="w-3.5 h-3.5 text-white" />
+        <X className="w-5 h-5 text-white" />
       </button>
     </div>
   );
@@ -462,9 +462,9 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                 {/* Add Photo Button */}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 hover:bg-muted/20 transition-all flex-shrink-0"
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 hover:bg-muted/20 transition-all flex-shrink-0"
                 >
-                  <Plus className="w-6 h-6 text-muted-foreground" />
+                  <Plus className="w-8 h-8 text-muted-foreground" />
                 </button>
 
                 {/* Loading state */}

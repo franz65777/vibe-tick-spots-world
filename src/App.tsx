@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -35,7 +35,6 @@ const PostPage = lazy(() => import('@/pages/PostPage'));
 const FeedPage = lazy(() => import('@/pages/FeedPage'));
 const ActivityFeedPage = lazy(() => import('@/pages/ActivityFeedPage'));
 const UserProfilePage = lazy(() => import('@/components/UserProfilePage'));
-const AddLocationPage = lazy(() => import('@/components/AddLocationPage'));
 const DiscoverPage = lazy(() => import('@/pages/DiscoverPage'));
 const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'));
 const ShareLocationPage = lazy(() => import('@/pages/ShareLocationPage'));
@@ -81,6 +80,20 @@ const PageLoader = () => (
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
   </div>
 );
+
+// Redirect /add to home and open add overlay
+const AddPageRedirect = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/', { replace: true });
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('open-add-overlay'));
+    }, 100);
+  }, [navigate]);
+  
+  return null;
+};
 
 // Import proper preloading utilities
 import { preloadAddPageAssets } from '@/utils/preloadAddPageAssets';
@@ -154,7 +167,7 @@ function AppContent() {
           <Route path="/" element={<Index />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/discover" element={<DiscoverPage />} />
-          <Route path="/add" element={<AddLocationPage />} />
+          <Route path="/add" element={<AddPageRedirect />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/activity" element={<ActivityFeedPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
