@@ -29,8 +29,6 @@ import Index from '@/pages/Index';
 const ExplorePage = lazy(() => import('@/components/ExplorePage'));
 const ProfilePage = lazy(() => import('@/components/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
-const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
-const MessagesPage = lazy(() => import('@/pages/MessagesPage'));
 const PostPage = lazy(() => import('@/pages/PostPage'));
 const FeedPage = lazy(() => import('@/pages/FeedPage'));
 const ActivityFeedPage = lazy(() => import('@/pages/ActivityFeedPage'));
@@ -89,6 +87,34 @@ const AddPageRedirect = () => {
     navigate('/', { replace: true });
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('open-add-overlay'));
+    }, 100);
+  }, [navigate]);
+  
+  return null;
+};
+
+// Redirect /notifications to home and open notifications overlay
+const NotificationsPageRedirect = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/', { replace: true });
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('open-notifications-overlay'));
+    }, 100);
+  }, [navigate]);
+  
+  return null;
+};
+
+// Redirect /messages to home and open messages overlay
+const MessagesPageRedirect = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/', { replace: true });
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('open-messages-overlay'));
     }, 100);
   }, [navigate]);
   
@@ -183,9 +209,9 @@ function AppContent() {
           <Route path="/activity" element={<ActivityFeedPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/notifications" element={<NotificationsPageRedirect />} />
+          <Route path="/messages" element={<MessagesPageRedirect />} />
           <Route path="/post/:postId" element={<PostPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
           <Route path="/business" element={<BusinessOverviewPageV2 />} />
           <Route path="/business/analytics" element={<BusinessAnalyticsPage />} />
           <Route path="/business/add" element={<BusinessAddPage />} />

@@ -4,8 +4,12 @@ import NewBottomNavigation from './NewBottomNavigation';
 import BusinessBottomNavigation from './BusinessBottomNavigation';
 import { UIStateProvider, useUIState } from '@/contexts/UIStateContext';
 import { AddOverlayProvider, useAddOverlay } from '@/contexts/AddOverlayContext';
+import { NotificationsOverlayProvider, useNotificationsOverlay } from '@/contexts/NotificationsOverlayContext';
+import { MessagesOverlayProvider, useMessagesOverlay } from '@/contexts/MessagesOverlayContext';
 import AddPageOverlay from './add/AddPageOverlay';
 import LocationContributionModal from './explore/LocationContributionModal';
+import NotificationsOverlay from './notifications/NotificationsOverlay';
+import MessagesOverlay from './messages/MessagesOverlay';
 
 const AuthenticatedLayoutContent: React.FC = () => {
   const location = useLocation();
@@ -18,6 +22,14 @@ const AuthenticatedLayoutContent: React.FC = () => {
     isAddContributionModalOpen,
     setIsAddContributionModalOpen,
   } = useAddOverlay();
+  const {
+    isNotificationsOverlayOpen,
+    closeNotificationsOverlay,
+  } = useNotificationsOverlay();
+  const {
+    isMessagesOverlayOpen,
+    closeMessagesOverlay,
+  } = useMessagesOverlay();
   
   const isBusinessRoute = location.pathname.startsWith('/business') && !location.pathname.startsWith('/business/view');
   const isDiscoverRoute = location.pathname === '/discover';
@@ -171,6 +183,18 @@ const AuthenticatedLayoutContent: React.FC = () => {
           onSuccess={() => setIsAddContributionModalOpen(false)}
         />
       )}
+      
+      {/* Notifications Overlay - rendered at layout level for all pages */}
+      <NotificationsOverlay
+        isOpen={isNotificationsOverlayOpen}
+        onClose={closeNotificationsOverlay}
+      />
+      
+      {/* Messages Overlay - rendered at layout level for all pages */}
+      <MessagesOverlay
+        isOpen={isMessagesOverlayOpen}
+        onClose={closeMessagesOverlay}
+      />
     </div>
   );
 };
@@ -179,7 +203,11 @@ const AuthenticatedLayout: React.FC = () => {
   return (
     <UIStateProvider>
       <AddOverlayProvider>
-        <AuthenticatedLayoutContent />
+        <NotificationsOverlayProvider>
+          <MessagesOverlayProvider>
+            <AuthenticatedLayoutContent />
+          </MessagesOverlayProvider>
+        </NotificationsOverlayProvider>
       </AddOverlayProvider>
     </UIStateProvider>
   );

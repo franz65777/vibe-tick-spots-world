@@ -51,9 +51,8 @@ const NewBottomNavigation = () => {
   useRealtimeEvent('profile_update', handleProfileUpdate);
 
   // Determine if navigation should be hidden (CSS-based, keeps component mounted)
+  // Note: /messages and /notifications are now overlays, not routes
   const shouldHideNav = hideNav || 
-    location.pathname === '/messages' || 
-    location.pathname === '/notifications' || 
     location.pathname === '/share-location' || 
     location.pathname === '/leaderboard';
 
