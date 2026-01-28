@@ -982,7 +982,9 @@ const MessagesPage = () => {
                   state: {
                     showLocationCard: true,
                     locationData: {
-                      id: placeData.id || googlePlaceId,
+                      // IMPORTANT: Only use internal ID if present and different from google_place_id
+                      // Let PinDetailCard resolve it if we only have google_place_id
+                      id: placeData.id && placeData.id !== googlePlaceId ? placeData.id : undefined,
                       google_place_id: googlePlaceId,
                       name: placeData.name || '',
                       category: placeData.category || 'place',
