@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 import { MessageThread } from '@/services/messageService';
 import { useTranslation } from 'react-i18next';
+import ThreadSkeleton from './ThreadSkeleton';
 
 interface VirtualizedThreadListProps {
   threads: MessageThread[];
@@ -167,12 +168,9 @@ const VirtualizedThreadList = ({
     overscan: 5,
   });
 
+  // Use skeleton UI instead of spinner for better perceived performance
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <ThreadSkeleton count={6} />;
   }
 
   if (threads.length === 0) {
