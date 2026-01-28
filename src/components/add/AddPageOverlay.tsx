@@ -106,10 +106,11 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
                 }}
                 userLocation={userLocation}
                 placeholder={t('searchForPlace', { ns: 'add' })}
-                className="w-full [&_input]:h-8 [&_input]:bg-transparent [&_input]:border-0 
+                className="w-full [&_input]:h-8 [&_input]:bg-transparent [&_input]:border-none 
                            [&_input]:text-white [&_input]:dark:text-gray-900 
                            [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
-                           [&_input]:p-0 [&_input]:focus-visible:ring-0"
+                           [&_input]:p-0 [&_input]:focus-visible:ring-0 [&_input]:focus-visible:ring-offset-0
+                           [&_input]:shadow-none [&_input]:outline-none"
                 onResultsChange={handleResultsChange}
               />
             </div>
