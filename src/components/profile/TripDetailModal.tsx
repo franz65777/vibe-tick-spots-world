@@ -11,6 +11,7 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { cn } from '@/lib/utils';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useLocationSavers } from '@/hooks/useLocationSavers';
+import { translateCategory } from '@/utils/translateCategory';
 
 interface TripDetailModalProps {
   trip?: Trip | null;
@@ -44,6 +45,7 @@ const getLocationThumbnail = (location: any): string | null => {
 };
 
 const LocationCardWithStats = ({ location, notes, onClick }: { location: any; notes?: string; onClick: () => void }) => {
+  const { t } = useTranslation('common');
   const { stats } = useLocationStats(location.id, location.google_place_id);
   const { savers } = useLocationSavers(location.id, 3);
 
@@ -68,7 +70,7 @@ const LocationCardWithStats = ({ location, notes, onClick }: { location: any; no
       <div className="flex-1 min-w-0 text-left space-y-1">
         <h4 className="font-medium truncate">{location.name}</h4>
         <p className="text-sm text-muted-foreground truncate">
-          {location.category} • {location.city}
+          {translateCategory(location.category, t)} • {location.city}
         </p>
         <div className="flex items-center gap-3 text-xs">
           {stats.averageRating && stats.averageRating > 0 && (
