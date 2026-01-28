@@ -9,6 +9,8 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeCity } from '@/utils/cityNormalization';
 import RecentUserSearches from './RecentUserSearches';
+import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/utils/translateCategory';
 
 interface AutocompleteResult {
   type: 'place' | 'user';
@@ -51,6 +53,7 @@ const SmartAutocomplete = ({
   visible
 }: SmartAutocompleteProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation('common');
   const { trackEvent } = useAnalytics();
   const [results, setResults] = useState<AutocompleteResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -152,11 +155,12 @@ const SmartAutocomplete = ({
           const locationResults: AutocompleteResult[] = data.map(location => {
             const cityPart = normalizeCity(location.city);
             const locationText = cityPart !== 'Unknown' ? `${cityPart}${location.country ? `, ${location.country}` : ''}` : (location.country || '');
+            const translatedCategory = translateCategory(location.category, t);
             return ({
               type: 'place' as const,
               id: location.id,
               title: location.name,
-              subtitle: `${location.category} • ${locationText}`.trim(),
+              subtitle: `${translatedCategory || location.category} • ${locationText}`.trim(),
               category: location.category
             });
           });
@@ -292,7 +296,7 @@ const SmartAutocomplete = ({
                         </div>
                         {result.category && (
                           <Badge variant="secondary" className="ml-2 text-xs shrink-0 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0">
-                            {result.category.split(' ')[0]}
+                            {translateCategory(result.category, t) || result.category.split(' ')[0]}
                           </Badge>
                         )}
                       </div>
