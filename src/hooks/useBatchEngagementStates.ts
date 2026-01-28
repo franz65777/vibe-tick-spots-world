@@ -6,59 +6,101 @@ import { SaveTag } from '@/utils/saveTags';
 interface BatchEngagementResult {
   likedPostIds: Set<string>;
   savedLocations: Map<string, SaveTag>;
+  // For UserVisitedCard - location likes
+  likedLocationIds: Set<string>;
+  locationLikeCounts: Map<string, number>;
 }
 
 /**
- * Batch fetches engagement states (likes, saves) for all posts in the feed
- * Eliminates N+1 queries by fetching all states in 2 queries total
+ * Batch fetches engagement states (likes, saves) for all posts and visited cards in the feed
+ * Eliminates N+1 queries by fetching all states in a few queries total
  */
 export const useBatchEngagementStates = (
   postIds: string[],
-  locationIds: (string | undefined)[]
+  locationIds: (string | undefined)[],
+  visitedLocationIds: string[] = [] // Additional location IDs from visited cards
 ) => {
   const { user } = useAuth();
+  
+  // Combine all location IDs for batch fetching
+  const allLocationIds = [...new Set([
+    ...locationIds.filter((id): id is string => !!id),
+    ...visitedLocationIds
+  ])];
 
   return useQuery<BatchEngagementResult>({
-    queryKey: ['batch-engagement', user?.id, postIds.join(',')],
+    queryKey: ['batch-engagement', user?.id, postIds.join(','), allLocationIds.join(',')],
     queryFn: async () => {
-      if (!user?.id || postIds.length === 0) {
-        return { likedPostIds: new Set(), savedLocations: new Map() };
+      if (!user?.id) {
+        return { 
+          likedPostIds: new Set(), 
+          savedLocations: new Map(),
+          likedLocationIds: new Set(),
+          locationLikeCounts: new Map()
+        };
       }
 
-      // Filter out undefined location IDs
-      const validLocationIds = locationIds.filter((id): id is string => !!id);
-
-      // Batch fetch: 1 query for all likes, 1 query for all saves
-      const [likesResult, savesResult] = await Promise.all([
+      // Batch fetch: post likes, location saves, location likes, location like counts
+      const [postLikesResult, savesResult, locationLikesResult, locationLikeCountsResult] = await Promise.all([
         // All user's likes on these posts
-        supabase
-          .from('post_likes')
-          .select('post_id')
-          .eq('user_id', user.id)
-          .in('post_id', postIds),
+        postIds.length > 0
+          ? supabase
+              .from('post_likes')
+              .select('post_id')
+              .eq('user_id', user.id)
+              .in('post_id', postIds)
+          : Promise.resolve({ data: [], error: null }),
         
         // All user's saves for these locations
-        validLocationIds.length > 0
+        allLocationIds.length > 0
           ? supabase
               .from('user_saved_locations')
               .select('location_id, save_tag')
               .eq('user_id', user.id)
-              .in('location_id', validLocationIds)
+              .in('location_id', allLocationIds)
+          : Promise.resolve({ data: [], error: null }),
+        
+        // All user's location likes (for visited cards)
+        allLocationIds.length > 0
+          ? supabase
+              .from('location_likes')
+              .select('location_id')
+              .eq('user_id', user.id)
+              .in('location_id', allLocationIds)
+          : Promise.resolve({ data: [], error: null }),
+        
+        // Location like counts (for visited cards) - batch count query
+        allLocationIds.length > 0
+          ? supabase
+              .from('location_likes')
+              .select('location_id')
+              .in('location_id', allLocationIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
       // Build Sets/Maps for O(1) lookups
       const likedPostIds = new Set(
-        (likesResult.data || []).map(l => l.post_id)
+        (postLikesResult.data || []).map(l => l.post_id)
       );
       
       const savedLocations = new Map<string, SaveTag>(
         (savesResult.data || []).map(s => [s.location_id, s.save_tag as SaveTag])
       );
+      
+      const likedLocationIds = new Set(
+        (locationLikesResult.data || []).map(l => l.location_id)
+      );
+      
+      // Count likes per location
+      const locationLikeCounts = new Map<string, number>();
+      (locationLikeCountsResult.data || []).forEach(l => {
+        const count = locationLikeCounts.get(l.location_id) || 0;
+        locationLikeCounts.set(l.location_id, count + 1);
+      });
 
-      return { likedPostIds, savedLocations };
+      return { likedPostIds, savedLocations, likedLocationIds, locationLikeCounts };
     },
-    enabled: !!user?.id && postIds.length > 0,
+    enabled: !!user?.id && (postIds.length > 0 || allLocationIds.length > 0),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000,
   });

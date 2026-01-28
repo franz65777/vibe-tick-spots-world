@@ -174,10 +174,14 @@ const FeedPage = memo(() => {
   // Fetch visited saves for interleaving in feed
   const { data: visitedSaves = [] } = useVisitedSaves();
   
-  // Batch fetch engagement states for all posts to eliminate N+1 queries
+  // Batch fetch engagement states for all posts AND visited cards to eliminate N+1 queries
   const postIds = useMemo(() => feedItems.map((p: any) => p.id), [feedItems]);
   const locationIds = useMemo(() => feedItems.map((p: any) => p.location_id), [feedItems]);
-  const { data: batchEngagement } = useBatchEngagementStates(postIds, locationIds);
+  const visitedLocationIds = useMemo(() => 
+    visitedSaves.map(v => v.location_id).filter((id): id is string => !!id), 
+    [visitedSaves]
+  );
+  const { data: batchEngagement } = useBatchEngagementStates(postIds, locationIds, visitedLocationIds);
   
   // Merge posts and visited saves chronologically
   type FeedEntry = 
@@ -646,12 +650,26 @@ const FeedPage = memo(() => {
                   );
                 };
                 
-                // Helper to render visited card
-                const renderVisited = (entry: typeof mergedFeed[0], key: string) => (
-                  <div key={key} className="py-1">
-                    <UserVisitedCard activity={entry.data} />
-                  </div>
-                );
+                // Helper to render visited card with batch engagement data
+                const renderVisited = (entry: typeof mergedFeed[0], key: string) => {
+                  const locationId = entry.data.location_id;
+                  const isSaved = locationId ? batchEngagement?.savedLocations.has(locationId) : false;
+                  const saveTag = locationId ? (batchEngagement?.savedLocations.get(locationId) ?? null) : null;
+                  const isLiked = locationId ? batchEngagement?.likedLocationIds.has(locationId) : false;
+                  const likeCount = locationId ? (batchEngagement?.locationLikeCounts.get(locationId) ?? 0) : 0;
+                  
+                  return (
+                    <div key={key} className="py-1">
+                      <UserVisitedCard 
+                        activity={entry.data}
+                        initialIsSaved={isSaved}
+                        initialSaveTag={saveTag}
+                        initialIsLiked={isLiked}
+                        initialLikeCount={likeCount}
+                      />
+                    </div>
+                  );
+                };
                 
                 // Section 1: 1 post OR 2 visited cards
                 if (posts.length > 0) {
