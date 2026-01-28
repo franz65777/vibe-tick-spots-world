@@ -10,6 +10,8 @@ import FolderMessageCard from './FolderMessageCard';
 import TripMessageCard from './TripMessageCard';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Reply } from 'lucide-react';
+import { useMessageSwipe } from '@/hooks/useMessageSwipe';
 
 interface MessageReaction {
   emoji: string;
@@ -30,6 +32,7 @@ interface VirtualizedMessageListProps {
   onDoubleTap: (messageId: string) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onViewPlace?: (placeData: any, otherUserId: string) => void;
+  onReply?: (message: DirectMessage) => void;
 }
 
 // Memoized message bubble component
@@ -234,6 +237,78 @@ const MessageBubble = memo(({
 
 MessageBubble.displayName = 'MessageBubble';
 
+// Swipeable wrapper for reply gesture
+const SwipeableMessageRow = memo(({
+  message,
+  isOwn,
+  onReply,
+  virtualRow,
+  measureElement,
+  children,
+}: {
+  message: DirectMessage;
+  isOwn: boolean;
+  onReply?: (message: DirectMessage) => void;
+  virtualRow: { index: number; start: number };
+  measureElement: (node: Element | null) => void;
+  children: React.ReactNode;
+}) => {
+  const {
+    swipeOffset,
+    showReplyIndicator,
+    progress,
+    handlers
+  } = useMessageSwipe({
+    isOwnMessage: isOwn,
+    threshold: 60,
+    onReply: () => onReply?.(message),
+    enabled: !!onReply
+  });
+
+  return (
+    <div
+      data-index={virtualRow.index}
+      ref={measureElement}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        transform: `translateY(${virtualRow.start}px)`,
+      }}
+    >
+      <div className="relative overflow-hidden" {...handlers}>
+        {/* Reply indicator icon - left side for received, right side for sent */}
+        <div 
+          className={`absolute top-1/2 -translate-y-1/2 transition-all duration-150 ${
+            isOwn ? 'right-2' : 'left-2'
+          }`}
+          style={{
+            opacity: showReplyIndicator ? 1 : 0,
+            transform: `translateY(-50%) scale(${0.8 + progress * 0.4})`,
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <Reply className="w-4 h-4 text-primary" />
+          </div>
+        </div>
+        
+        {/* Message content with swipe transform */}
+        <div 
+          style={{ 
+            transform: `translateX(${swipeOffset}px)`,
+            transition: swipeOffset === 0 ? 'transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none'
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+SwipeableMessageRow.displayName = 'SwipeableMessageRow';
+
 const VirtualizedMessageList = ({
   messages,
   loading,
@@ -248,6 +323,7 @@ const VirtualizedMessageList = ({
   onDoubleTap,
   onToggleReaction,
   onViewPlace,
+  onReply,
 }: VirtualizedMessageListProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -302,17 +378,13 @@ const VirtualizedMessageList = ({
           const reactions = messageReactions[message.id] || [];
 
           return (
-            <div
+            <SwipeableMessageRow
               key={message.id}
-              data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
+              message={message}
+              isOwn={isOwn}
+              onReply={onReply}
+              virtualRow={virtualRow}
+              measureElement={virtualizer.measureElement}
             >
               <div className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'} py-1`}>
                 <div className={`flex items-end gap-2 w-full ${isOwn ? 'flex-row-reverse justify-start' : 'flex-row'}`}>
@@ -345,7 +417,7 @@ const VirtualizedMessageList = ({
                   </div>
                 </div>
               </div>
-            </div>
+            </SwipeableMessageRow>
           );
         })}
       </div>

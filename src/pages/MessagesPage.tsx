@@ -84,6 +84,8 @@ const MessagesPage = () => {
   }[]>>({});
   const [isDoubleTapping, setIsDoubleTapping] = useState(false);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>([]);
+  const [replyingToMessage, setReplyingToMessage] = useState<DirectMessage | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [showSavedPlacesModal, setShowSavedPlacesModal] = useState(false);
   const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
@@ -979,6 +981,10 @@ const MessagesPage = () => {
               onLongPressEnd={handleLongPressEnd}
               onDoubleTap={handleDoubleTap}
               onToggleReaction={toggleReaction}
+              onReply={(message) => {
+                setReplyingToMessage(message);
+                inputRef.current?.focus();
+              }}
               onViewPlace={(placeData, otherUserId) => {
                 // Extract latitude/longitude from coordinates or direct fields
                 const lat = placeData.latitude ?? placeData.coordinates?.lat ?? 0;
@@ -1012,6 +1018,28 @@ const MessagesPage = () => {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Reply Preview */}
+          {replyingToMessage && (
+            <div className="shrink-0 border-t border-border bg-accent/30 px-4 py-2 flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">
+                  {replyingToMessage.sender_id === user?.id 
+                    ? t('replyingToYourself', { ns: 'messages', defaultValue: 'Replying to yourself' }) 
+                    : t('replyingTo', { ns: 'messages', name: otherUserProfile?.username, defaultValue: `Replying to ${otherUserProfile?.username}` })}
+                </p>
+                <p className="text-sm text-foreground truncate">
+                  {replyingToMessage.content || t('sharedContent', { ns: 'messages', defaultValue: 'Shared content' })}
+                </p>
+              </div>
+              <button 
+                onClick={() => setReplyingToMessage(null)}
+                className="ml-3 p-1 hover:bg-accent rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+          )}
+
           {/* Message Input */}
           <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+12px)] mt-auto">
             <div className="flex items-center gap-2">
@@ -1032,8 +1060,9 @@ const MessagesPage = () => {
               </Button>
               
               <Input 
+                ref={inputRef}
                 type="text" 
-                placeholder={t('typeMessage', { ns: 'messages' })} 
+                placeholder={replyingToMessage ? t('typeReply', { ns: 'messages', defaultValue: 'Type a reply...' }) : t('typeMessage', { ns: 'messages' })} 
                 value={newMessage} 
                 onChange={e => setNewMessage(e.target.value)} 
                 onKeyPress={e => {
@@ -1080,6 +1109,13 @@ const MessagesPage = () => {
         onReaction={(emoji) => {
           if (selectedMessageId) {
             toggleReaction(selectedMessageId, emoji);
+          }
+        }}
+        onReply={() => {
+          if (selectedMessage) {
+            setReplyingToMessage(selectedMessage);
+            setSelectedMessageId(null);
+            inputRef.current?.focus();
           }
         }}
         onDelete={handleDeleteMessage}
