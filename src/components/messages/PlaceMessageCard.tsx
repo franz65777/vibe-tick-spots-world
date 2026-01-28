@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
 import { useTranslation } from 'react-i18next';
@@ -16,16 +14,52 @@ interface PlaceMessageCardProps {
     address?: string;
     city?: string;
     image?: string;
+    image_url?: string;
+    photos?: unknown;
     coordinates?: { lat: number; lng: number };
+    latitude?: number;
+    longitude?: number;
     google_place_id?: string;
   };
   onViewPlace: (place: any) => void;
 }
 
+// Helper to extract the first photo URL from the locations.photos JSONB column
+const extractFirstPhotoUrl = (photos: unknown): string | null => {
+  if (!photos) return null;
+  const arr = Array.isArray(photos) ? photos : null;
+  if (!arr) return null;
+  for (const item of arr) {
+    if (typeof item === 'string' && item.trim()) return item;
+    if (item && typeof item === 'object') {
+      const anyItem = item as any;
+      const url = anyItem.url || anyItem.photo_url || anyItem.src;
+      if (typeof url === 'string' && url.trim()) return url;
+    }
+  }
+  return null;
+};
+
+// Determine which thumbnail to show: 1) business photo  2) Google photo  3) null (fallback to icon)
+const getLocationThumbnail = (placeData: PlaceMessageCardProps['placeData']): string | null => {
+  if (placeData.image_url) return placeData.image_url;
+  if (placeData.image) return placeData.image;
+  const googlePhoto = extractFirstPhotoUrl(placeData.photos);
+  if (googlePhoto) return googlePhoto;
+  return null;
+};
+
 const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const categoryImage = getCategoryImage(placeData.category);
+  const thumbnail = getLocationThumbnail(placeData);
+  
+  // Translate category
+  const translatedCategory = t(`categories.${placeData.category}`, { 
+    ns: 'common', 
+    defaultValue: placeData.category || 'Place' 
+  });
 
   const handleViewLocation = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,54 +77,74 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
       } 
     });
   };
+
   return (
     <div 
       onClick={handleViewLocation}
-      className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:bg-accent/30 transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+      className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 active:scale-[0.98] max-w-[280px]"
     >
-      {placeData.image && (
-        <div className="w-full h-32 overflow-hidden bg-muted">
-          <img 
-            src={placeData.image} 
-            alt={placeData.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      
-      <div className="p-3">
-        <div className="flex items-start gap-2.5">
-          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+      {/* Photo section with category badge */}
+      <div className="relative w-full h-36 bg-muted overflow-hidden">
+        {thumbnail ? (
+          <>
+            <img 
+              src={thumbnail} 
+              alt={placeData.name}
+              className="w-full h-full object-cover"
+            />
+            {/* Gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            {/* Category badge */}
+            <div className="absolute bottom-2 left-2 w-8 h-8 rounded-lg bg-background/90 backdrop-blur-sm shadow-md flex items-center justify-center">
+              <img 
+                src={categoryImage} 
+                alt={placeData.category}
+                className="w-6 h-6 object-contain"
+              />
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
             <img 
               src={categoryImage} 
               alt={placeData.category}
-              className="w-10 h-10 object-contain"
+              className="w-16 h-16 object-contain opacity-80"
             />
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-[13px] text-foreground leading-tight mb-1">{placeData.name}</h4>
-            {(placeData.city || placeData.address || placeData.coordinates) && (
-              <p className="text-[11px] text-muted-foreground truncate">
-                <CityLabel 
-                  id={placeData.google_place_id || placeData.id}
-                  city={placeData.city}
-                  address={placeData.address}
-                  coordinates={placeData.coordinates}
-                />
-              </p>
-            )}
-          </div>
+        )}
+      </div>
+      
+      {/* Content section */}
+      <div className="p-3.5">
+        <h4 className="font-semibold text-sm text-foreground leading-tight line-clamp-2 mb-1">
+          {placeData.name}
+        </h4>
+        
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+          {(placeData.city || placeData.address || placeData.coordinates) && (
+            <span className="truncate">
+              <CityLabel 
+                id={placeData.google_place_id || placeData.id}
+                city={placeData.city}
+                address={placeData.address}
+                coordinates={placeData.coordinates}
+              />
+            </span>
+          )}
+          <span className="text-muted-foreground/50">•</span>
+          <span className="capitalize shrink-0">{translatedCategory}</span>
         </div>
         
-        <div
-          className="w-full mt-3 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer flex items-center justify-center gap-2"
+        {/* View location button */}
+        <button
+          className="w-full px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center gap-2 group"
           onClick={handleViewLocation}
         >
-          <MapPin className="w-4 h-4 text-primary" />
-          <span className="text-[13px] font-semibold text-primary">
+          <MapPin className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-semibold text-primary">
             {t('viewLocation', { ns: 'messages' })}
           </span>
-        </div>
+        </button>
       </div>
     </div>
   );
