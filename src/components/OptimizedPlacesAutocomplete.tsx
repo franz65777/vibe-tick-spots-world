@@ -181,45 +181,44 @@ const OptimizedPlacesAutocomplete = ({
         )}
       </div>
 
-      {/* Results dropdown - Clean row style like reference */}
+      {/* Results dropdown - Simple rows like Photo 2 */}
       {showResults && hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl max-h-[400px] overflow-y-auto scrollbar-hide">
-          {/* Results list - simple rows with dividers */}
-          <div className="divide-y divide-border/30">
-            {allResults.map((result, index) => {
-              const categoryImage = getCategoryImage(result.category || 'restaurant');
-              
-              return (
-                <button
-                  key={result.id}
-                  onClick={() => handleSelect(result)}
-                  className={`w-full px-4 py-4 flex items-center gap-4 hover:bg-muted/40 active:bg-muted/60 transition-colors text-left ${
-                    selectedIndex === index ? 'bg-muted/40' : ''
-                  }`}
-                >
-                  {/* Category Image */}
-                  <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-muted/30">
-                    <img 
-                      src={categoryImage}
-                      alt={result.category || 'place'}
-                      className="w-full h-full object-cover"
-                      loading="eager"
-                    />
+        <div className="absolute z-50 w-full mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
+          {allResults.map((result, index) => {
+            const categoryImage = getCategoryImage(result.category || 'restaurant');
+            
+            return (
+              <button
+                key={result.id}
+                onClick={() => handleSelect(result)}
+                className={`w-full px-4 py-3.5 flex items-center gap-4 hover:bg-white/40 dark:hover:bg-white/10 
+                           active:bg-white/60 dark:active:bg-white/20 transition-colors text-left
+                           border-b border-black/5 dark:border-white/10 ${
+                  selectedIndex === index ? 'bg-white/30 dark:bg-white/10' : ''
+                }`}
+              >
+                {/* Category Image */}
+                <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-muted/20">
+                  <img 
+                    src={categoryImage}
+                    alt={result.category || 'place'}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                  />
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-lg text-foreground truncate">
+                    {result.name}
                   </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-base text-foreground truncate">
-                      {result.name}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate mt-0.5">
-                      {result.category || result.city || result.address?.split(',')[0]}
-                    </div>
+                  <div className="text-sm text-muted-foreground truncate">
+                    {result.category || result.city || result.address?.split(',')[0]}
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
