@@ -20,6 +20,7 @@ import { getCategoryIcon, getCategoryImage } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { translateCityName } from '@/utils/cityTranslations';
 import VirtualizedPostGrid from './VirtualizedPostGrid';
+import PostsGridSkeleton from './PostsGridSkeleton';
 
 interface Post {
   id: string;
@@ -189,11 +190,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <PostsGridSkeleton />;
   }
 
   const displayedPosts = postFilter === 'photos' ? photoPosts : reviewPosts;
