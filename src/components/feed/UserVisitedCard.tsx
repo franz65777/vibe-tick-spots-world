@@ -129,22 +129,39 @@ export interface VisitedSaveActivity {
 
 interface UserVisitedCardProps {
   activity: VisitedSaveActivity;
+  // Pre-loaded states from batch fetch (optional - falls back to individual queries)
+  initialIsSaved?: boolean;
+  initialSaveTag?: SaveTag | null;
+  initialIsLiked?: boolean;
+  initialLikeCount?: number;
 }
 
-const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
+const UserVisitedCard = memo(({ 
+  activity,
+  initialIsSaved,
+  initialSaveTag,
+  initialIsLiked,
+  initialLikeCount 
+}: UserVisitedCardProps) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const [isSaved, setIsSaved] = useState(false);
-  const [savedTag, setSavedTag] = useState<SaveTag | null>(null);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  // Use pre-loaded states if available
+  const [isSaved, setIsSaved] = useState(initialIsSaved ?? false);
+  const [savedTag, setSavedTag] = useState<SaveTag | null>(initialSaveTag ?? null);
+  const [isLiked, setIsLiked] = useState(initialIsLiked ?? false);
+  const [likeCount, setLikeCount] = useState(initialLikeCount ?? 0);
   const [isLiking, setIsLiking] = useState(false);
 
-  // Check if location is already saved and liked
+  // Skip individual queries if we have pre-loaded states from batch fetch
   useEffect(() => {
+    // If we have pre-loaded states, use them and skip individual queries
+    if (initialIsSaved !== undefined || initialIsLiked !== undefined) {
+      return; // Data already provided via props
+    }
+
     const checkSaveAndLikeStatus = async () => {
       if (!user?.id || !activity.location_id) return;
 
@@ -185,7 +202,7 @@ const UserVisitedCard = memo(({ activity }: UserVisitedCardProps) => {
     };
 
     checkSaveAndLikeStatus();
-  }, [user?.id, activity.location_id]);
+  }, [user?.id, activity.location_id, initialIsSaved, initialIsLiked]);
 
   // Store scroll position before navigation using the same anchor logic as the rest of the feed
   const storeScrollPosition = () => {
