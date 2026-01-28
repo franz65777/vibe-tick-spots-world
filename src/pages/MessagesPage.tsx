@@ -357,8 +357,10 @@ const MessagesPage = () => {
     if (!otherParticipant) return;
     try {
       setSending(true);
-      await messageService.sendTextMessage(otherParticipant.id, newMessage.trim());
+      // Pass replyingToMessage to sendTextMessage if present
+      await messageService.sendTextMessage(otherParticipant.id, newMessage.trim(), replyingToMessage || undefined);
       setNewMessage('');
+      setReplyingToMessage(null); // Clear reply context after sending
       await loadMessages(otherParticipant.id);
       await loadThreads(); // Reload threads to update the list
     } catch (error) {
@@ -366,7 +368,7 @@ const MessagesPage = () => {
     } finally {
       setSending(false);
     }
-  }, [newMessage, selectedThread, user, loadMessages, loadThreads]);
+  }, [newMessage, selectedThread, user, replyingToMessage, loadMessages, loadThreads]);
 
   const handleBack = useCallback(() => {
     if (view === 'chat') {
@@ -1025,11 +1027,11 @@ const MessagesPage = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">
                   {replyingToMessage.sender_id === user?.id 
-                    ? t('replyingToYourself', { ns: 'messages', defaultValue: 'Replying to yourself' }) 
-                    : t('replyingTo', { ns: 'messages', name: otherUserProfile?.username, defaultValue: `Replying to ${otherUserProfile?.username}` })}
+                    ? t('replyingToYourself', { ns: 'messages' }) 
+                    : t('replyingTo', { ns: 'messages', name: otherUserProfile?.username })}
                 </p>
                 <p className="text-sm text-foreground truncate">
-                  {replyingToMessage.content || t('sharedContent', { ns: 'messages', defaultValue: 'Shared content' })}
+                  {replyingToMessage.content || t('sharedContent', { ns: 'messages' })}
                 </p>
               </div>
               <button 
@@ -1063,7 +1065,7 @@ const MessagesPage = () => {
               <Input 
                 ref={inputRef}
                 type="text" 
-                placeholder={replyingToMessage ? t('typeReply', { ns: 'messages', defaultValue: 'Type a reply...' }) : t('typeMessage', { ns: 'messages' })} 
+                placeholder={replyingToMessage ? t('typeReply', { ns: 'messages' }) : t('typeMessage', { ns: 'messages' })} 
                 value={newMessage} 
                 onChange={e => setNewMessage(e.target.value)} 
                 onKeyPress={e => {

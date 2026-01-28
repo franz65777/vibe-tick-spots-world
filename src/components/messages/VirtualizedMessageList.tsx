@@ -67,6 +67,13 @@ const MessageBubble = memo(({
   t: (key: string, options?: any) => string;
   navigate: (path: string, options?: any) => void;
 }) => {
+  // Check if this message is a reply to another message
+  const replyContext = message.shared_content as {
+    reply_to_id?: string;
+    reply_to_content?: string;
+    reply_to_sender_id?: string;
+    reply_to_message_type?: string;
+  } | null;
   const messageInteractionProps = {
     onTouchStart: onLongPressStart,
     onTouchEnd: onLongPressEnd,
@@ -212,9 +219,35 @@ const MessageBubble = memo(({
     );
   }
 
+  // Check if this is a reply (has reply_to_id in shared_content but message_type is 'text')
+  const isReply = message.message_type === 'text' && replyContext?.reply_to_id;
+
+  // Render the reply context header
+  const renderReplyContext = () => {
+    if (!isReply || !replyContext) return null;
+    
+    const repliedToSelf = replyContext.reply_to_sender_id === userId;
+    
+    return (
+      <div className="mb-2">
+        <p className="text-xs text-muted-foreground mb-1">
+          {isOwn 
+            ? t('youReplied', { ns: 'messages' }) 
+            : t('theyReplied', { ns: 'messages', name: otherUserProfile?.username || 'User' })}
+        </p>
+        <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
+          <p className="line-clamp-2 text-muted-foreground">
+            {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   // Default text message
   return (
     <div className="w-full" {...messageInteractionProps}>
+      {renderReplyContext()}
       <div 
         className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`}
         style={{ wordBreak: 'normal', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}
