@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin } from 'lucide-react';
+
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
 import { useTranslation } from 'react-i18next';
@@ -81,10 +81,10 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
   return (
     <div 
       onClick={handleViewLocation}
-      className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 active:scale-[0.98] max-w-[280px]"
+      className="bg-accent/40 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer hover:bg-accent/60 transition-all duration-200 active:scale-[0.98] max-w-[260px]"
     >
-      {/* Photo section with category badge */}
-      <div className="relative w-full h-36 bg-muted overflow-hidden">
+      {/* Compact photo section */}
+      <div className="relative w-full h-24 bg-muted overflow-hidden">
         {thumbnail ? (
           <>
             <img 
@@ -92,35 +92,26 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
               alt={placeData.name}
               className="w-full h-full object-cover"
             />
-            {/* Gradient overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            {/* Category badge */}
-            <div className="absolute bottom-2 left-2 w-8 h-8 rounded-lg bg-background/90 backdrop-blur-sm shadow-md flex items-center justify-center">
-              <img 
-                src={categoryImage} 
-                alt={placeData.category}
-                className="w-6 h-6 object-contain"
-              />
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
             <img 
               src={categoryImage} 
               alt={placeData.category}
-              className="w-16 h-16 object-contain opacity-80"
+              className="w-12 h-12 object-contain opacity-70"
             />
           </div>
         )}
       </div>
       
-      {/* Content section */}
-      <div className="p-3.5">
-        <h4 className="font-semibold text-sm text-foreground leading-tight line-clamp-2 mb-1">
+      {/* Compact info section */}
+      <div className="p-2.5">
+        <h4 className="font-semibold text-sm text-foreground leading-tight line-clamp-1">
           {placeData.name}
         </h4>
         
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
           {(placeData.city || placeData.address || placeData.coordinates) && (
             <span className="truncate">
               <CityLabel 
@@ -134,17 +125,6 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
           <span className="text-muted-foreground/50">•</span>
           <span className="capitalize shrink-0">{translatedCategory}</span>
         </div>
-        
-        {/* View location button */}
-        <button
-          className="w-full px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center gap-2 group"
-          onClick={handleViewLocation}
-        >
-          <MapPin className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-primary">
-            {t('viewLocation', { ns: 'messages' })}
-          </span>
-        </button>
       </div>
     </div>
   );

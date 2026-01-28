@@ -236,8 +236,24 @@ const HomePage = memo(() => {
       // Handle location card from SaveLocationPage or Messages
       if (state?.showLocationCard && state?.locationData) {
         const locData = state.locationData;
+        
+        // Pre-resolve internal ID from google_place_id if needed
+        let internalId = locData.id;
+        if (!internalId && locData.google_place_id) {
+          const { data: locationRow } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', locData.google_place_id)
+            .maybeSingle();
+          
+          if (locationRow) {
+            internalId = locationRow.id;
+          }
+        }
+        
         const placeToShow: Place = {
-          id: locData.id,
+          id: internalId || locData.google_place_id || '',
+          google_place_id: locData.google_place_id,
           name: locData.name,
           category: locData.category,
           coordinates: locData.coordinates,
@@ -245,6 +261,8 @@ const HomePage = memo(() => {
           city: locData.city,
           streetName: locData.streetName,
           streetNumber: locData.streetNumber,
+          image: locData.image_url,
+          photos: locData.photos,
           isFollowing: false,
           isNew: true,
           isTemporary: locData.isTemporary || false, // Flag for unsaved locations
