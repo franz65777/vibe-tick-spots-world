@@ -59,6 +59,7 @@ const MessageOptionsOverlay = ({
           <PlaceMessageCard 
             placeData={sharedContent} 
             onViewPlace={() => {}} // No navigation in overlay
+            overlayMode={true}
           />
         </div>
       );
@@ -138,8 +139,8 @@ const MessageOptionsOverlay = ({
         </div>
       </div>
 
-      {/* === 2. MESSAGE/CARD - CENTERED + 3. ACTIONS BELOW === */}
-      <div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-center gap-4 px-2`}>
+      {/* === 2. MESSAGE/CARD + 3. ACTIONS BELOW === */}
+      <div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-start gap-4 px-2 mt-6`}>
         {/* Message/Card */}
         <div onClick={e => e.stopPropagation()}>
           {renderMessageOrCard()}

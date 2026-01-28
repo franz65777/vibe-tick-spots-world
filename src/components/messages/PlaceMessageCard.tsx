@@ -22,6 +22,7 @@ interface PlaceMessageCardProps {
     google_place_id?: string;
   };
   onViewPlace: (place: any) => void;
+  overlayMode?: boolean;
 }
 
 // Helper to extract the first photo URL from the locations.photos JSONB column
@@ -49,14 +50,15 @@ const getLocationThumbnail = (placeData: PlaceMessageCardProps['placeData']): st
   return null;
 };
 
-const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => {
+const PlaceMessageCard = ({ placeData, onViewPlace, overlayMode = false }: PlaceMessageCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const categoryImage = getCategoryImage(placeData.category);
   const thumbnail = getLocationThumbnail(placeData);
   
-  // Translate category - categories are in 'common' namespace
-  const translatedCategory = t(`categories.${placeData.category}`, { 
+  // Normalize category to lowercase for translation lookup
+  const categoryKey = placeData.category?.toLowerCase() || '';
+  const translatedCategory = t(`categories.${categoryKey}`, { 
     ns: 'common',
     defaultValue: placeData.category || 'Place' 
   });
@@ -111,7 +113,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
           {placeData.name}
         </h4>
         
-        <div className="flex items-center gap-1.5 text-xs text-white/80 mt-0.5">
+        <div className={`flex items-center gap-1.5 text-xs ${overlayMode ? 'text-white/80' : 'text-muted-foreground'} mt-0.5`}>
           {(placeData.city || placeData.address || placeData.coordinates) && (
             <span className="truncate">
               <CityLabel 
@@ -122,7 +124,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
               />
             </span>
           )}
-          <span className="text-white/50">•</span>
+          <span className={overlayMode ? 'text-white/50' : 'text-muted-foreground/50'}>•</span>
           <span className="capitalize shrink-0">{translatedCategory}</span>
         </div>
       </div>
