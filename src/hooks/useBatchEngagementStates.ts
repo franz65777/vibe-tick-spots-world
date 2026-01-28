@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { SaveTag } from '@/utils/saveTags';
+import { SaveTag, normalizeSaveTag } from '@/utils/saveTags';
 
 interface BatchEngagementResult {
   likedPostIds: Set<string>;
@@ -83,9 +83,12 @@ export const useBatchEngagementStates = (
         (postLikesResult.data || []).map(l => l.post_id)
       );
       
-      const savedLocations = new Map<string, SaveTag>(
-        (savesResult.data || []).map(s => [s.location_id, s.save_tag as SaveTag])
-      );
+       // Normalize legacy/invalid save tags (e.g. 'general') so icons render correctly.
+       const savedLocations = new Map<string, SaveTag>();
+       (savesResult.data || []).forEach((s: any) => {
+         const normalized = normalizeSaveTag(s.save_tag);
+         if (s.location_id && normalized) savedLocations.set(s.location_id, normalized);
+       });
       
       const likedLocationIds = new Set(
         (locationLikesResult.data || []).map(l => l.location_id)

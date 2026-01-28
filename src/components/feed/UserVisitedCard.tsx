@@ -11,7 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { formatPostDate } from '@/utils/dateFormatter';
 import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
-import { type SaveTag } from '@/utils/saveTags';
+import { type SaveTag, normalizeSaveTag } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { storeFeedScrollAnchor } from '@/utils/feedScroll';
@@ -150,7 +150,7 @@ const UserVisitedCard = memo(({
   
   // Use pre-loaded states if available
   const [isSaved, setIsSaved] = useState(initialIsSaved ?? false);
-  const [savedTag, setSavedTag] = useState<SaveTag | null>(initialSaveTag ?? null);
+  const [savedTag, setSavedTag] = useState<SaveTag | null>(normalizeSaveTag(initialSaveTag as any) ?? null);
   const [isLiked, setIsLiked] = useState(initialIsLiked ?? false);
   const [likeCount, setLikeCount] = useState(initialLikeCount ?? 0);
   const [isLiking, setIsLiking] = useState(false);
@@ -176,7 +176,7 @@ const UserVisitedCard = memo(({
 
         if (savedData) {
           setIsSaved(true);
-          setSavedTag(savedData.save_tag as SaveTag);
+          setSavedTag(normalizeSaveTag(savedData.save_tag) as SaveTag);
         }
 
         // Check like status
@@ -275,7 +275,7 @@ const UserVisitedCard = memo(({
       if (error) throw error;
 
       setIsSaved(true);
-      setSavedTag(tag);
+      setSavedTag(normalizeSaveTag(tag) as SaveTag);
       toast.success(t('locationSaved', { defaultValue: 'Location saved!' }));
     } catch (err) {
       console.error('Error saving location:', err);
@@ -415,11 +415,16 @@ const UserVisitedCard = memo(({
                   onClick={() => handleUnsaveLocation()}
                   className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
                 >
-                  <img 
-                    src={SAVE_TAG_ICONS[savedTag]} 
-                    alt="" 
-                    className="w-5 h-5"
-                  />
+                  {SAVE_TAG_ICONS[savedTag] ? (
+                    <img 
+                      src={SAVE_TAG_ICONS[savedTag]} 
+                      alt="" 
+                      className="w-5 h-5"
+                    />
+                  ) : (
+                    // Fallback for any unexpected tag values
+                    <div className="w-5 h-5 rounded bg-muted" aria-hidden="true" />
+                  )}
                 </button>
               ) : (
                 <SaveLocationDropdown
