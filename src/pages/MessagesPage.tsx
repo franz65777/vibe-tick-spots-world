@@ -836,9 +836,9 @@ const MessagesPage = () => {
     });
     return `${day} ${monthAbbr}`;
   };
-  return <SwipeBackWrapper onBack={handleBack}><div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+  return <SwipeBackWrapper onBack={handleBack}><div className="h-screen w-full bg-background/40 backdrop-blur-xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       {/* Header */}
-      <header className="shrink-0 bg-background w-full border-b-0">
+      <header className="shrink-0 bg-background/60 backdrop-blur-md w-full border-b-0">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {view !== 'search' && <Button onClick={handleBack} variant="ghost" size="icon" className="rounded-full flex-shrink-0 h-8 w-8">
