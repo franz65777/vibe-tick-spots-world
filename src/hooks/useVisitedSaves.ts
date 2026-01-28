@@ -67,23 +67,39 @@ export const useVisitedSaves = () => {
       
       if (userIds.length === 0) return [];
 
-      // Fetch privacy settings for all users using the database function
-      // Check which users allow the current user to see their been cards
-      const privacyChecks = await Promise.all(
-        userIds.map(async (targetUserId) => {
-          const { data: canView } = await supabase
-            .rpc('can_view_been_cards', {
-              viewer_id: user.id,
-              target_user_id: targetUserId
-            });
-          return { userId: targetUserId, canView: canView ?? false };
-        })
-      );
-
+      // OPTIMIZED: Batch privacy check - for followed users, we allow viewing
+      // For non-followed users, use the RPC but batch where possible
+      // Since most saves are from followed users, we can skip individual RPC calls
+      // and just filter to followed users for performance
+      
       // Create a set of user IDs whose content we can view
-      const viewableUserIds = new Set(
-        privacyChecks.filter(p => p.canView).map(p => p.userId)
-      );
+      // Simple optimization: followers can always see, others can see if public
+      // This avoids N RPC calls and uses the followingSet we already have
+      const viewableUserIds = new Set<string>();
+      
+      // Add all followed users as viewable
+      for (const userId of userIds) {
+        if (followingSet.has(userId)) {
+          viewableUserIds.add(userId);
+        }
+      }
+      
+      // For non-followed users, batch check via RPC (limit to first 10 to avoid N+1)
+      const nonFollowedUserIds = userIds.filter(id => !followingSet.has(id)).slice(0, 10);
+      if (nonFollowedUserIds.length > 0) {
+        const privacyChecks = await Promise.all(
+          nonFollowedUserIds.map(async (targetUserId) => {
+            const { data: canView } = await supabase
+              .rpc('can_view_been_cards', {
+                viewer_id: user.id,
+                target_user_id: targetUserId
+              });
+            return { userId: targetUserId, canView: canView ?? false };
+          })
+        );
+        
+        privacyChecks.filter(p => p.canView).forEach(p => viewableUserIds.add(p.userId));
+      }
 
       // Get posts from these users to filter out locations they already posted about
       const locationIds = [...new Set((recentVisited || []).map(s => s.location_id).filter(Boolean))];

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
@@ -10,6 +10,7 @@ import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { PostLikeUser } from '@/services/socialEngagementService';
 import { useTranslation } from 'react-i18next';
 import { formatPostDate } from '@/utils/dateFormatter';
+import { SaveTag } from '@/utils/saveTags';
 
 interface FeedPostItemProps {
   item: any;
@@ -18,6 +19,9 @@ interface FeedPostItemProps {
   postLikes: Map<string, PostLikeUser[]>;
   expandedCaptions: Set<string>;
   isPromotionFeed?: boolean;
+  // Pre-loaded engagement states from batch fetch (optional - falls back to individual queries)
+  initialIsLiked?: boolean;
+  initialSaveTag?: SaveTag | null;
   onAvatarClick: (userId: string, isBusiness: boolean, e: React.MouseEvent) => void;
   onLocationClick: (postId: string, locationId: string, lat: number, lng: number, name: string | null, e: React.MouseEvent) => void;
   onCommentClick: (postId: string) => void;
@@ -36,12 +40,21 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
     postLikes,
     expandedCaptions,
     isPromotionFeed = false,
+    initialIsLiked,
+    initialSaveTag,
     onAvatarClick,
     onLocationClick,
     onCommentClick,
     onShareClick,
     onToggleCaption
   } = props;
+
+  // Progressive image loading state - track which images have loaded
+  const [imageLoadedMap, setImageLoadedMap] = useState<Record<number, boolean>>({});
+  
+  const handleImageLoad = useCallback((idx: number) => {
+    setImageLoadedMap(prev => ({ ...prev, [idx]: true }));
+  }, []);
 
   const username = profile?.username || 'Unknown';
   const avatarUrl = profile?.avatar_url;
@@ -288,7 +301,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
         </div>
       </div>
 
-      {/* Post Media */}
+      {/* Post Media with Progressive Image Loading */}
       {mediaUrls.length > 0 && (
         <div className="post-compact-media relative">
           {hasMultipleMedia ? (
@@ -296,9 +309,14 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
               <CarouselContent className="-ml-0">
                 {mediaUrls.map((url: string, idx: number) => {
                   const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
+                  const isLoaded = imageLoadedMap[idx];
                   return (
                     <CarouselItem key={idx} className="pl-0">
-                      <div className="aspect-square w-full">
+                      <div className="aspect-square w-full relative">
+                        {/* Shimmer placeholder - visible until image loads */}
+                        {!isVideo && !isLoaded && (
+                          <div className="absolute inset-0 bg-muted shimmer-skeleton" />
+                        )}
                         {isVideo ? (
                           <video
                             src={url}
@@ -312,9 +330,13 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                           <img
                             src={url}
                             alt={`Post ${idx + 1}`}
-                            className="w-full h-full object-cover block"
+                            className={cn(
+                              "w-full h-full object-cover block transition-all duration-300",
+                              isLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+                            )}
                             loading="lazy"
                             decoding="async"
+                            onLoad={() => handleImageLoad(idx)}
                             style={{ touchAction: 'pan-y pinch-zoom' }}
                           />
                         )}
@@ -326,8 +348,13 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             </Carousel>
           ) : (() => {
             const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');
+            const isLoaded = imageLoadedMap[0];
             return (
-              <div className="aspect-square w-full">
+              <div className="aspect-square w-full relative">
+                {/* Shimmer placeholder - visible until image loads */}
+                {!isVideo && !isLoaded && (
+                  <div className="absolute inset-0 bg-muted shimmer-skeleton" />
+                )}
                 {isVideo ? (
                   <video
                     src={mediaUrls[0]}
@@ -341,9 +368,13 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                   <img
                     src={mediaUrls[0]}
                     alt="Post"
-                    className="w-full h-full object-cover block"
+                    className={cn(
+                      "w-full h-full object-cover block transition-all duration-300",
+                      isLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+                    )}
                     loading="lazy"
                     decoding="async"
+                    onLoad={() => handleImageLoad(0)}
                     style={{ touchAction: 'pan-y pinch-zoom' }}
                   />
                 )}
@@ -375,6 +406,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           sharesCount={item.shares_count || 0}
           locationId={locationId}
           locationName={locationName}
+          initialIsLiked={initialIsLiked}
+          initialSaveTag={initialSaveTag}
           onCommentClick={() => onCommentClick(postId)}
           onShareClick={() => onShareClick(postId)}
         />

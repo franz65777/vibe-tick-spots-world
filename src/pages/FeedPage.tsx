@@ -23,6 +23,8 @@ import { useVisitedSaves } from '@/hooks/useVisitedSaves';
 import UserVisitedCard from '@/components/feed/UserVisitedCard';
 import { storeFeedScrollAnchor } from '@/utils/feedScroll';
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+import { useBatchEngagementStates } from '@/hooks/useBatchEngagementStates';
+import FeedPostSkeleton from '@/components/feed/FeedPostSkeleton';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
@@ -171,6 +173,11 @@ const FeedPage = memo(() => {
   
   // Fetch visited saves for interleaving in feed
   const { data: visitedSaves = [] } = useVisitedSaves();
+  
+  // Batch fetch engagement states for all posts to eliminate N+1 queries
+  const postIds = useMemo(() => feedItems.map((p: any) => p.id), [feedItems]);
+  const locationIds = useMemo(() => feedItems.map((p: any) => p.location_id), [feedItems]);
+  const { data: batchEngagement } = useBatchEngagementStates(postIds, locationIds);
   
   // Merge posts and visited saves chronologically
   type FeedEntry = 
@@ -564,19 +571,10 @@ const FeedPage = memo(() => {
         {/* Feed Content */}
         <div ref={scrollContainerRef} data-feed-scroll-container className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
           {loading ? (
-            <div className="py-4 w-full">
-              {[1,2,3].map((i) => (
-                <div key={i} className="space-y-3">
-                  <div className="flex items-center gap-3 px-0 py-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <Skeleton className="aspect-square w-full" />
-                </div>
-              ))}
+            <div className="space-y-0 bg-background">
+              <FeedPostSkeleton />
+              <FeedPostSkeleton />
+              <FeedPostSkeleton />
             </div>
            ) : feedItems.length === 0 ? (
             <div className="text-center py-12 px-4 text-muted-foreground w-full">
@@ -623,8 +621,12 @@ const FeedPage = memo(() => {
                   const userId = item.user_id;
                   const userHasStory = stories.some(s => s.user_id === userId);
                   
+                  // Get pre-loaded engagement states from batch fetch
+                  const isLiked = batchEngagement?.likedPostIds.has(item.id);
+                  const saveTag = item.location_id ? (batchEngagement?.savedLocations.get(item.location_id) ?? null) : null;
+                  
                   return (
-                    <Suspense key={key} fallback={<Skeleton className="h-96 w-full" />}>
+                    <Suspense key={key} fallback={<FeedPostSkeleton />}>
                       <FeedPostItem
                         item={item}
                         profile={profile}
@@ -632,6 +634,8 @@ const FeedPage = memo(() => {
                         postLikes={postLikes}
                         expandedCaptions={expandedCaptions}
                         isPromotionFeed={feedType === 'promotions'}
+                        initialIsLiked={isLiked}
+                        initialSaveTag={saveTag}
                         onAvatarClick={handleAvatarClick}
                         onLocationClick={handleLocationClick}
                         onCommentClick={handleCommentClick}
