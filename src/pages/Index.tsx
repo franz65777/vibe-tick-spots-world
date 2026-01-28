@@ -10,10 +10,11 @@ let splashShownThisSession = false;
 const Index = () => {
   const { user, loading } = useAuth();
   const [showSplash, setShowSplash] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const previousUserRef = useRef<string | null>(null);
   const initialCheckDoneRef = useRef(false);
 
-  // Handle splash screen logic
+  // Handle splash screen logic - MUST complete before rendering anything else
   useEffect(() => {
     if (loading) return;
 
@@ -23,6 +24,7 @@ const Index = () => {
     if (justSignedIn && !splashShownThisSession) {
       sessionStorage.removeItem('playSplashAfterAuth');
       setShowSplash(true);
+      setInitialized(true);
       return;
     }
 
@@ -32,6 +34,7 @@ const Index = () => {
       if (user && !splashShownThisSession) {
         setShowSplash(true);
       }
+      setInitialized(true);
     }
   }, [loading, user]);
 
@@ -68,12 +71,11 @@ const Index = () => {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // Show loading state while auth is being determined
-  if (loading) {
+  // CRITICAL: Don't render anything until we've determined splash state
+  // This prevents the flash of HomePage/navigation before splash
+  if (!initialized || loading) {
     return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <div className="fixed inset-0 bg-background" />
     );
   }
 
