@@ -24,6 +24,7 @@ import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 import { useSuggestedContacts } from '@/hooks/useSuggestedContacts';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
+import { translateCategory } from '@/utils/translateCategory';
 // Helper to extract the first photo URL from the locations.photos JSONB column
 const extractFirstPhotoUrl = (photos: unknown): string | null => {
   if (!photos) return null;
@@ -1161,10 +1162,7 @@ const MessagesPage = () => {
               </div> : <div className="space-y-1 pb-4">
                 {savedPlaces.map(place => {
                   const thumbnail = getLocationThumbnail(place);
-                  const translatedCategory = t(`categories.${place.category}`, { 
-                    ns: 'common', 
-                    defaultValue: place.category || 'Place' 
-                  });
+                  const translatedCategory = translateCategory(place.category, t);
                   
                   return (
                     <button 

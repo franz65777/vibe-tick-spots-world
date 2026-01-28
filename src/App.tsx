@@ -131,15 +131,26 @@ function AppContent() {
   useEffect(() => {
     const loadLang = async () => {
       if (!user?.id) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('language')
-        .eq('id', user.id)
-        .single();
-      const lang = data?.language || 'en';
-      localStorage.setItem('userLanguage', lang);
-      localStorage.setItem('i18nextLng', lang);
-      try { i18n.changeLanguage(lang); } catch {}
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('language')
+          .eq('id', user.id)
+          .single();
+        const rawLang = data?.language || 'en';
+        // Normalize language: strip region (it-IT → it) except zh-CN
+        let normalizedLang = rawLang;
+        if (rawLang.startsWith('zh')) {
+          normalizedLang = 'zh-CN';
+        } else if (rawLang.includes('-') || rawLang.includes('_')) {
+          normalizedLang = rawLang.split('-')[0].split('_')[0].toLowerCase();
+        }
+        localStorage.setItem('userLanguage', normalizedLang);
+        localStorage.setItem('i18nextLng', normalizedLang);
+        await i18n.changeLanguage(normalizedLang);
+      } catch (error) {
+        console.error('Error loading language:', error);
+      }
     };
     loadLang();
   }, [user?.id]);
