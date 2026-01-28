@@ -1,9 +1,8 @@
-
-import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw, Loader2 } from 'lucide-react';
 import deleteIcon from '@/assets/icon-delete.png';
 import cameraIcon3d from '@/assets/icon-camera-3d.png';
 import starIcon3d from '@/assets/icon-star-3d.png';
-import React from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import LocationPostLibrary from '../explore/LocationPostLibrary';
@@ -48,18 +47,47 @@ interface PostsGridProps {
   excludeUserId?: string;
 }
 
+/**
+ * PostsGrid - Optimized with infinite scroll
+ * 
+ * PERFORMANCE: Uses useInfiniteQuery for paginated loading
+ * - Loads only 12 posts initially
+ * - Loads more on scroll to bottom
+ * - IntersectionObserver for efficient scroll detection
+ */
 const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGridProps) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { profile } = useOptimizedProfile();
   const targetUserId = userId || profile?.id;
-  const { posts: allPosts, loading } = useOptimizedPosts(targetUserId);
+  const { posts: allPosts, loading, isFetchingNextPage, fetchNextPage, hasNextPage } = useOptimizedPosts(targetUserId);
   const { deletePost, deleting } = usePostDeletion();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [postFilter, setPostFilter] = useState<'photos' | 'reviews'>('photos');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [reviewOrder, setReviewOrder] = useState<Record<string, number>>({});
+  
+  // Infinite scroll observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Assign progressive order to reviews for each location - memoized to prevent infinite loops
   React.useEffect(() => {
@@ -473,6 +501,13 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           </div>
         )
       )}
+      
+      {/* Infinite scroll trigger */}
+      <div ref={loadMoreRef} className="py-4 flex justify-center">
+        {isFetchingNextPage && (
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        )}
+      </div>
 
       {selectedPostId && (
         <PostDetailModalMobile 

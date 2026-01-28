@@ -1,27 +1,36 @@
-
-import { useState, useEffect, memo } from 'react';
-import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
+import { useState, useEffect, memo, lazy, Suspense } from 'react';
+import { useProfileAggregated } from '@/hooks/useProfileAggregated';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import ProfileHeader from './profile/ProfileHeader';
-import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
-import Achievements from './profile/Achievements';
-import PostsGrid from './profile/PostsGrid';
-import TripsGrid from './profile/TripsGrid';
-import TaggedPostsGrid from './profile/TaggedPostsGrid';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
-import { ThemeToggle } from './ThemeToggle';
 import ProfileSkeleton from './ProfileSkeleton';
+import TabContentSkeleton from './profile/TabContentSkeleton';
 
+// Lazy load tab content for bundle splitting
+const PostsGrid = lazy(() => import('./profile/PostsGrid'));
+const TripsGrid = lazy(() => import('./profile/TripsGrid'));
+const Achievements = lazy(() => import('./profile/Achievements'));
+const TaggedPostsGrid = lazy(() => import('./profile/TaggedPostsGrid'));
+
+/**
+ * ProfilePage - Optimized for 20k+ concurrent users
+ * 
+ * PERFORMANCE IMPROVEMENTS:
+ * - Lazy loaded tab components (PostsGrid, TripsGrid, Achievements, TaggedPostsGrid)
+ * - Single consolidated query via useProfileAggregated
+ * - React Query caching for instant transitions
+ * - Prefetch on navigation hover
+ */
 const ProfilePage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { profile, loading, error, refetch } = useOptimizedProfile();
+  const { profile, loading, error, refetch } = useProfileAggregated();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -127,30 +136,22 @@ const ProfilePage = memo(() => {
   }
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 'posts':
-        return (
+    return (
+      <Suspense fallback={<TabContentSkeleton />}>
+        {activeTab === 'posts' && (
           <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
             <PostsGrid />
           </div>
-        );
-      case 'trips':
-        return <TripsGrid />;
-      case 'badges':
-        return <Achievements userId={user?.id} />;
-      case 'tagged':
-        return (
+        )}
+        {activeTab === 'trips' && <TripsGrid />}
+        {activeTab === 'badges' && <Achievements userId={user?.id} />}
+        {activeTab === 'tagged' && (
           <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
             <TaggedPostsGrid />
           </div>
-        );
-      default:
-        return (
-          <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
-            <PostsGrid />
-          </div>
-        );
-    }
+        )}
+      </Suspense>
+    );
   };
 
   return (

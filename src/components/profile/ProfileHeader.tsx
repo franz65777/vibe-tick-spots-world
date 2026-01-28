@@ -1,4 +1,3 @@
-
 import { Building2 } from 'lucide-react';
 import saveTagAll from '@/assets/save-tag-all.png';
 import saveTagBeen from '@/assets/save-tag-been.png';
@@ -7,21 +6,17 @@ import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import settingsIcon from '@/assets/settings-icon.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
+import { useProfileAggregated } from '@/hooks/useProfileAggregated';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import BadgeDisplay from './BadgeDisplay';
-import EditProfileModal from './EditProfileModal';
-import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
-import { useOptimizedSavedPlaces } from '@/hooks/useOptimizedSavedPlaces';
-import { useUserSavedCities } from '@/hooks/useUserSavedCities';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useStories } from '@/hooks/useStories';
 import CreateStoryModal from '../CreateStoryModal';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
-import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
 
 interface ProfileHeaderProps {
   onFollowersClick: () => void;
@@ -33,6 +28,13 @@ interface ProfileHeaderProps {
   onCitySelect?: (city: string | null) => void;
 }
 
+/**
+ * ProfileHeader - Optimized with useProfileAggregated
+ * 
+ * PERFORMANCE: Consolidated from 5 hooks to 2 (aggregated + stories)
+ * - useProfileAggregated: profile + stats + categoryCounts in one query
+ * - useStories: only for avatar ring (lazy loaded)
+ */
 const ProfileHeader = ({ 
   onFollowersClick, 
   onFollowingClick, 
@@ -43,25 +45,18 @@ const ProfileHeader = ({
   onCitySelect
 }: ProfileHeaderProps) => {
   const { t } = useTranslation();
-  const { profile, refetch } = useOptimizedProfile();
   const { user } = useAuth();
-  const { cities, categoryCounts } = useUserSavedCities(user?.id);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const navigate = useNavigate();
+  
+  // CONSOLIDATED: Single hook for profile + stats + category counts
+  const { profile, stats, categoryCounts, loading, refetch } = useProfileAggregated();
+  
+  // Stories only needed for avatar ring
+  const { stories, refetch: refetchStories } = useStories();
+  
   const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
-  const { stats } = useOptimizedFollowStats();
-  const { getStats } = useOptimizedSavedPlaces();
-  const navigate = useNavigate();
-  const { stories, refetch: refetchStories } = useStories();
-
-  // Use centralized realtime for profile updates - eliminates individual channel
-  const handleProfileUpdate = useCallback(() => {
-    // Debounce refetch to avoid too many calls
-    setTimeout(() => refetch(), 300);
-  }, [refetch]);
-
-  useRealtimeEvent('profile_update', handleProfileUpdate);
 
   const hasBusinessAccount = (profile as any)?.is_business_user || false;
 
@@ -73,13 +68,12 @@ const ProfileHeader = ({
   };
 
   const displayUsername = profile?.username || user?.user_metadata?.username || 'user';
-  const savedPlacesStats = getStats();
 
   const displayStats = {
-    posts: profile?.posts_count || stats.postsCount || 0,
-    followers: profile?.follower_count || stats.followersCount || 0,
-    following: profile?.following_count || stats.followingCount || 0,
-    locations: savedPlacesStats.places || 0
+    posts: stats.postsCount,
+    followers: stats.followersCount,
+    following: stats.followingCount,
+    locations: stats.locationsCount
   };
 
   // Get user's own active stories (not expired)
@@ -97,6 +91,11 @@ const ProfileHeader = ({
       setIsCreateStoryOpen(true);
     }
   };
+
+  // Show skeleton only on initial load without cached data
+  if (loading && !profile) {
+    return <ProfileHeaderSkeleton />;
+  }
 
   return (
     <div className="pt-1 pb-2 bg-background">
