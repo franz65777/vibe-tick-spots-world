@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +53,7 @@ const UserPlacesPage = () => {
   const [profile, setProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [recenterToken, setRecenterToken] = useState(0);
 
   // Get page title with proper grammar for each language
   const getPageTitle = () => {
@@ -338,6 +339,8 @@ const UserPlacesPage = () => {
 
   const handleCityClick = (city: string) => {
     setSelectedCity(city);
+    // Trigger map recenter when city is selected
+    setRecenterToken(prev => prev + 1);
   };
 
   const handleBack = () => {
@@ -412,6 +415,7 @@ const UserPlacesPage = () => {
             onMapClick={() => setSelectedPlace(null)}
             fullScreen={true}
             preventCenterUpdate={false}
+            recenterToken={recenterToken}
             hideSharingControls={true}
           />
         </MapFilterProvider>

@@ -206,9 +206,14 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   
   // Background color based on dark mode
   const bgColor = isDarkMode ? '#2a2a2a' : 'white';
-  const borderColor = isSelected 
-    ? (isDarkMode ? '#ffffff' : '#1a1a1a') 
-    : (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)');
+  
+  // Border color - show special color when saved
+  const savedBorderColor = '#3b82f6'; // Blue color for saved markers
+  const borderColor = isSaved 
+    ? savedBorderColor
+    : isSelected 
+      ? (isDarkMode ? '#ffffff' : '#1a1a1a') 
+      : (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)');
   
   // User avatar overlay for shared locations - support multiple users
   let avatarOverlay = '';
