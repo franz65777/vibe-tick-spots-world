@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ChevronLeft } from 'lucide-react';
 
@@ -16,8 +17,13 @@ export const SwipeBackWrapper: React.FC<SwipeBackWrapperProps> = ({
   enabled = true,
   className
 }) => {
+  const isMobile = useIsMobile();
+  
+  // Only enable swipe on mobile devices
+  const isEnabled = enabled && isMobile;
+  
   const { containerRef, isSwipingBack, swipeProgress } = useSwipeBack(onBack, {
-    enabled,
+    enabled: isEnabled,
     edgeWidth: 30,
     threshold: 80
   });
