@@ -28,7 +28,7 @@ const preloadCriticalPages = () => {
   });
 };
 
-const SplashScreen = ({ onComplete, minDisplayTime = 2500 }: SplashScreenProps) => {
+const SplashScreen = ({ onComplete, minDisplayTime = 2000 }: SplashScreenProps) => {
   const [videoEnded, setVideoEnded] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [dataPreloaded, setDataPreloaded] = useState(false);
@@ -49,7 +49,7 @@ const SplashScreen = ({ onComplete, minDisplayTime = 2500 }: SplashScreenProps) 
     preloadStartedRef.current = true;
     console.log('🚀 SplashScreen: Starting data preload...');
     
-    preloadWithTimeout(user?.id || null, 5000)
+    preloadWithTimeout(user?.id || null, 3000)
       .then((result) => {
         console.log(`📦 SplashScreen: Data preload complete (${result.duration.toFixed(0)}ms)`);
         setDataPreloaded(true);
