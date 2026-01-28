@@ -3,14 +3,19 @@
  * 
  * Uses hybrid search: DB → Google (ID Only = FREE) → Nominatim fallback
  * Designed for ultra-fast, reliable place search at $0/month cost
+ * 
+ * Features:
+ * - 3D category icons matching Home page design
+ * - Filters cities out when used in Add page
+ * - Callback to notify parent of result state
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Loader2, Building2, Database, Globe } from 'lucide-react';
+import { MapPin, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useOptimizedPlacesSearch, SearchResult } from '@/hooks/useOptimizedPlacesSearch';
 import { useTranslation } from 'react-i18next';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { getCategoryImage } from '@/utils/categoryIcons';
 
 interface OptimizedPlacesAutocompleteProps {
   onPlaceSelect: (place: {
@@ -27,6 +32,7 @@ interface OptimizedPlacesAutocompleteProps {
   userLocation?: { lat: number; lng: number } | null;
   disabled?: boolean;
   autoFocus?: boolean;
+  onResultsChange?: (hasResults: boolean, isSearching: boolean) => void;
 }
 
 const OptimizedPlacesAutocomplete = ({
@@ -36,6 +42,7 @@ const OptimizedPlacesAutocomplete = ({
   userLocation,
   disabled = false,
   autoFocus = false,
+  onResultsChange,
 }: OptimizedPlacesAutocompleteProps) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +56,7 @@ const OptimizedPlacesAutocomplete = ({
     googleResults,
     isLoading,
     getPlaceDetails,
-  } = useOptimizedPlacesSearch({ userLocation, debounceMs: 150 });
+  } = useOptimizedPlacesSearch({ userLocation, debounceMs: 150, filterCitiesOut: true });
 
   // Filter out cities - only show specific locations/places
   const filteredDatabaseResults = databaseResults.filter(r => !r.isCity);
@@ -57,6 +64,14 @@ const OptimizedPlacesAutocomplete = ({
 
   const hasResults = filteredDatabaseResults.length > 0 || filteredGoogleResults.length > 0;
   const allResults = [...filteredDatabaseResults, ...filteredGoogleResults];
+  const isSearching = query.length >= 2;
+
+  // Notify parent of results state
+  useEffect(() => {
+    if (onResultsChange) {
+      onResultsChange(hasResults || isLoading, isSearching);
+    }
+  }, [hasResults, isLoading, isSearching, onResultsChange]);
 
   // Handle place selection
   const handleSelect = async (result: SearchResult) => {
@@ -145,18 +160,6 @@ const OptimizedPlacesAutocomplete = ({
     }
   }, [query]);
 
-  // Source icon component
-  const SourceIcon = ({ source }: { source: string }) => {
-    switch (source) {
-      case 'database':
-        return <Database className="w-3 h-3 text-green-500" />;
-      case 'google':
-        return <Globe className="w-3 h-3 text-blue-500" />;
-      default:
-        return <MapPin className="w-3 h-3 text-muted-foreground" />;
-    }
-  };
-
   return (
     <div className={`relative ${className}`}>
       <div className="relative">
@@ -178,84 +181,71 @@ const OptimizedPlacesAutocomplete = ({
         )}
       </div>
 
-      {/* Results dropdown - Clean minimal design */}
+      {/* Results dropdown - Home page style with 3D icons */}
       {showResults && hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl max-h-[320px] overflow-y-auto scrollbar-hide">
-          {/* Database results section */}
-          {filteredDatabaseResults.length > 0 && (
-            <>
-              <div className="px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b border-border/30">
-                <Database className="w-3 h-3" />
-                {t('savedPlaces', { ns: 'common', defaultValue: 'Luoghi salvati' })}
-              </div>
-              {filteredDatabaseResults.map((result, index) => (
+        <div className="absolute z-50 w-full mt-2 bg-card/95 backdrop-blur-lg border border-border/40 rounded-2xl shadow-2xl max-h-[360px] overflow-y-auto scrollbar-hide">
+          {/* Header */}
+          <div className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/30">
+            {t('locations', { ns: 'common', defaultValue: 'Posizioni' })}
+          </div>
+
+          {/* Combined results list */}
+          <div className="py-1">
+            {allResults.map((result, index) => {
+              const categoryImage = getCategoryImage(result.category || 'restaurant');
+              
+              return (
                 <button
                   key={result.id}
                   onClick={() => handleSelect(result)}
-                  className={`w-full px-3 py-2.5 flex items-center gap-2.5 hover:bg-accent/50 active:bg-accent transition-colors text-left ${
-                    selectedIndex === index ? 'bg-accent/50' : ''
-                  } ${index < filteredDatabaseResults.length - 1 ? 'border-b border-border/20' : ''}`}
+                  className={`w-full px-4 py-3 flex items-center gap-3.5 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${
+                    selectedIndex === index ? 'bg-muted/50' : ''
+                  }`}
                 >
-                  <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-primary/10 rounded-lg">
-                    {result.category ? (
-                      <CategoryIcon category={result.category} className="w-5 h-5" />
-                    ) : (
-                      <MapPin className="w-4 h-4 text-primary" />
-                    )}
+                  {/* 3D Category Icon */}
+                  <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-muted/40 rounded-xl overflow-hidden">
+                    <img 
+                      src={categoryImage}
+                      alt={result.category || 'place'}
+                      className="w-9 h-9 object-contain"
+                      loading="eager"
+                    />
                   </div>
+                  
+                  {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-foreground truncate">
+                    <div className="font-semibold text-sm text-foreground truncate">
                       {result.name}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {result.city}{result.city && result.address ? ' • ' : ''}{result.address}
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      {result.city && result.address 
+                        ? `${result.city} • ${result.address.split(',')[0]}`
+                        : result.address || result.city}
                     </div>
                   </div>
-                </button>
-              ))}
-            </>
-          )}
 
-          {/* External results section */}
-          {filteredGoogleResults.length > 0 && (
-            <>
-              <div className="px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b border-border/30 bg-muted/20">
-                <Globe className="w-3 h-3" />
-                {t('suggestions', { ns: 'common', defaultValue: 'Suggerimenti' })}
-              </div>
-              {filteredGoogleResults.map((result, index) => {
-                const globalIndex = filteredDatabaseResults.length + index;
-                return (
-                  <button
-                    key={result.id}
-                    onClick={() => handleSelect(result)}
-                    className={`w-full px-3 py-2.5 flex items-center gap-2.5 hover:bg-accent/50 active:bg-accent transition-colors text-left ${
-                      selectedIndex === globalIndex ? 'bg-accent/50' : ''
-                    } ${index < filteredGoogleResults.length - 1 ? 'border-b border-border/20' : ''}`}
-                  >
-                    <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-blue-500/10 rounded-lg">
-                      <MapPin className="w-4 h-4 text-blue-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-foreground truncate">
-                        {result.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {result.address}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </>
-          )}
+                  {/* Source indicator dot */}
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    result.source === 'database' 
+                      ? 'bg-green-500' 
+                      : result.source === 'google' 
+                        ? 'bg-blue-500' 
+                        : 'bg-orange-500'
+                  }`} />
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* No results message */}
       {showResults && !isLoading && query.length >= 2 && !hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg p-4 text-center text-muted-foreground text-sm">
-          {t('noPlacesFound', { ns: 'add', defaultValue: 'Nessun luogo trovato per' })} "{query}"
+        <div className="absolute z-50 w-full mt-2 bg-card/95 backdrop-blur-lg border border-border/40 rounded-2xl shadow-2xl p-6 text-center">
+          <MapPin className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+          <p className="text-sm text-muted-foreground">
+            {t('noPlacesFound', { ns: 'add', defaultValue: 'Nessun luogo trovato per' })} "{query}"
+          </p>
         </div>
       )}
     </div>

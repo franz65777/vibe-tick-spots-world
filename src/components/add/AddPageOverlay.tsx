@@ -24,6 +24,7 @@ interface AddPageOverlayProps {
 const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOverlayProps) => {
   const { t } = useTranslation();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [hasSearchResults, setHasSearchResults] = useState(false);
 
   // Get user location for better search results
   useEffect(() => {
@@ -44,29 +45,10 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
     }
   }, [isOpen]);
 
-  // Handle location selection from search
-  const handleLocationSelect = useCallback((place: {
-    name: string;
-    address: string;
-    coordinates: { lat: number; lng: number };
-    city: string;
-    nominatimType?: string;
-    nominatimClass?: string;
-    category?: string;
-    isCity?: boolean;
-  }) => {
-    // Don't allow cities to be selected - only specific locations
-    if (place.isCity) {
-      return;
-    }
-
-    onLocationSelected({
-      name: place.name,
-      latitude: place.coordinates.lat,
-      longitude: place.coordinates.lng,
-      category: place.category || 'place',
-    });
-  }, [onLocationSelected]);
+  // Handle results change from autocomplete
+  const handleResultsChange = useCallback((hasResults: boolean, isSearching: boolean) => {
+    setHasSearchResults(hasResults && isSearching);
+  }, []);
 
   // Handle escape key to close and close other overlays when opening
   useEffect(() => {
@@ -128,6 +110,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
                            [&_input]:text-white [&_input]:dark:text-gray-900 
                            [&_input]:placeholder:text-white/60 [&_input]:dark:placeholder:text-gray-500
                            [&_input]:p-0 [&_input]:focus-visible:ring-0"
+                onResultsChange={handleResultsChange}
               />
             </div>
           </div>
@@ -143,36 +126,43 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
         </div>
       </header>
 
-      {/* Hero Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col items-center justify-center px-6 pt-12 pb-24">
-          {/* Hero Image with floating animation */}
-          <div className="relative w-full flex items-center justify-center animate-fade-in-up">
-            <div className="w-80 h-52 flex items-center justify-center animate-hero-float">
-              <img 
-                src={addPageHero} 
-                alt="Share experience" 
-                className="w-full h-full object-contain drop-shadow-xl" 
-              />
+      {/* Hero Content - hidden when search has results */}
+      {!hasSearchResults && (
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col items-center justify-center px-6 pt-12 pb-24">
+            {/* Hero Image with floating animation */}
+            <div className="relative w-full flex items-center justify-center animate-fade-in-up">
+              <div className="w-80 h-52 flex items-center justify-center animate-hero-float">
+                <img 
+                  src={addPageHero} 
+                  alt="Share experience" 
+                  className="w-full h-full object-contain drop-shadow-xl" 
+                />
+              </div>
             </div>
-          </div>
-          
-          {/* Typography */}
-          <div className="text-center space-y-2 mt-6 animate-fade-in-up-delay-1">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              {t('shareExperience', { ns: 'add' })}
-            </h2>
-            <p className="text-muted-foreground/80 text-sm max-w-xs">
-              {t('addPhotosVideos', { ns: 'add' })}
+            
+            {/* Typography */}
+            <div className="text-center space-y-2 mt-6 animate-fade-in-up-delay-1">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                {t('shareExperience', { ns: 'add' })}
+              </h2>
+              <p className="text-muted-foreground/80 text-sm max-w-xs">
+                {t('addPhotosVideos', { ns: 'add' })}
+              </p>
+            </div>
+
+            {/* Hint text */}
+            <p className="text-center text-xs text-muted-foreground/60 mt-8 max-w-[280px] animate-fade-in-up-delay-2">
+              {t('searchToContribute', { ns: 'add', defaultValue: 'Cerca un posto per aggiungere foto, descrizioni o salvarlo nelle tue liste' })}
             </p>
           </div>
-
-          {/* Hint text */}
-          <p className="text-center text-xs text-muted-foreground/60 mt-8 max-w-[280px] animate-fade-in-up-delay-2">
-            {t('searchToContribute', { ns: 'add', defaultValue: 'Cerca un posto per aggiungere foto, descrizioni o salvarlo nelle tue liste' })}
-          </p>
         </div>
-      </div>
+      )}
+
+      {/* Empty space when showing search results - provides clean backdrop */}
+      {hasSearchResults && (
+        <div className="flex-1" />
+      )}
     </div>
   );
 
