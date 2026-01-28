@@ -62,8 +62,25 @@ const OptimizedPlacesAutocomplete = ({
   const filteredDatabaseResults = databaseResults.filter(r => !r.isCity);
   const filteredGoogleResults = googleResults.filter(r => !r.isCity);
 
-  const hasResults = filteredDatabaseResults.length > 0 || filteredGoogleResults.length > 0;
-  const allResults = [...filteredDatabaseResults, ...filteredGoogleResults];
+  // Deduplicate: if database has a result with same google_place_id or same name+address, skip the Google version
+  const deduplicatedGoogleResults = filteredGoogleResults.filter(googleResult => {
+    // Check if any database result matches by google_place_id
+    const matchesByPlaceId = filteredDatabaseResults.some(
+      dbResult => dbResult.google_place_id && googleResult.google_place_id && 
+                  dbResult.google_place_id === googleResult.google_place_id
+    );
+    if (matchesByPlaceId) return false;
+    
+    // Check if any database result matches by normalized name
+    const normalizedGoogleName = googleResult.name.toLowerCase().trim();
+    const matchesByName = filteredDatabaseResults.some(
+      dbResult => dbResult.name.toLowerCase().trim() === normalizedGoogleName
+    );
+    return !matchesByName;
+  });
+
+  const hasResults = filteredDatabaseResults.length > 0 || deduplicatedGoogleResults.length > 0;
+  const allResults = [...filteredDatabaseResults, ...deduplicatedGoogleResults];
   const isSearching = query.length >= 2;
 
   // Notify parent of results state
@@ -184,7 +201,7 @@ const OptimizedPlacesAutocomplete = ({
 
       {/* Results dropdown - Full width rows */}
       {showResults && hasResults && (
-        <div className="absolute z-50 w-full left-0 right-0 mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
+        <div className="absolute z-50 w-full mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide -mx-4 px-4" style={{ width: 'calc(100% + 2rem)', left: '-1rem' }}>
           {allResults.map((result, index) => {
             // Priority: 1. Business image (image_url), 2. First photo (photos[0]), 3. Category icon
             const displayImage = result.image_url 
@@ -196,13 +213,13 @@ const OptimizedPlacesAutocomplete = ({
               <button
                 key={result.id}
                 onClick={() => handleSelect(result)}
-                className={`w-full px-3 py-3 flex items-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 
+                className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 
                            active:bg-white/60 dark:active:bg-white/20 transition-colors text-left
                            border-b border-black/5 dark:border-white/10 ${
                   selectedIndex === index ? 'bg-white/30 dark:bg-white/10' : ''
                 }`}
               >
-                {/* Image - Smaller (40px), square with rounded corners */}
+                {/* Image - 40px square with rounded corners */}
                 <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-muted/20">
                   <img 
                     src={displayImage}
