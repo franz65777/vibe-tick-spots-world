@@ -838,7 +838,7 @@ const MessagesPage = () => {
   };
   return <SwipeBackWrapper onBack={handleBack}><div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       {/* Header */}
-      <header className="shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 w-full">
+      <header className="shrink-0 bg-background w-full">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {view !== 'search' && <Button onClick={handleBack} variant="ghost" size="icon" className="rounded-full flex-shrink-0 h-8 w-8">

@@ -122,7 +122,7 @@ const NotificationsPage = () => {
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header 
-        className="shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/50 w-full"
+        className="shrink-0 bg-background w-full"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
       >
         <div className="py-3 flex items-center justify-between px-4">
