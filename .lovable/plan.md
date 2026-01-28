@@ -1,336 +1,251 @@
 
-## Piano: Ottimizzazione Profile Page per 20k+ Utenti Concorrenti ✅ COMPLETED
 
-### Stato: Implementato
+## Optimization Plan: Enhanced Post Loading with Skeleton UI
 
-Tutte le ottimizzazioni sono state implementate con successo:
+### Current State Analysis
 
-1. ✅ `useProfileAggregated` - Query consolidata con Promise.all
-2. ✅ `useUserBadges` - Convertito a React Query con caching
-3. ✅ Lazy loading tabs - React.lazy + Suspense per Posts, Trips, Achievements
-4. ✅ Infinite scroll PostsGrid - useInfiniteQuery con paginazione 12 items
-5. ✅ VirtualizedPostGrid - @tanstack/react-virtual per 60fps con grandi dataset
-6. ✅ Prefetch da navigation - Dati profile pre-caricati su hover/focus
+The existing implementation already has solid foundations:
+- `useOptimizedPosts` with paginated `useInfiniteQuery` (12 posts per page)
+- `VirtualizedPostGrid` with `@tanstack/react-virtual` for row virtualization
+- Basic `TabContentSkeleton` with simple skeleton placeholders
 
----
+However, there are significant improvements possible:
 
-### Analisi della Situazione Attuale
+**Issue 1: Simple Loading Spinner**
+The current loading state shows a basic spinning circle (`border-2 border-blue-600 border-t-transparent rounded-full animate-spin`) which provides no content preview.
 
-#### 1. Cascata di Query al Caricamento (N+1 Problem)
-La pagina profilo attiva **6+ hook separati** che fanno query indipendenti:
-- `useOptimizedProfile` - Profilo utente
-- `useOptimizedFollowStats` - Contatori followers/following
-- `useOptimizedSavedPlaces` - Luoghi salvati
-- `useUserSavedCities` - Città e conteggi categorie
-- `useStories` - Stories utente
-- `useUserBadges` - Badge e statistiche
+**Issue 2: No Progressive Image Loading**
+Images load with a jarring appearance - no blur-up effect, no low-quality placeholders.
 
-**Impatto**: ~300-500ms di latenza cumulativa, 6 round-trip al database
-
-#### 2. `useUserBadges` Non Usa React Query
-Questo hook usa `useState/useEffect` tradizionale con query sequenziali:
-- Fetch profilo
-- Fetch saved locations
-- Fetch unique cities
-- Fetch posts con likes
-- Fetch reviews count
-
-**Impatto**: ~400ms, nessun caching, refetch completo ogni mount
-
-#### 3. `useUserSavedCities` Fa Query Ridondanti
-Quando visualizzi il tuo profilo vs profilo altri:
-- Fetch `user_saved_locations` (duplicato con `useOptimizedSavedPlaces`)
-- Fetch `saved_places` (duplicato)
-- Se profilo altri: 4 query aggiuntive per "common locations"
-
-**Impatto**: Query duplicate, 100-200ms sprecati
-
-#### 4. ProfileHeader Carica Troppi Dati
-```typescript
-// ProfileHeader.tsx - Line 46-56
-const { profile, refetch } = useOptimizedProfile();
-const { cities, categoryCounts } = useUserSavedCities(user?.id);
-const { stats } = useOptimizedFollowStats();
-const { getStats } = useOptimizedSavedPlaces();
-const { stories, refetch: refetchStories } = useStories();
-```
-Ogni hook ha il suo ciclo di loading, causando render multipli.
-
-#### 5. PostsGrid Carica Tutto Subito
-```typescript
-// PostsGrid.tsx
-const { posts: allPosts, loading } = useOptimizedPosts(targetUserId);
-```
-Carica TUTTI i post anche se l'utente guarda solo i primi 6.
+**Issue 3: Skeleton Doesn't Match Content Layout**
+The skeleton shows 6 identical gray squares, but doesn't simulate realistic post content (varying heights, hover states, etc.)
 
 ---
 
-### Architettura Proposta: "Single Query + Progressive Loading"
+### Proposed Improvements
+
+#### 1. Enhanced Skeleton Grid with Shimmer Animation
+
+Create a more engaging skeleton that simulates real content:
 
 ```text
-                    ┌──────────────────────────────────┐
-                    │     useProfileAggregated()       │
-                    │   (Single consolidated query)    │
-                    └──────────────────────────────────┘
-                                    │
-       ┌────────────────────────────┼────────────────────────────┐
-       ▼                            ▼                            ▼
-┌──────────────┐           ┌───────────────┐           ┌─────────────────┐
-│   Profile    │           │  Stats +      │           │   Category      │
-│   + Avatar   │           │  Followers    │           │   Counts        │
-└──────────────┘           └───────────────┘           └─────────────────┘
-                                    
-                    ┌──────────────────────────────────┐
-                    │    Lazy Load (dopo 300ms)        │
-                    └──────────────────────────────────┘
-                                    │
-       ┌────────────────────────────┼────────────────────────────┐
-       ▼                            ▼                            ▼
-┌──────────────┐           ┌───────────────┐           ┌─────────────────┐
-│    Posts     │           │    Stories    │           │     Badges      │
-│  (first 12)  │           │  (if active)  │           │   (cached)      │
-└──────────────┘           └───────────────┘           └─────────────────┘
++------------------+------------------+
+|  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓  |  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓  |  <- Shimmer effect
+|  (with badge)    |  (with badge)    |      animates across
+|  ▓▓▓▓▓           |  ▓▓▓▓▓           |
++------------------+------------------+
+|  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓  |  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓  |
+|                  |  (with badge)    |
+|  ▓▓▓▓▓           |  ▓▓▓▓▓           |
++------------------+------------------+
 ```
+
+The skeleton cards will include:
+- Multi-image badge placeholder (top-right corner)
+- Hover overlay simulation with likes/comments icons
+- Staggered shimmer animation for visual interest
+
+#### 2. Progressive Image Loading with Blur-Up Effect
+
+Each post image will:
+1. Start with a gradient placeholder matching the post's dominant color (if available) or a subtle gray
+2. Apply a blur filter that animates away as the image loads
+3. Use `loading="lazy"` and `decoding="async"` for browser-level optimization
+
+#### 3. Optimistic Rendering with Skeleton Swap
+
+Instead of showing a spinner, immediately render skeleton cards that:
+- Transform smoothly into real content as data arrives
+- Use CSS transitions for fade-in effects
+- Maintain exact layout dimensions to prevent layout shifts
 
 ---
 
-### Modifiche Tecniche Dettagliate
+### Technical Implementation
 
-#### 1. Creare `useProfileAggregated` Hook
+#### File: `src/components/profile/PostsGridSkeleton.tsx` (New)
 
-**Nuovo file**: `src/hooks/useProfileAggregated.ts`
-
-```typescript
-// Query singola che aggrega profile + stats + category counts
-export const useProfileAggregated = (userId?: string) => {
-  const { user } = useAuth();
-  const targetUserId = userId || user?.id;
-
-  return useQuery({
-    queryKey: ['profile-aggregated', targetUserId],
-    queryFn: async () => {
-      if (!targetUserId) return null;
-
-      // PARALLEL: tutte le query critiche insieme
-      const [
-        profileRes,
-        followersRes,
-        followingRes,
-        savedLocationsRes,
-        savedPlacesRes
-      ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', targetUserId).single(),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', targetUserId),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', targetUserId),
-        supabase.from('user_saved_locations').select('location_id, save_tag, locations(city)').eq('user_id', targetUserId),
-        supabase.from('saved_places').select('id, city, save_tag').eq('user_id', targetUserId),
-      ]);
-
-      // Calcola category counts inline
-      const categoryCounts = calculateCategoryCounts(savedLocationsRes.data, savedPlacesRes.data);
-
-      return {
-        profile: profileRes.data,
-        stats: {
-          followersCount: followersRes.count || 0,
-          followingCount: followingRes.count || 0,
-          postsCount: profileRes.data?.posts_count || 0,
-          locationsCount: (savedLocationsRes.data?.length || 0) + (savedPlacesRes.data?.length || 0),
-        },
-        categoryCounts,
-      };
-    },
-    enabled: !!targetUserId,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
-```
-
-**Beneficio**: 5-6 query → 1 query parallela (~100ms vs ~400ms)
-
-#### 2. Convertire `useUserBadges` a React Query con Caching
-
-**File**: `src/hooks/useUserBadges.ts`
+A dedicated skeleton component with:
+- Shimmer animation using CSS gradients
+- Randomized badge placeholders (some cards show multi-image indicator, some don't)
+- Filter dropdown skeleton
+- Staggered animation delays
 
 ```typescript
-export const useUserBadges = (userId?: string) => {
-  const { user } = useAuth();
-  const targetUserId = userId || user?.id;
-
-  const { data: badgeData, isLoading } = useQuery({
-    queryKey: ['user-badges', targetUserId],
-    queryFn: async () => {
-      // Fetch stats in parallel
-      const [profileRes, savedRes, postsRes, reviewsRes] = await Promise.all([
-        supabase.from('profiles').select('posts_count, follower_count, following_count').eq('id', targetUserId).single(),
-        supabase.from('user_saved_locations').select('location_id, locations!inner(city)').eq('user_id', targetUserId),
-        supabase.from('posts').select('id, likes_count').eq('user_id', targetUserId),
-        supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', targetUserId).not('rating', 'is', null),
-      ]);
-
-      // Calculate badges...
-      return { badges, userStats };
-    },
-    enabled: !!targetUserId,
-    staleTime: 5 * 60 * 1000, // Badges non cambiano spesso
-    gcTime: 30 * 60 * 1000,
-  });
-
-  return { badges: badgeData?.badges || [], loading: isLoading };
-};
-```
-
-**Beneficio**: Cache automatico, no refetch inutili, ~200ms saved
-
-#### 3. Lazy Load Tab Content
-
-**File**: `src/components/ProfilePage.tsx`
-
-```typescript
-// Lazy load dei componenti tab
-const PostsGrid = lazy(() => import('./profile/PostsGrid'));
-const TripsGrid = lazy(() => import('./profile/TripsGrid'));
-const Achievements = lazy(() => import('./profile/Achievements'));
-const TaggedPostsGrid = lazy(() => import('./profile/TaggedPostsGrid'));
-
-// Render con Suspense
-const renderTabContent = () => {
-  return (
-    <Suspense fallback={<TabContentSkeleton />}>
-      {activeTab === 'posts' && <PostsGrid />}
-      {activeTab === 'trips' && <TripsGrid />}
-      {activeTab === 'badges' && <Achievements userId={user?.id} />}
-      {activeTab === 'tagged' && <TaggedPostsGrid />}
-    </Suspense>
-  );
-};
-```
-
-**Beneficio**: Solo la tab attiva viene caricata, bundle splitting automatico
-
-#### 4. Paginazione/Virtualizzazione PostsGrid
-
-**File**: `src/components/profile/PostsGrid.tsx`
-
-```typescript
-// Usa infinite query per caricare progressivamente
-const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-  queryKey: ['posts', targetUserId, postFilter],
-  queryFn: async ({ pageParam = 0 }) => {
-    const from = pageParam * 12;
-    const to = from + 11;
+// Example structure
+const PostsGridSkeleton = () => (
+  <div className="px-4">
+    {/* Filter skeleton */}
+    <Skeleton className="h-6 w-20 mb-4" />
     
-    const { data } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('user_id', targetUserId)
-      .order('created_at', { ascending: false })
-      .range(from, to);
-    
-    return data || [];
-  },
-  getNextPageParam: (lastPage, allPages) => 
-    lastPage.length === 12 ? allPages.length : undefined,
-  initialPageSize: 12,
-});
-
-// Virtualized grid con @tanstack/react-virtual
-const rowVirtualizer = useVirtualizer({
-  count: Math.ceil(allPosts.length / 2),
-  getScrollElement: () => scrollRef.current,
-  estimateSize: () => 180,
-  overscan: 3,
-});
+    {/* Grid with shimmer */}
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div 
+          key={i} 
+          className="relative aspect-square rounded-xl overflow-hidden bg-muted"
+          style={{ animationDelay: `${i * 50}ms` }}
+        >
+          {/* Shimmer overlay */}
+          <div className="absolute inset-0 shimmer-animation" />
+          
+          {/* Random badge placeholder */}
+          {i % 3 === 0 && (
+            <div className="absolute top-2 right-2 bg-muted-foreground/20 rounded-full w-8 h-5" />
+          )}
+          
+          {/* Hover overlay skeleton */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 opacity-50">
+            <div className="flex gap-2">
+              <div className="bg-muted-foreground/20 rounded-full w-10 h-5" />
+              <div className="bg-muted-foreground/20 rounded-full w-10 h-5" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 ```
 
-**Beneficio**: Carica solo 12 post iniziali invece di tutti, scroll infinito performante
-
-#### 5. Prefetch Profilo da Altre Pagine
-
-**File**: `src/components/NewBottomNavigation.tsx` (o simile)
+#### File: `tailwind.config.ts` - Add Shimmer Animation
 
 ```typescript
-// Quando hover/focus sulla tab Profile, prefetch i dati
-const handleProfileHover = () => {
-  if (user?.id) {
-    queryClient.prefetchQuery({
-      queryKey: ['profile-aggregated', user.id],
-      staleTime: 2 * 60 * 1000,
-    });
+keyframes: {
+  shimmer: {
+    '0%': { transform: 'translateX(-100%)' },
+    '100%': { transform: 'translateX(100%)' }
   }
-};
+},
+animation: {
+  shimmer: 'shimmer 1.5s infinite'
+}
 ```
 
-**Beneficio**: Dati già pronti quando l'utente clicca su Profile
+#### File: `src/components/profile/PostsGrid.tsx` Updates
 
-#### 6. Ottimizzare ProfileHeader
-
-**File**: `src/components/profile/ProfileHeader.tsx`
+- Replace spinner with `PostsGridSkeleton`
+- Add CSS classes for smooth content reveal
 
 ```typescript
-// PRIMA: 5 hook separati
-// DOPO: 1 hook aggregato + 1 per stories (lazy)
+if (loading) {
+  return <PostsGridSkeleton />;
+}
+```
 
-const { data, isLoading } = useProfileAggregated();
-const { stories } = useStories(); // Solo se serve per avatar ring
+#### File: `src/components/profile/VirtualizedPostGrid.tsx` Updates
 
-// Render immediato con dati cached
-if (isLoading && !data) return <ProfileHeaderSkeleton />;
+Add progressive image loading to `PostItem`:
 
-// Usa data.profile, data.stats, data.categoryCounts direttamente
+```typescript
+const PostItem = memo(({ post, ... }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  
+  return (
+    <div className="relative aspect-square rounded-xl overflow-hidden">
+      {/* Skeleton placeholder - visible until image loads */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 bg-muted animate-pulse" />
+      )}
+      
+      <img
+        src={post.media_urls[0]}
+        alt={post.caption || 'Post'}
+        className={cn(
+          "w-full h-full object-cover transition-all duration-300",
+          imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+        )}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setImageLoaded(true)}
+        onError={(e) => {
+          setImageLoaded(true);
+          (e.target as HTMLImageElement).src = '/placeholder.svg';
+        }}
+      />
+      {/* ... rest of overlay content */}
+    </div>
+  );
+});
+```
+
+#### File: `src/components/profile/TabContentSkeleton.tsx` Updates
+
+Enhance with shimmer and more realistic layout:
+
+```typescript
+const TabContentSkeleton = () => (
+  <div className="px-4 py-4">
+    <Skeleton className="h-6 w-20 mb-4" />
+    
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div 
+          key={i} 
+          className="aspect-square rounded-xl bg-muted relative overflow-hidden"
+        >
+          {/* Shimmer effect */}
+          <div 
+            className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+);
 ```
 
 ---
 
-### Database Indexes Raccomandati
+### CSS Additions for `src/index.css`
 
-Per supportare 20k+ utenti, verificare questi indici:
+```css
+/* Shimmer animation for skeletons */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 
-```sql
--- Index composito per query follows frequenti
-CREATE INDEX IF NOT EXISTS idx_follows_following_id ON follows(following_id);
-CREATE INDEX IF NOT EXISTS idx_follows_follower_id ON follows(follower_id);
+.shimmer-skeleton {
+  position: relative;
+  overflow: hidden;
+}
 
--- Index per saved locations lookup
-CREATE INDEX IF NOT EXISTS idx_user_saved_locations_user_id ON user_saved_locations(user_id);
-CREATE INDEX IF NOT EXISTS idx_saved_places_user_id ON saved_places(user_id);
-
--- Index per posts lookup
-CREATE INDEX IF NOT EXISTS idx_posts_user_id_created_at ON posts(user_id, created_at DESC);
+.shimmer-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+}
 ```
 
 ---
 
-### Risultato Atteso
+### Files to Modify
 
-| Metrica | Prima | Dopo | Miglioramento |
-|---------|-------|------|---------------|
-| Tempo First Paint | ~800ms | ~200ms | **-75%** |
-| Query Database | 6-8 | 1-2 | **-80%** |
-| Time to Interactive | ~1.2s | ~400ms | **-67%** |
-| Bundle size (Profile) | ~120KB | ~40KB | **-67%** |
-| Concurrent user capacity | ~5k | 20k+ | **+300%** |
-
----
-
-### File da Modificare
-
-| File | Tipo Modifica |
-|------|--------------|
-| `src/hooks/useProfileAggregated.ts` | **Nuovo** - Hook consolidato |
-| `src/hooks/useUserBadges.ts` | Convertire a React Query |
-| `src/components/ProfilePage.tsx` | Lazy loading tabs, usare hook aggregato |
-| `src/components/profile/ProfileHeader.tsx` | Semplificare, usare hook aggregato |
-| `src/components/profile/PostsGrid.tsx` | Infinite query + virtualizzazione |
-| `src/hooks/useOptimizedPosts.ts` | Aggiungere paginazione |
+| File | Change Type |
+|------|-------------|
+| `src/components/profile/PostsGridSkeleton.tsx` | **New** - Dedicated skeleton with shimmer |
+| `src/components/profile/PostsGrid.tsx` | Replace spinner with skeleton component |
+| `src/components/profile/VirtualizedPostGrid.tsx` | Add progressive image loading with blur-up |
+| `src/components/profile/TabContentSkeleton.tsx` | Enhance with shimmer animation |
+| `src/index.css` | Add shimmer keyframes |
 
 ---
 
-### Priorità Implementazione
+### Expected Results
 
-1. **Quick Win** (30 min): Creare `useProfileAggregated` e usarlo in ProfileHeader
-2. **Medium** (1 ora): Convertire `useUserBadges` a React Query
-3. **High Impact** (2 ore): Lazy load tabs + PostsGrid virtualizzato
-4. **Polish** (30 min): Prefetch da navigation + skeleton improvements
+| Metric | Before | After |
+|--------|--------|-------|
+| Perceived load time | ~800ms (spinner) | ~100ms (skeleton appears instantly) |
+| Content layout shift | Visible | Zero (skeleton matches content) |
+| Image loading feel | Jarring pop-in | Smooth blur-to-clear transition |
+| User engagement | Loading anxiety | Content anticipation |
 
