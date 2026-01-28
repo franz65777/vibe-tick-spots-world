@@ -240,6 +240,37 @@ const MapSection = ({
     }
   }, [initialSelectedPlace]);
 
+  // Sync selectedPlace ID when location is saved (ID changes from temporary to UUID)
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { isSaved, newLocationId, oldLocationId, coordinates } = event.detail;
+      
+      // If we have a selected place and this save event is for it
+      if (selectedPlace && isSaved && newLocationId) {
+        const isMatchingPlace = 
+          selectedPlace.id === oldLocationId ||
+          selectedPlace.id === newLocationId ||
+          selectedPlace.isTemporary ||
+          (coordinates && selectedPlace.coordinates &&
+           Math.abs(selectedPlace.coordinates.lat - coordinates.lat) < 0.0001 &&
+           Math.abs(selectedPlace.coordinates.lng - coordinates.lng) < 0.0001);
+        
+        if (isMatchingPlace && selectedPlace.id !== newLocationId) {
+          console.log('🔄 Syncing selectedPlace ID:', oldLocationId, '->', newLocationId);
+          setSelectedPlace(prev => prev ? {
+            ...prev,
+            id: newLocationId,
+            isTemporary: false,
+            isSaved: true
+          } : null);
+        }
+      }
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+  }, [selectedPlace]);
+
   // Notify parent when selectedPlace changes
   useEffect(() => {
     onSelectedPlaceChange?.(selectedPlace);
