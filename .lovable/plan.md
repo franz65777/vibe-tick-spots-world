@@ -1,117 +1,87 @@
 
-# Piano: Unificare la Pagina Add e Migliorare la Sezione Foto
+# Piano: Fix Photo Upload - Separare Upload Manuali da Foto Vicine
 
-## Panoramica
+## Problema Attuale
 
-L'utente vuole:
-1. Eliminare la vecchia pagina `/add` che mostra "Crea un post" e "Crea una lista"
-2. Rendere la sezione "aggiungi foto" nel `LocationContributionModal` identica al vecchio design con preview più grandi e il bottone verde +
+Quando l'utente clicca il bottone `+` e seleziona una foto:
+1. La foto viene processata da `scanPhotos()` per analizzare i dati GPS
+2. La foto finisce nell'array `nearbyPhotos` o `allPhotos`
+3. Queste foto appaiono nella sezione "abbiamo trovato X foto" in basso
+4. L'utente deve cliccare DI NUOVO sulla foto per aggiungerla a `selectedPhotos`
 
-## Analisi Attuale
+Questo e sbagliato! Le foto uploadate manualmente devono apparire immediatamente nella preview principale.
 
-### Architettura Corrente
+## Comportamento Corretto
 
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    ADD PHOTOS SECTION                       │
+├─────────────────────────────────────────────────────────────┤
+│  [FOTO 1] [FOTO 2] [+]   ←── Foto uploadate manualmente    │
+│                               (selectedPhotos)              │
+├─────────────────────────────────────────────────────────────┤
+│  • abbiamo trovato 3 foto vicine >                         │
+│                                                             │
+│  Questa sezione mostra foto dal rullino del dispositivo    │
+│  che hanno GPS vicino alla location selezionata.           │
+│  NON le foto appena uploadate.                             │
+└─────────────────────────────────────────────────────────────┘
 ```
-/add route → AddLocationPage → NewAddPage → MediaSelector
-                                              (vecchia UI con Create Post/Create List)
-
-Add button → AddPageOverlay → LocationContributionModal
-             (search overlay)    (nuova UI con aggiungi foto)
-```
-
-### Problema 1: Route `/add` ancora attiva
-La route `/add` in `App.tsx` carica ancora `AddLocationPage` che mostra la vecchia interfaccia con "Crea un post" e "Crea una lista". Questo non dovrebbe più essere accessibile.
-
-### Problema 2: Dimensioni foto nella LocationContributionModal
-Le preview foto attuali sono `w-28 h-28` (112px), mentre nel vecchio design erano `w-40 h-40` (160px). L'utente vuole la stessa esperienza visiva.
-
----
 
 ## Soluzione
 
-### 1. Rimuovere/Reindirizzare la Route `/add`
+### Modificare `handleFileSelect` in `LocationContributionModal.tsx`
 
-Quando un utente naviga a `/add`:
-- Reindirizzare alla home (`/`) 
-- Aprire automaticamente l'AddPageOverlay
+Invece di chiamare `scanPhotos()`, creare direttamente oggetti `NearbyPhoto` e aggiungerli a `selectedPhotos`:
 
-**File da modificare:** `src/App.tsx`
-- Rimuovere la route `/add` → `AddLocationPage`
-- Creare un componente wrapper che reindirizza e apre l'overlay
+```tsx
+const handleFileSelect = useCallback(
+  async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-### 2. Ingrandire le Preview Foto nella LocationContributionModal
+    // Creare NearbyPhoto objects per ogni file selezionato
+    const newPhotos: NearbyPhoto[] = Array.from(files).map(file => ({
+      file,
+      url: URL.createObjectURL(file),
+      distance: Infinity, // Non mostrare badge distanza
+      timestamp: undefined,
+    }));
 
-Cambiare le dimensioni delle preview da `w-28 h-28` a `w-40 h-40` per matchare il vecchio design.
+    // Aggiungerli direttamente a selectedPhotos (max 5 totali)
+    setSelectedPhotos(prev => {
+      const combined = [...prev, ...newPhotos];
+      return combined.slice(0, 5); // Max 5 foto
+    });
+    
+    // Reset input per permettere riselection
+    e.target.value = '';
+  },
+  []
+);
+```
 
-**File da modificare:** `src/components/explore/LocationContributionModal.tsx`
+### La sezione "abbiamo trovato X foto" (Nearby Photos)
 
-| Componente | Attuale | Nuovo |
-|------------|---------|-------|
-| MediaPreviewItem | `w-28 h-28` | `w-40 h-40` |
-| Empty state add button | `w-20 h-20` | `w-24 h-24` |
-| Nearby photo tiles | `w-20 h-20` | `w-20 h-20` (invariato) |
-| Green + button | `w-12 h-12` | `w-12 h-12` (invariato) |
-| X button | `w-6 h-6` | `w-8 h-8` |
+Questa sezione dovrebbe mostrare foto rilevate automaticamente dal rullino del dispositivo, non le foto appena uploadate.
+
+Per ora, la logica `useNearbyPhotos` resta disponibile ma non viene piu chiamata durante l'upload manuale. La sezione "nearby photos" apparira vuota finche non viene implementata la scansione del rullino (funzionalita nativa con Capacitor).
 
 ---
 
-## Dettaglio Tecnico
+## Modifiche Tecniche
 
-### File 1: `src/App.tsx`
+### File: `src/components/explore/LocationContributionModal.tsx`
 
-Creare un componente `AddPageRedirect` che:
-1. Naviga alla home page
-2. Emette l'evento `open-add-overlay` per aprire il modal
+**1. Modificare `handleFileSelect`** (linee 234-242):
+- NON chiamare `scanPhotos(files)`
+- Creare direttamente `NearbyPhoto` objects
+- Aggiungerli subito a `selectedPhotos`
+- Reset del file input
 
-```tsx
-// Nuovo componente
-const AddPageRedirect = () => {
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    // Navigate to home first
-    navigate('/', { replace: true });
-    // Trigger add overlay
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('open-add-overlay'));
-    }, 100);
-  }, [navigate]);
-  
-  return null;
-};
-
-// Sostituire la route
-<Route path="/add" element={<AddPageRedirect />} />
-```
-
-### File 2: `src/components/explore/LocationContributionModal.tsx`
-
-Aggiornare le dimensioni nel componente `MediaPreviewItem`:
-
-```tsx
-// Linea ~87: Cambiare dimensioni container
-<div className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
-
-// Linea ~109-111: Ingrandire X button  
-<button 
-  onClick={handleRemove} 
-  className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black rounded-full ..."
->
-  <X className="w-5 h-5 text-white" />
-</button>
-```
-
-Aggiornare empty state button:
-
-```tsx
-// Linea ~463-467: Add Photo Button più grande
-<button
-  onClick={() => fileInputRef.current?.click()}
-  className="w-24 h-24 rounded-xl border-2 border-dashed ..."
->
-  <Plus className="w-8 h-8 text-muted-foreground" />
-</button>
-```
+**2. La UI esistente e gia corretta**:
+- `selectedPhotos.length > 0` mostra le preview in alto con il bottone `+` verde
+- `displayPhotos` (nearbyPhotos/allPhotos) mostra foto rilevate automaticamente sotto
 
 ---
 
@@ -119,14 +89,13 @@ Aggiornare empty state button:
 
 | File | Modifica |
 |------|----------|
-| `src/App.tsx` | Sostituire route `/add` con redirect + trigger overlay |
-| `src/components/explore/LocationContributionModal.tsx` | Ingrandire preview foto e bottoni |
+| `src/components/explore/LocationContributionModal.tsx` | Modificare `handleFileSelect` per aggiungere direttamente a `selectedPhotos` |
 
 ---
 
 ## Risultato Atteso
 
-1. **Navigazione `/add` → Overlay**: Visitando `/add` direttamente si viene reindirizzati alla home con l'AddPageOverlay aperto
-2. **Preview foto più grandi**: Le foto selezionate mostrano preview da 160x160px invece di 112x112px
-3. **Esperienza coerente**: L'UX della sezione foto nel modal è identica a quella del vecchio design
-4. **Bottone + visibile**: Il bottone verde per aggiungere foto è posizionato accanto alle preview come nella reference
+1. **Upload immediato**: Le foto selezionate appaiono subito nella preview principale (in alto)
+2. **Nessuna confusione**: La sezione "abbiamo trovato foto" rimane separata (per future implementazioni di scansione rullino)
+3. **UX fluida**: Nessun doppio click richiesto - la foto appare dove l'utente si aspetta
+4. **Max 5 foto**: Il limite viene rispettato correttamente
