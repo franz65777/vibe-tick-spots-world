@@ -1,140 +1,109 @@
 
-## Piano: Fix Search Bar Border e Dropdown UI
-
-### Problemi Identificati
-
-1. **Cerchio bianco attorno alla search bar**: L'Input component ha `rounded-2xl border border-input` e `focus-visible:ring-2` come stili di default. Gli override CSS con `[&_input]` non funzionano completamente perché l'Input usa `cn()` per merge delle classi.
-
-2. **Dropdown non usa tutto lo spazio orizzontale**: I risultati hanno padding eccessivo (px-4) e margini.
-
-3. **Icone troppo grandi**: Attualmente `w-14 h-14` (56px), dovrebbe essere più piccolo.
-
-4. **Seconda riga mostra categoria invece di indirizzo**: Deve mostrare l'indirizzo.
-
-5. **Immagini dal database non usate**: I risultati dal database hanno `image_url` (business account) e `photos[]` disponibili ma non vengono mostrati.
+Obiettivo: far sì che la dropdown dei risultati nell’Add overlay usi tutta la larghezza disponibile (la stessa fascia orizzontale della search pill + tasto X) e rimuovere le duplicazioni (stesso luogo mostrato due volte “con foto” e “senza foto”).
 
 ---
 
-### Modifiche Tecniche
-
-#### 1. Rimuovere il cerchio bianco dall'Input
-
-**File**: `src/components/OptimizedPlacesAutocomplete.tsx`
-
-Passare direttamente le classi override all'Input invece di usare i child selectors:
-
-```typescript
-<Input
-  ...
-  className="pr-10 !border-none !ring-0 !ring-offset-0 !shadow-none !outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0"
-/>
-```
-
-Oppure usare `style` prop per forzare:
-```typescript
-style={{ border: 'none', boxShadow: 'none', outline: 'none' }}
-```
-
-#### 2. Aggiornare SearchResult per includere immagini
-
-**File**: `src/hooks/useOptimizedPlacesSearch.ts`
-
-Aggiungere `image_url` e `photos` alla query del database:
-
-```typescript
-const { data: locations } = await supabase
-  .from('locations')
-  .select('id, name, address, city, latitude, longitude, category, google_place_id, image_url, photos')
-  ...
-```
-
-E al tipo `SearchResult`:
-```typescript
-export interface SearchResult {
-  ...
-  image_url?: string;    // Business account image (priority)
-  photos?: string[];     // User photos array
-}
-```
-
-#### 3. Ridisegnare il Dropdown
-
-**File**: `src/components/OptimizedPlacesAutocomplete.tsx`
-
-```typescript
-{/* Results dropdown - Full width rows */}
-{showResults && hasResults && (
-  <div className="absolute z-50 w-full left-0 right-0 mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
-    {allResults.map((result, index) => {
-      // Priorità immagine: 1. Business (image_url), 2. Prima foto (photos[0]), 3. Categoria icon
-      const displayImage = result.image_url 
-        || (result.photos && result.photos[0]) 
-        || getCategoryImage(result.category || 'restaurant');
-      const isRealPhoto = result.image_url || (result.photos && result.photos.length > 0);
-      
-      return (
-        <button
-          key={result.id}
-          onClick={() => handleSelect(result)}
-          className={`w-full px-3 py-3 flex items-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 
-                     active:bg-white/60 dark:active:bg-white/20 transition-colors text-left
-                     border-b border-black/5 dark:border-white/10 ${
-            selectedIndex === index ? 'bg-white/30 dark:bg-white/10' : ''
-          }`}
-        >
-          {/* Image - Smaller (40px), square with rounded corners */}
-          <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-muted/20">
-            <img 
-              src={displayImage}
-              alt={result.category || 'place'}
-              className={`w-full h-full ${isRealPhoto ? 'object-cover' : 'object-contain p-1'}`}
-              loading="eager"
-            />
-          </div>
-          
-          {/* Content - Name and ADDRESS */}
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-base text-foreground truncate">
-              {result.name}
-            </div>
-            <div className="text-sm text-muted-foreground truncate">
-              {result.address || result.city || ''}
-            </div>
-          </div>
-        </button>
-      );
-    })}
-  </div>
-)}
-```
+## 1) Perché oggi la dropdown è “stretta” (root cause)
+Attualmente la dropdown dei risultati è `position: absolute` dentro `OptimizedPlacesAutocomplete`, che a sua volta vive **dentro la search pill** (solo la parte sinistra del header). Quindi, per definizione, la dropdown non potrà mai estendersi sotto l’area del tasto **X** a destra, perché è “ancorata” a un contenitore più piccolo.
 
 ---
 
-### Modifiche Dettagliate
+## 2) Soluzione layout: spostare il rendering della dropdown a livello header (full width)
+### Approccio
+- Lasciamo `OptimizedPlacesAutocomplete` come “input + ricerca”, ma gli togliamo la responsabilità di renderizzare la lista.
+- Renderizziamo la lista risultati **in AddPageOverlay**, subito sotto l’header, in un container full-width con lo stesso padding del header (`px-3`) così:
+  - Larghezza = search pill + X (stessa riga del header)
+  - Allineamento perfetto con il layout esistente
 
-| Aspetto | Prima | Dopo |
-|---------|-------|------|
-| Search bar border | Cerchio bianco visibile | Nessun bordo (stile forzato) |
-| Icona dimensione | `w-14 h-14` (56px) | `w-10 h-10` (40px) |
-| Seconda riga | Categoria | Indirizzo |
-| Immagine fonte | Solo categoria icon | Business image → Foto → Icon |
-| Padding riga | `px-4 py-3.5` | `px-3 py-3` |
+### Modifiche previste
+**File: `src/components/OptimizedPlacesAutocomplete.tsx`**
+- Aggiungere una prop opzionale tipo:
+  - `hideDropdown?: boolean` (default `false`)
+  - `onResultsDataChange?: (data: { query; isLoading; results: SearchResult[]; isSearching: boolean }) => void`
+- Quando cambia `query/isLoading/allResults`, notificare il parent (AddPageOverlay) tramite `onResultsDataChange`.
+- Se `hideDropdown` è `true`, **non renderizzare** il blocco dropdown interno (quello `absolute z-50 ...`).
+
+**File: `src/components/add/AddPageOverlay.tsx`**
+- Inserire uno state locale per i risultati:
+  - `searchQuery`, `isSearching`, `isLoading`, `results`
+- Passare a `OptimizedPlacesAutocomplete`:
+  - `hideDropdown={true}`
+  - `onResultsDataChange={...}` per salvare i dati.
+- Renderizzare la lista in overlay, subito dopo `</header>`:
+  - Container con `px-3` (uguale al header), `mt-2`, `max-h`, `overflow-y-auto`, `z` alto
+  - Ogni row `w-full` (qui davvero full width perché il container è full)
+
+Risultato atteso: la lista occupa tutta la fascia orizzontale (sotto search pill + X), come richiesto nello screenshot.
 
 ---
 
-### File da Modificare
+## 3) Fix duplicazioni: dedup “intelligente” con priorità immagini
+Il problema “duplicato con foto e senza” molto spesso nasce da:
+- stesso luogo presente due volte nel DB (o DB + Google) con informazioni diverse
+- dedup attuale copre soprattutto DB vs Google (per `google_place_id` o `name`), ma non:
+  - duplicati interni al DB
+  - duplicati dove uno record ha `photos/image_url` e l’altro no (quindi li vedi entrambi)
 
-| File | Modifica |
-|------|----------|
-| `src/hooks/useOptimizedPlacesSearch.ts` | Aggiungere `image_url, photos` alla select e al tipo |
-| `src/components/OptimizedPlacesAutocomplete.tsx` | Input senza bordo, dropdown compatto, mostra indirizzo |
+### Approccio dedup
+Implementare una funzione di dedup/merge che:
+1) Raggruppa per `google_place_id` quando presente
+2) Se manca, fallback su chiave normalizzata: `name + address` (lowercase, trim, collassare spazi)
+3) Quando ci sono più candidati nello stesso gruppo, scegliere il “migliore” con questa priorità:
+   - (A) `image_url` (business account image) vince sempre
+   - (B) `photos?.length` maggiore
+   - (C) preferire `source === 'database'` (ha più dati e nessun costo)
+   - (D) fallback sul primo
+
+### Dove applicarla
+**File: `src/components/OptimizedPlacesAutocomplete.tsx`**
+- Dopo aver costruito `allResults` (DB + deduplicated Google), applicare una dedup finale:
+  - `const mergedResults = mergeAndDedupResults(allResults)`
+- Usare `mergedResults` sia per:
+  - keyboard navigation
+  - callback verso AddPageOverlay (se implementata)
+  - rendering (se in futuro si renderizza ancora qui)
+
+Questo risolve duplicati sia DB-only sia DB+Google.
 
 ---
 
-### Risultato Atteso
+## 4) Stile rows: full-width reale + immagine piccola + 2 righe (name + address)
+Nel rendering in AddPageOverlay:
+- Row container: `button` con `w-full` e padding coerente (`px-4 py-3`)
+- Thumbnail: `w-10 h-10` (o anche `w-9 h-9` se vuoi ancora più piccolo)
+- Immagine: usare esattamente la logica già presente:
+  1) `image_url` (business)
+  2) `photos[0]` (DB)
+  3) `getCategoryImage(...)` (fallback)
+- Testi:
+  - riga 1: `name` (bold)
+  - riga 2: `address` (muted). Se address vuoto, fallback `city`.
 
-1. Search bar completamente nera senza cerchio/bordo bianco
-2. Ogni riga usa tutto lo spazio orizzontale disponibile
-3. Icone più piccole (40px)
-4. Mostra foto reale del locale se disponibile (business > user photos > icon)
-5. Seconda riga mostra l'indirizzo invece della categoria
+Nota: questa parte è già quasi corretta nel componente, ma la sposteremo nel posto giusto (overlay) per risolvere la larghezza.
+
+---
+
+## 5) Verifica “non sembra dentro un container”
+Per evitare l’effetto “card/box”:
+- Nessun `bg-*` o `rounded-*` sul wrapper della lista
+- Solo `border-b` sulle righe
+- `z-index` alto per stare sopra al backdrop/hero (es. `z-[2147483641]` come resto overlay)
+
+---
+
+## 6) File toccati
+1) `src/components/OptimizedPlacesAutocomplete.tsx`
+   - aggiunta prop `hideDropdown`
+   - aggiunta callback `onResultsDataChange`
+   - dedup/merge finale più robusto
+2) `src/components/add/AddPageOverlay.tsx`
+   - gestire stato risultati
+   - renderizzare la lista sotto l’header a piena larghezza
+
+---
+
+## 7) Test checklist (rapida)
+- Digitando 2+ caratteri: la lista appare full width sotto header e passa sotto l’area del tasto X.
+- Clic su un risultato seleziona correttamente e chiude overlay come prima.
+- Nessun duplicato visibile (stesso posto non appare due volte con/ senza foto).
+- Nessuna chiamata extra: immagini solo da DB (`image_url`/`photos`) o icone locali; Google details solo al tap come già oggi.
