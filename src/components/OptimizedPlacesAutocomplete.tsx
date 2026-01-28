@@ -174,46 +174,51 @@ const OptimizedPlacesAutocomplete = ({
           placeholder={placeholder}
           disabled={disabled}
           autoFocus={autoFocus}
-          className="pr-10"
+          className="pr-10 !border-none !ring-0 !ring-offset-0 !shadow-none !outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0"
+          style={{ border: 'none', boxShadow: 'none', outline: 'none' }}
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
         )}
       </div>
 
-      {/* Results dropdown - Simple rows like Photo 2 */}
+      {/* Results dropdown - Full width rows */}
       {showResults && hasResults && (
-        <div className="absolute z-50 w-full mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
+        <div className="absolute z-50 w-full left-0 right-0 mt-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
           {allResults.map((result, index) => {
-            const categoryImage = getCategoryImage(result.category || 'restaurant');
+            // Priority: 1. Business image (image_url), 2. First photo (photos[0]), 3. Category icon
+            const displayImage = result.image_url 
+              || (result.photos && result.photos[0]) 
+              || getCategoryImage(result.category || 'restaurant');
+            const isRealPhoto = !!(result.image_url || (result.photos && result.photos.length > 0));
             
             return (
               <button
                 key={result.id}
                 onClick={() => handleSelect(result)}
-                className={`w-full px-4 py-3.5 flex items-center gap-4 hover:bg-white/40 dark:hover:bg-white/10 
+                className={`w-full px-3 py-3 flex items-center gap-3 hover:bg-white/40 dark:hover:bg-white/10 
                            active:bg-white/60 dark:active:bg-white/20 transition-colors text-left
                            border-b border-black/5 dark:border-white/10 ${
                   selectedIndex === index ? 'bg-white/30 dark:bg-white/10' : ''
                 }`}
               >
-                {/* Category Image */}
-                <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-muted/20">
+                {/* Image - Smaller (40px), square with rounded corners */}
+                <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-muted/20">
                   <img 
-                    src={categoryImage}
+                    src={displayImage}
                     alt={result.category || 'place'}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full ${isRealPhoto ? 'object-cover' : 'object-contain p-1'}`}
                     loading="eager"
                   />
                 </div>
                 
-                {/* Content */}
+                {/* Content - Name and ADDRESS */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-lg text-foreground truncate">
+                  <div className="font-bold text-base text-foreground truncate">
                     {result.name}
                   </div>
                   <div className="text-sm text-muted-foreground truncate">
-                    {result.category || result.city || result.address?.split(',')[0]}
+                    {result.address || result.city || ''}
                   </div>
                 </div>
               </button>
@@ -224,7 +229,7 @@ const OptimizedPlacesAutocomplete = ({
 
       {/* No results message */}
       {showResults && !isLoading && query.length >= 2 && !hasResults && (
-        <div className="absolute z-50 w-full mt-2 bg-card/95 backdrop-blur-lg border border-border/40 rounded-2xl shadow-2xl p-6 text-center">
+        <div className="absolute z-50 w-full mt-2 p-6 text-center">
           <MapPin className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
           <p className="text-sm text-muted-foreground">
             {t('noPlacesFound', { ns: 'add', defaultValue: 'Nessun luogo trovato per' })} "{query}"

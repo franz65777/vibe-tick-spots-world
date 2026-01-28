@@ -32,6 +32,8 @@ export interface SearchResult {
   google_place_id?: string;
   types?: string[];
   isCity?: boolean;
+  image_url?: string;    // Business account image (priority)
+  photos?: string[];     // User photos array
 }
 
 interface UseOptimizedPlacesSearchOptions {
@@ -88,7 +90,7 @@ export function useOptimizedPlacesSearch(options: UseOptimizedPlacesSearchOption
     try {
       const { data: locations } = await supabase
         .from('locations')
-        .select('id, name, address, city, latitude, longitude, category, google_place_id')
+        .select('id, name, address, city, latitude, longitude, category, google_place_id, image_url, photos')
         .or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`)
         .limit(5);
 
@@ -105,6 +107,8 @@ export function useOptimizedPlacesSearch(options: UseOptimizedPlacesSearchOption
         source: 'database' as const,
         google_place_id: loc.google_place_id || undefined,
         isCity: false,
+        image_url: loc.image_url || undefined,
+        photos: Array.isArray(loc.photos) ? loc.photos as string[] : undefined,
       }));
     } catch (err) {
       console.error('Database search error:', err);
