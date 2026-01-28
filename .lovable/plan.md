@@ -1,44 +1,91 @@
-## ✅ Ottimizzazioni Completate
 
-Tutte le ottimizzazioni sono state implementate con successo:
 
-### Fase 1 - Skeleton UI & Service (Precedente)
-- ✅ Skeleton UI per threads e messaggi
-- ✅ Rimozione fetch story_data legacy da messageService
-- ✅ Loading non bloccante (primo caricamento)
+## Implementazione Swipe-to-Back su Mobile per Messaggi
 
-### Fase 2 - Loading States & UX (Attuale)
-- ✅ Stati di loading separati (`threadsLoading`, `messagesLoading`)
-- ✅ Clear immediato messaggi al cambio chat
-- ✅ Empty state per nuove conversazioni
-- ✅ Rimozione scrollToBottom legacy (conflitti con virtualizer)
-- ✅ Auto-focus input quando si entra in chat
+### Stato Attuale
 
----
+Ho analizzato il codice e la situazione è la seguente:
 
-## Risultato Finale
+| Pagina | SwipeBackWrapper | Stato |
+|--------|------------------|-------|
+| `MessagesPage.tsx` | ✅ Presente (riga 839) | Funzionante |
+| `BusinessMessagesPage.tsx` | ❌ Mancante | Da aggiungere |
 
-| Metrica | Prima | Dopo |
-|---------|-------|------|
-| Loading states | 1 (blocking) | 2 (indipendenti) |
-| Cambio chat | ~200ms residui | Istantaneo |
-| Empty state | Nessuno | Messaggio chiaro |
-| Scroll conflicts | Frequenti | Nessuno |
-| Input focus | Manuale | Automatico |
+### Come Funziona lo Swipe Attuale
+
+Il sistema di swipe-to-back è già implementato e funziona così:
+- **Zona attiva**: Bordo sinistro dello schermo (30px)
+- **Soglia di attivazione**: 80px di trascinamento
+- **Feedback visivo**: Icona chevron che appare progressivamente + leggero spostamento del contenuto
+
+Nella `MessagesPage`, il `handleBack` gestisce già correttamente tutti i casi:
+- **Vista Chat** → Torna alla lista thread
+- **Vista Search** → Torna alla lista thread
+- **Vista Threads** → Torna alla home
 
 ---
 
-## Architettura Attuale
+## Modifiche da Implementare
 
-```
-MessagesPage.tsx (~1340 righe)
-├── threadsLoading → VirtualizedThreadList (skeleton)
-├── messagesLoading → VirtualizedMessageList (skeleton)  
-├── handleThreadSelect → clear + switch istantaneo
-└── Auto-focus input (300ms delay per iOS)
+### 1. Aggiungere SwipeBackWrapper a BusinessMessagesPage
 
-VirtualizedMessageList.tsx
-├── Skeleton UI (loading + no messages)
-├── Empty state (no loading + no messages)
-└── Scroll to bottom (handled internally)
+La pagina messaggi business non ha lo swipe-to-back. Aggiungerò il wrapper:
+
+```tsx
+// src/pages/business/BusinessMessagesPage.tsx
+import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
+
+const BusinessMessagesPage = () => {
+  // ...
+  
+  return (
+    <SwipeBackWrapper onBack={() => navigate('/business')}>
+      <div className="min-h-screen bg-background pb-24">
+        {/* contenuto esistente */}
+      </div>
+    </SwipeBackWrapper>
+  );
+};
 ```
+
+### 2. Limitare lo Swipe solo a Mobile (Opzionale)
+
+Attualmente lo swipe funziona su tutti i dispositivi. Se vuoi limitarlo solo a mobile, posso modificare il `SwipeBackWrapper` per usare `useIsMobile()`:
+
+```tsx
+// src/components/common/SwipeBackWrapper.tsx
+import { useIsMobile } from '@/hooks/use-mobile';
+
+export const SwipeBackWrapper = ({ children, onBack, enabled = true }) => {
+  const isMobile = useIsMobile();
+  
+  // Disabilita swipe su desktop
+  const isEnabled = enabled && isMobile;
+  
+  const { containerRef, isSwipingBack, swipeProgress } = useSwipeBack(onBack, {
+    enabled: isEnabled,
+    edgeWidth: 30,
+    threshold: 80
+  });
+  
+  // ...
+};
+```
+
+---
+
+## Riepilogo File da Modificare
+
+| File | Modifica |
+|------|----------|
+| `src/pages/business/BusinessMessagesPage.tsx` | Aggiungere `SwipeBackWrapper` |
+| `src/components/common/SwipeBackWrapper.tsx` | (Opzionale) Aggiungere controllo mobile-only |
+
+---
+
+## Note
+
+- Lo swipe nella `MessagesPage` è già completamente funzionante per tutte le viste (threads, chat, search)
+- Il feedback visivo (chevron + trascinamento contenuto) offre una UX nativa iOS-like
+- L'edge zone di 30px è sufficientemente piccola da non interferire con altri gesti (come lo swipe-to-reply sui messaggi)
+
