@@ -24,7 +24,29 @@ import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 import { useSuggestedContacts } from '@/hooks/useSuggestedContacts';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
-import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+// Helper to extract the first photo URL from the locations.photos JSONB column
+const extractFirstPhotoUrl = (photos: unknown): string | null => {
+  if (!photos) return null;
+  const arr = Array.isArray(photos) ? photos : null;
+  if (!arr) return null;
+  for (const item of arr) {
+    if (typeof item === 'string' && item.trim()) return item;
+    if (item && typeof item === 'object') {
+      const anyItem = item as any;
+      const url = anyItem.url || anyItem.photo_url || anyItem.src;
+      if (typeof url === 'string' && url.trim()) return url;
+    }
+  }
+  return null;
+};
+
+// Determine which thumbnail to show: 1) business photo  2) Google photo  3) null (fallback to icon)
+const getLocationThumbnail = (location: any): string | null => {
+  if (location.image_url) return location.image_url;
+  const googlePhoto = extractFirstPhotoUrl(location.photos);
+  if (googlePhoto) return googlePhoto;
+  return null;
+};
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import VirtualizedThreadList from '@/components/messages/VirtualizedThreadList';
 import VirtualizedMessageList from '@/components/messages/VirtualizedMessageList';
@@ -606,6 +628,7 @@ const MessagesPage = () => {
               city,
               address,
               image_url,
+              photos,
               google_place_id,
               latitude,
               longitude
@@ -1085,20 +1108,71 @@ const MessagesPage = () => {
                 <p className="text-muted-foreground">{t('noSavedPlaces', {
                 ns: 'messages'
               })}</p>
-              </div> : <div className="space-y-2 pb-4">
-                {savedPlaces.map(place => <button key={place.id} onClick={() => handlePlaceClick(place)} className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors rounded-lg">
-                    {place.image_url ? <img src={place.image_url} alt={place.name} className="w-14 h-14 rounded-lg object-cover" /> : <div className="w-14 h-14 flex items-center justify-center">
-                        <img src={getCategoryImage(place.category)} alt={place.category} className={`object-contain ${place.category === 'restaurant' || place.category === 'hotel' ? 'w-[52px] h-[52px]' : 'w-10 h-10'}`} />
-                      </div>}
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="font-semibold text-foreground truncate">
-                        {place.name || 'Location'}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        <CityLabel id={place.google_place_id || place.id} city={place.city} name={place.name} address={place.address} coordinates={place.coordinates} /> • {categoryDisplayNames[place.category as AllowedCategory] || place.category || 'Place'}
-                      </p>
-                    </div>
-                  </button>)}
+              </div> : <div className="space-y-1 pb-4">
+                {savedPlaces.map(place => {
+                  const thumbnail = getLocationThumbnail(place);
+                  const translatedCategory = t(`categories.${place.category}`, { 
+                    ns: 'common', 
+                    defaultValue: place.category || 'Place' 
+                  });
+                  
+                  return (
+                    <button 
+                      key={place.id} 
+                      onClick={() => handlePlaceClick(place)} 
+                      className="w-full flex items-center gap-4 p-3.5 hover:bg-accent/50 active:scale-[0.98] transition-all rounded-2xl group"
+                    >
+                      {/* Thumbnail with category badge overlay when photo exists */}
+                      <div className="relative w-14 h-14 shrink-0">
+                        {thumbnail ? (
+                          <>
+                            <img 
+                              src={thumbnail} 
+                              alt={place.name} 
+                              className="w-full h-full rounded-xl object-cover shadow-sm"
+                            />
+                            {/* Category badge in bottom right */}
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-background shadow-md flex items-center justify-center">
+                              <img 
+                                src={getCategoryImage(place.category)} 
+                                alt={place.category} 
+                                className="w-5 h-5 object-contain"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full rounded-xl bg-muted flex items-center justify-center">
+                            <img 
+                              src={getCategoryImage(place.category)} 
+                              alt={place.category} 
+                              className={`object-contain ${
+                                place.category === 'restaurant' || place.category === 'hotel' 
+                                  ? 'w-11 h-11' 
+                                  : 'w-9 h-9'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Place info */}
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                          {place.name || t('location', { ns: 'common', defaultValue: 'Location' })}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate mt-0.5">
+                          <CityLabel 
+                            id={place.google_place_id || place.id} 
+                            city={place.city} 
+                            name={place.name} 
+                            address={place.address} 
+                            coordinates={place.coordinates} 
+                          /> • {translatedCategory}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>}
           </ScrollArea>
         </SheetContent>
