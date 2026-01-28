@@ -51,7 +51,7 @@ const getLocationThumbnail = (placeData: PlaceMessageCardProps['placeData']): st
 };
 
 const PlaceMessageCard = ({ placeData, onViewPlace, overlayMode = false }: PlaceMessageCardProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const categoryImage = getCategoryImage(placeData.category);
   const thumbnail = getLocationThumbnail(placeData);

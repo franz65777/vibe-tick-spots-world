@@ -104,7 +104,7 @@ const MessageOptionsOverlay = ({
     // Default: regular text message bubble
     return (
       <div 
-        className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-2xl ring-2 ring-white/10 ${
+        className={`rounded-2xl px-4 py-3 shadow-2xl ring-2 ring-white/10 ${
           isOwnMessage 
             ? 'bg-primary text-primary-foreground' 
             : 'bg-card text-card-foreground border border-border/50'
