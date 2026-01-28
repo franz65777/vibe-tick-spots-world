@@ -64,19 +64,8 @@ export interface HomePageState {
   guidedTourStep: GuidedTourStep;
   showLogo: boolean;
   
-  // Add overlay state
-  isAddOverlayOpen: boolean;
-  addContributionLocation: {
-    id?: string;
-    name: string;
-    google_place_id?: string;
-    latitude?: number;
-    longitude?: number;
-    category?: string;
-  } | null;
-  isAddContributionModalOpen: boolean;
+  // Add overlay state moved to AddOverlayContext (AuthenticatedLayout level)
 }
-
 export function useHomePageState() {
   // Map state
   const [selectedCity, setSelectedCity] = useState('');
@@ -140,17 +129,7 @@ export function useHomePageState() {
     return false;
   });
   
-  // Add overlay state
-  const [isAddOverlayOpen, setIsAddOverlayOpen] = useState(false);
-  const [addContributionLocation, setAddContributionLocation] = useState<{
-    id?: string;
-    name: string;
-    google_place_id?: string;
-    latitude?: number;
-    longitude?: number;
-    category?: string;
-  } | null>(null);
-  const [isAddContributionModalOpen, setIsAddContributionModalOpen] = useState(false);
+  // Add overlay state moved to AddOverlayContext (AuthenticatedLayout level)
   
   // Refs
   const ignoreMoveEventRef = useRef(false);
@@ -207,10 +186,7 @@ export function useHomePageState() {
     guidedTourStep, setGuidedTourStep,
     showLogo, setShowLogo,
     
-    // Add overlay state
-    isAddOverlayOpen, setIsAddOverlayOpen,
-    addContributionLocation, setAddContributionLocation,
-    isAddContributionModalOpen, setIsAddContributionModalOpen,
+    // Add overlay state moved to AddOverlayContext
     
     // Refs
     ignoreMoveEventRef,

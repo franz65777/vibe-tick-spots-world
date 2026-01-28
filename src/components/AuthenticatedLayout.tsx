@@ -3,10 +3,22 @@ import { useLocation, Outlet } from 'react-router-dom';
 import NewBottomNavigation from './NewBottomNavigation';
 import BusinessBottomNavigation from './BusinessBottomNavigation';
 import { UIStateProvider, useUIState } from '@/contexts/UIStateContext';
+import { AddOverlayProvider, useAddOverlay } from '@/contexts/AddOverlayContext';
+import AddPageOverlay from './add/AddPageOverlay';
+import LocationContributionModal from './explore/LocationContributionModal';
 
 const AuthenticatedLayoutContent: React.FC = () => {
   const location = useLocation();
   const { isShareProfileOpen } = useUIState();
+  const {
+    isAddOverlayOpen,
+    closeAddOverlay,
+    addContributionLocation,
+    setAddContributionLocation,
+    isAddContributionModalOpen,
+    setIsAddContributionModalOpen,
+  } = useAddOverlay();
+  
   const isBusinessRoute = location.pathname.startsWith('/business') && !location.pathname.startsWith('/business/view');
   const isDiscoverRoute = location.pathname === '/discover';
   const isSettingsRoute = location.pathname === '/settings';
@@ -138,6 +150,27 @@ const AuthenticatedLayoutContent: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Add Page Overlay - rendered at layout level for all pages */}
+      <AddPageOverlay
+        isOpen={isAddOverlayOpen}
+        onClose={closeAddOverlay}
+        onLocationSelected={(loc) => {
+          closeAddOverlay();
+          setAddContributionLocation(loc);
+          setIsAddContributionModalOpen(true);
+        }}
+      />
+      
+      {/* Add Contribution Modal - rendered at layout level for all pages */}
+      {addContributionLocation && (
+        <LocationContributionModal
+          isOpen={isAddContributionModalOpen}
+          onClose={() => setIsAddContributionModalOpen(false)}
+          location={addContributionLocation}
+          onSuccess={() => setIsAddContributionModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
@@ -145,7 +178,9 @@ const AuthenticatedLayoutContent: React.FC = () => {
 const AuthenticatedLayout: React.FC = () => {
   return (
     <UIStateProvider>
-      <AuthenticatedLayoutContent />
+      <AddOverlayProvider>
+        <AuthenticatedLayoutContent />
+      </AddOverlayProvider>
     </UIStateProvider>
   );
 };
