@@ -485,6 +485,17 @@ const VirtualizedMessageList = ({
     return <MessageSkeleton count={5} />;
   }
 
+  // Empty state for new conversations
+  if (!loading && visibleMessages.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <p className="text-muted-foreground text-sm">
+          {t('startConversation', { ns: 'messages' })}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={parentRef}

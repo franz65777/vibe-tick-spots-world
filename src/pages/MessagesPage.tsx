@@ -68,7 +68,8 @@ const MessagesPage = () => {
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [threadsLoading, setThreadsLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [view, setView] = useState<ViewMode>('threads');
   const [searchQuery, setSearchQuery] = useState('');
@@ -184,41 +185,19 @@ const MessagesPage = () => {
     }
   }, [view]);
 
-  // Keep chat stuck to the latest message when the viewport resizes (images, keyboard, etc.)
+  // Auto-focus input when entering chat view
   useEffect(() => {
-    if (view !== 'chat') return;
-    const wrapper = chatViewportWrapperRef.current;
-    const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-    if (!viewport) return;
-    const ro = new ResizeObserver(() => scrollToBottom('auto'));
-    ro.observe(viewport);
-    return () => ro.disconnect();
-  }, [view]);
-  const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'smooth') => {
-    const wrapper = chatViewportWrapperRef.current;
-    const tryScroll = () => {
-      const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-      if (viewport) {
-        // Jump to the very end of the viewport
-        viewport.scrollTop = viewport.scrollHeight;
-      }
-      // Always ensure the last anchor is visible as a fallback
-      messagesEndRef.current?.scrollIntoView({
-        behavior,
-        block: 'end'
-      });
-    };
-    // attempt now, next frame, and after layout
-    tryScroll();
-    requestAnimationFrame(tryScroll);
-    setTimeout(tryScroll, 80);
-    setTimeout(tryScroll, 220);
-  }, []);
+    if (view === 'chat' && !replyingToMessage) {
+      // Delay to allow keyboard animation on mobile
+      const timer = setTimeout(() => inputRef.current?.focus(), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [view, replyingToMessage]);
 
   const loadThreads = useCallback(async () => {
     if (!user) return;
     try {
-      setLoading(true);
+      setThreadsLoading(true);
       // Get only personal (non-business) message threads
       const data = await messageService.getMessageThreads(false);
       setThreads(data || []);
@@ -229,7 +208,7 @@ const MessagesPage = () => {
         .filter((id): id is string => !!id);
 
       if (otherUserIds.length === 0) {
-        setLoading(false);
+        setThreadsLoading(false);
         return;
       }
 
@@ -271,17 +250,17 @@ const MessagesPage = () => {
     } catch (error) {
       console.error('Error loading threads:', error);
     } finally {
-      setLoading(false);
+      setThreadsLoading(false);
     }
   }, [user]);
 
   const loadMessages = useCallback(async (otherUserId: string) => {
     try {
-      // Only show loading spinner if we have NO messages yet (first load)
+      // Only show loading skeleton if we have NO messages yet (first load)
       // This prevents destroying the virtualizer on subsequent loads
       const isFirstLoad = messages.length === 0;
       if (isFirstLoad) {
-        setLoading(true);
+        setMessagesLoading(true);
       }
       
       const data = await messageService.getMessagesInThread(otherUserId);
@@ -299,7 +278,7 @@ const MessagesPage = () => {
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
-      setLoading(false);
+      setMessagesLoading(false);
     }
   }, [user, messages.length]);
 
@@ -343,6 +322,7 @@ const MessagesPage = () => {
   }, []);
 
   const handleThreadSelect = useCallback((thread: MessageThread) => {
+    setMessages([]); // Clear immediately for instant chat switch
     setSelectedThread(thread);
     setView('chat');
   }, []);
@@ -754,7 +734,6 @@ const MessagesPage = () => {
           // Optimistically add message to UI immediately
           if (sentMessage) {
             setMessages(prev => [...prev, sentMessage]);
-            setTimeout(() => scrollToBottom('auto'), 50);
           }
         } catch (error) {
           console.error('Error sharing place:', error);
@@ -995,7 +974,7 @@ const MessagesPage = () => {
         <div className="flex-1 min-h-0 overflow-hidden">
           <VirtualizedThreadList
             threads={threads}
-            loading={loading}
+            loading={threadsLoading}
             userId={user?.id}
             unreadCounts={unreadCounts}
             hasActiveStoryInThread={hasActiveStoryInThread}
@@ -1014,7 +993,7 @@ const MessagesPage = () => {
           <div ref={chatViewportWrapperRef} className="flex-1 min-h-0 overflow-hidden">
             <VirtualizedMessageList
               messages={messages}
-              loading={loading}
+              loading={messagesLoading}
               userId={user?.id}
               hiddenMessageIds={hiddenMessageIds}
               messageReactions={messageReactions}
