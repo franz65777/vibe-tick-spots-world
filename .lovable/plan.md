@@ -2,188 +2,143 @@
 
 ## Obiettivo
 
-Correggere due problemi critici nella visualizzazione delle risposte ai messaggi:
-1. **Messaggio di risposta allineato a sinistra invece che a destra** - deve essere allineato a destra perché è un messaggio inviato dall'utente corrente
-2. **Mostra "Contenuto condiviso" invece della card del contenuto** - quando si risponde a un luogo/post/profilo, deve mostrare la card completa (PlaceMessageCard, PostMessageCard, etc.)
+Eliminare lo stato di loading quando si invia un messaggio, implementando un'esperienza **optimistic UI** simile a WhatsApp/iMessage dove:
+1. Il messaggio appare istantaneamente nella chat
+2. Non c'è nessuno spinner/loading durante l'invio
+3. Il messaggio viene salvato in background
 
 ---
 
 ## Analisi Root-Cause
 
-### Problema 1: Allineamento sbagliato
-Nel file `VirtualizedMessageList.tsx`, il componente `MessageBubble` per i messaggi di testo con risposta (linee 247-260) usa:
-```tsx
-<div className="w-full" {...messageInteractionProps}>
-  {renderReplyContext()}
-  <div className={`... ${isOwn ? 'bg-primary' : 'bg-card'}`}>
-```
+Il problema è in `handleSendMessage` (righe 354-371):
 
-Il wrapper esterno ha `className="w-full"` senza `isOwn ? 'ml-auto' : ''`, quindi non viene allineato a destra.
-
-### Problema 2: Manca la card del contenuto
-Il `messageService.ts` quando salva la risposta (linee 175-180) memorizza solo:
 ```typescript
-{
-  reply_to_id: replyToMessage.id,
-  reply_to_content: replyToMessage.content || '',  // vuoto per place_share!
-  reply_to_sender_id: replyToMessage.sender_id,
-  reply_to_message_type: replyToMessage.message_type,
-}
+const handleSendMessage = useCallback(async () => {
+  // ...
+  try {
+    setSending(true);
+    await messageService.sendTextMessage(...);  // Invia al server
+    setNewMessage('');
+    setReplyingToMessage(null);
+    await loadMessages(otherParticipant.id);   // PROBLEMA: ricarica TUTTI i messaggi
+    await loadThreads();                        // PROBLEMA: ricarica thread
+  } finally {
+    setSending(false);
+  }
+}, [...]);
 ```
 
-**NON** salva `replyToMessage.shared_content` che contiene i dati del luogo/post/profilo.
-
-Quindi nel `renderReplyContext()` (linee 238-240) mostra:
-```tsx
-<p>{replyContext.reply_to_content || t('sharedContent')}</p>
+E `loadMessages` (righe 277-307) fa:
+```typescript
+setLoading(true);  // Questo causa lo spinner!
+const data = await messageService.getMessagesInThread(otherUserId);
+setMessages(data || []);
+setLoading(false);
 ```
 
-Siccome `reply_to_content` è vuoto, mostra "Contenuto condiviso".
+**Risultato:** Ogni volta che si invia un messaggio, tutta la chat scompare e mostra uno spinner mentre ricarica tutti i messaggi.
 
 ---
 
-## Piano di Implementazione
+## Soluzione: Optimistic UI
 
-### Fase 1: Salvare shared_content del messaggio originale
+Invece di ricaricare tutti i messaggi, aggiungiamo il nuovo messaggio direttamente all'array locale:
 
-**File:** `src/services/messageService.ts` (righe 175-180)
+### Fase 1: Implementare Optimistic Add
 
-Modificare per includere `reply_to_shared_content`:
-
-```typescript
-const sharedContent = replyToMessage ? {
-  reply_to_id: replyToMessage.id,
-  reply_to_content: replyToMessage.content || '',
-  reply_to_sender_id: replyToMessage.sender_id,
-  reply_to_message_type: replyToMessage.message_type,
-  reply_to_shared_content: replyToMessage.shared_content || null,  // AGGIUNTO
-} : null;
-```
-
-### Fase 2: Aggiornare interfaccia replyContext
-
-**File:** `src/components/messages/VirtualizedMessageList.tsx` (righe 70-76)
-
-Aggiungere `reply_to_shared_content` al tipo:
+Modificare `handleSendMessage` per:
+1. Creare un messaggio "ottimistico" con ID temporaneo
+2. Aggiungerlo subito ai messaggi locali
+3. Inviare al server in background
+4. Sostituire l'ID temporaneo con quello reale quando il server risponde
+5. **NON** ricaricare i messaggi
 
 ```typescript
-const replyContext = message.shared_content as {
-  reply_to_id?: string;
-  reply_to_content?: string;
-  reply_to_sender_id?: string;
-  reply_to_message_type?: string;
-  reply_to_shared_content?: any;  // AGGIUNTO
-} | null;
-```
-
-### Fase 3: Correggere allineamento + mostrare card
-
-**File:** `src/components/messages/VirtualizedMessageList.tsx`
-
-Modificare la funzione `renderReplyContext()` (righe 226-244) per:
-1. Mostrare la card completa se `reply_to_message_type` è place_share/post_share/etc
-2. Aggiungere allineamento corretto
-
-Nuovo codice per `renderReplyContext()`:
-
-```tsx
-const renderReplyContext = () => {
-  if (!isReply || !replyContext) return null;
+const handleSendMessage = useCallback(async () => {
+  if (!newMessage.trim() || !selectedThread || !user) return;
+  const otherParticipant = getOtherParticipant(selectedThread);
+  if (!otherParticipant) return;
   
-  const sharedContent = replyContext.reply_to_shared_content;
-  const messageType = replyContext.reply_to_message_type;
+  const messageContent = newMessage.trim();
+  const replyTo = replyingToMessage;
   
-  // Render appropriate card based on message type
-  const renderSharedCard = () => {
-    if (!sharedContent) {
-      return (
-        <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
-          <p className="line-clamp-2 text-muted-foreground">
-            {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
-          </p>
-        </div>
-      );
-    }
-    
-    switch (messageType) {
-      case 'place_share':
-        return (
-          <div className="opacity-70 scale-90 origin-top-left">
-            <PlaceMessageCard 
-              placeData={sharedContent} 
-              onViewPlace={() => {}} 
-            />
-          </div>
-        );
-      case 'post_share':
-        return (
-          <div className="opacity-70 scale-90 origin-top-left">
-            <PostMessageCard postData={sharedContent} />
-          </div>
-        );
-      case 'profile_share':
-        return (
-          <div className="opacity-70 scale-90 origin-top-left">
-            <ProfileMessageCard 
-              profileData={sharedContent} 
-              currentChatUserId={otherParticipantId}
-            />
-          </div>
-        );
-      case 'story_share':
-      case 'story_reply':
-        return (
-          <div className="opacity-70 scale-90 origin-top-left">
-            <StoryMessageCard storyData={sharedContent} />
-          </div>
-        );
-      case 'folder_share':
-        return (
-          <div className="opacity-70 scale-90 origin-top-left">
-            <FolderMessageCard folderData={sharedContent} />
-          </div>
-        );
-      case 'trip_share':
-        return (
-          <div className="opacity-70 scale-90 origin-top-left">
-            <TripMessageCard tripData={sharedContent} />
-          </div>
-        );
-      default:
-        return (
-          <div className="bg-muted/40 rounded-xl px-3 py-2 text-sm opacity-60 border-l-2 border-muted-foreground/30">
-            <p className="line-clamp-2 text-muted-foreground">
-              {replyContext.reply_to_content || t('sharedContent', { ns: 'messages' })}
-            </p>
-          </div>
-        );
+  // 1. Clear input immediately for instant feedback
+  setNewMessage('');
+  setReplyingToMessage(null);
+  
+  // 2. Create optimistic message with temporary ID
+  const tempId = `temp-${Date.now()}`;
+  const optimisticMessage: DirectMessage = {
+    id: tempId,
+    sender_id: user.id,
+    receiver_id: otherParticipant.id,
+    content: messageContent,
+    message_type: 'text',
+    is_read: false,
+    created_at: new Date().toISOString(),
+    shared_content: replyTo ? {
+      reply_to_id: replyTo.id,
+      reply_to_content: replyTo.content || '',
+      reply_to_sender_id: replyTo.sender_id,
+      reply_to_message_type: replyTo.message_type,
+      reply_to_shared_content: replyTo.shared_content || null,
+    } : null,
+    sender: {
+      username: user.user_metadata?.username || 'You',
+      full_name: user.user_metadata?.full_name || '',
+      avatar_url: user.user_metadata?.avatar_url || ''
     }
   };
   
-  return (
-    <div className="mb-2">
-      <p className="text-xs text-muted-foreground mb-1">
-        {isOwn 
-          ? t('youReplied', { ns: 'messages' }) 
-          : t('theyReplied', { ns: 'messages', name: otherUserProfile?.username || 'User' })}
-      </p>
-      {renderSharedCard()}
-    </div>
-  );
+  // 3. Add to UI immediately (optimistic update)
+  setMessages(prev => [...prev, optimisticMessage]);
+  
+  // 4. Scroll to bottom
+  setTimeout(() => scrollToBottom('smooth'), 50);
+  
+  // 5. Send to server in background (no loading state)
+  try {
+    const sentMessage = await messageService.sendTextMessage(
+      otherParticipant.id, 
+      messageContent, 
+      replyTo || undefined
+    );
+    
+    if (sentMessage) {
+      // Replace temp message with real one
+      setMessages(prev => 
+        prev.map(m => m.id === tempId ? sentMessage : m)
+      );
+    }
+    
+    // Update thread list in background (no await, non-blocking)
+    loadThreads();
+    
+  } catch (error) {
+    console.error('Error sending message:', error);
+    // Remove optimistic message on error
+    setMessages(prev => prev.filter(m => m.id !== tempId));
+    // Optionally: show error toast
+  }
+}, [newMessage, selectedThread, user, replyingToMessage, scrollToBottom, loadThreads]);
+```
+
+### Fase 2: Aggiungere stato "sending" visivo (opzionale)
+
+Per mostrare che il messaggio è in fase di invio, possiamo aggiungere un indicatore visivo:
+
+```typescript
+// Nel optimisticMessage, aggiungere un flag
+const optimisticMessage = {
+  ...
+  _isPending: true  // Flag locale per UI
 };
-```
 
-### Fase 4: Correggere wrapper per allineamento
-
-**File:** `src/components/messages/VirtualizedMessageList.tsx`
-
-Modificare il wrapper del default text message (riga 249) da:
-```tsx
-<div className="w-full" {...messageInteractionProps}>
-```
-a:
-```tsx
-<div className={`w-full ${isOwn ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} {...messageInteractionProps}>
+// Nel MessageBubble, mostrare un indicatore
+{message._isPending && (
+  <span className="text-xs text-muted-foreground ml-1">⏳</span>
+)}
 ```
 
 ---
@@ -192,27 +147,41 @@ a:
 
 | File | Modifica |
 |------|----------|
-| `src/services/messageService.ts` | Aggiungere `reply_to_shared_content` nel contesto di risposta |
-| `src/components/messages/VirtualizedMessageList.tsx` | Aggiornare interfaccia + renderReplyContext con card + fix allineamento |
+| `src/pages/MessagesPage.tsx` | Refactor `handleSendMessage` con optimistic UI |
 
 ---
 
 ## Risultato Atteso
 
 **Prima:**
-- Messaggio di risposta allineato a sinistra
-- Mostra "Contenuto condiviso" come testo
+1. Utente preme "Invia"
+2. Input si blocca (disabled)
+3. Tutta la chat scompare → spinner
+4. Messaggi si ricaricano
+5. Messaggio appare
 
 **Dopo:**
-- Messaggio di risposta allineato a destra (come messaggio inviato)
-- Mostra la card completa (PlaceMessageCard, PostMessageCard, etc.) con opacità 70% e scala 90%
-- Etichetta "Hai risposto" sopra la card
+1. Utente preme "Invia"
+2. Input si svuota istantaneamente
+3. Messaggio appare subito nella chat (con scroll smooth)
+4. Server salva in background (invisibile all'utente)
+5. Nessun loading, esperienza istantanea
+
+---
+
+## Benefici
+
+1. **UX istantanea** - Il messaggio appare in meno di 50ms
+2. **No interruzioni** - La chat non scompare mai
+3. **Riduzione carico server** - Non ricarica tutti i messaggi ad ogni invio
+4. **Pattern standard** - Come WhatsApp, iMessage, Telegram
 
 ---
 
 ## Note Tecniche
 
-1. Le card vengono renderizzate con `opacity-70 scale-90` per distinguerle dal messaggio originale e mantenere una gerarchia visiva
-2. `origin-top-left` assicura che la scala avvenga dall'angolo corretto in base all'allineamento
-3. La logica è retrocompatibile: i messaggi esistenti senza `reply_to_shared_content` mostreranno il fallback testuale
+1. Il messaggio ottimistico viene creato con un ID temporaneo `temp-{timestamp}`
+2. Quando il server risponde, l'ID temporaneo viene sostituito con l'ID reale del database
+3. In caso di errore, il messaggio ottimistico viene rimosso dalla lista
+4. `loadThreads()` viene chiamato senza `await` per non bloccare l'UI
 
