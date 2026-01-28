@@ -218,11 +218,11 @@ const FeedSuggestionsCarousel = memo(() => {
         return preferredDiscover.includes(n);
       };
 
-      // 3) Pull internal DB locations near the user with business profile images
+      // 3) Pull internal DB locations near the user with business profile images and photos
       const { data: dbLocations, error: dbErr } = await supabase
         .from('locations')
         .select(`
-          id, name, category, city, address, image_url, latitude, longitude, google_place_id,
+          id, name, category, city, address, image_url, photos, latitude, longitude, google_place_id,
           business_profiles!business_profiles_location_id_fkey (
             id,
             user_id,
@@ -273,9 +273,16 @@ const FeedSuggestionsCarousel = memo(() => {
       }
 
       const internalCandidates: SuggestedLocation[] = internalSample.map((loc: any) => {
-        // Get business profile image if available
+        // Get business profile image if available (priority 1)
         const businessProfile = loc.business_profiles?.[0];
         const businessImage = businessProfile?.profiles?.avatar_url || null;
+        
+        // Get first photo from photos array (priority 2) - could be Google or user-uploaded
+        const photosArray = Array.isArray(loc.photos) ? loc.photos : [];
+        const firstPhoto = photosArray[0] || null;
+        
+        // Priority: 1) business image, 2) photos[0], 3) image_url fallback
+        const displayImage = businessImage || firstPhoto || loc.image_url;
         
         return {
           id: loc.id,
@@ -283,7 +290,7 @@ const FeedSuggestionsCarousel = memo(() => {
           category: loc.category,
           city: loc.city,
           address: loc.address,
-          image_url: businessImage || loc.image_url, // Prefer business image
+          image_url: displayImage,
           latitude: loc.latitude,
           longitude: loc.longitude,
           google_place_id: loc.google_place_id,
@@ -641,14 +648,24 @@ const FeedSuggestionsCarousel = memo(() => {
               className="shrink-0 w-56 bg-white/60 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/20 rounded-xl overflow-hidden shadow-lg shadow-black/5 dark:shadow-black/20 text-left cursor-pointer transform-gpu p-3"
             >
               <div className="flex items-start gap-2.5">
-                {/* Image/Icon - Square */}
+                {/* Image/Icon - Square with category overlay when photo present */}
                 <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted/30">
                   {loc.image_url ? (
-                    <img 
-                      src={loc.image_url} 
-                      alt={loc.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img 
+                        src={loc.image_url} 
+                        alt={loc.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Category icon overlay in bottom-right corner */}
+                      <div className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded bg-white/90 dark:bg-black/70 flex items-center justify-center shadow-sm">
+                        <img 
+                          src={categoryImage} 
+                          alt={loc.category}
+                          className="w-3.5 h-3.5 object-contain"
+                        />
+                      </div>
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <img 

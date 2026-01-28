@@ -2,7 +2,7 @@ import { Utensils, Building, Coffee, ShoppingBag, MapPin, Music, Camera, Dumbbel
 
 // Category image assets (3D variants for vibrant categories)
 import imgRestaurant from '@/assets/category-restaurant-3d-new.png';
-import imgBar from '@/assets/category-bar-3d-new.png';
+import imgBar from '@/assets/category-bar-3d-updated.png';
 import imgCafe from '@/assets/category-cafe-3d-new.png';
 import imgHotel from '@/assets/category-hotel-3d-new.png';
 import imgEntertainment from '@/assets/category-entertainment-3d-new.png';
