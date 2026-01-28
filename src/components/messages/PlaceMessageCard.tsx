@@ -55,9 +55,8 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
   const categoryImage = getCategoryImage(placeData.category);
   const thumbnail = getLocationThumbnail(placeData);
   
-  // Translate category
+  // Translate category - categories are in root namespace, not 'common'
   const translatedCategory = t(`categories.${placeData.category}`, { 
-    ns: 'common', 
     defaultValue: placeData.category || 'Place' 
   });
 
@@ -81,10 +80,10 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
   return (
     <div 
       onClick={handleViewLocation}
-      className="bg-accent/40 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer hover:bg-accent/60 transition-all duration-200 active:scale-[0.98] max-w-[260px]"
+      className="bg-accent/50 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer hover:bg-accent/70 transition-all duration-200 active:scale-[0.98] max-w-[260px] shadow-sm"
     >
-      {/* Compact photo section */}
-      <div className="relative w-full h-24 bg-muted overflow-hidden">
+      {/* Photo section - increased height */}
+      <div className="relative w-full h-32 bg-muted overflow-hidden">
         {thumbnail ? (
           <>
             <img 
@@ -92,14 +91,14 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
               alt={placeData.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
             <img 
               src={categoryImage} 
               alt={placeData.category}
-              className="w-12 h-12 object-contain opacity-70"
+              className="w-14 h-14 object-contain opacity-70"
             />
           </div>
         )}
