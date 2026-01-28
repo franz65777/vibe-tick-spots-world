@@ -306,30 +306,18 @@ class MessageService {
 
       if (!messages || messages.length === 0) return [];
 
-      // Prepare IDs for parallel fetching
+      // Fetch sender profiles (story data removed - now stored in shared_content at message creation time)
       const senderIds = [...new Set(messages.map(m => m.sender_id))];
-      const storyIds = [...new Set(messages.filter(m => m.story_id).map(m => m.story_id))] as string[];
-
-      // Fetch profiles and stories in PARALLEL for 40% speed improvement
-      const [profilesResult, storiesResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .in('id', senderIds),
-        storyIds.length > 0 
-          ? supabase
-              .from('stories')
-              .select('id, media_url, media_type, location_name, user_id')
-              .in('id', storyIds)
-          : Promise.resolve({ data: [] as any[] })
-      ]);
+      const profilesResult = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', senderIds);
 
       const profileMap = new Map((profilesResult.data || []).map(p => [p.id, p]));
-      const storyMap = new Map((storiesResult.data || []).map(s => [s.id, s]));
 
       return messages.map((message) => {
         const senderProfile = profileMap.get(message.sender_id);
-        const result: DirectMessage = {
+        return {
           id: message.id,
           sender_id: message.sender_id,
           receiver_id: message.receiver_id,
@@ -345,20 +333,7 @@ class MessageService {
             full_name: senderProfile.full_name || 'Unknown User',
             avatar_url: senderProfile.avatar_url || ''
           } : undefined
-        };
-
-        // Add story data to shared_content if it's a story_reply
-        if (message.story_id && storyMap.has(message.story_id)) {
-          const story = storyMap.get(message.story_id)!;
-          result.shared_content = {
-            story_id: story.id,
-            media_url: story.media_url,
-            media_type: story.media_type,
-            location_name: story.location_name
-          };
-        }
-
-        return result;
+        } as DirectMessage;
       });
     } catch (error) {
       console.error('Error fetching messages:', error);

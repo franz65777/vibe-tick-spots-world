@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Reply } from 'lucide-react';
 import { useMessageSwipe } from '@/hooks/useMessageSwipe';
+import MessageSkeleton from './MessageSkeleton';
 
 interface MessageReaction {
   emoji: string;
@@ -479,13 +480,9 @@ const VirtualizedMessageList = ({
     lastMessageCount.current = visibleMessages.length;
   }, [visibleMessages, virtualizer]);
 
-  // Only show spinner if loading AND no messages yet (prevents virtualizer destruction)
+  // Use skeleton UI instead of spinner for better perceived performance
   if (loading && visibleMessages.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <MessageSkeleton count={5} />;
   }
 
   return (
