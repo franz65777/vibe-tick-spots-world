@@ -52,6 +52,14 @@ const Index = () => {
 
   const handleSplashComplete = () => {
     splashShownThisSession = true;
+    
+    // Set flags for fresh session centering and drop-in animation
+    sessionStorage.setItem('freshSession', 'true');
+    sessionStorage.setItem('shouldAnimateUserMarker', 'true');
+    
+    // Clear saved map center so HomePage centers on fresh GPS
+    localStorage.removeItem('lastMapCenter');
+    
     setShowSplash(false);
   };
 
