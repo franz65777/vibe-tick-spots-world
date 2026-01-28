@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, MapPin, Loader2 } from 'lucide-react';
 import OptimizedPlacesAutocomplete, { SearchResult } from '@/components/OptimizedPlacesAutocomplete';
@@ -82,35 +82,48 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
     setHasSearchResults(hasResults && isSearching);
   }, []);
 
-  // Handle escape key to close and close other overlays when opening
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
+  // Ref to track if this overlay set the data-modal-open attribute
+  const didSetModalOpenRef = useRef(false);
 
+  // Manage data-modal-open - only reacts to isOpen changes
+  useEffect(() => {
     if (isOpen) {
-      // Hide home page header/search bar
+      didSetModalOpenRef.current = true;
       document.body.setAttribute('data-modal-open', 'true');
-      
-      window.addEventListener('keydown', handleKeyDown);
-      // Hide bottom navigation
       window.dispatchEvent(new CustomEvent('ui:overlay-open'));
       // Close other overlays to prevent stacking
       window.dispatchEvent(new CustomEvent('close-search-drawer'));
       window.dispatchEvent(new CustomEvent('close-filter-dropdown'));
       window.dispatchEvent(new CustomEvent('close-city-selector'));
       window.dispatchEvent(new CustomEvent('close-list-view'));
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      // Restore home page header
+    } else if (didSetModalOpenRef.current) {
+      didSetModalOpenRef.current = false;
       document.body.removeAttribute('data-modal-open');
       window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+    }
+  }, [isOpen]);
+
+  // Escape key handler - separate to avoid interference with data-modal-open
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
     };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Cleanup on unmount only
+  useEffect(() => {
+    return () => {
+      if (didSetModalOpenRef.current) {
+        document.body.removeAttribute('data-modal-open');
+        window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
