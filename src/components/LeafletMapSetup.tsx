@@ -355,6 +355,7 @@ const LeafletMapSetup = ({
   // Update map center ONLY when explicitly requested (recenterToken changes).
   // This prevents "snap back" to the last stored mapCenter when UI state changes (e.g., closing PinDetailCard)
   // while the user has manually panned the map.
+  // Include mapCenter in dependencies to ensure we use the latest value when recenterToken changes.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || preventCenterUpdate) return;
@@ -362,7 +363,12 @@ const LeafletMapSetup = ({
 
     console.log('🗺️ Centering map to:', mapCenter, 'token:', recenterToken);
     map.setView([mapCenter.lat, mapCenter.lng], 15, { animate: true });
-  }, [recenterToken, preventCenterUpdate]);
+    
+    // Force a resize/invalidation to ensure tiles load properly
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }, [recenterToken, preventCenterUpdate, mapCenter]);
 
   // Center map when a place is selected from navigation (e.g., from feed)
   useEffect(() => {

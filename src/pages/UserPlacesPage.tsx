@@ -45,8 +45,9 @@ const UserPlacesPage = () => {
   const { location: userLocation } = useGeolocation();
   
   const initialFilterCategory = (location.state as any)?.filterCategory || 'all';
+  const initialSelectedCity = (location.state as any)?.selectedCity || null;
   const [filterCategory] = useState<string>(initialFilterCategory);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(initialSelectedCity);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [cities, setCities] = useState<{ city: string; count: number }[]>([]);
@@ -252,9 +253,17 @@ const UserPlacesPage = () => {
           .sort((a, b) => b.count - a.count);
         setCities(citiesArray);
 
-        // Auto-select city if only one city exists
-        if (citiesArray.length === 1) {
+        // Auto-select city if only one city exists AND no city was restored from state
+        if (citiesArray.length === 1 && !initialSelectedCity) {
           setSelectedCity(citiesArray[0].city);
+        }
+        
+        // If we have a restored city from navigation state, trigger recenter after data loads
+        if (initialSelectedCity && citiesArray.some(c => c.city === initialSelectedCity)) {
+          // Small delay to ensure mapCenter useMemo has the latest filteredLocations
+          setTimeout(() => {
+            setRecenterToken(prev => prev + 1);
+          }, 100);
         }
 
       } catch (err) {
@@ -331,7 +340,8 @@ const UserPlacesPage = () => {
           from: `/user-places/${userId}`,
           scrollY: window.scrollY,
           userPlacesUserId: userId,
-          filterCategory: filterCategory
+          filterCategory: filterCategory,
+          selectedCity: selectedCity
         }
       }
     });
