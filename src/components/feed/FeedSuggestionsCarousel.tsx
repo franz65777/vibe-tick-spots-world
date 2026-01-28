@@ -381,10 +381,29 @@ const FeedSuggestionsCarousel = memo(() => {
           return true;
         });
 
-      // 5) Merge candidates - deduplicate by ID only (NOT by name - chains have same name)
+      // 5) Merge candidates - deduplicate by ID AND by name+coordinates to avoid duplicates with/without photos
       const allCandidates = [...internalCandidates, ...discoverCandidates];
       const seenIds = new Set<string>();
-      const uniqueCandidates = allCandidates.filter((c) => {
+      const seenNameCoords = new Map<string, SuggestedLocation>(); // name -> best candidate with photo
+      
+      // First pass: group by normalized name and prefer entries with photos
+      allCandidates.forEach((c) => {
+        const normName = c.name.toLowerCase().trim();
+        const existing = seenNameCoords.get(normName);
+        
+        // If no existing entry, or this one has a photo and existing doesn't, prefer this one
+        if (!existing) {
+          seenNameCoords.set(normName, c);
+        } else if (c.image_url && !existing.image_url) {
+          seenNameCoords.set(normName, c);
+        } else if (c.source === 'db' && existing.source === 'discover') {
+          // Prefer DB entries over discover entries
+          seenNameCoords.set(normName, c);
+        }
+      });
+      
+      // Second pass: deduplicate using the best candidates
+      const uniqueCandidates = Array.from(seenNameCoords.values()).filter((c) => {
         const normId = (c.google_place_id || c.id).toLowerCase();
         if (seenIds.has(normId)) return false;
         seenIds.add(normId);
@@ -714,8 +733,8 @@ const FeedSuggestionsCarousel = memo(() => {
                         </div>
                         <span className="text-[11px] text-muted-foreground">
                           {loc.saved_by.length === 1 
-                            ? t('savedByOne', { ns: 'feed', defaultValue: '1 saved' })
-                            : t('savedByCount', { ns: 'feed', defaultValue: '{{count}} saved', count: loc.saved_by.length })}
+                            ? t('savedByUser', { ns: 'feed', defaultValue: 'saved by 1 user' })
+                            : t('savedByUsers', { ns: 'feed', defaultValue: 'saved by {{count}} users', count: loc.saved_by.length })}
                         </span>
                       </div>
                     ) : <span />}
