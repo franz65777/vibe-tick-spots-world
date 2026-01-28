@@ -44,6 +44,30 @@ const MessageOptionsOverlay = ({
     onClose();
   };
 
+  // Render message content based on type
+  const renderMessageContent = () => {
+    if (!message.content && message.shared_content) {
+      // For shared content without text, show a preview
+      const sharedContent = message.shared_content as any;
+      if (message.message_type === 'place_share') {
+        return sharedContent.name || sharedContent.place_name || t('placeShared', { ns: 'messages', defaultValue: 'Place shared' });
+      }
+      if (message.message_type === 'post_share') {
+        return sharedContent.caption || t('postShared', { ns: 'messages', defaultValue: 'Post shared' });
+      }
+      if (message.message_type === 'profile_share') {
+        return `@${sharedContent.username || t('profileShared', { ns: 'messages', defaultValue: 'Profile shared' })}`;
+      }
+      if (message.message_type === 'folder_share') {
+        return sharedContent.name || t('folderShared', { ns: 'messages', defaultValue: 'Folder shared' });
+      }
+      if (message.message_type === 'story_share' || message.message_type === 'story_reply') {
+        return t('storyShared', { ns: 'messages', defaultValue: 'Story' });
+      }
+    }
+    return message.content;
+  };
+
   return (
     <>
       {/* Full-screen overlay with blur */}
@@ -63,13 +87,13 @@ const MessageOptionsOverlay = ({
               onClick={e => e.stopPropagation()}
             >
               <p className="text-sm leading-relaxed">
-                {message.content || t('sharedContent', { ns: 'messages', defaultValue: 'Shared content' })}
+                {renderMessageContent()}
               </p>
             </div>
           </div>
 
-          {/* Centered content area */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-5">
+          {/* Content area - aligned with message position */}
+          <div className={`flex-1 flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} justify-center gap-5 px-2`}>
             {/* Emoji Bar */}
             <div 
               className="bg-card/90 backdrop-blur-lg rounded-full px-5 py-3 flex items-center gap-3 shadow-xl border border-border/30"
@@ -105,7 +129,7 @@ const MessageOptionsOverlay = ({
                 className="w-full flex items-center gap-4 px-5 py-4 hover:bg-accent/50 active:bg-accent/70 transition-colors"
               >
                 <Reply className="w-5 h-5 text-foreground" />
-                <span className="font-medium text-foreground">{t('reply', { ns: 'messages', defaultValue: 'Reply' })}</span>
+                <span className="font-medium text-foreground">{t('rispondi', { ns: 'messages', defaultValue: 'Rispondi' })}</span>
               </button>
               
               <div className="h-px bg-border/30 mx-3" />
