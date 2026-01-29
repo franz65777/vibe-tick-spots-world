@@ -1,135 +1,190 @@
 
-## Obiettivo
-Risolvere 3 regressioni del drawer “Posizioni”:
-1) La mappa non si vede dietro/“sopra” lo slider (drawer) quando la lista è aperta.
-2) L’anello (ring) sugli avatar nel filtro amici viene tagliato.
-3) Rimuovere la barra grigia “drag handle” in alto.
-In più: ripristinare padding dell’header e lo scroll verticale della lista.
+# Invite Friends Page Redesign
+
+## Overview
+Redesign the invite friend overlay to match the reference design with two distinct sections:
+1. **Top card**: Share app download link with SPOTT logo
+2. **Bottom card**: Find friends by accessing phone contacts
+
+## Visual Design
+
+The new design will feature:
+- Two rounded cards stacked vertically with gap between them
+- **Card 1 (Invite)**: SPOTT logo at top, "have friends with good taste?" text, gradient blue "invite them" button
+- **Card 2 (Find Friends)**: Avatar stack, "find your friends" text, privacy note with lock emoji, black "check contacts" button
 
 ---
 
-## Diagnosi rapida (cosa sta succedendo ora)
-### 1) Mappa non visibile
-In `src/components/home/MapSection.tsx` la mappa viene **nascosta** quando il list drawer è aperto:
+## Implementation Details
 
-- Attuale:
-  - wrapper map: `className={isListViewOpen ? 'opacity-0 pointer-events-none' : ''}`
-  - quindi anche se il drawer è trasparente, dietro non c’è nulla da vedere: la mappa è letteralmente invisibile.
+### 1. Update InviteFriendOverlay Component
 
-### 2) Ring avatar tagliato
-In `ListDrawerSubFilters.tsx` il contenitore degli avatar è `overflow-x-auto`. Spesso questo (o un parent) implica clipping verticale quando i ring “sporgono” (specialmente con `ring-offset`).
-Abbiamo già aumentato `pt-2 pb-2`, ma serve anche permettere overflow verticale visibile.
+**File**: `src/components/notifications/InviteFriendOverlay.tsx`
 
-### 3) Barra grigia in alto
-In `MapSection.tsx` usiamo `showHandle={false}`. Tuttavia può comunque comparire:
-- perché in altri drawer `showHandle` è true e lo stile è simile (da verificare visivamente), oppure
-- perché l’area “handle” è generata/stilizzata altrove.
-La nostra implementazione del handle è in `src/components/ui/drawer.tsx` (riga ~66): se `showHandle` è true, mostra una pill grigia.
+Completely redesign the content area:
+- Replace current single-section layout with two-card layout
+- Use existing SPOTT logo (either image asset or text logo component)
+- Top card uses gradient button with Send icon
+- Bottom card shows overlapping avatar stack (will use placeholder avatars initially)
 
----
+### 2. Install Capacitor Contacts Plugin
 
-## Modifiche previste (cosa cambierò)
+**Package**: `@capacitor-community/contacts`
 
-### A) Rendere la mappa sempre visibile dietro la lista (fix #1)
-**File:** `src/components/home/MapSection.tsx`
+This is a community plugin for accessing native phone contacts on iOS/Android. Will add to `package.json`.
 
-1) **Non nascondere più la mappa quando la lista è aperta**:
-   - Cambiare:
-     - da: `opacity-0 pointer-events-none`
-     - a: solo `pointer-events-none` (oppure nessuna classe, ma consigliato: disabilitare interazione mentre drawer è aperto)
-   - Risultato: la mappa resta renderizzata e visibile sotto il drawer (effetto “glass”).
+### 3. Create Contact Matching Hook
 
-2) (Opzionale ma consigliato) **Disabilitare lo “scale background” del vaul Drawer** per evitare che Vaul alteri il background della pagina (a volte fa sembrare “bianco/solido” dietro):
-   - Passare al `<Drawer …>` di questa lista `shouldScaleBackground={false}`.
-   - Questo aiuta anche a rispettare l’obiettivo “mappa dietro, bottom-nav sopra” senza artefatti.
+**New File**: `src/hooks/usePhoneContacts.ts`
 
----
+This hook will:
+- Request contact permission using Capacitor Contacts API
+- Extract phone numbers and emails from contacts
+- Hash the contact information client-side (SHA-256) for privacy
+- Send hashed values to an edge function for matching
 
-### B) Ripristinare scroll verticale e layout stabile della lista (richiesta extra)
-**File:** `src/components/home/MapSection.tsx`
+### 4. Create Contact Matching Edge Function
 
-Attualmente il drawer usa `max-h-[..vh]` senza un `overflow-hidden` esplicito sul container. Con `max-height` + contenuti sticky + scroll area, è facile perdere lo scroll “percepito” o ritrovarsi con layout che non vincola l’area scrollabile.
+**New File**: `supabase/functions/find-contacts-on-app/index.ts`
 
-Intervento:
-1) Cambiare la logica altezza da `max-h-[Xvh]` a **`h-[Xvh]`** (altezza “reale”, più prevedibile).
-2) Aggiungere `overflow-hidden` su `DrawerContent` per garantire che lo scroll resti dentro lo `ScrollArea`.
+The edge function will:
+- Receive hashed phone numbers/emails from the client
+- Compare against stored email hashes in profiles table
+- Return matching user profiles (id, username, avatar)
+- Never store or log raw contact data (privacy-first)
 
-Esempio (concetto):
-- `className` DrawerContent include: `overflow-hidden`
-- altezza dinamica:
-  - `places.length <= 3 ? "h-[45vh]" : ... : "h-[85vh]"`
+### 5. Database Migration (Optional Enhancement)
 
-Questo mantiene “85vh” come massimo (come richiesto) ma rende il drawer più basso con pochi elementi, e garantisce scroll verticale quando serve.
+If phone number matching is desired later, we'd need to:
+- Add `phone_hash` column to profiles table
+- Hash phone numbers on signup
 
----
+For now, we'll match by email only since profiles already have an email field.
 
-### C) Ripristinare padding header (richiesta extra)
-**File:** `src/components/home/MapSection.tsx`
+### 6. Create Avatar Stack Component
 
-Ora `DrawerHeader` è `pt-1 pb-2` e alcune righe hanno `-mt-1`.
-Intervento:
-- Aumentare padding in modo pulito e coerente, ad esempio:
-  - `px-6 pt-3 pb-3` (o simile) e ridurre/annullare i negativi (`-mt-1`) se non necessari.
-- Obiettivo: header più “respirato” senza creare uno “stacco” di background (lo manterremo uniforme).
+**New File**: `src/components/common/AvatarStack.tsx`
+
+A reusable component showing overlapping avatars:
+- Accepts array of avatar URLs
+- Shows configurable max count with "+N more" indicator
+- Colored ring borders like the reference design
+
+### 7. Create Contacts Found Modal/Results View
+
+When matches are found, display:
+- List of found friends already on the app
+- Follow buttons for each found user
+- Privacy-respecting messaging
 
 ---
 
-### D) Avatar ring non tagliato (fix #2)
-**File:** `src/components/home/ListDrawerSubFilters.tsx`
+## Technical Section
 
-Sul contenitore scroll orizzontale:
-- Cambiare classi:
-  - da: `overflow-x-auto scrollbar-hide pt-2 pb-2`
-  - a: `overflow-x-auto overflow-y-visible scrollbar-hide py-2`
-In più, se necessario:
-- Aggiungere un minimo padding laterale/verticale nel wrapper per evitare clipping nelle estremità.
-- Verificare che anche il “All button” (con immagine friends) non venga tagliato quando ha ring.
+### Contact Access Flow
+
+```text
+User taps "check contacts"
+        |
+        v
+Request permission (Capacitor.Contacts)
+        |
+        v
+Permission granted? --> No --> Show permission denied message
+        |
+        Yes
+        v
+Read contacts (phones + emails)
+        |
+        v
+Hash all values client-side (SHA-256)
+        |
+        v
+Send hashes to edge function
+        |
+        v
+Edge function compares against profiles.email
+        |
+        v
+Return matching profiles
+        |
+        v
+Display found friends with follow buttons
+```
+
+### Privacy Approach
+
+- Contacts are hashed client-side before sending
+- Raw contact data never leaves the device
+- Edge function only sees hashes, never plaintext
+- Add visible privacy note: "we never upload or store your contacts"
+
+### Platform Detection
+
+- On web: "Check contacts" button won't be functional (show "Available on mobile app" message)
+- On native (iOS/Android): Use Capacitor Contacts plugin
+
+### Code Structure
+
+```typescript
+// usePhoneContacts.ts - simplified structure
+export const usePhoneContacts = () => {
+  const [loading, setLoading] = useState(false);
+  const [matches, setMatches] = useState<FoundContact[]>([]);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  
+  const checkContacts = async () => {
+    // 1. Check if native platform
+    // 2. Request permission
+    // 3. Get contacts
+    // 4. Hash emails/phones
+    // 5. Call edge function
+    // 6. Return matches
+  };
+  
+  return { checkContacts, loading, matches, permissionDenied };
+};
+```
+
+### Dependencies to Add
+
+```json
+{
+  "@capacitor-community/contacts": "^7.0.0"
+}
+```
+
+### Capacitor Configuration
+
+After adding the plugin, run:
+- `npx cap sync` to sync native projects
+
+iOS Info.plist needs:
+- `NSContactsUsageDescription`: "SPOTT wants to find your friends who are already using the app"
+
+Android needs:
+- `android.permission.READ_CONTACTS` in AndroidManifest.xml
 
 ---
 
-### E) Rimuovere la barra grigia in alto (fix #3)
-**File:** `src/components/home/MapSection.tsx` + (se serve) `src/components/ui/drawer.tsx`
+## Files to Create/Modify
 
-1) Confermare che per il drawer “Posizioni”:
-- `showHandle={false}` resti impostato (già lo è).
-
-2) Se la barra grigia persistesse:
-- Verificare se proviene da un’altra area (es. un div “handle area” aggiunto manualmente).
-- In caso sia ancora il nostro handle, aggiungerò una protezione extra:
-  - assicurare che non venga renderizzato alcun handle (già condizionale) e che non ci siano pseudo-elementi/spacing che lo “simulano”.
-- Se invece è un “grip” visivo dovuto a qualche background/gradient/top spacing, lo eliminerò regolando padding/spacing in header/content (vedi punto C).
+| File | Action |
+|------|--------|
+| `src/components/notifications/InviteFriendOverlay.tsx` | Modify - complete redesign |
+| `src/hooks/usePhoneContacts.ts` | Create - contact access hook |
+| `src/components/common/AvatarStack.tsx` | Create - overlapping avatar component |
+| `supabase/functions/find-contacts-on-app/index.ts` | Create - matching edge function |
+| `package.json` | Modify - add contacts plugin |
 
 ---
 
-## Verifica (cosa controlleremo in preview)
-1) Aprire “Posizioni”:
-   - la mappa deve essere visibile dietro tutta la card/lista (effetto frosted).
-2) Scorrere verticalmente la lista:
-   - lo scroll deve funzionare con molti elementi.
-3) Filtro “Amici”:
-   - ring degli avatar e del pulsante “All” non deve essere tagliato in alto/basso.
-4) Top drawer:
-   - nessuna pill/grip bar grigia visibile.
-5) Padding header:
-   - titolo + filtri devono avere un padding piacevole e consistente.
+## Share Link Placeholder
 
----
+For the "invite them" button, we'll use a placeholder download link that can be updated once the app is in the App Store:
 
-## File coinvolti
-- `src/components/home/MapSection.tsx`
-  - non nascondere la mappa quando list open
-  - shouldScaleBackground={false} per questo drawer
-  - altezza dinamica con `h-[..vh]` e `overflow-hidden`
-  - ripristino padding header
-- `src/components/home/ListDrawerSubFilters.tsx`
-  - `overflow-y-visible` + padding per evitare clipping del ring
-- (solo se necessario) `src/components/ui/drawer.tsx`
-  - eventuale ulteriore hardening per evitare che appaia un handle non voluto
+```typescript
+const DOWNLOAD_LINK = "https://spott.app/download"; // Placeholder
+```
 
----
-
-## Note tecniche (perché questa soluzione funziona)
-- Il problema principale della “mappa non visibile” non è l’opacità degli item, ma che la mappa viene resa trasparente (`opacity-0`). Togliendo quell’opacità, il drawer può finalmente “glassare” qualcosa.
-- Usare un’altezza `h-[..vh]` invece di `max-h` rende più stabile lo scroll e la distribuzione `flex` (`ScrollArea` con `flex-1`).
-- `overflow-y-visible` sul container degli avatar impedisce che ring/offset vengano tagliati dal box di scroll orizzontale.
-
+This can be easily updated to the actual App Store/Play Store links later.
