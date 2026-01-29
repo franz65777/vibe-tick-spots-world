@@ -433,9 +433,9 @@ const ExplorePage = memo(() => {
   
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
-      {/* Dynamic gradient background */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-primary/20 via-background to-secondary/20 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
-      <div className="fixed inset-0 -z-10 bg-background/60 backdrop-blur-xl" />
+      {/* Frosted glass background - matching Add page style */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-gray-100 via-gray-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black" />
+      <div className="fixed inset-0 -z-10 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
