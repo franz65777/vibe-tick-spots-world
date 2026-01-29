@@ -538,7 +538,15 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
 
 
   return (
-    <div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] bg-[#FAF9F7] dark:bg-background">
+    <div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+      {/* Subtle gradient base */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+      </div>
+      {/* Frosted glass overlay */}
+      <div className="fixed inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+      {/* Content wrapper */}
+      <div className="relative z-10 h-full flex flex-col overflow-hidden">
       {/* Header */}
       <div className="sticky top-0 z-30 shrink-0 w-full">
         <div className="py-3 pl-4 flex justify-start w-full">
@@ -805,6 +813,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
             />
           </div>
         )}
+      </div>
     </div>
   );
 });

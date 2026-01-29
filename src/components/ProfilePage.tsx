@@ -155,8 +155,16 @@ const ProfilePage = memo(() => {
   };
 
   return (
-    <div className="flex flex-col h-full pt-[env(safe-area-inset-top)] bg-[#FAF9F7] dark:bg-background">
-      <ProfileHeader 
+    <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
+      {/* Subtle gradient base */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+      </div>
+      {/* Frosted glass overlay */}
+      <div className="absolute inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+      {/* Content wrapper */}
+      <div className="relative z-10 flex flex-col h-full">
+      <ProfileHeader
         onFollowersClick={() => openModal('followers')}
         onFollowingClick={() => openModal('following')}
         onPostsClick={handlePostsClick}
@@ -190,6 +198,7 @@ const ProfilePage = memo(() => {
         }}
         initialFolderId={initialFolderId}
       />
+      </div>
     </div>
   );
 });
