@@ -198,6 +198,15 @@ export const turkishTranslations = {
       suggestedContacts: 'Önerilen Kişiler',
       noSuggestedContacts: 'Öneri görmek için kişileri takip edin',
       followPeoplePrompt: 'Bağlantı kurmak ve sohbet etmek için insanları takip etmeye başlayın'
+    },
+    business: {
+      deletePostTitle: 'Gönderiyi Sil',
+      confirmDeletePost: 'Bu gönderiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      postDeletedSuccess: 'Gönderi başarıyla silindi',
+      failedDeletePost: 'Gönderi silinemedi',
+      noPostsYet: 'Henüz gönderi yok',
+      startSharing: 'Favori yerlerinizi paylaşmaya başlayın!',
+      noPostsToShow: 'Gösterilecek gönderi yok'
     }
   }
 };

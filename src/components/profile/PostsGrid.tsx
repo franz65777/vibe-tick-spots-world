@@ -21,6 +21,16 @@ import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { translateCityName } from '@/utils/cityTranslations';
 import VirtualizedPostGrid from './VirtualizedPostGrid';
 import PostsGridSkeleton from './PostsGridSkeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Post {
   id: string;
@@ -69,6 +79,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [reviewOrder, setReviewOrder] = useState<Record<string, number>>({});
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
   
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -159,23 +170,22 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
     setSelectedPostId(postId);
   };
 
-  const handleDeletePost = async (postId: string, event: React.MouseEvent) => {
+  const handleDeletePost = (postId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    
     console.log('Delete post clicked:', postId);
-    
-    if (!confirm(t('confirmDeletePost', { ns: 'business' }))) {
-      return;
-    }
+    setPostToDelete(postId);
+  };
 
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+    
     try {
-      console.log('Attempting to delete post:', postId);
-      const result = await deletePost(postId);
+      console.log('Attempting to delete post:', postToDelete);
+      const result = await deletePost(postToDelete);
       
       if (result.success) {
         console.log('Post deleted successfully');
         toast.success(t('postDeletedSuccess', { ns: 'business' }));
-        // Invalidate cache per aggiornare
         const { queryClient } = await import('@/lib/queryClient');
         queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
       } else {
@@ -185,6 +195,8 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
     } catch (error) {
       console.error('Error deleting post:', error);
       toast.error(t('failedDeletePost', { ns: 'business' }));
+    } finally {
+      setPostToDelete(null);
     }
   };
 
@@ -482,6 +494,31 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           onClose={() => setSelectedLocation(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deletePostTitle', { ns: 'business' })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmDeletePost', { ns: 'business' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row gap-2">
+            <AlertDialogCancel className="flex-1 rounded-xl">
+              {t('cancel', { ns: 'common' })}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {t('delete', { ns: 'common' })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

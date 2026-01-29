@@ -989,6 +989,7 @@ const resources = {
       noPostsYet: 'No posts yet',
       startSharing: 'Start sharing your favorite places!',
       noPostsToShow: 'No posts to show',
+      deletePostTitle: 'Delete Post',
       confirmDeletePost: 'Are you sure you want to delete this post? This action cannot be undone.',
       postDeletedSuccess: 'Post deleted successfully',
       failedDeletePost: 'Failed to delete post',
@@ -1990,6 +1991,7 @@ const resources = {
       noPostsYet: 'Aún no hay publicaciones',
       startSharing: '¡Empieza a compartir tus lugares favoritos!',
       noPostsToShow: 'No hay publicaciones para mostrar',
+      deletePostTitle: 'Eliminar Publicación',
       confirmDeletePost: '¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.',
       postDeletedSuccess: 'Publicación eliminada correctamente',
       failedDeletePost: 'Error al eliminar la publicación',
@@ -3046,6 +3048,7 @@ const resources = {
       noPostsYet: 'Ancora nessun post',
       startSharing: 'Inizia a condividere i tuoi luoghi preferiti!',
       noPostsToShow: 'Nessun post da mostrare',
+      deletePostTitle: 'Elimina Post',
       confirmDeletePost: 'Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.',
       postDeletedSuccess: 'Post eliminato con successo',
       failedDeletePost: 'Impossibile eliminare il post',
@@ -3984,6 +3987,7 @@ const resources = {
       noPostsYet: 'Pas encore de publications',
       startSharing: 'Commencez à partager vos lieux préférés!',
       noPostsToShow: 'Aucune publication à afficher',
+      deletePostTitle: 'Supprimer la Publication',
       confirmDeletePost: 'Êtes-vous sûr de vouloir supprimer cette publication? Cette action ne peut pas être annulée.',
       postDeletedSuccess: 'Publication supprimée avec succès',
       failedDeletePost: 'Échec de la suppression de la publication',
@@ -4818,7 +4822,14 @@ const resources = {
       dealMaster: 'Angebotsmeister',
       dealMasterDesc: 'Erstelle 10+ Rabatte',
       trendingNow: 'Im Trend',
-      trendingNowDesc: 'Erhalte 100 Shares'
+      trendingNowDesc: 'Erhalte 100 Shares',
+      deletePostTitle: 'Beitrag Löschen',
+      confirmDeletePost: 'Bist du sicher, dass du diesen Beitrag löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.',
+      postDeletedSuccess: 'Beitrag erfolgreich gelöscht',
+      failedDeletePost: 'Fehler beim Löschen des Beitrags',
+      noPostsYet: 'Noch keine Beiträge',
+      startSharing: 'Teile deine Lieblingsorte!',
+      noPostsToShow: 'Keine Beiträge vorhanden'
     },
     gamification: {
       level: 'Level'
