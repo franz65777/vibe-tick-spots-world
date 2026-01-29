@@ -9,7 +9,7 @@ import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
-import filterFriendsIcon from '@/assets/icons/filter-friends.png';
+import filterAllFriendsIcon from '@/assets/icons/filter-all-friends.png';
 
 interface FollowedUser {
   id: string;
@@ -73,7 +73,7 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
                 : "opacity-60"
             )}>
               <img 
-                src={filterFriendsIcon} 
+                src={filterAllFriendsIcon} 
                 alt={t('all', { ns: 'mapFilters' })} 
                 className="w-full h-full object-cover"
               />
