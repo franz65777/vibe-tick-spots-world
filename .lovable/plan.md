@@ -1,190 +1,182 @@
 
-# Invite Friends Page Redesign
+# Inviti Pagina - Traduzioni, Logo e Avatar
 
-## Overview
-Redesign the invite friend overlay to match the reference design with two distinct sections:
-1. **Top card**: Share app download link with SPOTT logo
-2. **Bottom card**: Find friends by accessing phone contacts
-
-## Visual Design
-
-The new design will feature:
-- Two rounded cards stacked vertically with gap between them
-- **Card 1 (Invite)**: SPOTT logo at top, "have friends with good taste?" text, gradient blue "invite them" button
-- **Card 2 (Find Friends)**: Avatar stack, "find your friends" text, privacy note with lock emoji, black "check contacts" button
+## Panoramica
+Tre modifiche principali per la pagina "Invita un amico":
+1. Aggiungere le traduzioni in 12 lingue per tutti i testi
+2. Sostituire il logo SPOTT testuale con l'immagine fornita + animazione bouncing
+3. Usare avatar reali (yungtrinky, ore, sarita) nella sezione "Trova amici"
 
 ---
 
-## Implementation Details
+## 1. Creare File Traduzioni per Namespace "invite"
 
-### 1. Update InviteFriendOverlay Component
+Creare un nuovo file `src/i18n-invite.ts` con traduzioni per tutte e 12 le lingue supportate:
 
-**File**: `src/components/notifications/InviteFriendOverlay.tsx`
-
-Completely redesign the content area:
-- Replace current single-section layout with two-card layout
-- Use existing SPOTT logo (either image asset or text logo component)
-- Top card uses gradient button with Send icon
-- Bottom card shows overlapping avatar stack (will use placeholder avatars initially)
-
-### 2. Install Capacitor Contacts Plugin
-
-**Package**: `@capacitor-community/contacts`
-
-This is a community plugin for accessing native phone contacts on iOS/Android. Will add to `package.json`.
-
-### 3. Create Contact Matching Hook
-
-**New File**: `src/hooks/usePhoneContacts.ts`
-
-This hook will:
-- Request contact permission using Capacitor Contacts API
-- Extract phone numbers and emails from contacts
-- Hash the contact information client-side (SHA-256) for privacy
-- Send hashed values to an edge function for matching
-
-### 4. Create Contact Matching Edge Function
-
-**New File**: `supabase/functions/find-contacts-on-app/index.ts`
-
-The edge function will:
-- Receive hashed phone numbers/emails from the client
-- Compare against stored email hashes in profiles table
-- Return matching user profiles (id, username, avatar)
-- Never store or log raw contact data (privacy-first)
-
-### 5. Database Migration (Optional Enhancement)
-
-If phone number matching is desired later, we'd need to:
-- Add `phone_hash` column to profiles table
-- Hash phone numbers on signup
-
-For now, we'll match by email only since profiles already have an email field.
-
-### 6. Create Avatar Stack Component
-
-**New File**: `src/components/common/AvatarStack.tsx`
-
-A reusable component showing overlapping avatars:
-- Accepts array of avatar URLs
-- Shows configurable max count with "+N more" indicator
-- Colored ring borders like the reference design
-
-### 7. Create Contacts Found Modal/Results View
-
-When matches are found, display:
-- List of found friends already on the app
-- Follow buttons for each found user
-- Privacy-respecting messaging
+| Chiave | EN | IT | ES | FR | ... |
+|--------|----|----|----|----|-----|
+| pageTitle | Invite a Friend | Invita un Amico | Invita a un Amigo | Inviter un Ami | ... |
+| haveFriendsTitle | have friends with good taste? | hai amici con buon gusto? | ¿tienes amigos con buen gusto? | des amis avec du goût? | ... |
+| inviteDescription | Share the app and discover places together | Condividi l'app e scopri posti insieme | Comparte la app y descubre lugares juntos | ... | ... |
+| inviteThem | invite them | invitali | invítalos | invite-les | ... |
+| findYourFriends | find your friends | trova i tuoi amici | encuentra a tus amigos | trouve tes amis | ... |
+| privacyNote | we never upload or store your contacts | non carichiamo né memorizziamo i tuoi contatti | nunca subimos ni almacenamos tus contactos | ... | ... |
+| checkContacts | check contacts | controlla contatti | verificar contactos | vérifier contacts | ... |
+| ... | ... | ... | ... | ... | ... |
 
 ---
 
-## Technical Section
+## 2. Registrare il Namespace "invite"
 
-### Contact Access Flow
+**File**: `src/i18n.ts`
 
-```text
-User taps "check contacts"
-        |
-        v
-Request permission (Capacitor.Contacts)
-        |
-        v
-Permission granted? --> No --> Show permission denied message
-        |
-        Yes
-        v
-Read contacts (phones + emails)
-        |
-        v
-Hash all values client-side (SHA-256)
-        |
-        v
-Send hashes to edge function
-        |
-        v
-Edge function compares against profiles.email
-        |
-        v
-Return matching profiles
-        |
-        v
-Display found friends with follow buttons
-```
+- Importare `inviteTranslations` dal nuovo file
+- Aggiungere 'invite' alla lista dei namespace (linea 10146)
+- Merge delle traduzioni nei resources
 
-### Privacy Approach
+---
 
-- Contacts are hashed client-side before sending
-- Raw contact data never leaves the device
-- Edge function only sees hashes, never plaintext
-- Add visible privacy note: "we never upload or store your contacts"
+## 3. Aggiungere Logo Immagine e Animazione Bouncing
 
-### Platform Detection
+### 3.1 Salvare Immagine Logo
+Copiare l'immagine caricata in `src/assets/spott-logo-colorful.png`
 
-- On web: "Check contacts" button won't be functional (show "Available on mobile app" message)
-- On native (iOS/Android): Use Capacitor Contacts plugin
+### 3.2 Aggiungere Keyframe Bouncing in Tailwind
 
-### Code Structure
+**File**: `tailwind.config.ts`
 
 ```typescript
-// usePhoneContacts.ts - simplified structure
-export const usePhoneContacts = () => {
-  const [loading, setLoading] = useState(false);
-  const [matches, setMatches] = useState<FoundContact[]>([]);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  
-  const checkContacts = async () => {
-    // 1. Check if native platform
-    // 2. Request permission
-    // 3. Get contacts
-    // 4. Hash emails/phones
-    // 5. Call edge function
-    // 6. Return matches
-  };
-  
-  return { checkContacts, loading, matches, permissionDenied };
-};
-```
-
-### Dependencies to Add
-
-```json
-{
-  "@capacitor-community/contacts": "^7.0.0"
+keyframes: {
+  // ... existing keyframes
+  'bounce-gentle': {
+    '0%, 100%': { transform: 'translateY(0)' },
+    '50%': { transform: 'translateY(-8px)' }
+  }
+},
+animation: {
+  // ... existing animations
+  'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite'
 }
 ```
 
-### Capacitor Configuration
+### 3.3 Aggiornare InviteFriendOverlay
 
-After adding the plugin, run:
-- `npx cap sync` to sync native projects
+**File**: `src/components/notifications/InviteFriendOverlay.tsx`
 
-iOS Info.plist needs:
-- `NSContactsUsageDescription`: "SPOTT wants to find your friends who are already using the app"
+Sostituire il logo testuale con:
 
-Android needs:
-- `android.permission.READ_CONTACTS` in AndroidManifest.xml
+```tsx
+import spottLogoColorful from '@/assets/spott-logo-colorful.png';
 
----
-
-## Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `src/components/notifications/InviteFriendOverlay.tsx` | Modify - complete redesign |
-| `src/hooks/usePhoneContacts.ts` | Create - contact access hook |
-| `src/components/common/AvatarStack.tsx` | Create - overlapping avatar component |
-| `supabase/functions/find-contacts-on-app/index.ts` | Create - matching edge function |
-| `package.json` | Modify - add contacts plugin |
-
----
-
-## Share Link Placeholder
-
-For the "invite them" button, we'll use a placeholder download link that can be updated once the app is in the App Store:
-
-```typescript
-const DOWNLOAD_LINK = "https://spott.app/download"; // Placeholder
+// Nel JSX, sostituire il div del logo con:
+<div className="flex justify-center mb-6">
+  <img 
+    src={spottLogoColorful} 
+    alt="SPOTT" 
+    className="h-16 w-auto animate-bounce-gentle"
+  />
+</div>
 ```
 
-This can be easily updated to the actual App Store/Play Store links later.
+---
+
+## 4. Avatar Reali per "Trova Amici"
+
+### Utenti Disponibili nel Database
+
+| Username | Avatar URL |
+|----------|-----------|
+| yungtrinky | https://...avatar-1765123237885.jpg |
+| ore | https://...6e627794-...-1763140984090.jpg |
+| sarita | https://...avatar-1750188571035.jpeg |
+
+### Aggiornare Placeholder Avatars
+
+**File**: `src/components/notifications/InviteFriendOverlay.tsx`
+
+```tsx
+// Sostituire placeholderAvatars con URL reali
+const placeholderAvatars = [
+  { 
+    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/101423bc-a06c-40cc-8bb9-42af76946e4d/avatar/avatar-1765123237885.jpg', 
+    name: 'yungtrinky' 
+  },
+  { 
+    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/avatars/6e627794-6ac1-4830-9737-de5158761904-1763140984090.jpg', 
+    name: 'ore' 
+  },
+  { 
+    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/media/4ff2a819-7556-4b74-a0ad-6950a03285c9/avatar/avatar-1750188571035.jpeg', 
+    name: 'sarita' 
+  },
+];
+```
+
+---
+
+## Riepilogo File da Modificare
+
+| File | Azione |
+|------|--------|
+| `src/i18n-invite.ts` | Creare - traduzioni 12 lingue |
+| `src/i18n.ts` | Modificare - importare e registrare namespace 'invite' |
+| `tailwind.config.ts` | Modificare - aggiungere keyframe bouncing |
+| `src/assets/spott-logo-colorful.png` | Creare - copiare immagine logo |
+| `src/components/notifications/InviteFriendOverlay.tsx` | Modificare - logo, avatar, rimuovere MapPin import |
+
+---
+
+## Sezione Tecnica
+
+### Struttura File Traduzioni
+
+```typescript
+// src/i18n-invite.ts
+export const inviteTranslations = {
+  en: {
+    pageTitle: 'Invite a Friend',
+    haveFriendsTitle: 'have friends with good taste?',
+    inviteDescription: 'Share the app and discover places together',
+    inviteThem: 'invite them',
+    findYourFriends: 'find your friends',
+    privacyNote: 'we never upload or store your contacts',
+    checkContacts: 'check contacts',
+    mobileOnly: 'Available on mobile app',
+    permissionDenied: 'Contact access denied. Please enable in settings.',
+    noFriendsFound: 'No friends found on SPOTT yet',
+    linkCopied: 'Link copied to clipboard!',
+    copyFailed: 'Failed to copy',
+    inviteShareMessage: 'Join me on SPOTT to discover the best places! Download the app:',
+    friendsFound: '{{count}} friends on SPOTT!',
+    followToSee: 'Follow them to see their saved places',
+    followed: 'Followed!',
+    followFailed: 'Failed to follow',
+    follow: 'Follow',
+    following: 'Following',
+    done: 'Done',
+    inviteFriend: 'Invite Friend',
+  },
+  it: {
+    pageTitle: 'Invita un Amico',
+    haveFriendsTitle: 'hai amici con buon gusto?',
+    // ... tutte le altre chiavi in italiano
+  },
+  // ... es, fr, de, pt, zh-CN, ja, ko, ar, hi, ru
+};
+```
+
+### Merge nel File i18n.ts
+
+```typescript
+import { inviteTranslations } from './i18n-invite';
+
+// Dopo gli altri merge, aggiungere:
+Object.keys(inviteTranslations).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang].invite = inviteTranslations[lang];
+  }
+});
+
+// Aggiornare la lista ns:
+ns: ['common', ... 'invite'],
+```
