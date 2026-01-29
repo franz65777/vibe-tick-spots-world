@@ -102,13 +102,22 @@ export default {
 					to: {
 						transform: 'translateY(0)'
 					}
+				},
+				'bounce-gentle': {
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-8px)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'slide-up': 'slide-up 0.3s ease-out',
-				'drawer-up': 'drawer-up 0.4s cubic-bezier(0.32, 0.72, 0, 1)'
+				'drawer-up': 'drawer-up 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
+				'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite'
 			},
 			transitionTimingFunction: {
 				'spring': 'cubic-bezier(0.32, 0.72, 0, 1)',

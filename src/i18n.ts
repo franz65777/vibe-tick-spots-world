@@ -11,6 +11,7 @@ import { createListTranslations } from './i18n-create-list';
 import { guidedTourTranslations } from './i18n-guided-tour';
 import { rewardsTranslations } from './i18n-rewards';
 import { contributionTranslations } from './i18n-contribution';
+import { inviteTranslations } from './i18n-invite';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -10124,6 +10125,13 @@ Object.keys(contributionTranslations).forEach(lang => {
   }
 });
 
+// Merge invite translations as a separate namespace
+Object.keys(inviteTranslations).forEach(lang => {
+  if (resources[lang as keyof typeof resources]) {
+    (resources as any)[lang].invite = inviteTranslations[lang];
+  }
+});
+
 // Add Chinese (zh) as the 12th language
 // Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
 /* resources.zh = {
@@ -10143,7 +10151,7 @@ i18n
     supportedLngs: ['en', 'it', 'es', 'fr', 'de', 'pt', 'zh-CN', 'ja', 'ko', 'ar', 'hi', 'ru'],
     nonExplicitSupportedLngs: true, // it-IT will use 'it' resources
     load: 'languageOnly', // Load only base language (strips region)
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour', 'save_tags'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy', 'trips', 'ai', 'onboarding', 'homeMenu', 'sharePosition', 'signup', 'createList', 'guidedTour', 'save_tags', 'invite'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,
