@@ -434,8 +434,11 @@ const ExplorePage = memo(() => {
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
       {/* Frosted glass background - matching Add page style */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-gray-100 via-gray-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black" />
-      <div className="fixed inset-0 -z-10 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-gray-100 via-gray-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black" />
+      <div className="absolute inset-0 z-0 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
+      
+      {/* Content wrapper with z-10 to be above background */}
+      <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
@@ -692,6 +695,7 @@ const ExplorePage = memo(() => {
           navigate('/');
         }}
       />
+      </div>
     </div>
   );
 });

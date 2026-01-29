@@ -44,7 +44,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
   }, []);
 
   return (
-    <div className="bg-background">
+    <div className="">
       <div className="px-4 py-4">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
