@@ -45,7 +45,7 @@ export const LocationListItem = memo(({ place, enrichedAddress, onClick }: Locat
   return (
     <div
       onClick={onClick}
-      className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm border border-white/50 dark:border-slate-600/50 cursor-pointer transition-all duration-200 hover:bg-white/90 dark:hover:bg-slate-700/90 hover:shadow-sm active:scale-[0.98]"
+      className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-white/30 dark:border-slate-600/30 cursor-pointer transition-all duration-200 hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-sm active:scale-[0.98]"
     >
       {/* Thumbnail / Category Icon */}
       <div className="relative flex-shrink-0 w-[52px] h-[52px] rounded-lg bg-muted/60 flex items-center justify-center overflow-hidden">
@@ -133,7 +133,7 @@ LocationListItem.displayName = 'LocationListItem';
 
 // Skeleton loader for list items
 export const LocationListItemSkeleton = () => (
-  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-background/60 border border-border/30">
+  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-800/30 backdrop-blur-sm border border-white/30 dark:border-slate-600/30">
     <Skeleton className="w-[52px] h-[52px] rounded-lg flex-shrink-0" />
     <div className="flex-1 min-w-0 space-y-1.5">
       <Skeleton className="h-3.5 w-3/4" />
