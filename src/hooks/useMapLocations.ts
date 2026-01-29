@@ -286,16 +286,21 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             }
             
             // Fetch internal locations within bounds (created by followed users)
-            const { data: locations } = await supabase
-              .from('locations')
-              .select('*')
-              .in('created_by', followedUserIds)
-              .gte('latitude', mapBounds.south)
-              .lte('latitude', mapBounds.north)
-              .gte('longitude', mapBounds.west)
-              .lte('longitude', mapBounds.east)
-              .not('latitude', 'is', null)
-              .not('longitude', 'is', null);
+            // Skip this query entirely if save tags are selected - we only want saved locations with those tags
+            let locations: any[] = [];
+            if (selectedSaveTags.length === 0) {
+              const { data } = await supabase
+                .from('locations')
+                .select('*')
+                .in('created_by', followedUserIds)
+                .gte('latitude', mapBounds.south)
+                .lte('latitude', mapBounds.north)
+                .gte('longitude', mapBounds.west)
+                .lte('longitude', mapBounds.east)
+                .not('latitude', 'is', null)
+                .not('longitude', 'is', null);
+              locations = data || [];
+            }
 
             // Fetch internal saved locations (user_saved_locations -> locations)
             let savedInternalQuery = supabase
@@ -594,13 +599,18 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             };
 
             // Fetch internal locations created by followed users (no city filter here; we filter in JS via cityOk)
-            const { data: locations } = await supabase
-              .from('locations')
-              .select('*')
-              .in('created_by', followedUserIds)
-              .not('latitude', 'is', null)
-              .not('longitude', 'is', null)
-              .limit(500);
+            // Skip this query entirely if save tags are selected - we only want saved locations with those tags
+            let locations: any[] = [];
+            if (selectedSaveTags.length === 0) {
+              const { data } = await supabase
+                .from('locations')
+                .select('*')
+                .in('created_by', followedUserIds)
+                .not('latitude', 'is', null)
+                .not('longitude', 'is', null)
+                .limit(500);
+              locations = data || [];
+            }
 
             // Fetch internal saved locations (user_saved_locations -> locations)
             let savedInternalQuery = supabase
