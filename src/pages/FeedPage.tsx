@@ -534,7 +534,10 @@ const FeedPage = memo(() => {
 
 
   return (
-    <div className="h-screen bg-background/40 backdrop-blur-xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+    <div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+      {/* Dynamic gradient background */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-primary/20 via-background to-secondary/20 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
+      <div className="fixed inset-0 -z-10 bg-background/60 backdrop-blur-xl" />
       <div className="w-full h-full flex flex-col">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background shrink-0 w-full">

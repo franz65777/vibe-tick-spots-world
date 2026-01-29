@@ -432,7 +432,10 @@ const ExplorePage = memo(() => {
   const displayedHistory = showAllHistory ? localSearchHistory : localSearchHistory.slice(0, 10);
   
   return (
-    <div className="flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0 bg-background/40 backdrop-blur-xl">
+    <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
+      {/* Dynamic gradient background */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-primary/20 via-background to-secondary/20 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
+      <div className="fixed inset-0 -z-10 bg-background/60 backdrop-blur-xl" />
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
