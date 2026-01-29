@@ -1,67 +1,28 @@
 
-## Migliorare la UI di Conferma Eliminazione Post
 
-### Problema Attuale
-Il sistema attualmente usa il dialog nativo del browser `confirm()` che appare come un popup generico del sistema operativo - non integrato con lo stile dell'app.
+## Correggere Layout e Stile del Dialog di Eliminazione Post
 
-### Soluzione
-Sostituire il `confirm()` nativo con un AlertDialog stilizzato di Radix UI, con traduzioni complete in tutte le lingue supportate.
+### Problemi Identificati dallo Screenshot
+
+1. **Container fuori margini**: La combinazione di `w-full max-w-lg` nel componente base + `max-w-sm mx-4` aggiunto crea conflitti
+2. **Bottoni disallineati verticalmente**: `AlertDialogFooter` usa `flex-col-reverse` su mobile
+3. **Margine extra su "Annulla"**: `AlertDialogCancel` ha `mt-2` su mobile
+4. **Bordo troppo spesso**: Il bottone "Annulla" ha un bordo outline troppo evidente
+
+### Traduzioni
+Le traduzioni esistono gia per tutte le lingue (EN, ES, IT, FR, DE, TR):
+- `deletePostTitle`: "Elimina Post" (IT), "Delete Post" (EN), etc.
+- `confirmDeletePost`: messaggio completo tradotto
+- `cancel` e `delete`: gia nel namespace common
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. PostsGrid.tsx - Aggiungere stato e AlertDialog
+#### PostsGrid.tsx - Migliorare classi CSS del dialog
 
-**Aggiungere import:**
 ```tsx
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-```
-
-**Aggiungere stato per tracciare il post da eliminare:**
-```tsx
-const [postToDelete, setPostToDelete] = useState<string | null>(null);
-```
-
-**Modificare handleDeletePost (riga 162-189):**
-```tsx
-const handleDeletePost = (postId: string, event: React.MouseEvent) => {
-  event.stopPropagation();
-  setPostToDelete(postId); // Apre il dialog invece di confirm()
-};
-
-const confirmDelete = async () => {
-  if (!postToDelete) return;
-  
-  try {
-    const result = await deletePost(postToDelete);
-    
-    if (result.success) {
-      toast.success(t('postDeletedSuccess', { ns: 'business' }));
-      const { queryClient } = await import('@/lib/queryClient');
-      queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
-    } else {
-      toast.error(result.error?.message || t('failedDeletePost', { ns: 'business' }));
-    }
-  } catch (error) {
-    toast.error(t('failedDeletePost', { ns: 'business' }));
-  } finally {
-    setPostToDelete(null);
-  }
-};
-```
-
-**Aggiungere AlertDialog nel JSX (prima del return finale):**
-```tsx
+// DA (riga 499-520)
 <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
   <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
     <AlertDialogHeader>
@@ -79,9 +40,34 @@ const confirmDelete = async () => {
         className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90"
         disabled={deleting}
       >
-        {deleting ? (
-          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        ) : null}
+        {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+        {t('delete', { ns: 'common' })}
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+
+// A
+<AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+  <AlertDialogContent className="w-[calc(100%-32px)] max-w-[320px] rounded-2xl p-6">
+    <AlertDialogHeader className="text-center">
+      <AlertDialogTitle className="text-lg font-semibold">
+        {t('deletePostTitle', { ns: 'business' })}
+      </AlertDialogTitle>
+      <AlertDialogDescription className="text-muted-foreground">
+        {t('confirmDeletePost', { ns: 'business' })}
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter className="flex flex-row gap-3 mt-2">
+      <AlertDialogCancel className="flex-1 m-0 rounded-xl h-12 border-muted-foreground/30">
+        {t('cancel', { ns: 'common' })}
+      </AlertDialogCancel>
+      <AlertDialogAction 
+        onClick={confirmDelete}
+        className="flex-1 m-0 rounded-xl h-12 bg-destructive hover:bg-destructive/90 text-white"
+        disabled={deleting}
+      >
+        {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
         {t('delete', { ns: 'common' })}
       </AlertDialogAction>
     </AlertDialogFooter>
@@ -91,37 +77,39 @@ const confirmDelete = async () => {
 
 ---
 
-#### 2. i18n.ts - Aggiungere traduzioni per il titolo
+### Dettaglio Modifiche CSS
 
-Aggiungere `deletePostTitle` al namespace `business` per tutte le lingue:
-
-| Lingua | Chiave | Valore |
-|--------|--------|--------|
-| EN | deletePostTitle | Delete Post |
-| ES | deletePostTitle | Eliminar Publicación |
-| IT | deletePostTitle | Elimina Post |
-| FR | deletePostTitle | Supprimer la Publication |
-| DE | deletePostTitle | Beitrag Löschen |
-| TR | deletePostTitle | Gönderiyi Sil |
+| Elemento | Prima | Dopo | Motivo |
+|----------|-------|------|--------|
+| `AlertDialogContent` | `max-w-sm mx-4` | `w-[calc(100%-32px)] max-w-[320px] p-6` | Calcolo preciso larghezza con margini |
+| `AlertDialogHeader` | default | `text-center` | Centrare titolo e descrizione |
+| `AlertDialogFooter` | `flex-row gap-2` | `flex flex-row gap-3 mt-2` | Forzare row layout sempre |
+| `AlertDialogCancel` | `flex-1 rounded-xl` | `flex-1 m-0 rounded-xl h-12 border-muted-foreground/30` | Rimuovere mt-2, bordo piu sottile |
+| `AlertDialogAction` | `flex-1 rounded-xl` | `flex-1 m-0 rounded-xl h-12` | Rimuovere margini, altezza uniforme |
 
 ---
+
+### Risultato Atteso
+
+```text
+┌─────────────────────────────────────┐
+│                                     │
+│          Elimina Post               │  <- Titolo centrato
+│                                     │
+│  Sei sicuro di voler eliminare      │  <- Descrizione centrata
+│  questo post? Questa azione non     │
+│  puo essere annullata.              │
+│                                     │
+│  ┌───────────┐  ┌───────────┐       │
+│  │  Annulla  │  │  Elimina  │       │  <- Bottoni allineati, stessa altezza
+│  └───────────┘  └───────────┘       │
+│                                     │
+└─────────────────────────────────────┘
+```
 
 ### File da Modificare
 
 | File | Modifica |
 |------|----------|
-| `src/components/profile/PostsGrid.tsx` | Sostituire `confirm()` con AlertDialog stilizzato |
-| `src/i18n.ts` | Aggiungere `deletePostTitle` per tutte le lingue |
+| `src/components/profile/PostsGrid.tsx` | Aggiornare classi CSS del dialog (righe 499-520) |
 
----
-
-### Risultato Visivo
-
-Il nuovo dialog avrà:
-- Sfondo blur scuro semi-trasparente
-- Card bianca con bordi arrotondati (rounded-2xl)
-- Titolo "Elimina Post" in grassetto
-- Messaggio di conferma tradotto
-- Due pulsanti affiancati:
-  - "Annulla" (outline) - chiude il dialog
-  - "Elimina" (rosso destructive) - conferma l'eliminazione con spinner durante il caricamento
