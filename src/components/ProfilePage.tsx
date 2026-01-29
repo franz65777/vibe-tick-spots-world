@@ -155,7 +155,7 @@ const ProfilePage = memo(() => {
   };
 
   return (
-    <div className="flex flex-col h-full pt-[env(safe-area-inset-top)]">
+    <div className="flex flex-col h-full pt-[env(safe-area-inset-top)] bg-[#FAF9F7] dark:bg-background">
       <ProfileHeader 
         onFollowersClick={() => openModal('followers')}
         onFollowingClick={() => openModal('following')}

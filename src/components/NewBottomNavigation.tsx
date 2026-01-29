@@ -15,9 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { haptics } from '@/utils/haptics';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useExploreOverlay } from '@/contexts/ExploreOverlayContext';
-import { useFeedOverlay } from '@/contexts/FeedOverlayContext';
-import { useProfileOverlay } from '@/contexts/ProfileOverlayContext';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
@@ -27,11 +24,6 @@ const NewBottomNavigation = () => {
   const { trackEvent } = useAnalytics();
   const { hasValidBusinessAccount } = useBusinessProfile();
   const queryClient = useQueryClient();
-  
-  // Overlay contexts
-  const { openExploreOverlay } = useExploreOverlay();
-  const { openFeedOverlay } = useFeedOverlay();
-  const { openProfileOverlay } = useProfileOverlay();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
@@ -106,20 +98,20 @@ const NewBottomNavigation = () => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
-      // Short tap - open profile overlay
+      // Short tap - navigate to profile
       if (!showSwitchModal) {
         haptics.selection();
-        openProfileOverlay();
+        navigate('/profile');
         trackEvent('nav_tab_clicked', { tab: 'profile' });
       }
     }
   };
 
   const handleProfileClick = () => {
-    // For users without business account, open profile overlay directly
+    // For users without business account, navigate directly
     if (!hasValidBusinessAccount) {
       haptics.selection();
-      openProfileOverlay();
+      navigate('/profile');
       trackEvent('nav_tab_clicked', { tab: 'profile' });
     }
   };
@@ -159,12 +151,7 @@ const NewBottomNavigation = () => {
     { 
       icon: <Search size={24} strokeWidth={2} />, 
       label: t('navigation:search'), 
-      path: '/explore',
-      customAction: () => {
-        haptics.selection();
-        openExploreOverlay();
-        trackEvent('nav_tab_clicked', { tab: 'search' });
-      }
+      path: '/explore'
     },
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
@@ -178,22 +165,12 @@ const NewBottomNavigation = () => {
     { 
       icon: <Activity size={24} strokeWidth={2} />, 
       label: t('navigation:feed'), 
-      path: '/feed',
-      customAction: () => {
-        haptics.selection();
-        openFeedOverlay();
-        trackEvent('nav_tab_clicked', { tab: 'feed' });
-      }
+      path: '/feed'
     },
     { 
       icon: <User size={24} strokeWidth={2} />, 
       label: t('navigation:profile'), 
-      path: '/profile',
-      customAction: () => {
-        haptics.selection();
-        openProfileOverlay();
-        trackEvent('nav_tab_clicked', { tab: 'profile' });
-      }
+      path: '/profile'
     },
   ];
 
