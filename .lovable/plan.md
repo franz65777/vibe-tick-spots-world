@@ -1,116 +1,76 @@
 
-# Inviti Pagina - Traduzioni, Logo e Avatar
+
+# Miglioramenti Pagina Invita Amici
 
 ## Panoramica
-Tre modifiche principali per la pagina "Invita un amico":
-1. Aggiungere le traduzioni in 12 lingue per tutti i testi
-2. Sostituire il logo SPOTT testuale con l'immagine fornita + animazione bouncing
-3. Usare avatar reali (yungtrinky, ore, sarita) nella sezione "Trova amici"
+Tre modifiche principali per migliorare la pagina:
+1. Ingrandire il logo SPOTT
+2. Cambiare i testi per renderli originali (non copiati dal competitor)
+3. Ridurre lo spazio bianco per un layout più compatto
+
+**Nota importante**: La logica per "check contacts" è già completamente implementata! L'hook `usePhoneContacts.ts` e l'edge function `find-contacts-on-app` sono già connessi e funzionanti. Quando l'utente tappa "check contacts" su un dispositivo nativo:
+- Viene richiesto il permesso ai contatti
+- Gli indirizzi email vengono estratti e hashati client-side (SHA-256)
+- Gli hash vengono inviati all'edge function
+- La funzione li confronta con le email degli utenti nel database
+- Restituisce i profili che matchano
 
 ---
 
-## 1. Creare File Traduzioni per Namespace "invite"
-
-Creare un nuovo file `src/i18n-invite.ts` con traduzioni per tutte e 12 le lingue supportate:
-
-| Chiave | EN | IT | ES | FR | ... |
-|--------|----|----|----|----|-----|
-| pageTitle | Invite a Friend | Invita un Amico | Invita a un Amigo | Inviter un Ami | ... |
-| haveFriendsTitle | have friends with good taste? | hai amici con buon gusto? | ¿tienes amigos con buen gusto? | des amis avec du goût? | ... |
-| inviteDescription | Share the app and discover places together | Condividi l'app e scopri posti insieme | Comparte la app y descubre lugares juntos | ... | ... |
-| inviteThem | invite them | invitali | invítalos | invite-les | ... |
-| findYourFriends | find your friends | trova i tuoi amici | encuentra a tus amigos | trouve tes amis | ... |
-| privacyNote | we never upload or store your contacts | non carichiamo né memorizziamo i tuoi contatti | nunca subimos ni almacenamos tus contactos | ... | ... |
-| checkContacts | check contacts | controlla contatti | verificar contactos | vérifier contacts | ... |
-| ... | ... | ... | ... | ... | ... |
-
----
-
-## 2. Registrare il Namespace "invite"
-
-**File**: `src/i18n.ts`
-
-- Importare `inviteTranslations` dal nuovo file
-- Aggiungere 'invite' alla lista dei namespace (linea 10146)
-- Merge delle traduzioni nei resources
-
----
-
-## 3. Aggiungere Logo Immagine e Animazione Bouncing
-
-### 3.1 Salvare Immagine Logo
-Copiare l'immagine caricata in `src/assets/spott-logo-colorful.png`
-
-### 3.2 Aggiungere Keyframe Bouncing in Tailwind
-
-**File**: `tailwind.config.ts`
-
-```typescript
-keyframes: {
-  // ... existing keyframes
-  'bounce-gentle': {
-    '0%, 100%': { transform: 'translateY(0)' },
-    '50%': { transform: 'translateY(-8px)' }
-  }
-},
-animation: {
-  // ... existing animations
-  'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite'
-}
-```
-
-### 3.3 Aggiornare InviteFriendOverlay
+## 1. Ingrandire il Logo SPOTT
 
 **File**: `src/components/notifications/InviteFriendOverlay.tsx`
 
-Sostituire il logo testuale con:
+Cambiare la dimensione del logo da `h-16` a `h-24` (da 64px a 96px):
 
 ```tsx
-import spottLogoColorful from '@/assets/spott-logo-colorful.png';
+// Prima
+<img src={spottLogoColorful} alt="SPOTT" className="h-16 w-auto animate-bounce-gentle" />
 
-// Nel JSX, sostituire il div del logo con:
-<div className="flex justify-center mb-6">
-  <img 
-    src={spottLogoColorful} 
-    alt="SPOTT" 
-    className="h-16 w-auto animate-bounce-gentle"
-  />
-</div>
+// Dopo  
+<img src={spottLogoColorful} alt="SPOTT" className="h-24 w-auto animate-bounce-gentle" />
 ```
 
 ---
 
-## 4. Avatar Reali per "Trova Amici"
+## 2. Cambiare i Testi (Più Originali)
 
-### Utenti Disponibili nel Database
+**File**: `src/i18n-invite.ts`
 
-| Username | Avatar URL |
-|----------|-----------|
-| yungtrinky | https://...avatar-1765123237885.jpg |
-| ore | https://...6e627794-...-1763140984090.jpg |
-| sarita | https://...avatar-1750188571035.jpeg |
+Testi attuali (simili al competitor):
+- "have friends with good taste?" 
+- "Share the app and discover places together"
+- "find your friends"
 
-### Aggiornare Placeholder Avatars
+**Nuovi testi proposti** (più originali e specifici per SPOTT):
+
+| Chiave | Nuovo Testo EN | Nuovo Testo IT |
+|--------|----------------|----------------|
+| `haveFriendsTitle` | "know someone who loves hidden gems?" | "conosci qualcuno che ama i posti nascosti?" |
+| `inviteDescription` | "bring them to SPOTT - share your favorite spots" | "portali su SPOTT - condividi i tuoi posti preferiti" |
+| `findYourFriends` | "who's already here?" | "chi c'è già?" |
+| `checkContacts` | "sync contacts" | "sincronizza contatti" |
+
+Queste modifiche vanno applicate a tutte e 12 le lingue.
+
+---
+
+## 3. Ridurre lo Spazio Bianco
 
 **File**: `src/components/notifications/InviteFriendOverlay.tsx`
 
-```tsx
-// Sostituire placeholderAvatars con URL reali
-const placeholderAvatars = [
-  { 
-    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/101423bc-a06c-40cc-8bb9-42af76946e4d/avatar/avatar-1765123237885.jpg', 
-    name: 'yungtrinky' 
-  },
-  { 
-    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/avatars/6e627794-6ac1-4830-9737-de5158761904-1763140984090.jpg', 
-    name: 'ore' 
-  },
-  { 
-    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/media/4ff2a819-7556-4b74-a0ad-6950a03285c9/avatar/avatar-1750188571035.jpeg', 
-    name: 'sarita' 
-  },
-];
-```
+Modifiche al layout:
+
+| Elemento | Prima | Dopo |
+|----------|-------|------|
+| Container padding | `px-6 py-8 gap-6` | `px-5 py-4 gap-4` |
+| Card padding | `p-8` | `p-6` |
+| Logo margin | `mb-6` | `mb-4` |
+| Description margin | `mb-6` | `mb-4` |
+| Avatar margin | `mb-6` | `mb-4` |
+| Privacy note margin | `mb-6` | `mb-4` |
+
+Questo renderà le card più compatte e ridurrà lo spazio tra gli elementi.
 
 ---
 
@@ -118,65 +78,51 @@ const placeholderAvatars = [
 
 | File | Azione |
 |------|--------|
-| `src/i18n-invite.ts` | Creare - traduzioni 12 lingue |
-| `src/i18n.ts` | Modificare - importare e registrare namespace 'invite' |
-| `tailwind.config.ts` | Modificare - aggiungere keyframe bouncing |
-| `src/assets/spott-logo-colorful.png` | Creare - copiare immagine logo |
-| `src/components/notifications/InviteFriendOverlay.tsx` | Modificare - logo, avatar, rimuovere MapPin import |
+| `src/components/notifications/InviteFriendOverlay.tsx` | Modificare - logo più grande, padding ridotti |
+| `src/i18n-invite.ts` | Modificare - testi originali per 12 lingue |
 
 ---
 
 ## Sezione Tecnica
 
-### Struttura File Traduzioni
+### Logica Contatti (Già Implementata)
 
-```typescript
-// src/i18n-invite.ts
-export const inviteTranslations = {
-  en: {
-    pageTitle: 'Invite a Friend',
-    haveFriendsTitle: 'have friends with good taste?',
-    inviteDescription: 'Share the app and discover places together',
-    inviteThem: 'invite them',
-    findYourFriends: 'find your friends',
-    privacyNote: 'we never upload or store your contacts',
-    checkContacts: 'check contacts',
-    mobileOnly: 'Available on mobile app',
-    permissionDenied: 'Contact access denied. Please enable in settings.',
-    noFriendsFound: 'No friends found on SPOTT yet',
-    linkCopied: 'Link copied to clipboard!',
-    copyFailed: 'Failed to copy',
-    inviteShareMessage: 'Join me on SPOTT to discover the best places! Download the app:',
-    friendsFound: '{{count}} friends on SPOTT!',
-    followToSee: 'Follow them to see their saved places',
-    followed: 'Followed!',
-    followFailed: 'Failed to follow',
-    follow: 'Follow',
-    following: 'Following',
-    done: 'Done',
-    inviteFriend: 'Invite Friend',
-  },
-  it: {
-    pageTitle: 'Invita un Amico',
-    haveFriendsTitle: 'hai amici con buon gusto?',
-    // ... tutte le altre chiavi in italiano
-  },
-  // ... es, fr, de, pt, zh-CN, ja, ko, ar, hi, ru
-};
+Il flusso completo è già funzionante:
+
+```
+usePhoneContacts.ts:
+├── Controlla se è piattaforma nativa (Capacitor.isNativePlatform())
+├── Richiede permessi (Contacts.requestPermissions())
+├── Estrae email dai contatti (Contacts.getContacts())
+├── Hasha le email client-side (SHA-256)
+└── Invia hash a edge function (supabase.functions.invoke)
+
+find-contacts-on-app/index.ts:
+├── Verifica autenticazione utente
+├── Riceve array di hash email
+├── Recupera profili dal database
+├── Hasha le email dei profili
+├── Confronta gli hash
+└── Restituisce profili matchanti
 ```
 
-### Merge nel File i18n.ts
+### Struttura Nuove Traduzioni
 
 ```typescript
-import { inviteTranslations } from './i18n-invite';
-
-// Dopo gli altri merge, aggiungere:
-Object.keys(inviteTranslations).forEach(lang => {
-  if (resources[lang]) {
-    resources[lang].invite = inviteTranslations[lang];
-  }
-});
-
-// Aggiornare la lista ns:
-ns: ['common', ... 'invite'],
+// Esempio per EN e IT
+en: {
+  haveFriendsTitle: 'know someone who loves hidden gems?',
+  inviteDescription: 'bring them to SPOTT - share your favorite spots',
+  findYourFriends: "who's already here?",
+  checkContacts: 'sync contacts',
+  // ... resto invariato
+},
+it: {
+  haveFriendsTitle: 'conosci qualcuno che ama i posti nascosti?',
+  inviteDescription: 'portali su SPOTT - condividi i tuoi posti preferiti',
+  findYourFriends: 'chi c\'è già?',
+  checkContacts: 'sincronizza contatti',
+  // ... resto invariato
+}
 ```
+
