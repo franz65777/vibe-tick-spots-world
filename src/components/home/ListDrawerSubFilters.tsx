@@ -9,7 +9,7 @@ import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
-import filterAllFriendsIcon from '@/assets/icons/filter-all-friends.png';
+import filterAllFriendsIcon from '@/assets/no-users-character.png';
 
 interface FollowedUser {
   id: string;
