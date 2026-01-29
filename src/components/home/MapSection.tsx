@@ -634,8 +634,8 @@ const MapSection = ({
             hideOverlay={true}
             className="flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl overflow-hidden"
             style={{
-              // Base header ~95px, avatar sub-filter adds ~50px for 'following', each item ~80px + 20px buffer, capped at 85vh
-              height: `min(${95 + (activeFilter === 'following' ? 50 : 0) + Math.max(1, places.length) * 80 + 20}px, 85vh)`
+              // Tuned for tight fit; add a small extra only for 'following' to avoid first card clipping.
+              height: `min(${95 + (activeFilter === 'following' ? 70 : 0) + Math.max(1, places.length) * 80 + 20}px, 85vh)`
             }}
           >
             <DrawerHeader className="px-6 pt-4 pb-2 flex-shrink-0 sticky top-0 z-10 backdrop-blur-xl rounded-t-[20px]">
