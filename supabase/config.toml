@@ -82,6 +82,9 @@ verify_jwt = false
 [functions.google-places-search]
 verify_jwt = false
 
+[functions.find-contacts-on-app]
+verify_jwt = true
+
 [db]
 # Port to use for the local database URL.
 port = 54322

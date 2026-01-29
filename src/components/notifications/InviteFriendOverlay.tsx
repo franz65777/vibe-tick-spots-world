@@ -1,51 +1,36 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Copy, Check, Share2 } from 'lucide-react';
+import { ArrowLeft, Send, Lock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { MapPin } from 'lucide-react';
+import { usePhoneContacts, FoundContact } from '@/hooks/usePhoneContacts';
+import AvatarStack from '@/components/common/AvatarStack';
+import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
-import addFriendIcon from '@/assets/icons/add-friend.png';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+// Placeholder download link - update when app is in stores
+const DOWNLOAD_LINK = 'https://spott.app/download';
+
+// Placeholder avatars for the "find friends" section
+const placeholderAvatars = [
+  { url: null, name: 'A' },
+  { url: null, name: 'B' },
+  { url: null, name: 'C' },
+];
+
 const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const { checkContacts, loading, matches, permissionDenied, error, isNativePlatform } = usePhoneContacts();
+  const [showContactsFound, setShowContactsFound] = useState(false);
+  const [foundContacts, setFoundContacts] = useState<FoundContact[]>([]);
   
   const didSetModalOpenRef = useRef(false);
-
-  // Fetch user's invite code
-  useEffect(() => {
-    if (!isOpen || !user) return;
-    
-    const fetchInviteCode = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('invite_code')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) throw error;
-        setInviteCode(data?.invite_code || null);
-      } catch (err) {
-        console.error('Error fetching invite code:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchInviteCode();
-  }, [isOpen, user]);
 
   // Manage data-modal-open
   useEffect(() => {
@@ -63,12 +48,18 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
     if (!isOpen) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (showContactsFound) {
+          setShowContactsFound(false);
+        } else {
+          onClose();
+        }
+      }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, showContactsFound]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -79,133 +70,154 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
     };
   }, []);
 
-  const handleCopyCode = async () => {
-    if (!inviteCode) return;
-    
-    try {
-      await navigator.clipboard.writeText(inviteCode);
-      setCopied(true);
-      toast.success(t('codeCopied', { ns: 'invite', defaultValue: 'Invite code copied!' }));
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error(t('copyFailed', { ns: 'invite', defaultValue: 'Failed to copy' }));
-    }
-  };
-
-  const handleShare = async () => {
-    if (!inviteCode) return;
-    
-    const shareText = t('shareMessage', { 
+  const handleInvite = async () => {
+    const shareText = t('inviteShareMessage', { 
       ns: 'invite', 
-      defaultValue: `Join me on the app! Use my invite code: ${inviteCode}`,
-      code: inviteCode 
+      defaultValue: `Join me on SPOTT to discover the best places! Download the app: ${DOWNLOAD_LINK}`,
     });
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: t('shareTitle', { ns: 'invite', defaultValue: 'Invite a friend' }),
+          title: 'SPOTT',
           text: shareText,
+          url: DOWNLOAD_LINK,
         });
       } catch (err) {
-        // User cancelled or share failed
         if ((err as Error).name !== 'AbortError') {
           console.error('Share failed:', err);
         }
       }
     } else {
-      // Fallback to copy
-      handleCopyCode();
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(`${shareText}`);
+        toast.success(t('linkCopied', { ns: 'invite', defaultValue: 'Link copied to clipboard!' }));
+      } catch (err) {
+        toast.error(t('copyFailed', { ns: 'invite', defaultValue: 'Failed to copy' }));
+      }
+    }
+  };
+
+  const handleCheckContacts = async () => {
+    if (!isNativePlatform) {
+      toast.info(t('mobileOnly', { ns: 'invite', defaultValue: 'Available on mobile app' }));
+      return;
+    }
+    
+    const results = await checkContacts();
+    if (results.length > 0) {
+      setFoundContacts(results);
+      setShowContactsFound(true);
+    } else if (permissionDenied) {
+      toast.error(t('permissionDenied', { ns: 'invite', defaultValue: 'Contact access denied. Please enable in settings.' }));
+    } else if (error) {
+      toast.error(error);
+    } else {
+      toast.info(t('noFriendsFound', { ns: 'invite', defaultValue: 'No friends found on SPOTT yet' }));
     }
   };
 
   if (!isOpen) return null;
 
   const overlay = (
-    <div className="fixed inset-0 z-[2147483641] flex flex-col bg-background/40 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[2147483641] flex flex-col bg-background/95 backdrop-blur-xl">
       {/* Header */}
       <header 
         className="sticky top-0 z-10"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
       >
         <div className="py-3 flex items-center px-4">
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="font-bold text-xl text-foreground">
-              {t('inviteFriend', { ns: 'invite', defaultValue: 'Invite a Friend' })}
-            </h1>
-          </div>
+          <Button
+            onClick={() => showContactsFound ? setShowContactsFound(false) : onClose()}
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
         </div>
       </header>
 
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
-        {/* Icon */}
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-          <img src={addFriendIcon} alt="Invite" className="w-14 h-14" />
-        </div>
-        
-        <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
-          {t('inviteTitle', { ns: 'invite', defaultValue: 'Grow your network' })}
-        </h2>
-        <p className="text-muted-foreground text-center mb-8 max-w-xs">
-          {t('inviteDescription', { ns: 'invite', defaultValue: 'Share your invite code with friends and discover places together!' })}
-        </p>
-
-        {loading ? (
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        ) : inviteCode ? (
-          <div className="w-full max-w-sm space-y-4">
-            {/* Invite code display */}
-            <div className="bg-muted/50 rounded-2xl p-4 text-center">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                {t('yourCode', { ns: 'invite', defaultValue: 'Your invite code' })}
-              </p>
-              <p className="text-2xl font-mono font-bold text-foreground tracking-widest">
-                {inviteCode}
-              </p>
+      {showContactsFound ? (
+        <ContactsFoundView 
+          contacts={foundContacts} 
+          onClose={() => setShowContactsFound(false)} 
+        />
+      ) : (
+        /* Main Content - Two Cards */
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-6">
+          
+          {/* Card 1: Invite Friends */}
+          <div className="w-full max-w-sm bg-card rounded-3xl p-8 shadow-lg border border-border/50">
+            {/* SPOTT Logo */}
+            <div className="flex justify-center mb-6">
+              <div className="flex items-center justify-center">
+                <h1 className="text-3xl font-bold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent relative flex items-baseline">
+                  SPOTT
+                  <MapPin className="w-4 h-4 text-blue-600 fill-blue-600 ml-1" />
+                </h1>
+              </div>
             </div>
-
-            {/* Action buttons */}
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleCopyCode}
-                variant="outline"
-                className="flex-1 rounded-full h-12"
-              >
-                {copied ? (
-                  <Check className="w-5 h-5 mr-2 text-green-500" />
-                ) : (
-                  <Copy className="w-5 h-5 mr-2" />
-                )}
-                {copied 
-                  ? t('copied', { ns: 'invite', defaultValue: 'Copied!' })
-                  : t('copy', { ns: 'invite', defaultValue: 'Copy' })
-                }
-              </Button>
-              <Button 
-                onClick={handleShare}
-                className="flex-1 rounded-full h-12"
-              >
-                <Share2 className="w-5 h-5 mr-2" />
-                {t('share', { ns: 'invite', defaultValue: 'Share' })}
-              </Button>
-            </div>
+            
+            <h2 className="text-xl font-semibold text-center text-foreground mb-2">
+              {t('haveFriendsTitle', { ns: 'invite', defaultValue: 'have friends with good taste?' })}
+            </h2>
+            
+            <p className="text-muted-foreground text-center text-sm mb-6">
+              {t('inviteDescription', { ns: 'invite', defaultValue: 'Share the app and discover places together' })}
+            </p>
+            
+            {/* Gradient Invite Button */}
+            <Button 
+              onClick={handleInvite}
+              className="w-full h-12 rounded-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-medium"
+            >
+              <Send className="w-5 h-5 mr-2" />
+              {t('inviteThem', { ns: 'invite', defaultValue: 'invite them' })}
+            </Button>
           </div>
-        ) : (
-          <p className="text-muted-foreground text-center">
-            {t('noCode', { ns: 'invite', defaultValue: 'No invite code available' })}
-          </p>
-        )}
-      </div>
+
+          {/* Card 2: Find Friends */}
+          <div className="w-full max-w-sm bg-card rounded-3xl p-8 shadow-lg border border-border/50">
+            {/* Avatar Stack */}
+            <div className="flex justify-center mb-6">
+              <AvatarStack avatars={placeholderAvatars} size="lg" />
+            </div>
+            
+            <h2 className="text-xl font-semibold text-center text-foreground mb-2">
+              {t('findYourFriends', { ns: 'invite', defaultValue: 'find your friends' })}
+            </h2>
+            
+            {/* Privacy Note */}
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs mb-6">
+              <Lock className="w-3 h-3" />
+              <span>
+                {t('privacyNote', { ns: 'invite', defaultValue: 'we never upload or store your contacts' })}
+              </span>
+            </div>
+            
+            {/* Check Contacts Button */}
+            <Button 
+              onClick={handleCheckContacts}
+              disabled={loading}
+              variant="default"
+              className="w-full h-12 rounded-full bg-foreground text-background hover:bg-foreground/90 font-medium"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Users className="w-5 h-5 mr-2" />
+                  {t('checkContacts', { ns: 'invite', defaultValue: 'check contacts' })}
+                </>
+              )}
+            </Button>
+          </div>
+          
+        </div>
+      )}
     </div>
   );
 
