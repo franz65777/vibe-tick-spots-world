@@ -629,7 +629,7 @@ const MapSection = ({
           }}
         >
           <DrawerContent 
-            showHandle={true}
+            showHandle={false}
             hideOverlay={true}
             className={cn(
               "flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl",

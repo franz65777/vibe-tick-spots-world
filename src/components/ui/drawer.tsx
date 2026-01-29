@@ -48,7 +48,7 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] bg-background will-change-transform",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] will-change-transform",
         !disableDefaultTransition && "transition-transform duration-300 ease-spring",
         // Override vaul's internal data-state animations when disabled
         disableDefaultTransition && "[&[data-state=open]]:!animate-none [&[data-state=closed]]:!animate-none",
@@ -63,7 +63,7 @@ const DrawerContent = React.forwardRef<
       }}
       {...props}
     >
-      {showHandle && <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />}
+      {showHandle && <div className="mx-auto mt-4 h-1.5 w-10 rounded-full bg-muted/50" />}
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
