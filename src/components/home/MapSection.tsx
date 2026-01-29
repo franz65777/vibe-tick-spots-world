@@ -633,12 +633,12 @@ const MapSection = ({
             hideOverlay={true}
             className="h-[85vh] flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
           >
-            <DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10">
+            <DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 bg-gray-200/60 dark:bg-slate-800/60 backdrop-blur-md rounded-t-[20px]">
               {/* Title row with save tag filters inline */}
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mt-1">
                 <DrawerTitle className="text-xl font-bold flex items-center gap-2 flex-shrink-0">
                   {t('locationsTitle', { ns: 'mapFilters' })}
-                  <Badge variant="secondary" className="text-sm font-medium">
+                  <Badge variant="secondary" className="text-sm font-medium bg-white/50 dark:bg-slate-700/50">
                     {places.length}
                   </Badge>
                 </DrawerTitle>
@@ -658,7 +658,10 @@ const MapSection = ({
                   size="sm"
                   variant={activeFilter === 'following' ? 'default' : 'outline'}
                   onClick={() => setActiveFilter('following')}
-                  className="rounded-full whitespace-nowrap flex-shrink-0 h-8"
+                  className={cn(
+                    "rounded-full whitespace-nowrap flex-shrink-0 h-8",
+                    activeFilter !== 'following' && "bg-white/50 dark:bg-slate-700/50 border-border/30"
+                  )}
                 >
                   {t('friends', { ns: 'mapFilters' })}
                 </Button>
@@ -666,7 +669,10 @@ const MapSection = ({
                   size="sm"
                   variant={activeFilter === 'popular' ? 'default' : 'outline'}
                   onClick={() => setActiveFilter('popular')}
-                  className="rounded-full whitespace-nowrap flex-shrink-0 h-8"
+                  className={cn(
+                    "rounded-full whitespace-nowrap flex-shrink-0 h-8",
+                    activeFilter !== 'popular' && "bg-white/50 dark:bg-slate-700/50 border-border/30"
+                  )}
                 >
                   {t('everyone', { ns: 'mapFilters' })}
                 </Button>
@@ -674,7 +680,10 @@ const MapSection = ({
                   size="sm"
                   variant={activeFilter === 'saved' ? 'default' : 'outline'}
                   onClick={() => setActiveFilter('saved')}
-                  className="rounded-full whitespace-nowrap flex-shrink-0 h-8"
+                  className={cn(
+                    "rounded-full whitespace-nowrap flex-shrink-0 h-8",
+                    activeFilter !== 'saved' && "bg-white/50 dark:bg-slate-700/50 border-border/30"
+                  )}
                 >
                   {t('saved', { ns: 'mapFilters' })}
                 </Button>
@@ -683,7 +692,7 @@ const MapSection = ({
                   size="sm"
                   variant="secondary"
                   onClick={() => setIsActiveSharesOpen(true)}
-                  className="rounded-full whitespace-nowrap flex-shrink-0 relative overflow-visible h-8"
+                  className="rounded-full whitespace-nowrap flex-shrink-0 relative overflow-visible h-8 bg-white/50 dark:bg-slate-700/50"
                 >
                   {t('activeShares', { ns: 'mapFilters' })}
                   {activeSharesCount > 0 && (
