@@ -7,6 +7,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationData } from '@/hooks/useNotificationData';
 import VirtualizedNotificationsList from '@/components/notifications/VirtualizedNotificationsList';
 import { useTranslation } from 'react-i18next';
+import InviteFriendOverlay from './InviteFriendOverlay';
+import addFriendIcon from '@/assets/icons/add-friend.png';
 
 interface NotificationsOverlayProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
   // Pre-fetch all notification data in batch (eliminates N+1 queries)
   const notificationData = useNotificationData(notifications);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   
   // Ref to track if this overlay set the data-modal-open attribute
   const didSetModalOpenRef = useRef(false);
@@ -175,7 +178,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
         className="sticky top-0 z-10"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
       >
-        <div className="py-3 flex items-center px-4">
+        <div className="py-3 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Button
               onClick={onClose}
@@ -188,6 +191,15 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
             </Button>
             <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
           </div>
+          
+          {/* Invite Friend Button */}
+          <button
+            onClick={() => setIsInviteOpen(true)}
+            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+            aria-label={t('inviteFriend', { ns: 'invite', defaultValue: 'Invite a Friend' })}
+          >
+            <img src={addFriendIcon} alt="" className="w-6 h-6" />
+          </button>
         </div>
       </header>
 
@@ -230,7 +242,12 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
     </div>
   );
 
-  return createPortal(overlay, document.body);
+  return (
+    <>
+      {createPortal(overlay, document.body)}
+      <InviteFriendOverlay isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
+    </>
+  );
 });
 
 NotificationsOverlay.displayName = 'NotificationsOverlay';
