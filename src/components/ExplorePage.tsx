@@ -436,7 +436,15 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
   const displayedHistory = showAllHistory ? localSearchHistory : localSearchHistory.slice(0, 10);
   
   return (
-    <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0 bg-[#FAF9F7] dark:bg-background">
+    <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
+      {/* Subtle gradient base */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+      </div>
+      {/* Frosted glass overlay */}
+      <div className="absolute inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+      {/* Content wrapper */}
+      <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
@@ -694,6 +702,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
           navigate('/');
         }}
       />
+      </div>
     </div>
   );
 });
