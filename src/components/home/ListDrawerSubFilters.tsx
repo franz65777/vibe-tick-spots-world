@@ -60,14 +60,14 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
     const allSelected = selectedFollowedUserIds.length === followedUsers.length && followedUsers.length > 0;
     return (
       <div className="px-4">
-        <div className="flex items-center gap-2.5 overflow-x-auto overflow-y-visible scrollbar-hide py-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto overflow-y-visible scrollbar-hide py-1.5">
           {/* All button - using friends icon like avatars */}
           <button 
             onClick={onSelectAllUsers} 
-            className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px]"
+            className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[40px]"
           >
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 overflow-hidden",
+              "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 bg-muted",
               allSelected || selectedFollowedUserIds.length === 0 
                 ? "ring-2 ring-primary ring-offset-1 ring-offset-background" 
                 : "opacity-60"
@@ -93,7 +93,7 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
               <button 
                 key={user.id} 
                 onClick={() => onToggleUser(user.id)} 
-                className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[44px]"
+                className="flex-shrink-0 flex flex-col items-center gap-0.5 min-w-[40px]"
               >
                 <Avatar className={cn(
                   "w-10 h-10 transition-all duration-200",
