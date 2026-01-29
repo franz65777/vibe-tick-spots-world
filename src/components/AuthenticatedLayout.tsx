@@ -6,10 +6,18 @@ import { UIStateProvider, useUIState } from '@/contexts/UIStateContext';
 import { AddOverlayProvider, useAddOverlay } from '@/contexts/AddOverlayContext';
 import { NotificationsOverlayProvider, useNotificationsOverlay } from '@/contexts/NotificationsOverlayContext';
 import { MessagesOverlayProvider, useMessagesOverlay } from '@/contexts/MessagesOverlayContext';
+import { ExploreOverlayProvider, useExploreOverlay } from '@/contexts/ExploreOverlayContext';
+import { FeedOverlayProvider, useFeedOverlay } from '@/contexts/FeedOverlayContext';
+import { ProfileOverlayProvider, useProfileOverlay } from '@/contexts/ProfileOverlayContext';
+import { LeaderboardOverlayProvider, useLeaderboardOverlay } from '@/contexts/LeaderboardOverlayContext';
 import AddPageOverlay from './add/AddPageOverlay';
 import LocationContributionModal from './explore/LocationContributionModal';
 import NotificationsOverlay from './notifications/NotificationsOverlay';
 import MessagesOverlay from './messages/MessagesOverlay';
+import ExploreOverlay from './explore/ExploreOverlay';
+import FeedOverlay from './feed/FeedOverlay';
+import ProfileOverlay from './profile/ProfileOverlay';
+import LeaderboardOverlay from './leaderboard/LeaderboardOverlay';
 
 const AuthenticatedLayoutContent: React.FC = () => {
   const location = useLocation();
@@ -195,6 +203,18 @@ const AuthenticatedLayoutContent: React.FC = () => {
         isOpen={isMessagesOverlayOpen}
         onClose={closeMessagesOverlay}
       />
+      
+      {/* Explore Overlay - rendered at layout level for all pages */}
+      <ExploreOverlay />
+      
+      {/* Feed Overlay - rendered at layout level for all pages */}
+      <FeedOverlay />
+      
+      {/* Profile Overlay - rendered at layout level for all pages */}
+      <ProfileOverlay />
+      
+      {/* Leaderboard Overlay - rendered at layout level for all pages */}
+      <LeaderboardOverlay />
     </div>
   );
 };
@@ -205,7 +225,15 @@ const AuthenticatedLayout: React.FC = () => {
       <AddOverlayProvider>
         <NotificationsOverlayProvider>
           <MessagesOverlayProvider>
-            <AuthenticatedLayoutContent />
+            <ExploreOverlayProvider>
+              <FeedOverlayProvider>
+                <ProfileOverlayProvider>
+                  <LeaderboardOverlayProvider>
+                    <AuthenticatedLayoutContent />
+                  </LeaderboardOverlayProvider>
+                </ProfileOverlayProvider>
+              </FeedOverlayProvider>
+            </ExploreOverlayProvider>
           </MessagesOverlayProvider>
         </NotificationsOverlayProvider>
       </AddOverlayProvider>

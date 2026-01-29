@@ -15,6 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { haptics } from '@/utils/haptics';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useExploreOverlay } from '@/contexts/ExploreOverlayContext';
+import { useFeedOverlay } from '@/contexts/FeedOverlayContext';
+import { useProfileOverlay } from '@/contexts/ProfileOverlayContext';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
@@ -24,6 +27,11 @@ const NewBottomNavigation = () => {
   const { trackEvent } = useAnalytics();
   const { hasValidBusinessAccount } = useBusinessProfile();
   const queryClient = useQueryClient();
+  
+  // Overlay contexts
+  const { openExploreOverlay } = useExploreOverlay();
+  const { openFeedOverlay } = useFeedOverlay();
+  const { openProfileOverlay } = useProfileOverlay();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
@@ -53,8 +61,7 @@ const NewBottomNavigation = () => {
   // Determine if navigation should be hidden (CSS-based, keeps component mounted)
   // Note: /messages and /notifications are now overlays, not routes
   const shouldHideNav = hideNav || 
-    location.pathname === '/share-location' || 
-    location.pathname === '/leaderboard';
+    location.pathname === '/share-location';
 
   // Prefetch profile data when hovering/focusing on Profile tab
   // This ensures instant loading when user clicks Profile
@@ -99,17 +106,20 @@ const NewBottomNavigation = () => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
-      // Short tap - navigate to profile
+      // Short tap - open profile overlay
       if (!showSwitchModal) {
-        handleNavClick('/profile', 'Profile');
+        haptics.selection();
+        openProfileOverlay();
+        trackEvent('nav_tab_clicked', { tab: 'profile' });
       }
     }
   };
 
   const handleProfileClick = () => {
-    // For users without business account, navigate directly
+    // For users without business account, open profile overlay directly
     if (!hasValidBusinessAccount) {
-      navigate('/profile');
+      haptics.selection();
+      openProfileOverlay();
       trackEvent('nav_tab_clicked', { tab: 'profile' });
     }
   };
@@ -149,7 +159,12 @@ const NewBottomNavigation = () => {
     { 
       icon: <Search size={24} strokeWidth={2} />, 
       label: t('navigation:search'), 
-      path: '/explore'
+      path: '/explore',
+      customAction: () => {
+        haptics.selection();
+        openExploreOverlay();
+        trackEvent('nav_tab_clicked', { tab: 'search' });
+      }
     },
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
@@ -163,12 +178,22 @@ const NewBottomNavigation = () => {
     { 
       icon: <Activity size={24} strokeWidth={2} />, 
       label: t('navigation:feed'), 
-      path: '/feed'
+      path: '/feed',
+      customAction: () => {
+        haptics.selection();
+        openFeedOverlay();
+        trackEvent('nav_tab_clicked', { tab: 'feed' });
+      }
     },
     { 
       icon: <User size={24} strokeWidth={2} />, 
       label: t('navigation:profile'), 
-      path: '/profile'
+      path: '/profile',
+      customAction: () => {
+        haptics.selection();
+        openProfileOverlay();
+        trackEvent('nav_tab_clicked', { tab: 'profile' });
+      }
     },
   ];
 

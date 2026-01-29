@@ -32,7 +32,7 @@ const CommunityChampions = ({
   return (
     <div className="flex justify-center w-full">
       <Button
-        onClick={() => navigate('/leaderboard')}
+        onClick={() => window.dispatchEvent(new CustomEvent('open-leaderboard-overlay'))}
         variant="outline"
         className="w-fit px-4 rounded-xl border-border bg-background hover:bg-muted/50 h-12 font-semibold text-base"
       >
