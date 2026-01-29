@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Send, Lock, Users } from 'lucide-react';
+import { ArrowLeft, Send, Lock, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { usePhoneContacts, FoundContact } from '@/hooks/usePhoneContacts';
@@ -202,9 +202,9 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
             </h2>
             
             {/* Privacy Note */}
-            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs mb-4">
-              <Lock className="w-3 h-3" />
-              <span>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs mb-4 text-center">
+              <Lock className="w-3 h-3 flex-shrink-0" />
+              <span className="text-center">
                 {t('privacyNote', { ns: 'invite', defaultValue: 'we never upload or store your contacts' })}
               </span>
             </div>
@@ -220,7 +220,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
                 <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Users className="w-5 h-5 mr-2" />
+                  <UserPlus className="w-5 h-5 mr-2" />
                   {t('checkContacts', { ns: 'invite', defaultValue: 'sync contacts' })}
                 </>
               )}
