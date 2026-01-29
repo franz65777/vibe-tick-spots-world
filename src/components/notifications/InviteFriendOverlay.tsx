@@ -121,13 +121,13 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
   if (!isOpen) return null;
 
   const overlay = (
-    <div className="fixed inset-0 z-[2147483641] flex flex-col bg-background/95 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[2147483641] flex flex-col bg-background/40 backdrop-blur-xl">
       {/* Header */}
       <header 
         className="sticky top-0 z-10"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
       >
-        <div className="py-3 flex items-center px-4">
+        <div className="py-3 flex items-center gap-3 px-4">
           <Button
             onClick={() => showContactsFound ? setShowContactsFound(false) : onClose()}
             variant="ghost"
@@ -137,6 +137,9 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
+          <h1 className="font-bold text-xl text-foreground">
+            {t('pageTitle', { ns: 'invite', defaultValue: 'Invite a Friend' })}
+          </h1>
         </div>
       </header>
 
