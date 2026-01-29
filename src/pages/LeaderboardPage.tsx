@@ -45,7 +45,7 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
         filter={filter}
       />
 
-      <div className="min-h-screen pb-safe">
+      <div className="min-h-screen pb-safe bg-[#FAF9F7] dark:bg-background">
         {/* Minimal Header */}
         <div 
           className="sticky top-0 z-10 pb-4"

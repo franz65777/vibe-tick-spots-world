@@ -538,7 +538,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
 
 
   return (
-    <div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+    <div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] bg-[#FAF9F7] dark:bg-background">
       {/* Header */}
       <div className="sticky top-0 z-30 shrink-0 w-full">
         <div className="py-3 pl-4 flex justify-start w-full">
