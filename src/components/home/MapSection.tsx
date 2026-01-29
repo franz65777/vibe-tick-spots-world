@@ -631,9 +631,15 @@ const MapSection = ({
           <DrawerContent 
             showHandle={true}
             hideOverlay={true}
-            className="h-[85vh] flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
+            className={cn(
+              "flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl",
+              places.length <= 3 ? "max-h-[45vh]" :
+              places.length <= 5 ? "max-h-[60vh]" :
+              places.length <= 8 ? "max-h-[72vh]" :
+              "max-h-[85vh]"
+            )}
           >
-            <DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 bg-gray-200/60 dark:bg-slate-800/60 backdrop-blur-md rounded-t-[20px]">
+            <DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 backdrop-blur-xl rounded-t-[20px]">
               {/* Title row with save tag filters inline */}
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mt-1">
                 <DrawerTitle className="text-xl font-bold flex items-center gap-2 flex-shrink-0">
