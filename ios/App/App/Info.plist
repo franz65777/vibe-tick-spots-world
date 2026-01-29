@@ -63,5 +63,9 @@
 	<string>Abbiamo bisogno di accedere alle tue foto per condividere immagini.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Abbiamo bisogno di salvare le foto nella tua libreria.</string>
+	
+	<!-- Contacts Permission -->
+	<key>NSContactsUsageDescription</key>
+	<string>SPOTT vuole trovare i tuoi amici che stanno già usando l'app.</string>
 </dict>
 </plist>
