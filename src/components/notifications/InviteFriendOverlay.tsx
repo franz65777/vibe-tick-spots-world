@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Send, Lock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
-import { MapPin } from 'lucide-react';
 import { usePhoneContacts, FoundContact } from '@/hooks/usePhoneContacts';
 import AvatarStack from '@/components/common/AvatarStack';
 import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
+import spottLogoColorful from '@/assets/spott-logo-colorful.png';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
@@ -17,11 +17,20 @@ interface InviteFriendOverlayProps {
 // Placeholder download link - update when app is in stores
 const DOWNLOAD_LINK = 'https://spott.app/download';
 
-// Placeholder avatars for the "find friends" section
+// Real avatars for the "find friends" section
 const placeholderAvatars = [
-  { url: null, name: 'A' },
-  { url: null, name: 'B' },
-  { url: null, name: 'C' },
+  { 
+    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/101423bc-a06c-40cc-8bb9-42af76946e4d/avatar/avatar-1765123237885.jpg', 
+    name: 'yungtrinky' 
+  },
+  { 
+    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/avatars/6e627794-6ac1-4830-9737-de5158761904-1763140984090.jpg', 
+    name: 'ore' 
+  },
+  { 
+    url: 'https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/media/4ff2a819-7556-4b74-a0ad-6950a03285c9/avatar/avatar-1750188571035.jpeg', 
+    name: 'sarita' 
+  },
 ];
 
 const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps) => {
@@ -156,12 +165,11 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
           <div className="w-full max-w-sm bg-card rounded-3xl p-8 shadow-lg border border-border/50">
             {/* SPOTT Logo */}
             <div className="flex justify-center mb-6">
-              <div className="flex items-center justify-center">
-                <h1 className="text-3xl font-bold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent relative flex items-baseline">
-                  SPOTT
-                  <MapPin className="w-4 h-4 text-blue-600 fill-blue-600 ml-1" />
-                </h1>
-              </div>
+              <img 
+                src={spottLogoColorful} 
+                alt="SPOTT" 
+                className="h-16 w-auto animate-bounce-gentle"
+              />
             </div>
             
             <h2 className="text-xl font-semibold text-center text-foreground mb-2">
