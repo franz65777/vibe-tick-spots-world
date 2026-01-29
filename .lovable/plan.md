@@ -1,74 +1,108 @@
 
-## Applicare l'Effetto "Frosted Glass" al Drawer "Posizioni"
+## Migliorare la UI di Conferma Eliminazione Post
 
-### Problema Identificato
-Guardando lo screenshot, l'area superiore del drawer "Posizioni" (header con titolo e filtri) appare con uno sfondo più opaco rispetto all'effetto vetro smerigliato desiderato. Il drawer ha già `bg-gray-200/40 backdrop-blur-md`, ma:
+### Problema Attuale
+Il sistema attualmente usa il dialog nativo del browser `confirm()` che appare come un popup generico del sistema operativo - non integrato con lo stile dell'app.
 
-1. Il `DrawerHeader` non ha uno stile specifico per mantenere la trasparenza
-2. I pulsanti `Button` con variant `outline` usano `bg-background` che è solido
-3. La `Badge` "secondary" usa `bg-secondary` che è anche solido
-
-### Obiettivo
-Rendere tutto il drawer (header incluso) più trasparente per mostrare la mappa dietro con effetto blur, simile all'immagine di riferimento.
+### Soluzione
+Sostituire il `confirm()` nativo con un AlertDialog stilizzato di Radix UI, con traduzioni complete in tutte le lingue supportate.
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. MapSection.tsx - Aggiungere sfondo trasparente al DrawerHeader
+#### 1. PostsGrid.tsx - Aggiungere stato e AlertDialog
 
-Modificare la riga 636 per aggiungere uno sfondo frosted glass al `DrawerHeader`:
-
+**Aggiungere import:**
 ```tsx
-// DA
-<DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10">
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+```
 
-// A
-<DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 bg-gray-200/60 dark:bg-slate-800/60 backdrop-blur-md rounded-t-[20px]">
+**Aggiungere stato per tracciare il post da eliminare:**
+```tsx
+const [postToDelete, setPostToDelete] = useState<string | null>(null);
+```
+
+**Modificare handleDeletePost (riga 162-189):**
+```tsx
+const handleDeletePost = (postId: string, event: React.MouseEvent) => {
+  event.stopPropagation();
+  setPostToDelete(postId); // Apre il dialog invece di confirm()
+};
+
+const confirmDelete = async () => {
+  if (!postToDelete) return;
+  
+  try {
+    const result = await deletePost(postToDelete);
+    
+    if (result.success) {
+      toast.success(t('postDeletedSuccess', { ns: 'business' }));
+      const { queryClient } = await import('@/lib/queryClient');
+      queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
+    } else {
+      toast.error(result.error?.message || t('failedDeletePost', { ns: 'business' }));
+    }
+  } catch (error) {
+    toast.error(t('failedDeletePost', { ns: 'business' }));
+  } finally {
+    setPostToDelete(null);
+  }
+};
+```
+
+**Aggiungere AlertDialog nel JSX (prima del return finale):**
+```tsx
+<AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+  <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+    <AlertDialogHeader>
+      <AlertDialogTitle>{t('deletePostTitle', { ns: 'business' })}</AlertDialogTitle>
+      <AlertDialogDescription>
+        {t('confirmDeletePost', { ns: 'business' })}
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter className="flex-row gap-2">
+      <AlertDialogCancel className="flex-1 rounded-xl">
+        {t('cancel', { ns: 'common' })}
+      </AlertDialogCancel>
+      <AlertDialogAction 
+        onClick={confirmDelete}
+        className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90"
+        disabled={deleting}
+      >
+        {deleting ? (
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        ) : null}
+        {t('delete', { ns: 'common' })}
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
 ```
 
 ---
 
-#### 2. MapSection.tsx - Modificare i Button dei filtri per trasparenza
+#### 2. i18n.ts - Aggiungere traduzioni per il titolo
 
-Modificare i pulsanti dei filtri (Amici, Tutti, Salvati) per usare sfondi trasparenti invece di solidi:
+Aggiungere `deletePostTitle` al namespace `business` per tutte le lingue:
 
-**Button Outline (non attivo):**
-```tsx
-// DA
-variant={activeFilter === 'following' ? 'default' : 'outline'}
-
-// A - Aggiungere className personalizzato
-className={cn(
-  "rounded-full whitespace-nowrap flex-shrink-0 h-8",
-  activeFilter !== 'following' && "bg-white/50 dark:bg-slate-700/50 border-border/30"
-)}
-```
-
----
-
-#### 3. MapSection.tsx - Modificare la Badge del conteggio
-
-Modificare la Badge per essere più trasparente:
-
-```tsx
-// DA
-<Badge variant="secondary" className="text-sm font-medium">
-
-// A
-<Badge variant="secondary" className="text-sm font-medium bg-white/50 dark:bg-slate-700/50">
-```
-
----
-
-#### 4. LocationListItem.tsx - Rendere gli item più trasparenti
-
-Attualmente gli item usano `bg-white/70`. Mantenere questo valore o ridurlo leggermente:
-
-```tsx
-// Riga 48 - già usa bg-white/70 che è appropriato
-// Opzionale: ridurre a bg-white/60 per più trasparenza
-```
+| Lingua | Chiave | Valore |
+|--------|--------|--------|
+| EN | deletePostTitle | Delete Post |
+| ES | deletePostTitle | Eliminar Publicación |
+| IT | deletePostTitle | Elimina Post |
+| FR | deletePostTitle | Supprimer la Publication |
+| DE | deletePostTitle | Beitrag Löschen |
+| TR | deletePostTitle | Gönderiyi Sil |
 
 ---
 
@@ -76,35 +110,18 @@ Attualmente gli item usano `bg-white/70`. Mantenere questo valore o ridurlo legg
 
 | File | Modifica |
 |------|----------|
-| `src/components/home/MapSection.tsx` | Aggiungere sfondo frosted glass al DrawerHeader e rendere i Button più trasparenti |
-| `src/components/home/LocationListItem.tsx` | (Opzionale) Ridurre opacità sfondo item se necessario |
+| `src/components/profile/PostsGrid.tsx` | Sostituire `confirm()` con AlertDialog stilizzato |
+| `src/i18n.ts` | Aggiungere `deletePostTitle` per tutte le lingue |
 
 ---
 
-### Nota sui Filtri Save Tag per "Amici"
+### Risultato Visivo
 
-Ho verificato il codice in `useMapLocations.ts` e i filtri save tag (Been, To Try, Favourite) sono **già implementati** per il filtro "following" (Amici):
-
-- Righe 314-317: Applicato per query con mapBounds su `user_saved_locations`
-- Righe 327-330: Applicato per query con mapBounds su `saved_places`  
-- Righe 620-623: Applicato per query senza bounds su `user_saved_locations`
-- Righe 634-637: Applicato per query senza bounds su `saved_places`
-
-Il codice usa correttamente:
-```typescript
-if (selectedSaveTags.length > 0) {
-  savedInternalQuery = savedInternalQuery.in('save_tag', selectedSaveTags);
-}
-```
-
-Quindi **non sono necessarie modifiche** per far funzionare i filtri save tag con il filtro "Amici" - dovrebbe già funzionare.
-
----
-
-### Risultato Atteso
-
-Dopo le modifiche:
-1. Il drawer "Posizioni" mostrerà la mappa sfumata dietro l'intera area (header + contenuto)
-2. L'header sticky manterrà l'effetto vetro smerigliato durante lo scroll
-3. I pulsanti dei filtri avranno uno sfondo semi-trasparente coordinato
-4. I filtri Been/To Try/Favourite continueranno a funzionare sia per "Salvati" che per "Amici"
+Il nuovo dialog avrà:
+- Sfondo blur scuro semi-trasparente
+- Card bianca con bordi arrotondati (rounded-2xl)
+- Titolo "Elimina Post" in grassetto
+- Messaggio di conferma tradotto
+- Due pulsanti affiancati:
+  - "Annulla" (outline) - chiude il dialog
+  - "Elimina" (rosso destructive) - conferma l'eliminazione con spinner durante il caricamento
