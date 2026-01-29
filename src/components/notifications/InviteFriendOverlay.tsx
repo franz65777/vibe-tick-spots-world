@@ -159,16 +159,16 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
         />
       ) : (
         /* Main Content - Two Cards */
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-6">
+        <div className="flex-1 flex flex-col items-center justify-center px-5 py-4 gap-4">
           
           {/* Card 1: Invite Friends */}
-          <div className="w-full max-w-sm bg-card rounded-3xl p-8 shadow-lg border border-border/50">
+          <div className="w-full max-w-sm bg-card rounded-3xl p-6 shadow-lg border border-border/50">
             {/* SPOTT Logo */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4">
               <img 
                 src={spottLogoColorful} 
                 alt="SPOTT" 
-                className="h-16 w-auto animate-bounce-gentle"
+                className="h-24 w-auto animate-bounce-gentle"
               />
             </div>
             
@@ -176,8 +176,8 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
               {t('haveFriendsTitle', { ns: 'invite', defaultValue: 'have friends with good taste?' })}
             </h2>
             
-            <p className="text-muted-foreground text-center text-sm mb-6">
-              {t('inviteDescription', { ns: 'invite', defaultValue: 'Share the app and discover places together' })}
+            <p className="text-muted-foreground text-center text-sm mb-4">
+              {t('inviteDescription', { ns: 'invite', defaultValue: 'bring them to SPOTT - share your favorite spots' })}
             </p>
             
             {/* Gradient Invite Button */}
@@ -191,18 +191,18 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
           </div>
 
           {/* Card 2: Find Friends */}
-          <div className="w-full max-w-sm bg-card rounded-3xl p-8 shadow-lg border border-border/50">
+          <div className="w-full max-w-sm bg-card rounded-3xl p-6 shadow-lg border border-border/50">
             {/* Avatar Stack */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4">
               <AvatarStack avatars={placeholderAvatars} size="lg" />
             </div>
             
             <h2 className="text-xl font-semibold text-center text-foreground mb-2">
-              {t('findYourFriends', { ns: 'invite', defaultValue: 'find your friends' })}
+              {t('findYourFriends', { ns: 'invite', defaultValue: "who's already here?" })}
             </h2>
             
             {/* Privacy Note */}
-            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs mb-6">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs mb-4">
               <Lock className="w-3 h-3" />
               <span>
                 {t('privacyNote', { ns: 'invite', defaultValue: 'we never upload or store your contacts' })}
@@ -221,7 +221,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
               ) : (
                 <>
                   <Users className="w-5 h-5 mr-2" />
-                  {t('checkContacts', { ns: 'invite', defaultValue: 'check contacts' })}
+                  {t('checkContacts', { ns: 'invite', defaultValue: 'sync contacts' })}
                 </>
               )}
             </Button>
