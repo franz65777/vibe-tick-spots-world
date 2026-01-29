@@ -41,11 +41,14 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
   
   const didSetModalOpenRef = useRef(false);
 
-  // Manage data-modal-open
+  // Manage data-modal-open - only set if not already set by parent overlay
   useEffect(() => {
     if (isOpen) {
-      didSetModalOpenRef.current = true;
-      document.body.setAttribute('data-modal-open', 'true');
+      // Only set if not already set (avoids conflicts with parent overlay)
+      if (!document.body.hasAttribute('data-modal-open')) {
+        didSetModalOpenRef.current = true;
+        document.body.setAttribute('data-modal-open', 'true');
+      }
     } else if (didSetModalOpenRef.current) {
       didSetModalOpenRef.current = false;
       document.body.removeAttribute('data-modal-open');
