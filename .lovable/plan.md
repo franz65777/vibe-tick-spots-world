@@ -1,104 +1,185 @@
 
 
-## Replicare l'Aspetto Frosted Glass dell'Add Page
+## Applicare lo Sfondo "Mappa con Blur" a Explore, Feed, Leaderboard e Profile
 
 ### Il Problema
-L'Add page ha l'effetto frosted glass perché è un **overlay sopra la mappa**. Il `backdrop-blur-xl` sfuma la mappa colorata creando l'effetto vetro smerigliato.
+L'effetto frosted glass della pagina Notifications funziona perché è un **overlay a portale** posizionato sopra la mappa (Home page). Il `backdrop-blur-xl` sfuma la mappa colorata sottostante.
 
-Le pagine Explore e Feed sono **pagine standalone** - non c'è nulla di colorato sotto da sfumare. La soluzione precedente con gradiente grigio non funziona perché non replica l'aspetto della mappa sfumata.
+Le pagine Explore, Feed, Leaderboard e Profile sono **rotte separate** - quando ci navighi, la mappa viene smontata e non c'è nulla da sfumare. Per questo i tentativi precedenti non hanno funzionato.
 
 ### Soluzione
-Creare un layer di "noise" o pattern colorato sottile sotto il blur per simulare l'effetto della mappa sfumata, oppure usare un approccio più semplice: applicare direttamente lo stesso stile dell'Add page (`bg-background/40 backdrop-blur-xl`) con un gradiente colorato sottile come base.
+Convertire queste 4 pagine in **overlay** come NotificationsOverlay e MessagesOverlay:
+
+1. Creare context provider per ogni pagina (ExploreOverlayContext, FeedOverlayContext, ecc.)
+2. Creare componenti overlay per ogni pagina
+3. Montare gli overlay nel AuthenticatedLayout sopra la mappa
+4. Modificare la navigazione per aprire overlay invece di cambiare rotta
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. ExplorePage.tsx (righe 435-441)
+#### 1. Creare ExploreOverlayContext (nuovo file)
 
-Sostituire il background attuale con un pattern colorato + blur simile all'Add page:
+```text
+src/contexts/ExploreOverlayContext.tsx
+```
 
+Context che gestisce apertura/chiusura dell'overlay Explore, navigando sempre alla Home (mappa) quando aperto.
+
+---
+
+#### 2. Creare FeedOverlayContext (nuovo file)
+
+```text
+src/contexts/FeedOverlayContext.tsx
+```
+
+Context per la pagina Feed.
+
+---
+
+#### 3. Creare ProfileOverlayContext (nuovo file)
+
+```text
+src/contexts/ProfileOverlayContext.tsx
+```
+
+Context per la pagina Profile.
+
+---
+
+#### 4. Creare LeaderboardOverlayContext (nuovo file)
+
+```text
+src/contexts/LeaderboardOverlayContext.tsx
+```
+
+Context per la pagina Leaderboard.
+
+---
+
+#### 5. Convertire ExplorePage in ExploreOverlay
+
+Modificare il componente per:
+- Usare `createPortal` per renderizzare a livello `<body>`
+- Applicare lo stesso sfondo delle notifiche: `bg-background/40 backdrop-blur-xl`
+- Aggiungere z-index alto (simile a NotificationsOverlay)
+
+**Struttura del wrapper:**
 ```tsx
-// ATTUALE
-<div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
-  <div className="absolute inset-0 z-0 bg-gradient-to-b from-gray-100 via-gray-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black" />
-  <div className="absolute inset-0 z-0 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
-  <div className="relative z-10 flex flex-col h-full">
-
-// NUOVO - layer colorati sfumati come la mappa + blur
-<div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
-  {/* Base colorful layer - simula la mappa sotto */}
-  <div className="absolute inset-0 z-0">
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-50/30 to-pink-100/40 dark:from-blue-900/20 dark:via-purple-950/20 dark:to-pink-900/20" />
-    <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/30 dark:bg-blue-800/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-200/30 dark:bg-purple-800/20 rounded-full blur-3xl" />
-    <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-pink-200/20 dark:bg-pink-800/15 rounded-full blur-3xl" />
-  </div>
-  {/* Frosted glass overlay - come Add page */}
-  <div className="absolute inset-0 z-[1] bg-background/40 backdrop-blur-xl" />
-  {/* Content */}
-  <div className="relative z-10 flex flex-col h-full">
+<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+  {/* Header e contenuto esistenti */}
+</div>
 ```
 
 ---
 
-#### 2. FeedPage.tsx (righe 537-541)
+#### 6. Convertire FeedPage in FeedOverlay
 
-Stesso approccio:
+Stesso approccio di ExplorePage.
+
+---
+
+#### 7. Convertire ProfilePage in ProfileOverlay
+
+Stesso approccio.
+
+---
+
+#### 8. Convertire LeaderboardPage in LeaderboardOverlay
+
+Stesso approccio.
+
+---
+
+#### 9. Aggiornare AuthenticatedLayout
+
+Aggiungere i nuovi provider e montare i nuovi overlay:
 
 ```tsx
-// ATTUALE
-<div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
-  <div className="fixed inset-0 -z-10 bg-gradient-to-b from-gray-100 via-gray-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black" />
-  <div className="fixed inset-0 -z-10 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
-  <div className="w-full h-full flex flex-col">
-
-// NUOVO
-<div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
-  {/* Base colorful layer - simula la mappa sotto */}
-  <div className="fixed inset-0 z-0">
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-50/30 to-pink-100/40 dark:from-blue-900/20 dark:via-purple-950/20 dark:to-pink-900/20" />
-    <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/30 dark:bg-blue-800/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-200/30 dark:bg-purple-800/20 rounded-full blur-3xl" />
-    <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-pink-200/20 dark:bg-pink-800/15 rounded-full blur-3xl" />
-  </div>
-  {/* Frosted glass overlay - come Add page */}
-  <div className="fixed inset-0 z-[1] bg-background/40 backdrop-blur-xl" />
-  {/* Content */}
-  <div className="relative z-10 w-full h-full flex flex-col">
+<ExploreOverlayProvider>
+  <FeedOverlayProvider>
+    <ProfileOverlayProvider>
+      <LeaderboardOverlayProvider>
+        ...
+        <ExploreOverlay />
+        <FeedOverlay />
+        <ProfileOverlay />
+        <LeaderboardOverlay />
+      </LeaderboardOverlayProvider>
+    </ProfileOverlayProvider>
+  </FeedOverlayProvider>
+</ExploreOverlayProvider>
 ```
 
 ---
 
-#### 3. FeedPage.tsx - Rimuovere bg-background dal scroll container (riga 582)
+#### 10. Aggiornare NewBottomNavigation
 
-Il contenitore scroll ha ancora `bg-background` che copre l'effetto:
+Modificare i click sui tab per aprire gli overlay invece di navigare a rotte separate:
 
-```tsx
-// ATTUALE
-<div ref={scrollContainerRef} data-feed-scroll-container className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+- Tab Explore → `openExploreOverlay()` invece di `navigate('/explore')`
+- Tab Feed → `openFeedOverlay()` invece di `navigate('/feed')`
+- Tab Profile → `openProfileOverlay()` invece di `navigate('/profile')`
 
-// NUOVO - rimuovere bg-background
-<div ref={scrollContainerRef} data-feed-scroll-container className="flex-1 overflow-y-scroll pb-24 scrollbar-hide">
-```
+---
+
+### File da Creare
+
+| File | Descrizione |
+|------|-------------|
+| `src/contexts/ExploreOverlayContext.tsx` | Context per gestire overlay Explore |
+| `src/contexts/FeedOverlayContext.tsx` | Context per gestire overlay Feed |
+| `src/contexts/ProfileOverlayContext.tsx` | Context per gestire overlay Profile |
+| `src/contexts/LeaderboardOverlayContext.tsx` | Context per gestire overlay Leaderboard |
+| `src/components/explore/ExploreOverlay.tsx` | Overlay wrapper per Explore |
+| `src/components/feed/FeedOverlay.tsx` | Overlay wrapper per Feed |
+| `src/components/profile/ProfileOverlay.tsx` | Overlay wrapper per Profile |
+| `src/components/leaderboard/LeaderboardOverlay.tsx` | Overlay wrapper per Leaderboard |
 
 ---
 
 ### File da Modificare
 
-| File | Righe | Modifica |
-|------|-------|----------|
-| `src/components/ExplorePage.tsx` | 435-441 | Sostituire sfondo con layer colorati + blur |
-| `src/pages/FeedPage.tsx` | 537-541 | Sostituire sfondo con layer colorati + blur |
-| `src/pages/FeedPage.tsx` | 582 | Rimuovere `bg-background` dal scroll container |
+| File | Modifica |
+|------|----------|
+| `src/components/AuthenticatedLayout.tsx` | Aggiungere provider e overlay |
+| `src/components/NewBottomNavigation.tsx` | Usare context overlay invece di navigate |
+| `src/components/ExplorePage.tsx` | Rimuovere sfondo simulato (sarà nell'overlay) |
+| `src/pages/FeedPage.tsx` | Rimuovere sfondo simulato |
+| `src/pages/LeaderboardPage.tsx` | Rimuovere sfondo bg-background |
+| `src/components/ProfilePage.tsx` | Rimuovere sfondo bg-background |
 
 ---
 
 ### Come Funziona
 
-1. **Layer colorato base**: Gradienti e "blob" sfumati blu/viola/rosa simulano i colori della mappa
-2. **Frosted glass overlay**: `bg-background/40 backdrop-blur-xl` (esattamente come Add page) sfuma il layer colorato
-3. **Contenuto sopra**: Z-index 10 per posizionare tutto il contenuto sopra i layer di sfondo
+```text
+┌─────────────────────────────────────┐
+│         Home Page (Mappa)           │ ← Sempre montata
+├─────────────────────────────────────┤
+│                                     │
+│  ┌─────────────────────────────┐    │
+│  │     Overlay (Portal)        │    │
+│  │  bg-background/40           │    │
+│  │  backdrop-blur-xl           │    │ ← Sfuma la mappa
+│  │                             │    │
+│  │  [Explore/Feed/Profile/     │    │
+│  │   Leaderboard Content]      │    │
+│  └─────────────────────────────┘    │
+│                                     │
+└─────────────────────────────────────┘
+```
 
-Questo replica esattamente la tecnica dell'Add page ma con un pattern colorato simulato al posto della mappa.
+La mappa rimane sempre visibile e montata. Gli overlay si sovrappongono con il blur, creando l'effetto vetro smerigliato identico a Notifications.
+
+---
+
+### Vantaggi
+
+1. **Stesso effetto visivo** delle Notifications - identico `backdrop-blur-xl`
+2. **Performance migliori** - la mappa resta montata, transizioni istantanee
+3. **Coerenza UI** - tutte le sezioni principali hanno lo stesso stile
+4. **Architettura pulita** - pattern già collaudato con Notifications e Messages
 
