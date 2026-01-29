@@ -24,6 +24,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
   const notificationData = useNotificationData(notifications);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   
   // Ref to track if this overlay set the data-modal-open attribute
   const didSetModalOpenRef = useRef(false);
@@ -38,7 +39,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
     }
   }, [isOpen, loading, notifications.length, unreadCount, markAllAsRead]);
 
-  // Manage data-modal-open - only reacts to isOpen changes
+  // Manage data-modal-open and visibility animation
   useEffect(() => {
     if (isOpen) {
       didSetModalOpenRef.current = true;
@@ -49,10 +50,15 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
       window.dispatchEvent(new CustomEvent('close-filter-dropdown'));
       window.dispatchEvent(new CustomEvent('close-city-selector'));
       window.dispatchEvent(new CustomEvent('close-list-view'));
-    } else if (didSetModalOpenRef.current) {
-      didSetModalOpenRef.current = false;
-      document.body.removeAttribute('data-modal-open');
-      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+      // Trigger fade-in animation
+      requestAnimationFrame(() => setIsVisible(true));
+    } else {
+      setIsVisible(false);
+      if (didSetModalOpenRef.current) {
+        didSetModalOpenRef.current = false;
+        document.body.removeAttribute('data-modal-open');
+        window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+      }
     }
   }, [isOpen]);
 
@@ -172,7 +178,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
   if (!isOpen) return null;
 
   const overlay = (
-    <div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+    <div className={`fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl transition-all duration-200 ease-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Header */}
       <header 
         className="sticky top-0 z-10"

@@ -75,6 +75,7 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [view, setView] = useState<ViewMode>('threads');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -117,7 +118,7 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
     return messages.find(m => m.id === selectedMessageId) || null;
   }, [selectedMessageId, messages]);
 
-  // Manage data-modal-open - only reacts to isOpen changes
+  // Manage data-modal-open and visibility animation
   useEffect(() => {
     if (isOpen) {
       didSetModalOpenRef.current = true;
@@ -128,10 +129,15 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
       window.dispatchEvent(new CustomEvent('close-filter-dropdown'));
       window.dispatchEvent(new CustomEvent('close-city-selector'));
       window.dispatchEvent(new CustomEvent('close-list-view'));
-    } else if (didSetModalOpenRef.current) {
-      didSetModalOpenRef.current = false;
-      document.body.removeAttribute('data-modal-open');
-      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+      // Trigger fade-in animation
+      requestAnimationFrame(() => setIsVisible(true));
+    } else {
+      setIsVisible(false);
+      if (didSetModalOpenRef.current) {
+        didSetModalOpenRef.current = false;
+        document.body.removeAttribute('data-modal-open');
+        window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+      }
     }
   }, [isOpen]);
 
@@ -684,7 +690,7 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
   if (!isOpen) return null;
 
   const overlay = (
-    <div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+    <div className={`fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl transition-all duration-200 ease-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       <div className="h-screen w-full flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
         {/* Header */}
         <header className="shrink-0 w-full">
