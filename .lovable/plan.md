@@ -1,12 +1,12 @@
 
 
-## Sfondo Omogeneo per Overlay Notifiche e Messaggi
+## Ripristinare Effetto Glassmorphism per Notifiche e Messaggi
 
-### Problema Attuale
-Gli overlay usano `bg-background/40 backdrop-blur-xl` che mostra la mappa sotto con blur. I colori variabili della mappa (strade, aree verdi, acqua) creano uno sfondo disomogeneo visivamente.
+### Problema
+Dopo l'ultima modifica, gli overlay usano `bg-background/95` che nasconde completamente la mappa e appare piatto/noioso, mentre l'Add page usa `bg-background/40 backdrop-blur-xl` che crea un bellissimo effetto vetro smerigliato.
 
 ### Soluzione
-Sostituire lo sfondo semi-trasparente con uno sfondo quasi opaco che mantenga un leggero effetto blur per profondità ma nasconda efficacemente la mappa.
+Tornare allo stesso stile dell'Add page (`bg-background/40 backdrop-blur-xl`) per entrambi gli overlay.
 
 ---
 
@@ -16,12 +16,12 @@ Sostituire lo sfondo semi-trasparente con uno sfondo quasi opaco che mantenga un
 
 **Attuale:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
 ```
 
 **Nuovo:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
+<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
 ```
 
 ---
@@ -30,28 +30,27 @@ Sostituire lo sfondo semi-trasparente con uno sfondo quasi opaco che mantenga un
 
 **Attuale:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
 ```
 
 **Nuovo:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
+<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
 ```
 
 ---
 
 ### Risultato
 
-| Prima | Dopo |
-|-------|------|
-| Mappa visibile con blur (colori variabili) | Sfondo quasi solido, omogeneo |
-| Effetto glassmorphism forte | Effetto più sottile ma uniforme |
-| Distrazioni visive | Aspetto pulito e professionale |
+Tutti e tre gli overlay (Add, Notifiche, Messaggi) avranno lo stesso identico aspetto glassmorphism con:
+- Sfondo semi-trasparente al 40%
+- Blur forte (xl) che sfuma la mappa sottostante
+- Effetto vetro smerigliato coerente in tutta l'app
 
 ### File da Modificare
 
-| File | Riga | Modifica |
-|------|------|----------|
-| `src/components/notifications/NotificationsOverlay.tsx` | 172 | `bg-background/40` → `bg-background/95` |
-| `src/components/messages/MessagesOverlay.tsx` | 687 | `bg-background/40` → `bg-background/95` |
+| File | Modifica |
+|------|----------|
+| `src/components/notifications/NotificationsOverlay.tsx` | `bg-background/95 dark:bg-background/95` → `bg-background/40` |
+| `src/components/messages/MessagesOverlay.tsx` | `bg-background/95 dark:bg-background/95` → `bg-background/40` |
 
