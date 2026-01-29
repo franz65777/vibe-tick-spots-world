@@ -1,56 +1,57 @@
 
 
-## Ripristinare Effetto Glassmorphism per Notifiche e Messaggi
+## Applicare Effetto Glassmorphism a Explore e Feed Page
 
-### Problema
-Dopo l'ultima modifica, gli overlay usano `bg-background/95` che nasconde completamente la mappa e appare piatto/noioso, mentre l'Add page usa `bg-background/40 backdrop-blur-xl` che crea un bellissimo effetto vetro smerigliato.
+### Contesto
+L'utente vuole applicare lo stesso effetto glassmorphism (`bg-background/40 backdrop-blur-xl`) anche alle pagine Explore e Feed per coerenza visiva con gli overlay Notifiche e Messaggi.
 
-### Soluzione
-Tornare allo stesso stile dell'Add page (`bg-background/40 backdrop-blur-xl`) per entrambi gli overlay.
+**Nota:** Queste sono pagine complete, non overlay. L'effetto blur sarà visibile ma meno pronunciato dato che non c'è una mappa sotto.
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. NotificationsOverlay.tsx (riga 172)
+#### 1. ExplorePage.tsx (riga 435)
 
 **Attuale:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
+<div className="flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
 ```
 
 **Nuovo:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+<div className="flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0 bg-background/40 backdrop-blur-xl">
 ```
 
 ---
 
-#### 2. MessagesOverlay.tsx (riga 687)
+#### 2. FeedPage.tsx (riga 537)
 
 **Attuale:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/95 dark:bg-background/95 backdrop-blur-xl">
+<div className="h-screen bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
 ```
 
 **Nuovo:**
 ```tsx
-<div className="fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl">
+<div className="h-screen bg-background/40 backdrop-blur-xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
 ```
 
 ---
-
-### Risultato
-
-Tutti e tre gli overlay (Add, Notifiche, Messaggi) avranno lo stesso identico aspetto glassmorphism con:
-- Sfondo semi-trasparente al 40%
-- Blur forte (xl) che sfuma la mappa sottostante
-- Effetto vetro smerigliato coerente in tutta l'app
 
 ### File da Modificare
 
-| File | Modifica |
-|------|----------|
-| `src/components/notifications/NotificationsOverlay.tsx` | `bg-background/95 dark:bg-background/95` → `bg-background/40` |
-| `src/components/messages/MessagesOverlay.tsx` | `bg-background/95 dark:bg-background/95` → `bg-background/40` |
+| File | Riga | Modifica |
+|------|------|----------|
+| `src/components/ExplorePage.tsx` | 435 | Aggiungere `bg-background/40 backdrop-blur-xl` |
+| `src/pages/FeedPage.tsx` | 537 | Sostituire `bg-background` con `bg-background/40 backdrop-blur-xl` |
+
+---
+
+### Risultato Atteso
+
+Tutte le pagine principali (Explore, Feed, Notifiche, Messaggi) avranno lo stesso stile glassmorphism coerente con:
+- Sfondo semi-trasparente al 40%
+- Effetto blur (xl) per profondità visiva
+- Aspetto uniforme in tutta l'app
 
