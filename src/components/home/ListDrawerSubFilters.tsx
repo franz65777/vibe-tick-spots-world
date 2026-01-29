@@ -60,7 +60,7 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
     const allSelected = selectedFollowedUserIds.length === followedUsers.length && followedUsers.length > 0;
     return (
       <div className="px-4 -mt-1">
-        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-hide pt-1 pb-1">
+        <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-hide pt-2 pb-2">
           {/* All button - using friends icon like avatars */}
           <button 
             onClick={onSelectAllUsers} 
