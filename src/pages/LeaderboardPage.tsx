@@ -12,7 +12,11 @@ import { translateCityName } from '@/utils/cityTranslations';
 import { useAuth } from '@/contexts/AuthContext';
 import leaderboardTrophy from '@/assets/leaderboard-trophy.png';
 
-const LeaderboardPage = () => {
+interface LeaderboardPageProps {
+  onClose?: () => void;
+}
+
+const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
@@ -41,16 +45,16 @@ const LeaderboardPage = () => {
         filter={filter}
       />
 
-      <div className="min-h-screen bg-background pb-safe">
+      <div className="min-h-screen pb-safe">
         {/* Minimal Header */}
         <div 
-          className="sticky top-0 z-10 bg-background pb-4"
+          className="sticky top-0 z-10 pb-4"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
         >
           <div className="px-4">
             <div className="flex items-center gap-3 mb-4">
               <Button
-                onClick={() => navigate('/explore', { state: { searchMode: 'users' } })}
+                onClick={onClose || (() => navigate('/explore', { state: { searchMode: 'users' } }))}
                 variant="ghost"
                 size="icon"
                 className="rounded-full"

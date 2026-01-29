@@ -1,5 +1,5 @@
 import { memo, RefObject, useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ interface ExploreHeaderBarProps {
   onSearchChange: (query: string) => void;
   onInputFocus: (focused: boolean) => void;
   onClearSearch: () => void;
+  onClose?: () => void;
 }
 
 const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
@@ -25,7 +26,8 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
     searchInputRef,
     onSearchChange,
     onInputFocus,
-    onClearSearch
+    onClearSearch,
+    onClose
   } = props;
 
   // Check if in onboarding mode
@@ -48,6 +50,18 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
       <div className="px-4 py-4">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
+          {/* Back button when onClose is provided (overlay mode) */}
+          {onClose && !inputFocused && !searchQuery && (
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-12 w-12 rounded-2xl"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
+          
           {/* Swipe Discovery Button - Hidden when search is active or during onboarding */}
           {!inputFocused && !searchQuery && !isOnboarding && (
             <Button
