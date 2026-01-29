@@ -75,7 +75,7 @@ const ListDrawerSubFilters: React.FC<ListDrawerSubFiltersProps> = ({
               <img 
                 src={filterAllFriendsIcon} 
                 alt={t('all', { ns: 'mapFilters' })} 
-                className="w-full h-full object-cover"
+                className="w-7 h-7 object-contain"
               />
             </div>
             <span className={cn(
