@@ -298,11 +298,12 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .not('longitude', 'is', null);
 
             // Fetch internal saved locations (user_saved_locations -> locations)
-            const { data: savedInternal } = await supabase
+            let savedInternalQuery = supabase
               .from('user_saved_locations')
               .select(`
                 user_id,
                 created_at,
+                save_tag,
                 location:locations (
                   id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data, photos
                 )
@@ -310,11 +311,25 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .in('user_id', followedUserIds)
               .not('location', 'is', null);
 
+            // Apply save_tag filter if selected
+            if (selectedSaveTags.length > 0) {
+              savedInternalQuery = savedInternalQuery.in('save_tag', selectedSaveTags);
+            }
+
+            const { data: savedInternal } = await savedInternalQuery;
+
             // Fetch saved places (Google places)
-            const { data: savedPlaces } = await supabase
+            let savedPlacesQuery = supabase
               .from('saved_places')
-              .select('place_id, created_at, user_id, place_name, place_category, city, coordinates')
+              .select('place_id, created_at, user_id, place_name, place_category, city, coordinates, save_tag')
               .in('user_id', followedUserIds);
+
+            // Apply save_tag filter if selected
+            if (selectedSaveTags.length > 0) {
+              savedPlacesQuery = savedPlacesQuery.in('save_tag', selectedSaveTags);
+            }
+
+            const { data: savedPlaces } = await savedPlacesQuery;
 
             const locationMap = new Map<string, MapLocation>();
             const usedCoords = new Set<string>();
@@ -588,11 +603,12 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .limit(500);
 
             // Fetch internal saved locations (user_saved_locations -> locations)
-            const { data: savedInternal } = await supabase
+            let savedInternalQuery = supabase
               .from('user_saved_locations')
               .select(`
                 user_id,
                 created_at,
+                save_tag,
               location:locations (
                   id, name, category, address, city, latitude, longitude, created_by, google_place_id, opening_hours_data, photos
                 )
@@ -601,12 +617,26 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .not('location', 'is', null)
               .limit(800);
 
+            // Apply save_tag filter if selected
+            if (selectedSaveTags.length > 0) {
+              savedInternalQuery = savedInternalQuery.in('save_tag', selectedSaveTags);
+            }
+
+            const { data: savedInternal } = await savedInternalQuery;
+
             // Fetch saved places by followed users (no city filter here; we filter in JS via cityOk)
-            const { data: savedPlaces } = await supabase
+            let savedPlacesQuery = supabase
               .from('saved_places')
-              .select('place_id, created_at, user_id, place_name, place_category, city, coordinates')
+              .select('place_id, created_at, user_id, place_name, place_category, city, coordinates, save_tag')
               .in('user_id', followedUserIds)
               .limit(800);
+
+            // Apply save_tag filter if selected
+            if (selectedSaveTags.length > 0) {
+              savedPlacesQuery = savedPlacesQuery.in('save_tag', selectedSaveTags);
+            }
+
+            const { data: savedPlaces } = await savedPlacesQuery;
 
             const locationMap = new Map<string, MapLocation>();
             const usedCoords = new Set<string>();
