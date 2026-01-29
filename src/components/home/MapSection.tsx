@@ -479,8 +479,8 @@ const MapSection = ({
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen relative' : 'w-full h-full relative'} overflow-hidden`}>
-        {/* Keep map mounted but visually hidden when list view is open - prevents layout glitches */}
-        <div className={isListViewOpen ? 'opacity-0 pointer-events-none' : ''}>
+        {/* Keep map mounted and visible behind the drawer - only disable interactions when list is open */}
+        <div className={isListViewOpen ? 'pointer-events-none' : ''}>
           <LeafletMapSetup
             key={isExpanded ? 'map-full' : 'map-embedded'}
             places={places}
@@ -610,7 +610,8 @@ const MapSection = ({
 
         {/* Location List Drawer - Always rendered */}
         <Drawer 
-          open={isListViewOpen} 
+          open={isListViewOpen}
+          shouldScaleBackground={false}
           onOpenChange={(open) => {
             // Timestamp-based guard: ignore close events within 500ms of programmatic open
             if (!open) {
@@ -632,16 +633,16 @@ const MapSection = ({
             showHandle={false}
             hideOverlay={true}
             className={cn(
-              "flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl",
-              places.length <= 3 ? "max-h-[45vh]" :
-              places.length <= 5 ? "max-h-[60vh]" :
-              places.length <= 8 ? "max-h-[72vh]" :
-              "max-h-[85vh]"
+              "flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl overflow-hidden",
+              places.length <= 3 ? "h-[45vh]" :
+              places.length <= 5 ? "h-[60vh]" :
+              places.length <= 8 ? "h-[72vh]" :
+              "h-[85vh]"
             )}
           >
-            <DrawerHeader className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 backdrop-blur-xl rounded-t-[20px]">
+            <DrawerHeader className="px-6 pt-4 pb-2 flex-shrink-0 sticky top-0 z-10 backdrop-blur-xl rounded-t-[20px]">
               {/* Title row with save tag filters inline */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mt-1">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
                 <DrawerTitle className="text-xl font-bold flex items-center gap-2 flex-shrink-0">
                   {t('locationsTitle', { ns: 'mapFilters' })}
                   <Badge variant="secondary" className="text-sm font-medium bg-white/50 dark:bg-slate-700/50">
