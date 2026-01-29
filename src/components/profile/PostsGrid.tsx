@@ -498,25 +498,25 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       {/* Delete Confirmation Dialog */}
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-        <AlertDialogContent className="w-[calc(100%-32px)] max-w-[320px] rounded-2xl p-6">
-          <AlertDialogHeader className="text-center">
-            <AlertDialogTitle className="text-lg font-semibold">
+        <AlertDialogContent className="w-[280px] rounded-3xl p-5 bg-background/80 backdrop-blur-xl border-white/20 shadow-2xl">
+          <AlertDialogHeader className="text-center space-y-1">
+            <AlertDialogTitle className="text-base font-medium">
               {t('deletePostTitle', { ns: 'business' })}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
+            <AlertDialogDescription className="text-sm text-muted-foreground/80">
               {t('confirmDeletePost', { ns: 'business' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row gap-3 mt-2">
-            <AlertDialogCancel className="flex-1 m-0 rounded-xl h-12 border-muted-foreground/30">
+          <AlertDialogFooter className="flex flex-row gap-2 mt-4">
+            <AlertDialogCancel className="flex-1 m-0 rounded-full h-10 text-sm font-medium bg-muted/50 border-0 hover:bg-muted/80">
               {t('cancel', { ns: 'common' })}
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
-              className="flex-1 m-0 rounded-xl h-12 bg-destructive hover:bg-destructive/90 text-white"
+              className="flex-1 m-0 rounded-full h-10 text-sm font-medium bg-destructive hover:bg-destructive/90 text-white border-0"
               disabled={deleting}
             >
-              {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {deleting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
               {t('delete', { ns: 'common' })}
             </AlertDialogAction>
           </AlertDialogFooter>
