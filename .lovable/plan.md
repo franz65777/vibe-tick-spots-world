@@ -1,105 +1,137 @@
 
-## Rendere i Filtri Save Tag Funzionanti per il Filtro "Amici"
+## Aggiungere Effetto Blur "Frosted Glass" alle Pagine (Explore, Feed, Profile, Leaderboard)
 
-### Situazione Attuale
+### Obiettivo
+Replicare l'effetto visivo "Per te" della foto 2: uno sfondo off-white/crema con un sottile effetto vetro smerigliato che dà un aspetto morbido e sfumato.
 
-Attualmente il drawer "Posizioni" sulla mappa mostra i filtri save tag (Been, To Try, Favourite) sia per "Salvati" che per "Amici" a livello UI, ma il backend (useMapLocations) applica il filtro `selectedSaveTags` **solo** per il filtro "saved", non per "following".
+### Approccio Tecnico
+Creare un effetto multi-layer simile agli overlay, ma con gradienti colorati sottili come base invece della mappa:
 
-Questo significa che quando selezioni "Favourite" in modalità "Amici", il filtro non funziona - vengono mostrate tutte le location degli amici invece di solo quelle contrassegnate come favourite.
+1. **Layer base colorato**: Gradienti sfumati blu/viola/rosa molto tenui che simulano colori sotto il blur
+2. **Layer frosted glass**: `bg-[#FAF9F7]/80 backdrop-blur-xl` sopra il layer colorato
+3. **Contenuto**: Z-index superiore per il contenuto della pagina
+
+```text
+┌─────────────────────────────────────┐
+│  Layer 1: Gradienti colorati tenui  │ ← Base (z-0)
+├─────────────────────────────────────┤
+│  Layer 2: Off-white/80 blur-xl      │ ← Frosted glass (z-[1])
+├─────────────────────────────────────┤
+│  Layer 3: Contenuto pagina          │ ← Content (z-10)
+└─────────────────────────────────────┘
+```
 
 ---
 
 ### Modifiche Tecniche
 
-#### 1. useMapLocations.ts - Aggiungere filtro save_tag per "following" 
+#### 1. ExplorePage.tsx (riga 439)
 
-**Problema**: Nel case `following` (righe 268-814), le query per `user_saved_locations` e `saved_places` non filtrano per `save_tag`.
+```tsx
+// DA
+<div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0 bg-[#FAF9F7] dark:bg-background">
 
-**Soluzione**: Aggiungere `.in('save_tag', selectedSaveTags)` alle query quando `selectedSaveTags.length > 0`, come già fatto per il case `saved`.
-
-**Righe da modificare**:
-
-1. **Con mapBounds (riga ~301-310)**: Query `user_saved_locations`
-```typescript
-// Aggiungere filtro save_tag
-let savedInternalQuery = supabase
-  .from('user_saved_locations')
-  .select(...)
-  .in('user_id', followedUserIds)
-  .not('location', 'is', null);
-
-if (selectedSaveTags.length > 0) {
-  savedInternalQuery = savedInternalQuery.in('save_tag', selectedSaveTags);
-}
-
-const { data: savedInternal } = await savedInternalQuery;
+// A
+<div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
+  {/* Subtle gradient base */}
+  <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+  </div>
+  {/* Frosted glass overlay */}
+  <div className="absolute inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+  {/* Content wrapper */}
+  <div className="relative z-10 flex flex-col h-full">
+    {/* ... tutto il contenuto esistente ... */}
+  </div>
+</div>
 ```
 
-2. **Con mapBounds (riga ~314-317)**: Query `saved_places`
-```typescript
-let savedPlacesQuery = supabase
-  .from('saved_places')
-  .select(...)
-  .in('user_id', followedUserIds);
+---
 
-if (selectedSaveTags.length > 0) {
-  savedPlacesQuery = savedPlacesQuery.in('save_tag', selectedSaveTags);
-}
+#### 2. FeedPage.tsx (riga 541)
 
-const { data: savedPlaces } = await savedPlacesQuery;
+```tsx
+// DA
+<div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] bg-[#FAF9F7] dark:bg-background">
+
+// A
+<div className="relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+  {/* Subtle gradient base */}
+  <div className="fixed inset-0 z-0">
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+  </div>
+  {/* Frosted glass overlay */}
+  <div className="fixed inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+  {/* Content wrapper */}
+  <div className="relative z-10 h-full flex flex-col overflow-hidden">
+    {/* ... tutto il contenuto esistente ... */}
+  </div>
+</div>
 ```
 
-3. **Senza mapBounds (riga ~590-602)**: Query `user_saved_locations`
-```typescript
-let savedInternalQuery = supabase
-  .from('user_saved_locations')
-  .select(...)
-  .in('user_id', followedUserIds)
-  .not('location', 'is', null)
-  .limit(800);
+---
 
-if (selectedSaveTags.length > 0) {
-  savedInternalQuery = savedInternalQuery.in('save_tag', selectedSaveTags);
-}
+#### 3. ProfilePage.tsx (riga 158)
 
-const { data: savedInternal } = await savedInternalQuery;
+```tsx
+// DA
+<div className="flex flex-col h-full pt-[env(safe-area-inset-top)] bg-[#FAF9F7] dark:bg-background">
+
+// A
+<div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
+  {/* Subtle gradient base */}
+  <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+  </div>
+  {/* Frosted glass overlay */}
+  <div className="absolute inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+  {/* Content wrapper */}
+  <div className="relative z-10 flex flex-col h-full">
+    {/* ... tutto il contenuto esistente ... */}
+  </div>
+</div>
 ```
 
-4. **Senza mapBounds (riga ~605-609)**: Query `saved_places`
-```typescript
-let savedPlacesQuery = supabase
-  .from('saved_places')
-  .select('place_id, created_at, user_id, place_name, place_category, city, coordinates, save_tag')
-  .in('user_id', followedUserIds)
-  .limit(800);
+---
 
-if (selectedSaveTags.length > 0) {
-  savedPlacesQuery = savedPlacesQuery.in('save_tag', selectedSaveTags);
-}
+#### 4. LeaderboardPage.tsx (riga 48)
 
-const { data: savedPlaces } = await savedPlacesQuery;
+```tsx
+// DA
+<div className="min-h-screen pb-safe bg-[#FAF9F7] dark:bg-background">
+
+// A
+<div className="relative min-h-screen pb-safe">
+  {/* Subtle gradient base */}
+  <div className="fixed inset-0 z-0">
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+  </div>
+  {/* Frosted glass overlay */}
+  <div className="fixed inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+  {/* Content wrapper */}
+  <div className="relative z-10 min-h-screen pb-safe">
+    {/* ... tutto il contenuto esistente ... */}
+  </div>
+</div>
 ```
 
 ---
 
 ### File da Modificare
 
-| File | Modifica |
-|------|----------|
-| `src/hooks/useMapLocations.ts` | Aggiungere filtro `selectedSaveTags` alle 4 query nel case `following` |
+| File | Riga | Modifica |
+|------|------|----------|
+| `src/components/ExplorePage.tsx` | 439 | Aggiungere layer gradient + frosted overlay |
+| `src/pages/FeedPage.tsx` | 541 | Aggiungere layer gradient + frosted overlay |
+| `src/components/ProfilePage.tsx` | 158 | Aggiungere layer gradient + frosted overlay |
+| `src/pages/LeaderboardPage.tsx` | 48 | Aggiungere layer gradient + frosted overlay |
 
 ---
 
-### Comportamento Risultante
+### Vantaggi di questo Approccio
 
-1. **Nessun tag selezionato**: Mostra tutte le location degli amici (comportamento attuale)
-2. **Tag selezionato (es. Favourite)**: Mostra solo le location degli amici contrassegnate come "Favourite"
-3. **Tag multipli selezionati**: Mostra location che corrispondono a uno qualsiasi dei tag selezionati
-
----
-
-### Note Aggiuntive
-
-- La UI già mostra i `SaveTagInlineFilters` per il filtro "following" (riga 647-651 di MapSection.tsx)
-- Lo stato `selectedSaveTags` viene già passato a `useMapLocations` (riga 222 di MapSection.tsx)
-- Non serve toccare nessun componente UI - solo la logica di backend nel hook
+1. **Nessun cambio di architettura** - le pagine restano come rotte standard
+2. **Effetto blur visibile** - il gradiente sotto viene sfumato creando l'effetto vetro
+3. **Performance leggera** - solo CSS, nessun componente aggiuntivo
+4. **Coerenza visiva** - stesso "look" della foto "Per te"
+5. **Dark mode supportata** - colori adattati per tema scuro
