@@ -1,115 +1,102 @@
 
-
-## Correggere Layout e Stile del Dialog di Eliminazione Post
+## Correggere il Drawer delle Posizioni
 
 ### Problemi Identificati dallo Screenshot
 
-1. **Container fuori margini**: La combinazione di `w-full max-w-lg` nel componente base + `max-w-sm mx-4` aggiunto crea conflitti
-2. **Bottoni disallineati verticalmente**: `AlertDialogFooter` usa `flex-col-reverse` su mobile
-3. **Margine extra su "Annulla"**: `AlertDialogCancel` ha `mt-2` su mobile
-4. **Bordo troppo spesso**: Il bottone "Annulla" ha un bordo outline troppo evidente
-
-### Traduzioni
-Le traduzioni esistono gia per tutte le lingue (EN, ES, IT, FR, DE, TR):
-- `deletePostTitle`: "Elimina Post" (IT), "Delete Post" (EN), etc.
-- `confirmDeletePost`: messaggio completo tradotto
-- `cancel` e `delete`: gia nel namespace common
+1. **Sfondi diversi**: L'header ("Posizioni 67" + filtri) usa `bg-gray-200/60` mentre il drawer generale usa `bg-gray-200/40` - visivamente diversi
+2. **Mappa non visibile**: Gli item della lista usano `bg-white/70` che e troppo opaco - la mappa dovrebbe trasparire
+3. **Altezza fissa**: Il drawer usa sempre `h-[85vh]` indipendentemente dal numero di elementi
 
 ---
 
 ### Modifiche Tecniche
 
-#### PostsGrid.tsx - Migliorare classi CSS del dialog
+#### 1. MapSection.tsx - Unificare sfondi e rendere altezza dinamica
+
+**DrawerContent (riga 631-634):**
+- Rimuovere lo sfondo solido dal drawer principale
+- Rendere l'altezza dinamica basata sul numero di elementi
+- Usare solo `backdrop-blur-xl` senza colore di sfondo semi-opaco
 
 ```tsx
-// DA (riga 499-520)
-<AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-  <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
-    <AlertDialogHeader>
-      <AlertDialogTitle>{t('deletePostTitle', { ns: 'business' })}</AlertDialogTitle>
-      <AlertDialogDescription>
-        {t('confirmDeletePost', { ns: 'business' })}
-      </AlertDialogDescription>
-    </AlertDialogHeader>
-    <AlertDialogFooter className="flex-row gap-2">
-      <AlertDialogCancel className="flex-1 rounded-xl">
-        {t('cancel', { ns: 'common' })}
-      </AlertDialogCancel>
-      <AlertDialogAction 
-        onClick={confirmDelete}
-        className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90"
-        disabled={deleting}
-      >
-        {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-        {t('delete', { ns: 'common' })}
-      </AlertDialogAction>
-    </AlertDialogFooter>
-  </AlertDialogContent>
-</AlertDialog>
+// DA
+className="h-[85vh] flex flex-col z-[150] bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md border-t border-border/10 shadow-2xl"
 
 // A
-<AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-  <AlertDialogContent className="w-[calc(100%-32px)] max-w-[320px] rounded-2xl p-6">
-    <AlertDialogHeader className="text-center">
-      <AlertDialogTitle className="text-lg font-semibold">
-        {t('deletePostTitle', { ns: 'business' })}
-      </AlertDialogTitle>
-      <AlertDialogDescription className="text-muted-foreground">
-        {t('confirmDeletePost', { ns: 'business' })}
-      </AlertDialogDescription>
-    </AlertDialogHeader>
-    <AlertDialogFooter className="flex flex-row gap-3 mt-2">
-      <AlertDialogCancel className="flex-1 m-0 rounded-xl h-12 border-muted-foreground/30">
-        {t('cancel', { ns: 'common' })}
-      </AlertDialogCancel>
-      <AlertDialogAction 
-        onClick={confirmDelete}
-        className="flex-1 m-0 rounded-xl h-12 bg-destructive hover:bg-destructive/90 text-white"
-        disabled={deleting}
-      >
-        {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-        {t('delete', { ns: 'common' })}
-      </AlertDialogAction>
-    </AlertDialogFooter>
-  </AlertDialogContent>
-</AlertDialog>
+className={cn(
+  "flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl",
+  // Altezza dinamica: max 85vh, min basato sul contenuto
+  places.length <= 3 ? "max-h-[45vh]" :
+  places.length <= 5 ? "max-h-[60vh]" :
+  places.length <= 8 ? "max-h-[72vh]" :
+  "max-h-[85vh]"
+)}
+```
+
+**DrawerHeader (riga 636):**
+- Rimuovere sfondo separato per unificare con il resto
+- Mantenere solo backdrop-blur per coerenza
+
+```tsx
+// DA
+className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 bg-gray-200/60 dark:bg-slate-800/60 backdrop-blur-md rounded-t-[20px]"
+
+// A
+className="pt-1 pb-2 flex-shrink-0 sticky top-0 z-10 backdrop-blur-xl rounded-t-[20px]"
 ```
 
 ---
 
-### Dettaglio Modifiche CSS
+#### 2. LocationListItem.tsx - Rendere la mappa piu visibile dietro
 
-| Elemento | Prima | Dopo | Motivo |
-|----------|-------|------|--------|
-| `AlertDialogContent` | `max-w-sm mx-4` | `w-[calc(100%-32px)] max-w-[320px] p-6` | Calcolo preciso larghezza con margini |
-| `AlertDialogHeader` | default | `text-center` | Centrare titolo e descrizione |
-| `AlertDialogFooter` | `flex-row gap-2` | `flex flex-row gap-3 mt-2` | Forzare row layout sempre |
-| `AlertDialogCancel` | `flex-1 rounded-xl` | `flex-1 m-0 rounded-xl h-12 border-muted-foreground/30` | Rimuovere mt-2, bordo piu sottile |
-| `AlertDialogAction` | `flex-1 rounded-xl` | `flex-1 m-0 rounded-xl h-12` | Rimuovere margini, altezza uniforme |
+**Item principale (riga 48):**
+- Ridurre opacita da `bg-white/70` a `bg-white/50` per light mode
+- Ridurre opacita da `bg-slate-700/70` a `bg-slate-800/40` per dark mode
+- La mappa sara piu visibile dietro ogni elemento
+
+```tsx
+// DA
+className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm border border-white/50 dark:border-slate-600/50 cursor-pointer transition-all duration-200 hover:bg-white/90 dark:hover:bg-slate-700/90 hover:shadow-sm active:scale-[0.98]"
+
+// A
+className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-white/30 dark:border-slate-600/30 cursor-pointer transition-all duration-200 hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-sm active:scale-[0.98]"
+```
+
+**Skeleton loader (riga 136):**
+```tsx
+// DA
+className="flex items-center gap-2.5 p-2.5 rounded-xl bg-background/60 border border-border/30"
+
+// A
+className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/40 dark:bg-slate-800/30 backdrop-blur-sm border border-white/30 dark:border-slate-600/30"
+```
 
 ---
 
-### Risultato Atteso
+### Logica Altezza Dinamica
 
-```text
-┌─────────────────────────────────────┐
-│                                     │
-│          Elimina Post               │  <- Titolo centrato
-│                                     │
-│  Sei sicuro di voler eliminare      │  <- Descrizione centrata
-│  questo post? Questa azione non     │
-│  puo essere annullata.              │
-│                                     │
-│  ┌───────────┐  ┌───────────┐       │
-│  │  Annulla  │  │  Elimina  │       │  <- Bottoni allineati, stessa altezza
-│  └───────────┘  └───────────┘       │
-│                                     │
-└─────────────────────────────────────┘
-```
+| Numero Elementi | Altezza Massima |
+|-----------------|-----------------|
+| 1-3 | 45vh |
+| 4-5 | 60vh |
+| 6-8 | 72vh |
+| 9+ | 85vh (attuale) |
+
+Questo fa si che con pochi elementi il drawer sia compatto, mostrando piu mappa.
+
+---
 
 ### File da Modificare
 
 | File | Modifica |
 |------|----------|
-| `src/components/profile/PostsGrid.tsx` | Aggiornare classi CSS del dialog (righe 499-520) |
+| `src/components/home/MapSection.tsx` | Unificare sfondi header/content, altezza dinamica |
+| `src/components/home/LocationListItem.tsx` | Ridurre opacita sfondo items per mostrare mappa |
 
+---
+
+### Risultato Visivo
+
+- **Sfondo unificato**: Header e lista avranno lo stesso effetto glassmorphism
+- **Mappa visibile**: Attraverso gli elementi della lista si vedra la mappa sottostante
+- **Altezza adattiva**: Con poche posizioni il drawer sara piu basso, mostrando piu mappa
