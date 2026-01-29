@@ -496,21 +496,24 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       )}
 
       {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('deletePostTitle', { ns: 'business' })}</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="w-[calc(100%-32px)] max-w-[320px] rounded-2xl p-6">
+          <AlertDialogHeader className="text-center">
+            <AlertDialogTitle className="text-lg font-semibold">
+              {t('deletePostTitle', { ns: 'business' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               {t('confirmDeletePost', { ns: 'business' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-2">
-            <AlertDialogCancel className="flex-1 rounded-xl">
+          <AlertDialogFooter className="flex flex-row gap-3 mt-2">
+            <AlertDialogCancel className="flex-1 m-0 rounded-xl h-12 border-muted-foreground/30">
               {t('cancel', { ns: 'common' })}
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
-              className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90"
+              className="flex-1 m-0 rounded-xl h-12 bg-destructive hover:bg-destructive/90 text-white"
               disabled={deleting}
             >
               {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
