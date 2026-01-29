@@ -201,7 +201,7 @@ export const turkishTranslations = {
     },
     business: {
       deletePostTitle: 'Gönderiyi Sil',
-      confirmDeletePost: 'Bu gönderiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      confirmDeletePost: 'Bu gönderiyi silmek mi? Geri alınamaz.',
       postDeletedSuccess: 'Gönderi başarıyla silindi',
       failedDeletePost: 'Gönderi silinemedi',
       noPostsYet: 'Henüz gönderi yok',
