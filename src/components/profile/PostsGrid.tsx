@@ -507,7 +507,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               {t('confirmDeletePost', { ns: 'business' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row gap-2 mt-4">
+          <AlertDialogFooter className="flex flex-row gap-2 mt-2">
             <AlertDialogCancel className="flex-1 m-0 rounded-full h-10 text-sm font-medium bg-muted/50 border-0 hover:bg-muted/80">
               {t('cancel', { ns: 'common' })}
             </AlertDialogCancel>
