@@ -196,7 +196,7 @@ const NewBottomNavigation = () => {
         aria-hidden={shouldHideNav}
       >
         <div className="w-full px-4 pb-[env(safe-area-inset-bottom)]">
-          <div className="relative bg-white dark:bg-zinc-900 rounded-full mx-4 mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)] overflow-hidden">
+          <div className="relative bg-white dark:bg-zinc-900 rounded-full mx-4 mb-2 shadow-[0_8px_32px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_4px_16px_rgba(0,0,0,0.25)] overflow-hidden">
             {/* Gradient blue accent in corner */}
             <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-blue-400/30 via-blue-500/20 to-transparent rounded-full blur-xl pointer-events-none" />
             <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-gradient-to-tl from-primary/20 via-blue-400/10 to-transparent rounded-full blur-lg pointer-events-none" />

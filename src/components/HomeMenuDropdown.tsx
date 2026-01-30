@@ -40,7 +40,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
       {/* Dropdown Menu - matches bottom nav pill style */}
       <div 
         className={cn(
-          "fixed bottom-[88px] left-6 z-[151] flex flex-col gap-1.5 transition-all duration-200",
+          "fixed bottom-[80px] left-6 z-[151] flex flex-col gap-1.5 transition-all duration-200",
           isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
         aria-hidden={!isOpen}
