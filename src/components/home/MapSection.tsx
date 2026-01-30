@@ -50,6 +50,7 @@ interface MapSectionProps {
   registerCloseSelectedPlace?: (closeFn: () => void) => void;
   onMapCenterChange?: (center: { lat: number; lng: number }) => void;
   registerReopenSearchDrawer?: (reopenFn: () => void) => void;
+  showBrandingLogo?: boolean;
 }
 
 const MapSection = ({ 
@@ -73,6 +74,7 @@ const MapSection = ({
   registerCloseSelectedPlace,
   onMapCenterChange,
   registerReopenSearchDrawer,
+  showBrandingLogo = false,
 }: MapSectionProps) => {
   const { user } = useAuth();
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
@@ -578,6 +580,7 @@ const MapSection = ({
               registerCloseDrawer={(closeFn) => {
                 closeDrawerRef.current = closeFn;
               }}
+              showBrandingLogo={showBrandingLogo}
             />
           </div>
         )}
