@@ -1,10 +1,11 @@
 import { memo, RefObject, useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import tinderIcon from '@/assets/tinder-icon.png';
+import { haptics } from '@/utils/haptics';
 
 interface ExploreHeaderBarProps {
   searchQuery: string;
@@ -14,6 +15,7 @@ interface ExploreHeaderBarProps {
   onInputFocus: (focused: boolean) => void;
   onClearSearch: () => void;
   onClose?: () => void;
+  isSearching?: boolean;
 }
 
 const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
@@ -27,7 +29,8 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
     onSearchChange,
     onInputFocus,
     onClearSearch,
-    onClose
+    onClose,
+    isSearching = false
   } = props;
 
   // Check if in onboarding mode
@@ -53,17 +56,20 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
           {/* Swipe Discovery Button - Hidden when search is active or during onboarding */}
           {!inputFocused && !searchQuery && !isOnboarding && (
             <Button
-              onClick={() => navigate('/discover')}
+              onClick={() => {
+                haptics.impact('light');
+                navigate('/discover');
+              }}
               variant="ghost"
               size="icon"
-              className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted"
+              className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted active:scale-95 transition-transform"
             >
               <img src={tinderIcon} alt="Discover" className="w-6 h-6 object-contain" />
             </Button>
           )}
           
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base pointer-events-none">🔍</span>
             <Input
               ref={searchInputRef}
               type="text"
@@ -72,11 +78,20 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
               onChange={(e) => onSearchChange(e.target.value)}
               onFocus={() => onInputFocus(true)}
               onBlur={() => setTimeout(() => onInputFocus(false), 100)}
-              className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-2xl"
+              className="pl-12 pr-12 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm"
             />
+            {/* Loading spinner */}
+            {isSearching && (
+              <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+              </div>
+            )}
             {searchQuery && (
               <Button
-                onClick={onClearSearch}
+                onClick={() => {
+                  haptics.selection();
+                  onClearSearch();
+                }}
                 variant="ghost"
                 size="sm"
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted rounded-full"
@@ -87,9 +102,12 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
           </div>
           {(inputFocused || searchQuery) && (
             <Button
-              onClick={() => searchInputRef.current?.blur()}
+              onClick={() => {
+                haptics.selection();
+                searchInputRef.current?.blur();
+              }}
               variant="ghost"
-              className="text-sm font-medium text-primary hover:text-primary/80 px-3 shrink-0"
+              className="text-sm font-medium text-primary hover:text-primary/80 px-3 shrink-0 animate-fade-in"
             >
               {t('cancel', { ns: 'common' })}
             </Button>

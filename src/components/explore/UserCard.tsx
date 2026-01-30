@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useTranslation } from 'react-i18next';
+import { haptics } from '@/utils/haptics';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
@@ -56,6 +56,7 @@ const UserCard = ({
     e.stopPropagation();
     if (isFollowLoading) return;
     
+    haptics.impact('light');
     setIsFollowLoading(true);
     const previousState = isOptimisticFollowing;
     
@@ -75,6 +76,7 @@ const UserCard = ({
 
   const handleAvatarClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptics.selection();
     // Ensure history is saved by parent before navigation
     onUserClick(user);
     if (hasActiveStory) {
@@ -113,6 +115,7 @@ const UserCard = ({
     if (target.closest('button') || target.closest('.avatar-clickable')) {
       return;
     }
+    haptics.selection();
     // Save history via parent
     onUserClick(user);
     navigate(`/profile/${user.id}`, { 
@@ -158,12 +161,27 @@ const UserCard = ({
           className="avatar-clickable cursor-pointer relative"
           onClick={handleAvatarClick}
         >
-          <Avatar className={`w-12 h-12 ${hasActiveStory ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className={`${getAvatarColor(user.name)} text-white font-semibold`}>
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
+          {/* Story ring with gradient for active stories */}
+          {hasActiveStory ? (
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 p-[2px] animate-pulse">
+                <div className="w-full h-full rounded-full bg-background" />
+              </div>
+              <Avatar className="w-12 h-12 relative">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className={`${getAvatarColor(user.name)} text-white font-semibold`}>
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          ) : (
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className={`${getAvatarColor(user.name)} text-white font-semibold`}>
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+          )}
         </div>
         
         <div className="flex-1 min-w-0 text-left">

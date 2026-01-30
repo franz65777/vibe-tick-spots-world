@@ -16,6 +16,7 @@ import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
+import { haptics } from '@/utils/haptics';
 // AI Modal disabled - now using Swipe Discovery button instead
 import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 // Lazy load heavy components
@@ -249,6 +250,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
     console.log('Comment on place:', place.name);
   };
   const handleUserClick = useCallback(async (userId: string) => {
+    haptics.selection();
     // Save to search history when user clicks a profile
     if (user) {
       try {
@@ -294,6 +296,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
     });
   }, [user, filteredUsers, suggestions, champions, searchQuery, navigate, fetchSearchHistory]);
   const handleFollowUser = useCallback(async (userId: string) => {
+    haptics.impact('light');
     if (!user) return;
     try {
       const {
@@ -361,6 +364,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
   };
 
   const handleHistoryAvatarClick = async (item: any) => {
+    haptics.selection();
     if (!item.target_user_id) return;
 
     // Re-save to bump this user on top and avoid duplicates (also remove legacy username-only entries)
@@ -421,12 +425,14 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
     }
   };
   const clearSearch = () => {
+    haptics.selection();
     setSearchQuery('');
     setFilteredUsers([]);
     searchInputRef.current?.blur(); // Hide mobile keyboard
   };
   
   const clearAllHistory = async () => {
+    haptics.warning();
     if (!user) return;
     try {
       await supabase
@@ -465,6 +471,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
           onInputFocus={setInputFocused}
           onClearSearch={clearSearch}
           onClose={onClose}
+          isSearching={isSearching}
         />
       </Suspense>
 
@@ -583,6 +590,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
+                                haptics.selection();
                                 setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
                                 if (item.target_user_id) {
                                   setHiddenUserIds(prev => {
@@ -658,7 +666,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
                 ) : (
                   <div className="px-1 py-8">
                     <Suspense fallback={<div />}>
-                      <NoResults searchQuery={searchQuery} />
+                      <NoResults searchQuery={searchQuery} onTryDifferent={clearSearch} />
                     </Suspense>
                   </div>
                 )
