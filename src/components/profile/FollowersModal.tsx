@@ -1,17 +1,18 @@
 import { ArrowLeft, Search, MapPin, X, Check, UserPlus } from 'lucide-react';
 import { haptics } from '@/utils/haptics';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
+import { useFollowList } from '@/hooks/useFollowList';
+import { useQueryClient } from '@tanstack/react-query';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -34,10 +35,30 @@ interface UserWithFollowStatus {
 
 type TabType = 'mutuals' | 'following' | 'followers';
 
+// Skeleton component for loading state
+const UserGridSkeleton = () => (
+  <div className="grid grid-cols-3 gap-0 px-1">
+    {Array.from({ length: 9 }).map((_, i) => (
+      <div key={i} className="flex flex-col items-center gap-1.5 py-2 px-1">
+        <div 
+          className="w-[76px] h-[76px] rounded-[20px] bg-muted relative overflow-hidden"
+          style={{ animationDelay: `${i * 50}ms` }}
+        >
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
+        </div>
+        <div className="w-14 h-3 bg-muted rounded relative overflow-hidden">
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onFollowChange }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const targetUserId = userId || currentUser?.id;
   const { profile: targetProfile } = useOptimizedProfile(targetUserId);
   
@@ -47,19 +68,30 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     if (initialTab === 'mutuals' && !isOwnProfile) return 'mutuals';
     if (initialTab === 'followers') return 'followers';
     if (initialTab === 'following') return 'following';
-    // Default to following for own profile, followers for others
     return isOwnProfile ? 'following' : 'followers';
   };
   
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
-  const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  
+  // Use optimized React Query hooks for data fetching
+  const { 
+    data: followers = [], 
+    isLoading: followersLoading,
+    updateFollowStatus: updateFollowerStatus,
+    removeUser: removeFollowerFromList,
+  } = useFollowList(targetUserId, 'followers', isOpen);
+  
+  const { 
+    data: following = [], 
+    isLoading: followingLoading,
+    updateFollowStatus: updateFollowingStatus,
+  } = useFollowList(targetUserId, 'following', isOpen);
   
   // Mutuals data - only fetch when viewing other profiles
   const shouldFetchMutuals = !isOwnProfile && isOpen;
@@ -68,14 +100,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     shouldFetchMutuals
   );
   
-  // Embla Carousel for smooth swiping - 3 panels when viewing others, 2 for own profile
+  // Embla Carousel for smooth swiping
   const tabCount = isOwnProfile ? 2 : 3;
   const getTabIndex = (tab: TabType): number => {
     if (isOwnProfile) {
-      // Own profile: following (0), followers (1)
       return tab === 'following' ? 0 : 1;
     }
-    // Other profile: mutuals (0), following (1), followers (2)
     return tab === 'mutuals' ? 0 : tab === 'following' ? 1 : 2;
   };
   const getTabFromIndex = (index: number): TabType => {
@@ -90,10 +120,6 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     startIndex: getTabIndex(getInitialTab()),
   });
   
-  // Cache for tabs to reduce refetching
-  const followersCache = useRef<UserWithFollowStatus[]>([]);
-  const followingCache = useRef<UserWithFollowStatus[]>([]);
-  const cacheLoaded = useRef<{ followers: boolean; following: boolean }>({ followers: false, following: false });
 
   // Sync Embla with activeTab
   const onSelect = useCallback(() => {
@@ -122,157 +148,30 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       const newTab = getInitialTab();
       setActiveTab(newTab);
       emblaApi?.scrollTo(getTabIndex(newTab), true);
-      cacheLoaded.current = { followers: false, following: false };
     }
   }, [initialTab, isOpen, emblaApi, isOwnProfile]);
 
-  // Fetch counts on modal open
+  // Update counts from React Query data
   useEffect(() => {
-    const fetchCounts = async () => {
-      if (!targetUserId || !isOpen) return;
-      
-      const [followersResult, followingResult] = await Promise.all([
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', targetUserId),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', targetUserId),
-      ]);
-      
-      setFollowersCount(followersResult.count || 0);
-      setFollowingCount(followingResult.count || 0);
-    };
-    
-    fetchCounts();
-  }, [targetUserId, isOpen]);
-
-  useEffect(() => {
-    const fetchFollowData = async () => {
-      if (!targetUserId || activeTab === 'mutuals') {
-        if (activeTab !== 'mutuals') {
-          setUsers([]);
-          setLoading(false);
-        }
-        return;
-      }
-
-      // Check cache first
-      if (activeTab === 'followers' && cacheLoaded.current.followers) {
-        setUsers(followersCache.current);
-        setLoading(false);
-        return;
-      }
-      if (activeTab === 'following' && cacheLoaded.current.following) {
-        setUsers(followingCache.current);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        let query = supabase
-          .from('follows')
-          .select(`
-            ${activeTab === 'followers' ? 'follower_id' : 'following_id'},
-            profiles!${activeTab === 'followers' ? 'follows_follower_id_fkey' : 'follows_following_id_fkey'} (
-              id,
-              username,
-              avatar_url
-            )
-          `);
-
-        if (activeTab === 'followers') {
-          query = query.eq('following_id', targetUserId);
-        } else {
-          query = query.eq('follower_id', targetUserId);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          console.error('Error fetching follow data:', error);
-          setUsers([]);
-        } else {
-          const followUsers = data?.map((item: any) => item.profiles).filter(Boolean) || [];
-          
-          const userIds = followUsers.map((u: any) => u.id);
-
-          const [savedPlacesResult, userSavedLocationsResult] = await Promise.all([
-            supabase
-              .from('saved_places')
-              .select('user_id, place_id')
-              .in('user_id', userIds),
-            supabase
-              .from('user_saved_locations')
-              .select('user_id, location_id')
-              .in('user_id', userIds)
-          ]);
-
-          const savedPlacesDistinct = new Map<string, Set<string>>();
-          savedPlacesResult.data?.forEach((sp: any) => {
-            if (!sp.user_id || !sp.place_id) return;
-            if (!savedPlacesDistinct.has(sp.user_id)) savedPlacesDistinct.set(sp.user_id, new Set());
-            savedPlacesDistinct.get(sp.user_id)!.add(`sp_${sp.place_id}`);
-          });
-
-          userSavedLocationsResult.data?.forEach((usl: any) => {
-            if (!usl.user_id || !usl.location_id) return;
-            if (!savedPlacesDistinct.has(usl.user_id)) savedPlacesDistinct.set(usl.user_id, new Set());
-            savedPlacesDistinct.get(usl.user_id)!.add(`usl_${usl.location_id}`);
-          });
-
-          const placesCountMap = new Map<string, number>();
-          savedPlacesDistinct.forEach((places, usrId) => {
-            placesCountMap.set(usrId, places.size);
-          });
-
-          let usersWithStatus: UserWithFollowStatus[];
-          if (currentUser) {
-            const { data: followsData } = await supabase
-              .from('follows')
-              .select('following_id')
-              .eq('follower_id', currentUser.id)
-              .in('following_id', userIds);
-
-            const followingIds = new Set(followsData?.map(f => f.following_id) || []);
-
-            usersWithStatus = followUsers.map((u: any) => ({
-              ...u,
-              isFollowing: followingIds.has(u.id),
-              savedPlacesCount: placesCountMap.get(u.id) || 0,
-            }));
-          } else {
-            usersWithStatus = followUsers.map((u: any) => ({
-              ...u,
-              savedPlacesCount: placesCountMap.get(u.id) || 0,
-            }));
-          }
-          
-          if (activeTab === 'followers') {
-            followersCache.current = usersWithStatus;
-            cacheLoaded.current.followers = true;
-          } else {
-            followingCache.current = usersWithStatus;
-            cacheLoaded.current.following = true;
-          }
-          
-          setUsers(usersWithStatus);
-        }
-      } catch (error) {
-        console.error('Error fetching follow data:', error);
-        setUsers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isOpen && activeTab !== 'mutuals') {
-      fetchFollowData();
+    if (followers.length > 0 || !followersLoading) {
+      setFollowersCount(followers.length);
     }
-  }, [targetUserId, activeTab, isOpen, currentUser]);
+  }, [followers, followersLoading]);
+
+  useEffect(() => {
+    if (following.length > 0 || !followingLoading) {
+      setFollowingCount(following.length);
+    }
+  }, [following, followingLoading]);
 
   const followUser = async (targetId: string) => {
     if (!currentUser) return;
 
     try {
+      // Optimistic update
+      updateFollowerStatus(targetId, true);
+      updateFollowingStatus(targetId, true);
+      
       const { error } = await supabase
         .from('follows')
         .insert({
@@ -280,11 +179,15 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           following_id: targetId,
         });
 
-      if (!error) {
-        setUsers(prev => prev.map(u => 
-          u.id === targetId ? { ...u, isFollowing: true } : u
-        ));
+      if (error) {
+        // Revert on error
+        updateFollowerStatus(targetId, false);
+        updateFollowingStatus(targetId, false);
+        console.error('Error following user:', error);
+      } else {
         onFollowChange?.();
+        // Invalidate to refresh data
+        queryClient.invalidateQueries({ queryKey: ['follow-list'] });
       }
     } catch (error) {
       console.error('Error following user:', error);
@@ -295,17 +198,24 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     if (!currentUser) return;
 
     try {
+      // Optimistic update
+      updateFollowerStatus(targetId, false);
+      updateFollowingStatus(targetId, false);
+      
       const { error } = await supabase
         .from('follows')
         .delete()
         .eq('follower_id', currentUser.id)
         .eq('following_id', targetId);
 
-      if (!error) {
-        setUsers(prev => prev.map(u => 
-          u.id === targetId ? { ...u, isFollowing: false } : u
-        ));
+      if (error) {
+        // Revert on error
+        updateFollowerStatus(targetId, true);
+        updateFollowingStatus(targetId, true);
+        console.error('Error unfollowing user:', error);
+      } else {
         onFollowChange?.();
+        queryClient.invalidateQueries({ queryKey: ['follow-list'] });
       }
     } catch (error) {
       console.error('Error unfollowing user:', error);
@@ -321,9 +231,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       });
 
       if (!error) {
-        setUsers(prev => prev.filter(u => u.id !== followerId));
+        removeFollowerFromList(followerId);
         setFollowersCount(prev => Math.max(0, prev - 1));
         onFollowChange?.();
+        queryClient.invalidateQueries({ queryKey: ['follow-list'] });
       } else {
         console.error('Error removing follower:', error);
       }
@@ -336,7 +247,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     return username ? username.substring(0, 2).toUpperCase() : 'U';
   };
 
-  // Get current data based on active tab
+  // Get current data based on active tab - now uses React Query data
   const getCurrentUsers = (): UserWithFollowStatus[] => {
     if (activeTab === 'mutuals') {
       return mutualFollowers.map(m => ({
@@ -347,8 +258,17 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         savedPlacesCount: m.savedPlacesCount,
       }));
     }
-    return users;
+    if (activeTab === 'followers') {
+      return followers;
+    }
+    return following;
   };
+
+  const isLoading = activeTab === 'mutuals' 
+    ? mutualsLoading 
+    : activeTab === 'followers' 
+      ? followersLoading 
+      : followingLoading;
 
   const filteredUsers = getCurrentUsers().filter(user => 
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -490,16 +410,18 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   // Grid Content for each tab
   const TabGridContent = ({ tabType }: { tabType: TabType }) => {
     const isActiveTab = activeTab === tabType;
-    const isLoading = tabType === 'mutuals' ? mutualsLoading : loading;
+    const tabLoading = tabType === 'mutuals' 
+      ? mutualsLoading 
+      : tabType === 'followers' 
+        ? followersLoading 
+        : followingLoading;
     const displayUsers = isActiveTab ? filteredUsers : [];
     
     return (
       <ScrollArea className="h-full">
         <div className="pb-4 pt-2">
-          {isLoading && isActiveTab ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-            </div>
+          {tabLoading && isActiveTab ? (
+            <UserGridSkeleton />
           ) : displayUsers.length === 0 && isActiveTab ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <p className="text-muted-foreground text-sm text-center">
