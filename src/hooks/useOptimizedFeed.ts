@@ -79,24 +79,23 @@ export const useOptimizedFeed = () => {
       return enriched;
     },
     enabled: !!user?.id,
-    staleTime: 3 * 60 * 1000, // 3 minutes - show cached immediately
+    staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes in memory
-    refetchOnMount: false, // Use cache if available
-    initialData: () => {
-      // Carica subito dalla cache solo se recentissima per evitare contatori vecchi
-      if (!user?.id) return [];
+    // placeholderData mostra i dati cached mentre il fetch è in corso, ma non blocca il fetch
+    placeholderData: () => {
+      if (!user?.id) return undefined;
       try {
         const cachedRaw = localStorage.getItem(`feed_cache_${user.id}`);
-        if (!cachedRaw) return [];
+        if (!cachedRaw) return undefined; // undefined = no placeholder, mostra skeleton
 
         const cached = JSON.parse(cachedRaw) as { ts?: number; data?: any[] };
         const ageMs = Date.now() - (cached.ts || 0);
 
-        // se la cache è più vecchia di 2s, evitiamo contatori obsoleti che poi "saltano"
-        if (!cached.ts || ageMs > 2_000) return [];
-        return Array.isArray(cached.data) ? cached.data : [];
+        // Mostra placeholder solo se cache < 5 minuti
+        if (!cached.ts || ageMs > 5 * 60 * 1000) return undefined;
+        return Array.isArray(cached.data) ? cached.data : undefined;
       } catch {
-        return [];
+        return undefined;
       }
     },
   });
