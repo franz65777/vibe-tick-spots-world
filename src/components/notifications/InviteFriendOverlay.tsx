@@ -171,7 +171,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
               <img 
                 src={spottLogoTransparent} 
                 alt="SPOTT" 
-                className="h-24 w-auto animate-bounce-gentle"
+                className="h-36 w-auto animate-bounce-gentle"
               />
             </div>
             

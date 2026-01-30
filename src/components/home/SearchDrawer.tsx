@@ -1014,7 +1014,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 <img 
                   src={spottLogoTransparent} 
                   alt="SPOTT" 
-                  className="h-7 w-auto"
+                  className="h-12 w-auto"
                 />
               </div>
             ) : (
