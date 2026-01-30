@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
@@ -59,6 +59,242 @@ const UserGridSkeleton = () => (
   </div>
 );
 
+// ===============================
+// UserGridCard - EXTRACTED TO TOP-LEVEL with React.memo
+// ===============================
+interface UserGridCardProps {
+  user: UserWithFollowStatus;
+  index: number;
+  userHasStories: boolean;
+  isOwnProfile: boolean;
+  activeTab: TabType;
+  currentUserId: string | undefined;
+  onAvatarClick: (user: UserWithFollowStatus) => void;
+  onActionClick: (user: UserWithFollowStatus, e: React.MouseEvent) => void;
+  onUsernameClick: (userId: string) => void;
+  getInitials: (username: string) => string;
+}
+
+const UserGridCard = memo(({ 
+  user, 
+  index, 
+  userHasStories,
+  isOwnProfile,
+  activeTab,
+  currentUserId,
+  onAvatarClick,
+  onActionClick,
+  onUsernameClick,
+  getInitials,
+}: UserGridCardProps) => {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const avatarUrl = user.avatar_url || undefined;
+
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    haptics.selection();
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 200);
+    onActionClick(user, e);
+  };
+
+  // Determine icon and color based on state
+  const getActionIcon = () => {
+    if (isOwnProfile && activeTab === 'followers') {
+      return { icon: X, iconColor: 'text-rose-500' };
+    }
+    if (user.isFollowing) {
+      return { icon: Check, iconColor: 'text-emerald-500' };
+    }
+    if (user.followRequestPending) {
+      return { icon: Clock, iconColor: 'text-amber-500' };
+    }
+    return { icon: UserPlus, iconColor: 'text-primary' };
+  };
+
+  const { icon: ActionIcon, iconColor } = getActionIcon();
+
+  return (
+    <div 
+      className="flex flex-col items-center gap-1.5 py-2 px-1 animate-in fade-in duration-200"
+      style={{ animationDelay: `${index * 30}ms` }}
+    >
+      {/* Avatar with overlay action icon */}
+      <div className="relative">
+        <button
+          onClick={() => onAvatarClick(user)}
+          className="group"
+        >
+          <div className={cn(
+            "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
+            userHasStories 
+              ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
+              : ""
+          )}>
+            <Avatar className={cn(
+              "w-[76px] h-[76px] rounded-[20px]",
+              userHasStories && "border-2 border-background"
+            )}>
+              <AvatarImage 
+                src={avatarUrl} 
+                className="object-cover rounded-[20px]" 
+                loading="lazy"
+              />
+              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
+                {getInitials(user.username || 'User')}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </button>
+        
+        {/* Action icon overlay - TOP LEFT with glass effect */}
+        {currentUserId !== user.id && (
+          <button
+            onClick={handleActionClick}
+            className={cn(
+              "absolute top-1 left-1 w-7 h-7 rounded-full flex items-center justify-center",
+              "backdrop-blur-md bg-white/80 dark:bg-black/40",
+              "border border-white/40 dark:border-white/15",
+              "shadow-sm ring-1 ring-black/5 dark:ring-white/10",
+              "hover:bg-white/90 dark:hover:bg-black/50 active:scale-95 transition-all duration-150",
+              "z-20",
+              isAnimating && "scale-110"
+            )}
+          >
+            <ActionIcon className={cn("w-3.5 h-3.5", iconColor)} strokeWidth={2.5} />
+          </button>
+        )}
+
+        {/* Places badge - bottom center with glass effect */}
+        {(user.savedPlacesCount ?? 0) > 0 && (
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/70 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 text-foreground text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm z-10">
+            <span className="leading-none">📌</span>
+            <span>{user.savedPlacesCount}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Username */}
+      <button
+        onClick={() => onUsernameClick(user.id)}
+        className="w-full flex justify-center"
+      >
+        <p className="font-medium text-foreground text-xs truncate text-center max-w-[80px]">
+          {user.username || 'User'}
+        </p>
+      </button>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison for memo - only re-render if these change
+  return (
+    prevProps.user.id === nextProps.user.id &&
+    prevProps.user.avatar_url === nextProps.user.avatar_url &&
+    prevProps.user.username === nextProps.user.username &&
+    prevProps.user.isFollowing === nextProps.user.isFollowing &&
+    prevProps.user.followRequestPending === nextProps.user.followRequestPending &&
+    prevProps.user.savedPlacesCount === nextProps.user.savedPlacesCount &&
+    prevProps.user.isPrivate === nextProps.user.isPrivate &&
+    prevProps.userHasStories === nextProps.userHasStories &&
+    prevProps.isOwnProfile === nextProps.isOwnProfile &&
+    prevProps.activeTab === nextProps.activeTab &&
+    prevProps.index === nextProps.index
+  );
+});
+
+UserGridCard.displayName = 'UserGridCard';
+
+// ===============================
+// TabGridContent - EXTRACTED TO TOP-LEVEL
+// ===============================
+interface TabGridContentProps {
+  tabType: TabType;
+  activeTab: TabType;
+  filteredUsers: UserWithFollowStatus[];
+  tabLoading: boolean;
+  searchQuery: string;
+  t: (key: string, options?: any) => string;
+  stories: any[];
+  isOwnProfile: boolean;
+  currentUserId: string | undefined;
+  onAvatarClick: (user: UserWithFollowStatus) => void;
+  onActionClick: (user: UserWithFollowStatus, e: React.MouseEvent) => void;
+  onUsernameClick: (userId: string) => void;
+  getInitials: (username: string) => string;
+}
+
+const TabGridContent = memo(({ 
+  tabType, 
+  activeTab, 
+  filteredUsers, 
+  tabLoading, 
+  searchQuery, 
+  t,
+  stories,
+  isOwnProfile,
+  currentUserId,
+  onAvatarClick,
+  onActionClick,
+  onUsernameClick,
+  getInitials,
+}: TabGridContentProps) => {
+  const isActiveTab = activeTab === tabType;
+  const displayUsers = isActiveTab ? filteredUsers : [];
+  const now = new Date();
+  
+  return (
+    <ScrollArea className="h-full">
+      <div className="pb-4 pt-2">
+        {tabLoading && isActiveTab ? (
+          <UserGridSkeleton />
+        ) : displayUsers.length === 0 && isActiveTab ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <p className="text-muted-foreground text-sm text-center">
+              {searchQuery 
+                ? t('noResults', { ns: 'common' }) 
+                : tabType === 'mutuals'
+                  ? t('noMutuals', { ns: 'profile', defaultValue: 'Nessun amico in comune' })
+                  : tabType === 'followers' 
+                    ? t('noFollowers', { ns: 'profile' }) 
+                    : t('noFollowing', { ns: 'profile' })
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-0 px-1">
+            {displayUsers.map((user, index) => {
+              const userHasStories = stories.some(s => 
+                s.user_id === user.id && 
+                new Date(s.expires_at) > now
+              );
+              return (
+                <UserGridCard 
+                  key={user.id} 
+                  user={user} 
+                  index={index}
+                  userHasStories={userHasStories}
+                  isOwnProfile={isOwnProfile}
+                  activeTab={activeTab}
+                  currentUserId={currentUserId}
+                  onAvatarClick={onAvatarClick}
+                  onActionClick={onActionClick}
+                  onUsernameClick={onUsernameClick}
+                  getInitials={getInitials}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  );
+});
+
+TabGridContent.displayName = 'TabGridContent';
+
+// ===============================
+// Main FollowersModal Component
+// ===============================
 const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onFollowChange }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
@@ -292,12 +528,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  const getInitials = (username: string) => {
+  const getInitials = useCallback((username: string) => {
     return username ? username.substring(0, 2).toUpperCase() : 'U';
-  };
+  }, []);
 
   // Get current data based on active tab - now uses React Query data
-  const getCurrentUsers = (): UserWithFollowStatus[] => {
+  const getCurrentUsers = useCallback((): UserWithFollowStatus[] => {
     if (activeTab === 'mutuals') {
       return mutualFollowers.map(m => ({
         id: m.id,
@@ -311,19 +547,14 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       return followers;
     }
     return following;
-  };
-
-  const isLoading = activeTab === 'mutuals' 
-    ? mutualsLoading 
-    : activeTab === 'followers' 
-      ? followersLoading 
-      : followingLoading;
+  }, [activeTab, mutualFollowers, followers, following]);
 
   const filteredUsers = getCurrentUsers().filter(user => 
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAvatarClick = (user: UserWithFollowStatus) => {
+  // Stable callback for avatar click
+  const handleAvatarClick = useCallback((user: UserWithFollowStatus) => {
     const now = new Date();
     const userStories = stories.filter(s => 
       s.user_id === user.id && 
@@ -338,199 +569,71 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       onClose();
       navigate(`/profile/${user.id}`);
     }
-  };
+  }, [stories, onClose, navigate]);
 
-  // User Grid Card Component - compact design with overlay icons
-  const UserGridCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
-    const [isAnimating, setIsAnimating] = useState(false);
-    // Track if animation has already played (one-shot animation)
-    const hasAnimatedRef = useRef(false);
-    const now = new Date();
-    const userHasStories = stories.some(s => 
-      s.user_id === user.id && 
-      new Date(s.expires_at) > now
-    );
-
-    const avatarUrl = user.avatar_url || undefined;
-
-    // Mark as animated after first render
-    useEffect(() => {
-      if (!hasAnimatedRef.current) {
-        // Small delay to ensure animation plays on mount
-        const timer = setTimeout(() => {
-          hasAnimatedRef.current = true;
-        }, 250);
-        return () => clearTimeout(timer);
-      }
-    }, []);
-
-    const handleActionClick = async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      haptics.selection();
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 200);
-      
-      if (isOwnProfile && activeTab === 'followers') {
-        // Remove follower - always show confirmation
-        setConfirmDialog({ type: 'remove-follower', user });
-      } else if (user.isFollowing) {
-        // Unfollow
-        if (user.isPrivate) {
-          // Private profile - show confirmation
-          setConfirmDialog({ type: 'unfollow', user });
-        } else {
-          // Public profile - unfollow directly but keep in list
-          await unfollowUserKeepInList(user.id);
-        }
-      } else if (user.followRequestPending) {
-        // Already has pending request - do nothing or show info
-        toast.info(t('userProfile.requestPending', { ns: 'common', defaultValue: 'Richiesta in attesa di approvazione' }));
+  // Stable callback for action click
+  const handleActionClick = useCallback(async (user: UserWithFollowStatus, e: React.MouseEvent) => {
+    if (isOwnProfile && activeTab === 'followers') {
+      // Remove follower - always show confirmation
+      setConfirmDialog({ type: 'remove-follower', user });
+    } else if (user.isFollowing) {
+      // Unfollow
+      if (user.isPrivate) {
+        // Private profile - show confirmation
+        setConfirmDialog({ type: 'unfollow', user });
       } else {
-        // Follow
-        if (user.isPrivate) {
-          // Private profile - send follow request (don't bypass)
-          await sendFollowRequest(user.id);
-        } else {
-          await followUser(user.id);
-        }
+        // Public profile - unfollow directly but keep in list
+        await unfollowUserKeepInList(user.id);
       }
-    };
-
-    // Determine icon and color based on state
-    const getActionIcon = () => {
-      if (isOwnProfile && activeTab === 'followers') {
-        return { icon: X, color: 'bg-destructive', hoverColor: 'hover:bg-destructive/90' };
+    } else if (user.followRequestPending) {
+      // Already has pending request - do nothing or show info
+      toast.info(t('userProfile.requestPending', { ns: 'common', defaultValue: 'Richiesta in attesa di approvazione' }));
+    } else {
+      // Follow
+      if (user.isPrivate) {
+        // Private profile - send follow request (don't bypass)
+        await sendFollowRequest(user.id);
+      } else {
+        await followUser(user.id);
       }
-      if (user.isFollowing) {
-        return { icon: Check, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600' };
-      }
-      if (user.followRequestPending) {
-        return { icon: Clock, color: 'bg-amber-500', hoverColor: 'hover:bg-amber-600' };
-      }
-      return { icon: UserPlus, color: 'bg-primary', hoverColor: 'hover:bg-primary/90' };
-    };
+    }
+  }, [isOwnProfile, activeTab, unfollowUserKeepInList, sendFollowRequest, followUser, t]);
 
-    const { icon: ActionIcon, color, hoverColor } = getActionIcon();
+  // Stable callback for username click
+  const handleUsernameClick = useCallback((userId: string) => {
+    onClose();
+    navigate(`/profile/${userId}`);
+  }, [onClose, navigate]);
 
-    // Only apply animation styles on first mount, not on re-renders
-    const animationStyle = !hasAnimatedRef.current ? {
-      animationDelay: `${index * 30}ms`,
-      animation: 'fadeIn 0.2s ease-out forwards',
-      opacity: 0,
-    } : {};
+  // Get loading state for specific tab
+  const getTabLoading = useCallback((tabType: TabType) => {
+    if (tabType === 'mutuals') return mutualsLoading;
+    if (tabType === 'followers') return followersLoading;
+    return followingLoading;
+  }, [mutualsLoading, followersLoading, followingLoading]);
 
-    return (
-      <div 
-        className="flex flex-col items-center gap-1.5 py-2 px-1"
-        style={animationStyle}
-      >
-        {/* Avatar with overlay action icon */}
-        <div className="relative">
-          <button
-            onClick={() => handleAvatarClick(user)}
-            className="group"
-          >
-            <div className={cn(
-              "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
-              userHasStories 
-                ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
-                : ""
-            )}>
-              <Avatar className={cn(
-                "w-[76px] h-[76px] rounded-[20px]",
-                userHasStories && "border-2 border-background"
-              )}>
-                <AvatarImage 
-                  src={avatarUrl} 
-                  className="object-cover rounded-[20px]" 
-                  loading="lazy"
-                />
-                <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
-                  {getInitials(user.username || 'User')}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </button>
-          
-          {/* Places badge - bottom center with glass effect */}
-          {(user.savedPlacesCount ?? 0) > 0 && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/70 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 text-foreground text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm z-10">
-              <span className="leading-none">📌</span>
-              <span>{user.savedPlacesCount}</span>
-            </div>
-          )}
+  // Get users for specific tab
+  const getUsersForTab = useCallback((tabType: TabType): UserWithFollowStatus[] => {
+    if (tabType === 'mutuals') {
+      return mutualFollowers.map(m => ({
+        id: m.id,
+        username: m.username,
+        avatar_url: m.avatar_url,
+        isFollowing: m.isFollowing,
+        savedPlacesCount: m.savedPlacesCount,
+      }));
+    }
+    if (tabType === 'followers') {
+      return followers;
+    }
+    return following;
+  }, [mutualFollowers, followers, following]);
 
-          {/* Action icon overlay - bottom right corner */}
-          {currentUser?.id !== user.id && (
-            <button
-              onClick={handleActionClick}
-              className={cn(
-                "absolute -bottom-0.5 -right-0.5 w-[22px] h-[22px] rounded-full flex items-center justify-center",
-                "ring-2 ring-background shadow-sm transition-all duration-150",
-                color, hoverColor,
-                isAnimating && "scale-110"
-              )}
-            >
-              <ActionIcon className="w-3 h-3 text-white" strokeWidth={2.5} />
-            </button>
-          )}
-        </div>
-
-        {/* Username */}
-        <button
-          onClick={() => {
-            onClose();
-            navigate(`/profile/${user.id}`);
-          }}
-          className="w-full flex justify-center"
-        >
-          <p className="font-medium text-foreground text-xs truncate text-center max-w-[80px]">
-            {user.username || 'User'}
-          </p>
-        </button>
-      </div>
+  const getFilteredUsersForTab = useCallback((tabType: TabType) => {
+    return getUsersForTab(tabType).filter(user => 
+      user.username?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  };
-
-  // Grid Content for each tab
-  const TabGridContent = ({ tabType }: { tabType: TabType }) => {
-    const isActiveTab = activeTab === tabType;
-    const tabLoading = tabType === 'mutuals' 
-      ? mutualsLoading 
-      : tabType === 'followers' 
-        ? followersLoading 
-        : followingLoading;
-    const displayUsers = isActiveTab ? filteredUsers : [];
-    
-    return (
-      <ScrollArea className="h-full">
-        <div className="pb-4 pt-2">
-          {tabLoading && isActiveTab ? (
-            <UserGridSkeleton />
-          ) : displayUsers.length === 0 && isActiveTab ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <p className="text-muted-foreground text-sm text-center">
-                {searchQuery 
-                  ? t('noResults', { ns: 'common' }) 
-                  : tabType === 'mutuals'
-                    ? t('noMutuals', { ns: 'profile', defaultValue: 'Nessun amico in comune' })
-                    : tabType === 'followers' 
-                      ? t('noFollowers', { ns: 'profile' }) 
-                      : t('noFollowing', { ns: 'profile' })
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-0 px-1">
-              {displayUsers.map((user, index) => (
-                <UserGridCard key={user.id} user={user} index={index} />
-              ))}
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-    );
-  };
+  }, [getUsersForTab, searchQuery]);
 
   if (!isOpen) return null;
 
@@ -641,16 +744,58 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           <div className="flex h-full">
             {!isOwnProfile && (
               <div className="flex-[0_0_100%] min-w-0 h-full">
-                <TabGridContent tabType="mutuals" />
+                <TabGridContent 
+                  tabType="mutuals"
+                  activeTab={activeTab}
+                  filteredUsers={getFilteredUsersForTab('mutuals')}
+                  tabLoading={getTabLoading('mutuals')}
+                  searchQuery={searchQuery}
+                  t={t}
+                  stories={stories}
+                  isOwnProfile={isOwnProfile}
+                  currentUserId={currentUser?.id}
+                  onAvatarClick={handleAvatarClick}
+                  onActionClick={handleActionClick}
+                  onUsernameClick={handleUsernameClick}
+                  getInitials={getInitials}
+                />
               </div>
             )}
             
             <div className="flex-[0_0_100%] min-w-0 h-full">
-              <TabGridContent tabType="following" />
+              <TabGridContent 
+                tabType="following"
+                activeTab={activeTab}
+                filteredUsers={getFilteredUsersForTab('following')}
+                tabLoading={getTabLoading('following')}
+                searchQuery={searchQuery}
+                t={t}
+                stories={stories}
+                isOwnProfile={isOwnProfile}
+                currentUserId={currentUser?.id}
+                onAvatarClick={handleAvatarClick}
+                onActionClick={handleActionClick}
+                onUsernameClick={handleUsernameClick}
+                getInitials={getInitials}
+              />
             </div>
             
             <div className="flex-[0_0_100%] min-w-0 h-full">
-              <TabGridContent tabType="followers" />
+              <TabGridContent 
+                tabType="followers"
+                activeTab={activeTab}
+                filteredUsers={getFilteredUsersForTab('followers')}
+                tabLoading={getTabLoading('followers')}
+                searchQuery={searchQuery}
+                t={t}
+                stories={stories}
+                isOwnProfile={isOwnProfile}
+                currentUserId={currentUser?.id}
+                onAvatarClick={handleAvatarClick}
+                onActionClick={handleActionClick}
+                onUsernameClick={handleUsernameClick}
+                getInitials={getInitials}
+              />
             </div>
           </div>
         </div>
