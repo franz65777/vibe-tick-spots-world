@@ -1,267 +1,191 @@
 
-# Feed Page Improvement Plan
+# Explore Page Improvements Plan
 
-## Current Architecture Overview
-
-The feed page is already well-optimized with several performance features:
-- Batch engagement state fetching via `useBatchEngagementStates` (eliminates N+1 queries)
-- Centralized realtime via `useRealtimeEvent` (singleton WebSocket)
-- React Query caching with appropriate stale times
-- Lazy-loaded components (`FeedPostItem`, `CityStatsCard`, carousels)
-- Progressive image loading with blur-up effect
-- Skeleton UI with shimmer animations
-- Scroll position restoration
-
-## Identified Improvements
-
-### 1. Missing Haptic Feedback
-
-**Current State:** Haptics are used in `PostActions.tsx` for like/pin but missing in several key feed interactions.
-
-**Missing Haptic Touchpoints:**
-- `UserVisitedCard` - Like button, save button, follow button
-- `FeedListsCarousel` - Card tap
-- `FeedSuggestionsCarousel` - Card tap, save location
-- `FeedPage` - Feed type dropdown toggle, comment/share actions
-- Caption expand/collapse toggle
-
-**Implementation:**
-```typescript
-// UserVisitedCard.tsx - Add to handleLike, handleFollow, handleSaveLocation
-import { haptics } from '@/utils/haptics';
-
-const handleLike = async (e: React.MouseEvent) => {
-  e.stopPropagation();
-  haptics.impact('light'); // Add this
-  // ... existing code
-};
-
-const handleFollow = async (e: React.MouseEvent) => {
-  haptics.selection(); // Add this
-  // ... existing code
-};
-
-// FeedListsCarousel.tsx - Add to card click
-onClick={() => {
-  haptics.selection(); // Add this
-  window.dispatchEvent(new CustomEvent('feed:open-folder', {...}));
-}}
-
-// FeedSuggestionsCarousel.tsx - Add to handleLocationClick and handleSaveLocation
-haptics.impact('light'); // On card click
-haptics.success(); // On successful save
-```
-
-### 2. Double-Tap to Like
-
-**Enhancement:** Instagram-style double-tap to like on post images - native feel on mobile.
-
-**Implementation in `FeedPostItem.tsx`:**
-```typescript
-// Add state and ref
-const lastTapRef = useRef<number>(0);
-
-const handleDoubleTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-  const now = Date.now();
-  const timeSinceLastTap = now - lastTapRef.current;
-  
-  if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
-    // Double tap detected
-    haptics.impact('medium');
-    if (!isLiked) {
-      // Trigger like with heart animation
-      onLike();
-    }
-    // Show heart animation overlay
-    setShowHeartAnimation(true);
-    setTimeout(() => setShowHeartAnimation(false), 1000);
-  }
-  lastTapRef.current = now;
-}, [isLiked, onLike]);
-
-// Wrap media in clickable div with double-tap handler
-```
-
-### 3. Pull-to-Refresh
-
-**Enhancement:** Add pull-to-refresh gesture for native-like experience.
-
-**Implementation in `FeedPage.tsx`:**
-```typescript
-import { useCallback, useState } from 'react';
-
-const [isRefreshing, setIsRefreshing] = useState(false);
-const pullStartY = useRef<number>(0);
-
-const handleRefresh = useCallback(async () => {
-  setIsRefreshing(true);
-  haptics.impact('medium');
-  
-  await queryClient.invalidateQueries({ queryKey: ['feed', user?.id] });
-  
-  haptics.success();
-  setIsRefreshing(false);
-}, [queryClient, user?.id]);
-
-// Add touch handlers to scroll container
-onTouchStart={(e) => {
-  if (scrollContainerRef.current?.scrollTop === 0) {
-    pullStartY.current = e.touches[0].clientY;
-  }
-}}
-onTouchMove={(e) => {
-  // Track pull distance, show indicator
-}}
-onTouchEnd={() => {
-  if (pullDistance > threshold) handleRefresh();
-}}
-```
-
-### 4. Feed Type Switcher Haptics
-
-**Enhancement:** Add selection haptics when switching between "For You" and "Promotions".
-
-**Location:** `FeedPage.tsx` dropdown menu items
-
-```typescript
-<DropdownMenuItem 
-  onClick={() => {
-    haptics.selection(); // Add this
-    setFeedType('forYou');
-  }}
->
-```
-
-### 5. Comment Button Haptic Feedback
-
-**Enhancement:** Add haptics when opening comment drawer.
-
-**Location:** `FeedPage.tsx` - `handleCommentClick`
-
-```typescript
-const handleCommentClick = async (postId: string) => {
-  haptics.impact('light'); // Add this
-  setCommentPostId(postId);
-  // ... rest
-};
-```
-
-### 6. Share Button Haptic Feedback
-
-**Location:** `FeedPage.tsx` - `handleShareClick`
-
-```typescript
-const handleShareClick = (postId: string) => {
-  haptics.impact('light'); // Add this
-  setSharePostId(postId);
-  setShareModalOpen(true);
-};
-```
-
-### 7. Caption Toggle Haptic Feedback
-
-**Enhancement:** Subtle selection feedback when expanding/collapsing captions.
-
-**Location:** `FeedPage.tsx` - `toggleCaption`
-
-```typescript
-const toggleCaption = (postId: string) => {
-  haptics.selection(); // Add this
-  setExpandedCaptions(prev => {...});
-};
-```
-
-### 8. Carousel Card Haptics
-
-**Enhancement:** Add consistent haptics to list and suggestion carousel cards.
-
-**Files:**
-- `FeedListsCarousel.tsx` - list card tap
-- `FeedSuggestionsCarousel.tsx` - suggestion card tap, save action
-
-### 9. Performance: useSocialEngagement Optimization
-
-**Issue:** `useSocialEngagement` hook makes individual queries per post for like status, comments count, shares count. This partly duplicates the batch fetch.
-
-**Current Flow:**
-1. `useBatchEngagementStates` fetches all likes/saves in batch
-2. BUT `useSocialEngagement` ALSO fetches counts individually (lines 40-44)
-
-**Optimization:** Pass pre-loaded counts to `useSocialEngagement` to skip redundant queries.
-
-```typescript
-// In useSocialEngagement, add option to skip initial fetch
-export const useSocialEngagement = (
-  postId: string, 
-  initialCounts?: { likes?: number; comments?: number; shares?: number },
-  options?: { skipInitialFetch?: boolean; initialIsLiked?: boolean }
-) => {
-  // If skipInitialFetch and we have initial values, use them
-  useEffect(() => {
-    if (options?.skipInitialFetch && initialCounts) {
-      setLikeCount(initialCounts.likes ?? 0);
-      setCommentCount(initialCounts.comments ?? 0);
-      setShareCount(initialCounts.shares ?? 0);
-      if (options.initialIsLiked !== undefined) {
-        setIsLiked(options.initialIsLiked);
-      }
-      setLoading(false);
-      return;
-    }
-    // ... existing fetch logic
-  }, [...]);
-};
-```
-
-This could reduce up to 60 queries to 0 for a 20-post feed.
-
-### 10. Image Preloading for Carousels
-
-**Enhancement:** Preload first 2-3 images in carousels for smoother scrolling.
-
-```typescript
-// In FeedListsCarousel and FeedSuggestionsCarousel
-useEffect(() => {
-  // Preload first 3 card images
-  suggestions.slice(0, 3).forEach(s => {
-    if (s.image_url) {
-      const img = new Image();
-      img.src = s.image_url;
-    }
-  });
-}, [suggestions]);
-```
+## Overview
+This plan updates the Explore page search bar to match the Home page style (lens emoji, theme-aware colors) and implements additional UI/UX improvements for a more polished, native-like experience.
 
 ---
 
-## Files to Modify
+## 1. Search Bar Redesign (ExploreHeaderBar.tsx)
+
+### Current State
+- Uses the Lucide `Search` icon with `text-muted-foreground` styling
+- Input has `bg-muted/50 border-border` colors
+- Doesn't match the Home page SearchDrawer pattern
+
+### Target Style (matching SearchDrawer.tsx)
+The Home page uses:
+```
+// Collapsed state (pill-shaped)
+bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700
+
+// Expanded input
+bg-white dark:bg-background border border-border/40 dark:border-input
+
+// Lens emoji instead of icon
+🔍 (emoji, not Lucide icon)
+```
+
+### Implementation
+Update `ExploreHeaderBar.tsx`:
+- Replace Lucide `Search` icon with 🔍 emoji
+- Change input styling to:
+  - Light mode: `bg-white border border-border/40`
+  - Dark mode: `bg-background dark:border-input`
+- Round corners: `rounded-3xl` (matching the pill shape)
+- Focus states: `focus:ring-2 focus:ring-primary focus:border-transparent`
+- Remove the current `bg-muted/50 border-border` styling
+
+---
+
+## 2. Add Haptic Feedback
+
+### Missing Haptic Touchpoints
+The Explore page currently has no haptic feedback. Add haptics to:
+
+| Component | Interaction | Haptic Type |
+|-----------|-------------|-------------|
+| `ExploreHeaderBar` | Swipe Discovery button tap | `impact('light')` |
+| `ExplorePage` | User card click | `selection()` |
+| `ExplorePage` | Follow button toggle | `impact('light')` |
+| `ExplorePage` | Search history item click | `selection()` |
+| `ExplorePage` | Clear all history | `warning()` |
+| `ExplorePage` | Delete single history item | `selection()` |
+| `UserCard` | Follow/Unfollow toggle | `impact('light')` |
+| `UserCard` | Row tap (profile navigation) | `selection()` |
+
+---
+
+## 3. UI Polish Improvements
+
+### 3.1 Search Input Loading State
+Add a subtle loading indicator when searching (like the SearchDrawer has):
+- Show a small spinner inside the input when `isSearching` is true
+- Position: absolute right side of input
+
+### 3.2 Cancel Button Enhancement
+Current cancel button appears instantly. Improve with:
+- Smooth slide-in animation when appearing
+- Match the styling of the Home page close button
+
+### 3.3 Swipe Discovery Button Polish
+- Add subtle press animation: `active:scale-95`
+- Add haptic feedback on tap
+
+### 3.4 Empty State Improvements (NoResults)
+The current "No Results" state is basic. Enhance with:
+- Larger, more expressive illustration
+- Secondary action: "Try a different search"
+- Animate entrance with fade-in-up
+
+### 3.5 User Card Story Ring
+Currently uses a simple ring. Match the Home page story ring styling:
+- Use gradient ring for active stories (like Instagram)
+- Add subtle pulse animation for active stories
+
+---
+
+## 4. UX Flow Improvements
+
+### 4.1 Auto-Focus Improvement
+Currently auto-focuses with a 100ms delay. Improve:
+- Use `requestAnimationFrame` for smoother focus
+- Add keyboard-aware padding when input is focused
+
+### 4.2 Clear Search Enhancement
+Add haptic feedback when clearing search:
+```typescript
+const clearSearch = () => {
+  haptics.selection();
+  setSearchQuery('');
+  setFilteredUsers([]);
+  searchInputRef.current?.blur();
+};
+```
+
+### 4.3 Search Suggestions Debounce
+Currently 500ms delay on search. Optimize:
+- Reduce to 150-200ms for snappier feel
+- Add immediate visual feedback while searching
+
+---
+
+## 5. Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/feed/UserVisitedCard.tsx` | Add haptics to like, follow, save buttons |
-| `src/components/feed/FeedListsCarousel.tsx` | Add haptics to card tap |
-| `src/components/feed/FeedSuggestionsCarousel.tsx` | Add haptics to card tap and save |
-| `src/components/feed/FeedPostItem.tsx` | Add double-tap to like |
-| `src/pages/FeedPage.tsx` | Add haptics to dropdown, comment, share, caption toggle |
-| `src/hooks/useSocialEngagement.ts` | Add skipInitialFetch option to avoid duplicate queries |
+| `src/components/explore/ExploreHeaderBar.tsx` | Restyle search bar, add haptics |
+| `src/components/ExplorePage.tsx` | Add haptics to user interactions, improve animations |
+| `src/components/explore/UserCard.tsx` | Add haptics to follow/navigation |
+| `src/components/explore/NoResults.tsx` | Enhance empty state UI |
 
 ---
 
-## Summary of Benefits
+## 6. Technical Implementation Details
 
-| Improvement | User Impact |
-|-------------|-------------|
-| Haptic feedback | Native iOS/Android feel on all interactions |
-| Double-tap to like | Instagram-like intuitive interaction |
-| Pull-to-refresh | Standard mobile gesture support |
-| Query optimization | Faster load, reduced network usage |
-| Image preloading | Smoother carousel scrolling |
+### ExploreHeaderBar.tsx Changes
+
+```tsx
+// Before
+<Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+<Input
+  className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-2xl"
+/>
+
+// After
+<span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base">🔍</span>
+<Input
+  className="pl-12 pr-4 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm"
+/>
+```
+
+### Haptics Integration
+
+```tsx
+// Add to ExplorePage.tsx
+import { haptics } from '@/utils/haptics';
+
+// In handleUserClick
+const handleUserClick = useCallback(async (userId: string) => {
+  haptics.selection();
+  // ... existing code
+}, [...]);
+
+// In handleFollowUser
+const handleFollowUser = useCallback(async (userId: string) => {
+  haptics.impact('light');
+  // ... existing code
+}, [...]);
+
+// In clearAllHistory
+const clearAllHistory = async () => {
+  haptics.warning();
+  // ... existing code
+};
+```
 
 ---
 
-## Technical Notes
+## 7. Summary of Benefits
 
-- All haptic calls are no-ops on web (handled by the `haptics` utility)
-- The `useSocialEngagement` optimization is backward compatible
-- Double-tap detection uses a 300ms window (standard mobile timing)
-- Pull-to-refresh threshold should be ~80-100px
+| Improvement | Impact |
+|-------------|--------|
+| Unified search bar style | Visual consistency with Home page |
+| Haptic feedback | Native iOS/Android feel |
+| Loading indicators | Better feedback during search |
+| Story ring enhancement | Modern, Instagram-like appearance |
+| Animation polish | Smoother, more premium interactions |
+| Auto-focus improvements | Better keyboard handling |
+
+---
+
+## 8. Testing Checklist
+- Search bar matches Home page style in light mode
+- Search bar matches Home page style in dark mode
+- Haptic feedback triggers on all interactions (test on device)
+- Loading spinner appears during search
+- Cancel button animates smoothly
+- User cards have proper story ring styling
+- Follow button has haptic feedback
+- Clear history has warning haptic
+- Empty state looks polished
