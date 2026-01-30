@@ -317,8 +317,11 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
+  
+  // Track unfollowed users during this modal session for count calculation and cache cleanup
+  const [unfollowedIds, setUnfollowedIds] = useState<Set<string>>(new Set());
+  // Track removed followers during this modal session
+  const [removedFollowerIds, setRemovedFollowerIds] = useState<Set<string>>(new Set());
   
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -398,18 +401,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   }, [initialTab, isOpen, emblaApi, isOwnProfile]);
 
-  // Update counts from React Query data
-  useEffect(() => {
-    if (followers.length > 0 || !followersLoading) {
-      setFollowersCount(followers.length);
-    }
-  }, [followers, followersLoading]);
-
-  useEffect(() => {
-    if (following.length > 0 || !followingLoading) {
-      setFollowingCount(following.length);
-    }
-  }, [following, followingLoading]);
+  // Derive counts dynamically - exclude unfollowed/removed users from session
+  const effectiveFollowersCount = followers.filter(u => !removedFollowerIds.has(u.id)).length;
+  const effectiveFollowingCount = following.filter(u => !unfollowedIds.has(u.id)).length;
 
   const followUser = async (targetId: string) => {
     if (!currentUser) return;
@@ -432,8 +426,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         updateFollowingStatus(targetId, false);
         console.error('Error following user:', error);
       } else {
-        // Update counter - no invalidateQueries to avoid reload
-        setFollowingCount(prev => prev + 1);
+        // Re-follow: remove from unfollowedIds if was previously unfollowed in this session
+        setUnfollowedIds(prev => {
+          const next = new Set(prev);
+          next.delete(targetId);
+          return next;
+        });
         onFollowChange?.();
       }
     } catch (error) {
@@ -462,8 +460,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         updateFollowingStatus(targetId, true);
         console.error('Error unfollowing user:', error);
       } else {
-        // Update counter - no invalidateQueries to avoid reload
-        setFollowingCount(prev => Math.max(0, prev - 1));
+        // Track this user as unfollowed for this session (affects count, removed on close)
+        setUnfollowedIds(prev => new Set(prev).add(targetId));
         onFollowChange?.();
       }
     } catch (error) {
@@ -517,7 +515,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
 
       if (!error) {
         removeFollowerFromList(followerId);
-        setFollowersCount(prev => Math.max(0, prev - 1));
+        // Track for count (already removed from list visually)
+        setRemovedFollowerIds(prev => new Set(prev).add(followerId));
         onFollowChange?.();
         // No invalidateQueries - optimistic update already done
       } else {
@@ -553,6 +552,21 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Handle modal close - cleanup cache for unfollowed users
+  const handleClose = useCallback(() => {
+    // Remove unfollowed users from cache so they don't reappear on reopen
+    if (unfollowedIds.size > 0) {
+      queryClient.setQueryData<FollowUser[]>(
+        ['follow-list', targetUserId, 'following'],
+        (old) => old?.filter(u => !unfollowedIds.has(u.id))
+      );
+    }
+    // Reset session tracking state
+    setUnfollowedIds(new Set());
+    setRemovedFollowerIds(new Set());
+    onClose();
+  }, [unfollowedIds, queryClient, targetUserId, onClose]);
+
   // Stable callback for avatar click
   const handleAvatarClick = useCallback((user: UserWithFollowStatus) => {
     const now = new Date();
@@ -566,10 +580,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       setSelectedStoryIndex(storyIndex >= 0 ? storyIndex : 0);
       setIsStoriesViewerOpen(true);
     } else {
-      onClose();
+      handleClose();
       navigate(`/profile/${user.id}`);
     }
-  }, [stories, onClose, navigate]);
+  }, [stories, handleClose, navigate]);
 
   // Stable callback for action click
   const handleActionClick = useCallback(async (user: UserWithFollowStatus, e: React.MouseEvent) => {
@@ -601,9 +615,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
 
   // Stable callback for username click
   const handleUsernameClick = useCallback((userId: string) => {
-    onClose();
+    handleClose();
     navigate(`/profile/${userId}`);
-  }, [onClose, navigate]);
+  }, [handleClose, navigate]);
 
   // Get loading state for specific tab
   const getTabLoading = useCallback((tabType: TabType) => {
@@ -660,7 +674,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button 
-              onClick={onClose} 
+              onClick={handleClose} 
               className="p-1.5 -ml-1.5 rounded-full hover:bg-muted/80 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -698,7 +712,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
                   : "bg-muted/60 text-muted-foreground hover:bg-muted"
               )}
             >
-              <span className="font-semibold">{followingCount}</span>
+              <span className="font-semibold">{effectiveFollowingCount}</span>
               <span>{t('followingTab', { ns: 'common', defaultValue: 'seguiti' })}</span>
             </button>
             
@@ -711,7 +725,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
                   : "bg-muted/60 text-muted-foreground hover:bg-muted"
               )}
             >
-              <span className="font-semibold">{followersCount}</span>
+              <span className="font-semibold">{effectiveFollowersCount}</span>
               <span>{t('followers', { ns: 'common' })}</span>
             </button>
           </div>
