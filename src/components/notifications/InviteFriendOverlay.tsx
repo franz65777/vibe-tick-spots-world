@@ -8,7 +8,7 @@ import AvatarStack from '@/components/common/AvatarStack';
 import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
 import spottLogoColorful from '@/assets/spott-logo-colorful.png';
-import syncContactsIcon from '@/assets/icons/add-friend.png';
+import syncContactsIcon from '@/assets/icons/sync-contacts.png';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
