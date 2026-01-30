@@ -7,6 +7,7 @@ import spottLogo from '@/assets/spott-logo.png';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { haptics } from '@/utils/haptics';
 
 // Production URL for password reset - always redirect to spott.cloud
 const PRODUCTION_RESET_URL = 'https://spott.cloud/forgot-password?type=recovery';
@@ -48,6 +49,7 @@ const ForgotPassword = () => {
 
   const handleSendResetLink = async (e: React.FormEvent) => {
     e.preventDefault();
+    haptics.impact('light');
     setLoading(true);
 
     try {
@@ -58,8 +60,10 @@ const ForgotPassword = () => {
       if (error) throw error;
       
       setEmailSent(true);
+      haptics.success();
       toast.success(t('auth:resetLinkSent'));
     } catch (err: any) {
+      haptics.error();
       toast.error(err.message || t('auth:resetLinkError'));
     } finally {
       setLoading(false);
@@ -70,15 +74,18 @@ const ForgotPassword = () => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
+      haptics.warning();
       toast.error(t('auth:passwordsNotMatch'));
       return;
     }
     
     if (newPassword.length < 6) {
+      haptics.warning();
       toast.error(t('auth:passwordMinLength'));
       return;
     }
     
+    haptics.impact('light');
     setLoading(true);
 
     try {
@@ -88,25 +95,40 @@ const ForgotPassword = () => {
       
       if (error) throw error;
       
+      haptics.success();
       toast.success(t('auth:passwordUpdated'));
       setPasswordResetSuccess(true);
     } catch (err: any) {
+      haptics.error();
       toast.error(err.message || t('auth:passwordUpdateError'));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleTogglePassword = () => {
+    haptics.selection();
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="h-screen bg-[#F5F1EA] dark:bg-background flex flex-col overflow-hidden pt-safe pb-safe">
       <header className="p-4 flex items-center justify-start">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="text-muted-foreground">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => {
+            haptics.selection();
+            navigate('/auth');
+          }} 
+          className="text-muted-foreground active:scale-95 transition-transform"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" /> {t('auth:backToLogin')}
         </Button>
       </header>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-4">
-        <div className="text-center">
+        <div className="text-center animate-in fade-in duration-500">
           <div className="flex items-center justify-center mb-8">
             <img 
               src={spottLogo} 
@@ -125,23 +147,30 @@ const ForgotPassword = () => {
         {!isResetMode ? (
           // Request reset link form
           emailSent ? (
-            <div className="text-center mt-8 space-y-4">
+            <div className="text-center mt-8 space-y-4 animate-in fade-in zoom-in duration-300">
               <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                 <p className="text-green-600 dark:text-green-400">{t('auth:resetLinkSent')}</p>
               </div>
-              <Button variant="outline" onClick={() => navigate('/auth')} className="mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  haptics.selection();
+                  navigate('/auth');
+                }} 
+                className="mt-4 active:scale-95 transition-transform"
+              >
                 {t('auth:backToLogin')}
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSendResetLink} className="space-y-6 mt-8">
+            <form onSubmit={handleSendResetLink} className="space-y-6 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
               <div>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 bg-background text-foreground"
+                  className="h-12 bg-background text-foreground shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_2px_hsl(var(--ring))]"
                   placeholder={t('auth:emailPlaceholder')}
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -151,7 +180,7 @@ const ForgotPassword = () => {
               <Button
                 type="submit"
                 disabled={loading || !email.trim()}
-                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full"
+                className="w-full h-12 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-full shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] active:scale-[0.98] transition-all duration-200"
               >
                 {loading ? t('auth:pleaseWait') : t('auth:sendResetLink')}
               </Button>
@@ -159,7 +188,7 @@ const ForgotPassword = () => {
           )
         ) : passwordResetSuccess ? (
           // Success message after password reset
-          <div className="text-center mt-8 space-y-6">
+          <div className="text-center mt-8 space-y-6 animate-in fade-in zoom-in duration-300">
             <div className="p-6 bg-green-500/10 border border-green-500/20 rounded-lg">
               <div className="text-4xl mb-4">✓</div>
               <h3 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">
@@ -172,7 +201,7 @@ const ForgotPassword = () => {
           </div>
         ) : (
           // Update password form
-          <form onSubmit={handleUpdatePassword} className="space-y-6 mt-8">
+          <form onSubmit={handleUpdatePassword} className="space-y-6 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
             <div>
               <label className="text-sm font-medium text-foreground block mb-2">
                 {t('auth:newPassword')}
@@ -183,13 +212,13 @@ const ForgotPassword = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  className="h-12 pr-10 bg-background text-foreground"
+                  className="h-12 pr-10 bg-background text-foreground shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_2px_hsl(var(--ring))]"
                   placeholder={t('auth:enterNewPassword')}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                  onClick={handleTogglePassword}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 active:scale-95 transition-transform"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -209,7 +238,7 @@ const ForgotPassword = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="h-12 bg-background text-foreground"
+                className="h-12 bg-background text-foreground shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_2px_hsl(var(--ring))]"
                 placeholder={t('auth:confirmYourPassword')}
               />
             </div>
@@ -217,7 +246,7 @@ const ForgotPassword = () => {
             <Button
               type="submit"
               disabled={loading || !newPassword || !confirmPassword}
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+              className="w-full h-12 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-full shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] active:scale-[0.98] transition-all duration-200"
             >
               {loading ? t('auth:pleaseWait') : t('auth:updatePassword')}
             </Button>
