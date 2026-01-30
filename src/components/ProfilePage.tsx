@@ -139,14 +139,14 @@ const ProfilePage = memo(() => {
     return (
       <Suspense fallback={<TabContentSkeleton />}>
         {activeTab === 'posts' && (
-          <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+          <div className="h-full overflow-y-auto pb-20">
             <PostsGrid />
           </div>
         )}
         {activeTab === 'trips' && <TripsGrid />}
         {activeTab === 'badges' && <Achievements userId={user?.id} />}
         {activeTab === 'tagged' && (
-          <div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+          <div className="h-full overflow-y-auto pb-20">
             <TaggedPostsGrid />
           </div>
         )}

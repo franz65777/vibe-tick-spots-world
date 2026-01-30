@@ -238,7 +238,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   return (
     <div className="px-4 overscroll-contain">
       {/* Filter Dropdown + City Chips Row */}
-      <div className="sticky top-0 z-20 -mx-4 px-4 mb-4 bg-background">
+      <div className="sticky top-0 z-20 -mx-4 px-4 pb-3 bg-background rounded-b-2xl">
         <div className="flex items-center gap-3">
           {/* Existing Dropdown */}
           <DropdownMenu>
@@ -311,11 +311,6 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               </div>
             </div>
           )}
-        </div>
-
-        {/* Soft rounded divider */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-12 h-1 bg-gray-200/60 dark:bg-gray-700/60 rounded-full" />
         </div>
       </div>
 
