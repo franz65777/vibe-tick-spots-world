@@ -258,7 +258,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.all > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'all' } })}
             disabled={categoryCounts.all === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagAll} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
@@ -271,7 +271,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.been > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'been' } })}
             disabled={categoryCounts.been === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.been === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.been === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagBeen} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
@@ -284,7 +284,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.toTry > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'to-try' } })}
             disabled={categoryCounts.toTry === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.toTry === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.toTry === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagToTry} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
@@ -297,7 +297,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.favourite > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'favourite' } })}
             disabled={categoryCounts.favourite === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 shrink-0 ${categoryCounts.favourite === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.favourite === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagFavourite} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">

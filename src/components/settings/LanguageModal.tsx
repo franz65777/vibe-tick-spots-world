@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Check, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import languageIcon from '@/assets/settings-language.png';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface LanguageModalProps {
   open: boolean;
@@ -38,13 +39,14 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
-        <div className="h-full flex flex-col">
-          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10 bg-background">
+      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden !bg-transparent">
+        <FrostedGlassBackground />
+        <div className="relative z-10 h-full flex flex-col">
+          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onOpenChange(false)}
-                className="p-2 hover:bg-muted rounded-full transition-colors"
+                className="p-2 hover:bg-muted/50 rounded-full transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -65,10 +67,10 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
                 onOpenChange(false);
               }}
               disabled={saving}
-              className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all min-h-[60px] ${
+              className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all min-h-[60px] shadow-sm ${
                 currentLanguage === lang.code
-                  ? 'border-primary bg-primary/10 shadow-sm'
-                  : 'border-border bg-background hover:border-primary/30'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-white/30 dark:border-white/10 bg-white/60 dark:bg-white/10 hover:border-primary/30'
               } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="text-2xl flex-shrink-0">{lang.flag}</span>

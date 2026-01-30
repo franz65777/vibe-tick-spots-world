@@ -282,7 +282,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     "px-4 py-2 rounded-full text-sm font-semibold transition-all flex-shrink-0 flex items-center gap-1.5",
                     !selectedCity
                       ? "bg-black text-white"
-                      : "bg-white/50 dark:bg-white/10 text-gray-500 shadow-sm"
+                      : "bg-white/60 dark:bg-white/10 text-gray-500 shadow-sm backdrop-blur-sm"
                   )}
                 >
                   <Globe className="w-4 h-4" />
@@ -298,7 +298,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       "px-4 py-2 rounded-full text-sm font-semibold transition-all flex-shrink-0 whitespace-nowrap",
                       selectedCity === city
                         ? "bg-black text-white"
-                        : "bg-white/50 dark:bg-white/10 text-gray-500 shadow-sm"
+                        : "bg-white/60 dark:bg-white/10 text-gray-500 shadow-sm backdrop-blur-sm"
                     )}
                   >
                     {translateCityName(city, i18n.language).toLowerCase()}

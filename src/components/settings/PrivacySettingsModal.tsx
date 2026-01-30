@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Lock, Eye, ArrowLeft } from 'lucide-react';
 import privacyIcon from '@/assets/icons/privacy-icon.png';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 type BeenCardsVisibility = 'everyone' | 'none' | 'close_friends';
 
@@ -113,13 +114,14 @@ const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({ open, onOpe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
-        <div className="h-full flex flex-col">
-          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10 bg-background">
+      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden !bg-transparent">
+        <FrostedGlassBackground />
+        <div className="relative z-10 h-full flex flex-col">
+          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onOpenChange(false)}
-                className="p-2 hover:bg-muted rounded-full transition-colors"
+                className="p-2 hover:bg-muted/50 rounded-full transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>

@@ -9,6 +9,7 @@ import { Calendar, Users, TrendingUp, Activity, MapPin, Zap } from 'lucide-react
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DataFixUtility from '@/components/admin/DataFixUtility';
 import { useRetentionAnalytics } from '@/hooks/useRetentionAnalytics';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 interface AdminAnalyticsModalProps {
   open: boolean;
@@ -33,10 +34,12 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
   } = useRetentionAnalytics(startDate, endDate);
   const dauMauRatio = mau > 0 ? (dau / mau * 100).toFixed(1) : '0';
   return <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[100dvh] overflow-y-auto scrollbar-hide rounded-t-none p-0">
-        <SheetHeader className="pt-[env(safe-area-inset-top)] px-6 pb-4 sticky top-0 bg-background z-10 border-b">
+      <SheetContent side="bottom" className="h-[100dvh] overflow-y-auto scrollbar-hide rounded-t-none p-0 !bg-transparent">
+        <FrostedGlassBackground />
+        <div className="relative z-10 flex flex-col h-full">
+        <SheetHeader className="pt-[env(safe-area-inset-top)] px-6 pb-4 sticky top-0 z-10 border-b border-white/20">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="shrink-0 hover:bg-muted/50">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex-1">
@@ -44,7 +47,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
               
             </div>
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 bg-white/60 dark:bg-white/10 border-white/30 dark:border-white/10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -184,6 +187,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
               </Card>
             </TabsContent>
           </Tabs>
+        </div>
         </div>
       </SheetContent>
     </Sheet>;
