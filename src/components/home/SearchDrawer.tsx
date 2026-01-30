@@ -17,7 +17,7 @@ import { searchNearbyByCategory, type NearbySearchResult, type NearbyPrompt as N
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 import { useOptimizedPlacesSearch, type SearchResult } from '@/hooks/useOptimizedPlacesSearch';
-import spottLogoTransparent from '@/assets/spott-logo-transparent-v2.png';
+import spottLogoTransparent from '@/assets/spott-logo-transparent-v3.png';
 
 interface PopularSpot {
   id: string;
