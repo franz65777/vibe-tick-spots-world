@@ -455,17 +455,17 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
       {/* Multi-layer background - unified frosted glass effect */}
       <div className="absolute inset-0 z-0">
-        {/* Warm base */}
-        <div className="absolute inset-0 bg-[#F7F3EC] dark:bg-background" />
+        {/* Warm base - light: off-white, dark: deep blue */}
+        <div className="absolute inset-0 bg-[#F7F3EC] dark:bg-[#0A1628]" />
         {/* Subtle vertical gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3] dark:from-background dark:via-background dark:to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3] dark:from-[#0D1B2A] dark:via-[#0A1628] dark:to-[#071320]" />
         {/* Faint vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)] dark:opacity-50" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)] dark:bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
         {/* Frosted glass overlay */}
-        <div className="absolute inset-0 bg-white/40 dark:bg-background/60 backdrop-blur-xl" />
+        <div className="absolute inset-0 bg-white/40 dark:bg-[#0A1628]/60 backdrop-blur-xl" />
         {/* Subtle grain/noise */}
         <div 
-          className="absolute inset-0 opacity-[0.025] mix-blend-multiply pointer-events-none"
+          className="absolute inset-0 opacity-[0.025] mix-blend-multiply dark:mix-blend-soft-light pointer-events-none"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
@@ -710,7 +710,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
 
       {/* Leaderboard Button */}
       {!isSearchActive && champions.length > 0 && (
-        <div className="fixed bottom-28 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+        <div className="fixed bottom-28 left-0 right-0 px-4 pb-2 pointer-events-none">
           <div className="pointer-events-auto">
             <Suspense fallback={<div />}>
               <CommunityChampions 
