@@ -387,7 +387,10 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                 <div
                   key={post.id}
                   className={cn(
-                    "relative bg-background border border-border rounded-xl p-3 animate-fade-in group",
+                    "relative bg-gradient-to-br from-white to-gray-50/80 dark:from-zinc-900 dark:to-zinc-800/80",
+                    "border border-white/60 dark:border-zinc-700/50 rounded-2xl p-4",
+                    "shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]",
+                    "transition-all duration-200 active:scale-[0.99] animate-fade-in group",
                     hasMedia && "cursor-pointer"
                   )}
                   onClick={hasMedia ? () => handlePostClick(post.id) : undefined}
@@ -412,7 +415,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       }}
                       className="shrink-0"
                     >
-                      <Avatar className="h-10 w-10 rounded-xl overflow-hidden">
+                      <Avatar className="h-14 w-14 rounded-2xl overflow-hidden shadow-md ring-2 ring-white/80 dark:ring-zinc-700/50">
                         {getLocationThumbnail(post.locations) ? (
                           <AvatarImage 
                             src={getLocationThumbnail(post.locations)!}
@@ -455,7 +458,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                                 });
                               }
                             }}
-                            className="font-semibold text-sm hover:opacity-70 text-left flex-1"
+                            className="font-bold text-[15px] hover:opacity-70 text-left flex-1 tracking-tight"
                           >
                             {post.locations.name}
                           </button>
@@ -466,13 +469,19 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         )}
 
                         {post.rating && (
-                          <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
-                            <div className="flex items-center gap-1">
+                          <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                            <div className={cn(
+                              "flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-sm",
+                              "bg-gradient-to-r",
+                              post.rating >= 8 ? "from-green-50 to-green-100/80 dark:from-green-900/30 dark:to-green-800/20" :
+                              post.rating >= 5 ? "from-amber-50 to-orange-100/80 dark:from-amber-900/30 dark:to-amber-800/20" :
+                              "from-red-50 to-red-100/80 dark:from-red-900/30 dark:to-red-800/20"
+                            )}>
                               {(() => {
                                 const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
                                 return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
                               })()}
-                              <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
+                              <span className={cn("text-sm font-bold", getRatingColor(post.rating))}>{post.rating}</span>
                             </div>
                             {reviewOrder[post.id] > 1 && (
                               <div className="flex items-center gap-0.5 bg-primary/10 rounded-full px-1.5 py-0.5">
@@ -495,7 +504,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
                       {post.caption && (
                         <div className="relative">
-                          <p className="text-sm text-foreground text-left">
+                          <p className="text-sm text-foreground/90 text-left leading-relaxed mt-1.5">
                             {isExpanded ? (
                               <span className="whitespace-pre-wrap">{post.caption}</span>
                             ) : (
