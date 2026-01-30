@@ -98,7 +98,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden pt-safe pb-safe">
+    <div className="h-screen bg-[#F5F1EA] dark:bg-background flex flex-col overflow-hidden pt-safe pb-safe">
       <header className="p-4 flex items-center justify-start">
         <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="text-muted-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" /> {t('auth:backToLogin')}

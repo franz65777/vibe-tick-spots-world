@@ -69,7 +69,7 @@ const SigninStart = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden pt-safe pb-safe">
+    <div className="h-screen bg-[#F5F1EA] dark:bg-background flex flex-col overflow-hidden pt-safe pb-safe">
       {/* Header with language selector */}
       <header className="p-4 flex items-center justify-end">
         <div className="w-40">
