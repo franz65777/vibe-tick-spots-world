@@ -25,6 +25,7 @@ const TaggedPostsGrid = lazy(() => import('./profile/TaggedPostsGrid'));
  * PERFORMANCE IMPROVEMENTS:
  * - Lazy loaded tab components (PostsGrid, TripsGrid, Achievements, TaggedPostsGrid)
  * - Single consolidated query via useProfileAggregated
+ * - Data passed as props to children (no duplicate queries)
  * - React Query caching for instant transitions
  * - Prefetch on navigation hover
  */
@@ -32,7 +33,13 @@ const ProfilePage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const { profile, loading, error, refetch } = useProfileAggregated();
+  
+  // SINGLE source of truth for profile data
+  const { profile, stats, categoryCounts, loading, error, refetch } = useProfileAggregated();
+  
+  // SINGLE source of truth for badges
+  const { badges } = useUserBadges();
+  
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -51,7 +58,6 @@ const ProfilePage = memo(() => {
   });
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
   const [initialFolderId, setInitialFolderId] = useState<string | null>(null);
-  const { badges } = useUserBadges();
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
 
@@ -138,7 +144,7 @@ const ProfilePage = memo(() => {
   }
 
   const tabsConfig = [
-    { key: 'posts', content: <div className="h-full overflow-y-auto pb-20"><PostsGrid /></div> },
+    { key: 'posts', content: <div className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
     { key: 'trips', content: <TripsGrid /> },
     { key: 'badges', content: <Achievements userId={user?.id} /> },
     { key: 'tagged', content: <div className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
@@ -155,6 +161,11 @@ const ProfilePage = memo(() => {
       {/* Content wrapper */}
       <div className="relative z-10 flex flex-col h-full">
       <ProfileHeader
+        profile={profile}
+        stats={stats}
+        categoryCounts={categoryCounts}
+        badges={badges}
+        loading={loading}
         onFollowersClick={() => openModal('followers')}
         onFollowingClick={() => openModal('following')}
         onPostsClick={handlePostsClick}

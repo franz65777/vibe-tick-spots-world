@@ -6,9 +6,8 @@ import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import settingsIcon from '@/assets/settings-icon.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useProfileAggregated } from '@/hooks/useProfileAggregated';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,9 +15,29 @@ import { useStories } from '@/hooks/useStories';
 import CreateStoryModal from '../CreateStoryModal';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
-import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProfileHeaderProps {
+  profile?: {
+    id: string;
+    username?: string;
+    avatar_url?: string;
+    is_business_user?: boolean;
+  } | null;
+  stats?: {
+    followersCount: number;
+    followingCount: number;
+    postsCount: number;
+    locationsCount: number;
+  };
+  categoryCounts?: {
+    all: number;
+    been: number;
+    toTry: number;
+    favourite: number;
+  };
+  badges?: any[];
+  loading?: boolean;
   onFollowersClick: () => void;
   onFollowingClick: () => void;
   onPostsClick: () => void;
@@ -28,14 +47,23 @@ interface ProfileHeaderProps {
   onCitySelect?: (city: string | null) => void;
 }
 
+// Prefetch settings page on module load
+const settingsPromise = import('@/pages/SettingsPage');
+
 /**
- * ProfileHeader - Optimized with useProfileAggregated
+ * ProfileHeader - Optimized with props drilling
  * 
- * PERFORMANCE: Consolidated from 5 hooks to 2 (aggregated + stories)
- * - useProfileAggregated: profile + stats + categoryCounts in one query
- * - useStories: only for avatar ring (lazy loaded)
+ * PERFORMANCE: Receives data from parent instead of re-fetching
+ * - Profile, stats, categoryCounts, badges passed as props
+ * - Settings button always visible (even during loading)
+ * - Stories lazy loaded only when user has avatar
  */
 const ProfileHeader = ({ 
+  profile,
+  stats = { followersCount: 0, followingCount: 0, postsCount: 0, locationsCount: 0 },
+  categoryCounts = { all: 0, been: 0, toTry: 0, favourite: 0 },
+  badges = [],
+  loading = false,
   onFollowersClick, 
   onFollowingClick, 
   onPostsClick, 
@@ -48,17 +76,14 @@ const ProfileHeader = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // CONSOLIDATED: Single hook for profile + stats + category counts
-  const { profile, stats, categoryCounts, loading, refetch } = useProfileAggregated();
-  
-  // Stories only needed for avatar ring
+  // Stories only needed for avatar ring - lazy load when avatar exists
   const { stories, refetch: refetchStories } = useStories();
   
   const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
-  const hasBusinessAccount = (profile as any)?.is_business_user || false;
+  const hasBusinessAccount = profile?.is_business_user || false;
 
   const getInitials = () => {
     if (profile?.username) {
@@ -92,9 +117,62 @@ const ProfileHeader = ({
     }
   };
 
-  // Show skeleton only on initial load without cached data
+  // Settings button - ALWAYS rendered, never hidden during loading
+  const SettingsButton = (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="h-10 w-10 p-0"
+      onMouseEnter={() => {
+        // Prefetch settings chunk
+        settingsPromise;
+      }}
+      onClick={() => navigate('/settings')}
+    >
+      <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />
+    </Button>
+  );
+
+  // Show skeleton with REAL settings button during loading
   if (loading && !profile) {
-    return <ProfileHeaderSkeleton />;
+    return (
+      <div className="pt-1 pb-2 bg-background">
+        {/* Main row: Avatar + Name/Stats + Badges + Settings */}
+        <div className="flex items-start gap-3 px-3">
+          {/* Avatar skeleton */}
+          <div className="shrink-0">
+            <Skeleton className="w-16 h-16 rounded-full" />
+          </div>
+
+          {/* Middle: Name and Stats */}
+          <div className="flex-1 min-w-0">
+            <Skeleton className="h-5 w-24 mt-2" />
+            
+            {/* Stats Row */}
+            <div className="flex gap-3 mt-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          </div>
+
+          {/* Right: Settings ALWAYS visible */}
+          <div className="flex items-center gap-2 shrink-0">
+            {SettingsButton}
+          </div>
+        </div>
+
+        {/* Category Cards Skeleton */}
+        <div className="px-3 pt-2 pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <Skeleton className="h-12 w-28 rounded-xl shrink-0" />
+            <Skeleton className="h-12 w-28 rounded-xl shrink-0" />
+            <Skeleton className="h-12 w-28 rounded-xl shrink-0" />
+            <Skeleton className="h-12 w-28 rounded-xl shrink-0" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -168,20 +246,8 @@ const ProfileHeader = ({
 
         {/* Right: Badges + Settings */}
         <div className="flex items-center gap-2 shrink-0">
-          <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-10 w-10 p-0"
-            onMouseEnter={() => {
-              // Prefetch settings chunk to avoid perceived lag
-              import('@/pages/SettingsPage');
-            }}
-            onClick={() => navigate('/settings')}
-          >
-            <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />
-          </Button>
+          <BadgeDisplay badges={badges} onBadgesClick={onBadgesClick} />
+          {SettingsButton}
         </div>
       </div>
 

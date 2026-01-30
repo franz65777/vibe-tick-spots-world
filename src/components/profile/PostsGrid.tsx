@@ -7,7 +7,6 @@ import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import LocationPostLibrary from '../explore/LocationPostLibrary';
 import { useOptimizedPosts } from '@/hooks/useOptimizedPosts';
-import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostDeletion } from '@/hooks/usePostDeletion';
 import { toast } from 'sonner';
@@ -70,8 +69,8 @@ interface PostsGridProps {
 const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGridProps) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const { profile } = useOptimizedProfile();
-  const targetUserId = userId || profile?.id;
+  // Use userId prop or fallback to current user
+  const targetUserId = userId || user?.id;
   const { posts: allPosts, loading, isFetchingNextPage, fetchNextPage, hasNextPage } = useOptimizedPosts(targetUserId);
   const { deletePost, deleting } = usePostDeletion();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
