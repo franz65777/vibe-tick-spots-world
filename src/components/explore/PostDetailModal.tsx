@@ -20,6 +20,7 @@ import { ShareModal } from '@/components/social/ShareModal';
 import { ReviewModal } from './ReviewModal';
 import { getPostReviews, type PostReview } from '@/services/reviewService';
 import { getLocationRanking } from '@/services/locationRankingService';
+import PostDetailSkeleton from '@/components/common/skeletons/PostDetailSkeleton';
 
 interface PostDetailModalProps {
   postId: string;
@@ -320,14 +321,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
   if (!isOpen) return null;
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-          <p className="text-white text-sm">Loading post...</p>
-        </div>
-      </div>
-    );
+    return <PostDetailSkeleton />;
   }
 
   if (!post) {

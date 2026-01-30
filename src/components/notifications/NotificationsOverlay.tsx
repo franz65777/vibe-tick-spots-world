@@ -9,6 +9,7 @@ import VirtualizedNotificationsList from '@/components/notifications/Virtualized
 import { useTranslation } from 'react-i18next';
 import InviteFriendOverlay from './InviteFriendOverlay';
 import addFriendIcon from '@/assets/icons/add-friend.png';
+import NotificationsSkeleton from '@/components/common/skeletons/NotificationsSkeleton';
 
 interface NotificationsOverlayProps {
   isOpen: boolean;
@@ -254,12 +255,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
       {/* Content */}
       <div className="flex-1 min-h-0">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-muted-foreground text-sm">Loading notifications…</span>
-            </div>
-          </div>
+          <NotificationsSkeleton count={6} />
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">

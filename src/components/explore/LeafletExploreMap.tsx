@@ -5,9 +5,9 @@ import 'leaflet/dist/leaflet.css';
 import { createLeafletCustomMarker, createCurrentLocationMarker } from '@/utils/leafletMarkerCreator';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { Loader2 } from 'lucide-react';
 import { useLocationShares } from '@/hooks/useLocationShares';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import MapLoadingSkeleton from '@/components/common/skeletons/MapLoadingSkeleton';
 
 export interface MapPin {
   id: string;
@@ -266,14 +266,7 @@ const LeafletExploreMap = ({
       </MapContainer>
 
       {/* Loading indicator */}
-      {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-[1000]">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Loading map...</p>
-          </div>
-        </div>
-      )}
+      {!isLoaded && <MapLoadingSkeleton />}
 
       {/* Location counter */}
       <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md z-[1000] border border-border">

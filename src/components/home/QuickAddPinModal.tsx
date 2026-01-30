@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import LocationCardsSkeleton from '@/components/common/skeletons/LocationCardsSkeleton';
 
 // Import category icons
 import restaurantIcon from '@/assets/category-restaurant-upload.png';
@@ -339,12 +340,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
           <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
             <ScrollArea className="h-[55vh] max-h-[55vh]">
               {isFetchingSuggestions ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center space-y-3">
-                    <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
-                    <p className="text-sm text-muted-foreground">{t('searching', { ns: 'common' })}</p>
-                  </div>
-                </div>
+                <LocationCardsSkeleton count={5} />
               ) : nearbySuggestions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
