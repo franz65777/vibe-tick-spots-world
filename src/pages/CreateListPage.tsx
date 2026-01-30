@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Trash2, Plus, MapPin, Upload, Check } from 'lucide-react';
 import iconPublic from '@/assets/icon-public.png';
@@ -10,9 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { compressImage } from '@/utils/imageUtils';
 import { GoogleMapsImportModal } from '@/components/list/GoogleMapsImportModal';
+import { useScrollHide } from '@/hooks/useScrollHide';
 
 const FOLDER_COLORS = [
   'bg-red-500',
@@ -70,6 +70,14 @@ const CreateListPage = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importedPlaces, setImportedPlaces] = useState<ImportedPlace[]>([]);
 
+  // iOS-style scroll hiding for header/form
+  const { hidden, setScrollContainer, resetHidden } = useScrollHide({ 
+    threshold: 30, 
+    enabled: true 
+  });
+  
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
   const isEditMode = !!folderId;
 
   useEffect(() => {
@@ -78,6 +86,13 @@ const CreateListPage = () => {
       loadFolderData();
     }
   }, [folderId]);
+
+  // Connect scroll container
+  useEffect(() => {
+    if (listContainerRef.current) {
+      setScrollContainer(listContainerRef.current);
+    }
+  }, [setScrollContainer]);
 
   const loadSavedLocations = async () => {
     if (!user) return;
@@ -355,39 +370,54 @@ const CreateListPage = () => {
     }
   };
 
+  // Scroll to top and show header
+  const scrollToTop = useCallback(() => {
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      resetHidden();
+    }
+  }, [resetHidden]);
+
   return (
     <div className="fixed inset-0 z-[10001] flex flex-col bg-[#F5F1EA] dark:bg-background">
-      {/* Header with glassmorphism */}
-      <div className="flex items-center justify-between px-4 py-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-background/60 backdrop-blur-xl border-b border-border/30">
-        <button
-          onClick={handleClose}
-          className="p-2 hover:bg-accent rounded-full transition-colors"
-        >
-          <X className="h-6 w-6" />
-        </button>
-        <h2 className="flex-1 text-lg font-semibold text-left ml-2">
-          {isEditMode
-            ? t('editList', 'Edit List')
-            : t('createNewList', 'Create New List')}
-        </h2>
-        <button
-          onClick={() => setIsPrivate(!isPrivate)}
-          className="p-2 hover:bg-accent rounded-full transition-colors"
-          title={isPrivate ? t('privateList', 'Private') : t('publicList', 'Public')}
-        >
-          {isPrivate ? (
-            <img src={iconPrivate} alt="Private" className="h-8 w-auto" />
-          ) : (
-            <img src={iconPublic} alt="Public" className="h-8 w-auto" />
-          )}
-        </button>
-      </div>
+      {/* Collapsible Header + Form Section */}
+      <div 
+        className={`transition-all duration-300 ease-out ${
+          hidden 
+            ? 'max-h-0 opacity-0 overflow-hidden' 
+            : 'max-h-[1000px] opacity-100'
+        }`}
+      >
+        {/* Header with glassmorphism */}
+        <div className="flex items-center justify-between px-4 py-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-background/60 backdrop-blur-xl border-b border-border/30">
+          <button
+            onClick={handleClose}
+            className="p-2 hover:bg-accent rounded-full transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <h2 className="flex-1 text-lg font-semibold text-left ml-2">
+            {isEditMode
+              ? t('editList', 'Edit List')
+              : t('createNewList', 'Create New List')}
+          </h2>
+          <button
+            onClick={() => setIsPrivate(!isPrivate)}
+            className="p-2 hover:bg-accent rounded-full transition-colors"
+            title={isPrivate ? t('privateList', 'Private') : t('publicList', 'Public')}
+          >
+            {isPrivate ? (
+              <img src={iconPrivate} alt="Private" className="h-8 w-auto" />
+            ) : (
+              <img src={iconPublic} alt="Public" className="h-8 w-auto" />
+            )}
+          </button>
+        </div>
 
-      {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="px-4 py-4 space-y-5">
+        {/* Form Content */}
+        <div className="px-4 py-4 space-y-4">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">
                 {t('common:loading', 'Loading')}...
               </div>
@@ -451,7 +481,7 @@ const CreateListPage = () => {
                   </div>
                 ) : (
                   <label className="block cursor-pointer">
-                    <div className="h-24 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-2 border-dashed border-border/50 flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors shadow-sm">
+                    <div className="h-20 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-2 border-dashed border-border/50 flex flex-col items-center justify-center gap-1.5 hover:border-primary/50 transition-colors shadow-sm">
                       {uploadingCover ? (
                         <span className="text-sm text-muted-foreground">
                           {t('uploading', 'Uploading...')}
@@ -477,159 +507,182 @@ const CreateListPage = () => {
               </div>
 
               {/* Privacy Status Card */}
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm shadow-sm">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm shadow-sm">
                 {isPrivate ? (
-                  <img src={iconPrivate} alt="Private" className="h-7 w-auto" />
+                  <img src={iconPrivate} alt="Private" className="h-6 w-auto" />
                 ) : (
-                  <img src={iconPublic} alt="Public" className="h-7 w-auto" />
+                  <img src={iconPublic} alt="Public" className="h-6 w-auto" />
                 )}
                 <span className="text-sm">
                   {isPrivate ? t('privateList', 'Only you can see this list') : t('publicList', 'Everyone can see this list')}
                 </span>
               </div>
-
-              {/* Imported Places */}
-              {importedPlaces.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      {t('importedPlaces', 'Imported places')}
-                    </label>
-                    <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
-                      {importedPlaces.length}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {importedPlaces.map((place, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-3"
-                      >
-                        <div className="shrink-0 bg-primary/10 rounded-xl w-12 h-12 flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{place.name}</p>
-                          {place.city && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {place.city}
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => setImportedPlaces(prev => prev.filter((_, i) => i !== idx))}
-                          className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
-                        >
-                          <X className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Locations Section */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-muted-foreground">
-                  {t('selectPlaces', 'Select places to add')}
-                </label>
-
-                {/* Search Bar */}
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base z-10">🔍</span>
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t('searchPlaces', 'Search places...')}
-                    className="pl-10 h-11 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-border/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]"
-                  />
-                </div>
-
-                {/* Selected Count */}
-                {selectedLocationIds.length > 0 && (
-                  <div className="text-sm text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full inline-block">
-                    {t('placesSelected', { count: selectedLocationIds.length, defaultValue: '{{count}} places selected' })}
-                  </div>
-                )}
-
-                {/* Locations List */}
-                <div className="space-y-2 max-h-72 overflow-y-auto">
-                  {savedLocations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      {t('noSavedPlaces', 'You have no saved places to add yet')}
-                    </p>
-                  ) : filteredLocations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      {t('noPlacesFoundSearch', 'No places found')}
-                    </p>
-                  ) : (
-                    filteredLocations.map((place: any) => {
-                      const idToCheck = place.location_id || place.id;
-                      const isSelected = selectedLocationIds.includes(idToCheck);
-                      const thumbnailUrl = getLocationThumbnail(place);
-                      
-                      return (
-                        <button
-                          type="button"
-                          key={place.id}
-                          onClick={() => toggleLocationSelection(place.id, place.location_id)}
-                          className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all shadow-sm ${
-                            isSelected 
-                              ? 'bg-primary/10 border-2 border-primary/40' 
-                              : 'bg-white/60 dark:bg-white/10 backdrop-blur-sm border-2 border-transparent hover:border-border/50'
-                          }`}
-                        >
-                          {/* Thumbnail with photo or category icon */}
-                          {thumbnailUrl ? (
-                            <img 
-                              src={thumbnailUrl} 
-                              alt={place.name}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                              <CategoryIcon category={place.category} className="w-6 h-6" />
-                            </div>
-                          )}
-                          
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{place.name}</p>
-                            {place.city && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {place.city}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {/* Checkbox */}
-                          <div
-                            className={`ml-2 h-6 w-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                              isSelected 
-                                ? 'border-primary bg-primary text-primary-foreground' 
-                                : 'border-muted-foreground/30 bg-background'
-                            }`}
-                          >
-                            {isSelected && <Check className="h-3.5 w-3.5" />}
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
             </>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Footer Actions */}
-      <div className="p-4 pb-safe flex gap-4">
+      {/* Mini context bar when header is hidden */}
+      {hidden && (
+        <button
+          onClick={scrollToTop}
+          className="flex items-center justify-center gap-2 px-4 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-background/80 backdrop-blur-xl border-b border-border/30 transition-all"
+        >
+          <span className="text-sm font-medium text-muted-foreground">
+            {folderName || t('newList', 'New List')}
+          </span>
+          {selectedLocationIds.length > 0 && (
+            <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
+              {selectedLocationIds.length}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Locations Section - Scrollable */}
+      <div 
+        ref={listContainerRef}
+        className="flex-1 overflow-y-auto px-4 pb-2"
+      >
+        {/* Imported Places */}
+        {importedPlaces.length > 0 && (
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-muted-foreground">
+                {t('importedPlaces', 'Imported places')}
+              </label>
+              <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
+                {importedPlaces.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {importedPlaces.map((place, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-3"
+                >
+                  <div className="shrink-0 bg-primary/10 rounded-xl w-12 h-12 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{place.name}</p>
+                    {place.city && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {place.city}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setImportedPlaces(prev => prev.filter((_, i) => i !== idx))}
+                    className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Locations Section */}
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-muted-foreground">
+            {t('selectPlaces', 'Select places to add')}
+          </label>
+
+          {/* Search Bar */}
+          <div className="relative sticky top-0 z-10 bg-[#F5F1EA] dark:bg-background py-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base z-10">🔍</span>
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('searchPlaces', 'Search places...')}
+              className="pl-10 h-11 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-border/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]"
+            />
+          </div>
+
+          {/* Selected Count */}
+          {selectedLocationIds.length > 0 && (
+            <div className="text-sm text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full inline-block">
+              {t('placesSelected', { count: selectedLocationIds.length, defaultValue: '{{count}} places selected' })}
+            </div>
+          )}
+
+          {/* Locations List - No max-height limit */}
+          <div className="space-y-2 pb-2">
+            {savedLocations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {t('noSavedPlaces', 'You have no saved places to add yet')}
+              </p>
+            ) : filteredLocations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {t('noPlacesFoundSearch', 'No places found')}
+              </p>
+            ) : (
+              filteredLocations.map((place: any) => {
+                const idToCheck = place.location_id || place.id;
+                const isSelected = selectedLocationIds.includes(idToCheck);
+                const thumbnailUrl = getLocationThumbnail(place);
+                
+                return (
+                  <button
+                    type="button"
+                    key={place.id}
+                    onClick={() => toggleLocationSelection(place.id, place.location_id)}
+                    className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all shadow-sm ${
+                      isSelected 
+                        ? 'bg-primary/10 border-2 border-primary/40' 
+                        : 'bg-white/60 dark:bg-white/10 backdrop-blur-sm border-2 border-transparent hover:border-border/50'
+                    }`}
+                  >
+                    {/* Thumbnail with photo or category icon */}
+                    {thumbnailUrl ? (
+                      <img 
+                        src={thumbnailUrl} 
+                        alt={place.name}
+                        className="w-12 h-12 rounded-xl object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <CategoryIcon category={place.category} className="w-6 h-6" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{place.name}</p>
+                      {place.city && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {place.city}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Checkbox */}
+                    <div
+                      className={`ml-2 h-6 w-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        isSelected 
+                          ? 'border-primary bg-primary text-primary-foreground' 
+                          : 'border-muted-foreground/30 bg-background'
+                      }`}
+                    >
+                      {isSelected && <Check className="h-3.5 w-3.5" />}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Actions - Compact */}
+      <div className="p-3 pb-safe flex gap-3">
         {isEditMode ? (
           <>
             <Button
               onClick={handleDelete}
               variant="outline"
-              className="flex-1 h-12 rounded-full bg-white dark:bg-zinc-800 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/40 hover:bg-destructive/5 shadow-[0_2px_8px_rgba(239,68,68,0.15),0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(239,68,68,0.25),0_2px_6px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all font-medium"
+              className="flex-1 h-11 rounded-full bg-white dark:bg-zinc-800 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/40 hover:bg-destructive/5 shadow-[0_2px_8px_rgba(239,68,68,0.15),0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(239,68,68,0.25),0_2px_6px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all font-medium"
               disabled={saving}
             >
               <Trash2 className="h-5 w-5 mr-2" />
@@ -638,7 +691,7 @@ const CreateListPage = () => {
             <Button
               onClick={handleSave}
               disabled={saving || !folderName.trim()}
-              className="flex-1 h-12 rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(59,130,246,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_rgba(59,130,246,0.4),0_2px_8px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all font-semibold"
+              className="flex-1 h-11 rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(59,130,246,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_rgba(59,130,246,0.4),0_2px_8px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all font-semibold"
             >
               {saving ? t('saving', 'Saving...') : t('save', 'Save')}
             </Button>
@@ -647,7 +700,7 @@ const CreateListPage = () => {
           <Button
             onClick={handleSave}
             disabled={saving || !folderName.trim()}
-            className="w-full h-12 rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(59,130,246,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_rgba(59,130,246,0.4),0_2px_8px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all font-semibold"
+            className="w-full h-11 rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(59,130,246,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_rgba(59,130,246,0.4),0_2px_8px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all font-semibold"
           >
             {saving ? t('creating', 'Creating...') : t('create', 'Create')}
           </Button>
