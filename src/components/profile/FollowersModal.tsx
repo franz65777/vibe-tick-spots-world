@@ -40,18 +40,18 @@ interface UserWithFollowStatus {
 
 type TabType = 'mutuals' | 'following' | 'followers';
 
-// Skeleton component for loading state
+// Skeleton component for loading state - 4 columns
 const UserGridSkeleton = () => (
-  <div className="grid grid-cols-3 gap-0 px-1">
-    {Array.from({ length: 9 }).map((_, i) => (
-      <div key={i} className="flex flex-col items-center gap-1.5 py-2 px-1">
+  <div className="grid grid-cols-4 gap-0 px-2">
+    {Array.from({ length: 12 }).map((_, i) => (
+      <div key={i} className="flex flex-col items-center gap-1 py-1.5 px-0.5">
         <div 
-          className="w-[76px] h-[76px] rounded-[20px] bg-muted relative overflow-hidden"
-          style={{ animationDelay: `${i * 50}ms` }}
+          className="w-[68px] h-[68px] rounded-full bg-muted relative overflow-hidden"
+          style={{ animationDelay: `${i * 40}ms` }}
         >
           <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
         </div>
-        <div className="w-14 h-3 bg-muted rounded relative overflow-hidden">
+        <div className="w-12 h-3 bg-muted rounded relative overflow-hidden">
           <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
         </div>
       </div>
@@ -116,8 +116,8 @@ const UserGridCard = memo(({
 
   return (
     <div 
-      className="flex flex-col items-center gap-1.5 py-2 px-1 animate-in fade-in duration-200"
-      style={{ animationDelay: `${index * 30}ms` }}
+      className="flex flex-col items-center gap-1 py-1.5 px-0.5 animate-in fade-in duration-200"
+      style={{ animationDelay: `${index * 20}ms` }}
     >
       {/* Avatar with overlay action icon */}
       <div className="relative">
@@ -126,48 +126,48 @@ const UserGridCard = memo(({
           className="group"
         >
           <div className={cn(
-            "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
+            "rounded-full p-[2px] transition-transform group-hover:scale-105",
             userHasStories 
               ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
               : ""
           )}>
             <Avatar className={cn(
-              "w-[76px] h-[76px] rounded-[20px]",
+              "w-[68px] h-[68px] rounded-full",
               userHasStories && "border-2 border-background"
             )}>
               <AvatarImage 
                 src={avatarUrl} 
-                className="object-cover rounded-[20px]" 
+                className="object-cover rounded-full" 
                 loading="lazy"
               />
-              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
+              <AvatarFallback className="bg-muted text-muted-foreground text-base font-semibold rounded-full">
                 {getInitials(user.username || 'User')}
               </AvatarFallback>
             </Avatar>
           </div>
         </button>
         
-        {/* Action icon overlay - TOP LEFT with glass effect */}
+        {/* Action icon overlay - positioned outside top-left */}
         {currentUserId !== user.id && (
           <button
             onClick={handleActionClick}
             className={cn(
-              "absolute top-1 left-1 w-7 h-7 rounded-full flex items-center justify-center",
-              "backdrop-blur-md bg-white/80 dark:bg-black/40",
-              "border border-white/40 dark:border-white/15",
-              "shadow-sm ring-1 ring-black/5 dark:ring-white/10",
-              "hover:bg-white/90 dark:hover:bg-black/50 active:scale-95 transition-all duration-150",
+              "absolute -top-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center",
+              "backdrop-blur-md bg-white/90 dark:bg-black/50",
+              "border border-white/50 dark:border-white/20",
+              "shadow-md",
+              "hover:bg-white dark:hover:bg-black/60 active:scale-95 transition-all duration-150",
               "z-20",
               isAnimating && "scale-110"
             )}
           >
-            <ActionIcon className={cn("w-3.5 h-3.5", iconColor)} strokeWidth={2.5} />
+            <ActionIcon className={cn("w-3 h-3", iconColor)} strokeWidth={2.5} />
           </button>
         )}
 
         {/* Places badge - bottom center with glass effect */}
         {(user.savedPlacesCount ?? 0) > 0 && (
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/70 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 text-foreground text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm z-10">
+          <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white/80 dark:bg-white/15 backdrop-blur-md border border-white/50 dark:border-white/20 text-foreground text-[9px] font-medium px-1.5 py-0.5 rounded-full shadow-sm z-10">
             <span className="leading-none">📌</span>
             <span>{user.savedPlacesCount}</span>
           </div>
@@ -179,7 +179,7 @@ const UserGridCard = memo(({
         onClick={() => onUsernameClick(user.id)}
         className="w-full flex justify-center"
       >
-        <p className="font-medium text-foreground text-xs truncate text-center max-w-[80px]">
+        <p className="font-medium text-foreground text-[11px] truncate text-center max-w-[70px]">
           {user.username || 'User'}
         </p>
       </button>
@@ -261,7 +261,7 @@ const TabGridContent = memo(({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-0 px-1">
+          <div className="grid grid-cols-4 gap-0 px-2">
             {displayUsers.map((user, index) => {
               const userHasStories = stories.some(s => 
                 s.user_id === user.id && 
