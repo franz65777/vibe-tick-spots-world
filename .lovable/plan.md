@@ -1,149 +1,90 @@
 
 
-# Plan: Add City Filter Chips to Profile Posts/Reviews
+# Plan: Update City Filter Chips to Match Reference Image
 
-## Overview
-Add horizontally scrollable city filter chips next to the existing posts/reviews dropdown. These chips will show cities where the user has uploaded posts or reviews, with counts. Selecting a chip filters the displayed content to that city only.
+## Reference Image Analysis
+Looking at the uploaded image, the chips have:
+- **Larger size**: More generous padding, bigger font
+- **Very rounded**: Full pill shape with `rounded-2xl` or `rounded-3xl`
+- **Clean white background**: Pure white with soft shadow for inactive chips
+- **Black solid**: Active "all" chip is solid black (not just foreground)
+- **Subtle shadow**: Soft, diffused shadow on inactive chips
+- **More spacing**: Larger gap between chips
 
-## Current State
-- The `PostsGrid` component has a dropdown to switch between "Posts" and "Reviews"
-- Posts are enriched with location data including `locations.city`
-- No city filtering exists currently
+## Current vs Desired
 
-## Solution Design
+| Property | Current | Desired (from image) |
+|----------|---------|---------------------|
+| Padding | `px-3 py-1.5` | `px-5 py-2.5` |
+| Font size | `text-xs` | `text-base` |
+| Border radius | `rounded-full` | `rounded-2xl` |
+| Gap | `gap-1.5` | `gap-3` |
+| Shadow | `shadow-sm` | `shadow-md` with blur |
+| Icon size | `w-3 h-3` | `w-5 h-5` |
 
-### Visual Design
-```text
-┌─────────────────────────────────────────────────────┐
-│  Posts ▼   │ All │ Dublin (3) │ Paris (1) │ London (2) │
-└─────────────────────────────────────────────────────┘
-              └──── Horizontally scrollable chips ────┘
-```
-
-- **Chips style**: Similar to FilterButtons on the home page
-  - Rounded corners (`rounded-xl`)
-  - Active state: Blue gradient with shadow
-  - Inactive state: Light background with subtle border
-- **"All" chip**: Always first, shows total count, selected by default
-- **City chips**: Show city name + count in parentheses
-- **Scrollable container**: Horizontal scroll for many cities
-
-### Implementation Details
+## Implementation
 
 **File: `src/components/profile/PostsGrid.tsx`**
 
-1. **Add state for city filter**
-   ```tsx
-   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-   ```
-
-2. **Extract unique cities from posts**
-   - Create a function to get cities with counts from the current filter (photos or reviews)
-   - Sort by count descending, then alphabetically
-
-3. **Add city chips UI after the dropdown**
-   - Horizontally scrollable container
-   - "All" chip first (always visible)
-   - City chips dynamically generated
-
-4. **Apply city filter to displayed posts**
-   - When `selectedCity` is set, filter `displayedPosts` by `post.locations?.city`
-
-5. **Reset city filter when switching between photos/reviews**
-   - Clear `selectedCity` when `postFilter` changes
-
-### Code Changes Summary
+Update the chip styles to:
 
 ```tsx
-// 1. New state
-const [selectedCity, setSelectedCity] = useState<string | null>(null);
-
-// 2. Extract cities with counts (based on current filter)
-const citiesWithCounts = useMemo(() => {
-  const basePosts = postFilter === 'photos' ? photoPosts : reviewPosts;
-  const cityMap = new Map<string, number>();
-  
-  basePosts.forEach((post: any) => {
-    const city = post.locations?.city;
-    if (city) {
-      cityMap.set(city, (cityMap.get(city) || 0) + 1);
-    }
-  });
-  
-  return Array.from(cityMap.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([city, count]) => ({ city, count }));
-}, [photoPosts, reviewPosts, postFilter]);
-
-// 3. Reset city when filter changes
-useEffect(() => {
-  setSelectedCity(null);
-}, [postFilter]);
-
-// 4. Apply city filter
-const displayedPosts = useMemo(() => {
-  const basePosts = postFilter === 'photos' ? photoPosts : reviewPosts;
-  if (!selectedCity) return basePosts;
-  return basePosts.filter((post: any) => post.locations?.city === selectedCity);
-}, [postFilter, photoPosts, reviewPosts, selectedCity]);
-```
-
-### UI Component Structure
-
-```tsx
-{/* Filter Dropdown + City Chips Row */}
-<div className="sticky top-0 z-20 -mx-4 px-4 mb-4 bg-background">
-  <div className="flex items-center gap-3">
-    {/* Existing Dropdown */}
-    <DropdownMenu>...</DropdownMenu>
-    
-    {/* City Filter Chips */}
-    {citiesWithCounts.length > 0 && (
-      <div className="flex-1 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-1.5 pb-1">
-          {/* All chip */}
-          <button
-            onClick={() => setSelectedCity(null)}
-            className={cn(
-              "px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex-shrink-0",
-              !selectedCity
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted"
-            )}
-          >
-            All
-          </button>
-          
-          {/* City chips */}
-          {citiesWithCounts.map(({ city, count }) => (
-            <button
-              key={city}
-              onClick={() => setSelectedCity(city)}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex-shrink-0 whitespace-nowrap",
-                selectedCity === city
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {translateCityName(city, i18n.language)} ({count})
-            </button>
-          ))}
-        </div>
-      </div>
-    )}
+{/* City Filter Chips */}
+{citiesWithCounts.length > 0 && (
+  <div className="flex-1 overflow-x-auto scrollbar-hide">
+    <div className="flex gap-3">
+      {/* All chip */}
+      <button
+        onClick={() => setSelectedCity(null)}
+        className={cn(
+          "px-5 py-2.5 rounded-2xl text-base font-medium transition-all flex-shrink-0 flex items-center gap-2",
+          !selectedCity
+            ? "bg-black text-white shadow-lg"
+            : "bg-white text-gray-400 shadow-md hover:shadow-lg"
+        )}
+      >
+        <Globe className="w-5 h-5" />
+        {t('all', { ns: 'common', defaultValue: 'all' })}
+      </button>
+      
+      {/* City chips */}
+      {citiesWithCounts.map(({ city }) => (
+        <button
+          key={city}
+          onClick={() => setSelectedCity(city)}
+          className={cn(
+            "px-5 py-2.5 rounded-2xl text-base font-medium transition-all flex-shrink-0 whitespace-nowrap",
+            selectedCity === city
+              ? "bg-black text-white shadow-lg"
+              : "bg-white text-gray-400 shadow-md hover:shadow-lg"
+          )}
+        >
+          {translateCityName(city, i18n.language).toLowerCase()}
+        </button>
+      ))}
+    </div>
   </div>
-</div>
+)}
 ```
 
-## Technical Considerations
+## Key Style Changes
 
-1. **Performance**: Uses `useMemo` for efficient recalculation
-2. **City translation**: Reuses existing `translateCityName` utility already imported
-3. **Responsive**: Horizontal scroll handles many cities gracefully
-4. **Consistency**: Matches existing chip patterns from FilterButtons
-5. **UX**: "All" chip always visible as first option
+1. **Size increase**:
+   - Padding: `px-3 py-1.5` → `px-5 py-2.5`
+   - Font: `text-xs` → `text-base`
+   - Icon: `w-3 h-3` → `w-5 h-5`
+   - Gap: `gap-1.5` → `gap-3`
+
+2. **Border radius**: `rounded-full` → `rounded-2xl` (matches the softer rounded corners in the image)
+
+3. **Colors exactly like the image**:
+   - Active: `bg-black text-white` (solid black)
+   - Inactive: `bg-white text-gray-400` (pure white with muted gray text)
+
+4. **Shadows**:
+   - Active: `shadow-lg` (more prominent)
+   - Inactive: `shadow-md` (soft, diffused shadow like in the image)
 
 ## Files to Modify
-- `src/components/profile/PostsGrid.tsx` - Add city filter state, logic, and UI
+- `src/components/profile/PostsGrid.tsx` - Update chip styles only
 
