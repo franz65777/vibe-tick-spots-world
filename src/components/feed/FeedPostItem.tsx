@@ -1,8 +1,8 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { MapPin, Star, Percent, Calendar, Sparkles, Megaphone } from 'lucide-react';
+import { MapPin, Star, Percent, Calendar, Sparkles, Megaphone, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PostActions } from './PostActions';
 import { getCategoryIcon } from '@/utils/categoryIcons';
@@ -11,6 +11,7 @@ import { PostLikeUser } from '@/services/socialEngagementService';
 import { useTranslation } from 'react-i18next';
 import { formatPostDate } from '@/utils/dateFormatter';
 import { SaveTag } from '@/utils/saveTags';
+import { haptics } from '@/utils/haptics';
 
 interface FeedPostItemProps {
   item: any;
@@ -27,6 +28,7 @@ interface FeedPostItemProps {
   onCommentClick: (postId: string) => void;
   onShareClick: (postId: string) => void;
   onToggleCaption: (postId: string) => void;
+  onDoubleTapLike?: (postId: string) => void;
 }
 
 // Custom comparison to prevent unnecessary re-renders during feed scroll
@@ -72,11 +74,16 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
     onLocationClick,
     onCommentClick,
     onShareClick,
-    onToggleCaption
+    onToggleCaption,
+    onDoubleTapLike
   } = props;
 
   // Progressive image loading state - track which images have loaded
   const [imageLoadedMap, setImageLoadedMap] = useState<Record<number, boolean>>({});
+  
+  // Double-tap to like state
+  const lastTapRef = useRef<number>(0);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   
   const handleImageLoad = useCallback((idx: number) => {
     setImageLoadedMap(prev => ({ ...prev, [idx]: true }));
@@ -97,6 +104,27 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
   const createdAt = item.created_at;
   const isExpanded = expandedCaptions.has(postId);
   const contentType = item.content_type;
+
+  // Double-tap to like handler (must be after postId is declared)
+  const handleDoubleTap = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapRef.current;
+    
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double tap detected
+      haptics.impact('medium');
+      
+      // Show heart animation
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+      
+      // Trigger like if not already liked
+      if (!initialIsLiked && onDoubleTapLike) {
+        onDoubleTapLike(postId);
+      }
+    }
+    lastTapRef.current = now;
+  }, [initialIsLiked, onDoubleTapLike, postId]);
 
   const isReview = !!rating && rating > 0;
   const isReviewOnly = isReview && mediaUrls.length === 0;
@@ -327,9 +355,18 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
         </div>
       </div>
 
-      {/* Post Media with Progressive Image Loading */}
+      {/* Post Media with Progressive Image Loading and Double-Tap to Like */}
       {mediaUrls.length > 0 && (
-        <div className="post-compact-media relative">
+        <div className="post-compact-media relative" onClick={handleDoubleTap}>
+          {/* Heart animation overlay */}
+          {showHeartAnimation && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+              <Heart 
+                className="w-24 h-24 fill-white text-white animate-ping opacity-90" 
+                style={{ animationDuration: '0.8s' }}
+              />
+            </div>
+          )}
           {hasMultipleMedia ? (
             <Carousel className="w-full" gutter={false}>
               <CarouselContent className="-ml-0">

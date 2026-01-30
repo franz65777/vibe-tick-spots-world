@@ -12,16 +12,20 @@ import { useRealtimeEvent } from './useCentralizedRealtime';
  * Reduces connections from 3 per post to 0 (uses shared channel)
  */
 
-export const useSocialEngagement = (postId: string, initialCounts?: { likes?: number; comments?: number; shares?: number }) => {
+export const useSocialEngagement = (
+  postId: string, 
+  initialCounts?: { likes?: number; comments?: number; shares?: number },
+  options?: { skipInitialFetch?: boolean; initialIsLiked?: boolean; initialIsSaved?: boolean }
+) => {
   const { user } = useAuth();
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(options?.initialIsLiked ?? false);
+  const [isSaved, setIsSaved] = useState(options?.initialIsSaved ?? false);
   // Use null to indicate "not yet loaded" vs 0 meaning "loaded but zero"
-  const [likeCount, setLikeCount] = useState<number | null>(null);
-  const [commentCount, setCommentCount] = useState<number | null>(null);
-  const [shareCount, setShareCount] = useState<number | null>(null);
+  const [likeCount, setLikeCount] = useState<number | null>(initialCounts?.likes ?? null);
+  const [commentCount, setCommentCount] = useState<number | null>(initialCounts?.comments ?? null);
+  const [shareCount, setShareCount] = useState<number | null>(initialCounts?.shares ?? null);
   const [comments, setComments] = useState<engagement.Comment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!options?.skipInitialFetch);
   
   // Keep postId in ref for stable callbacks
   const postIdRef = useRef(postId);
@@ -29,9 +33,24 @@ export const useSocialEngagement = (postId: string, initialCounts?: { likes?: nu
     postIdRef.current = postId;
   }, [postId]);
 
-  // Load initial state
+  // Load initial state - skip if skipInitialFetch is true and we have initial values
   useEffect(() => {
     if (!postId) return;
+    
+    // If we have pre-loaded data, skip the initial fetch
+    if (options?.skipInitialFetch && initialCounts) {
+      setLikeCount(initialCounts.likes ?? 0);
+      setCommentCount(initialCounts.comments ?? 0);
+      setShareCount(initialCounts.shares ?? 0);
+      if (options.initialIsLiked !== undefined) {
+        setIsLiked(options.initialIsLiked);
+      }
+      if (options.initialIsSaved !== undefined) {
+        setIsSaved(options.initialIsSaved);
+      }
+      setLoading(false);
+      return;
+    }
 
     const loadEngagement = async () => {
       setLoading(true);
@@ -65,7 +84,7 @@ export const useSocialEngagement = (postId: string, initialCounts?: { likes?: nu
     };
 
     loadEngagement();
-  }, [postId, user]);
+  }, [postId, user, options?.skipInitialFetch]);
 
   // Handle like events from centralized realtime
   const handleLikeEvent = useCallback((payload: any) => {

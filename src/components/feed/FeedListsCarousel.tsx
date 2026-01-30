@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import ColorfulGradientBackground from '@/components/common/ColorfulGradientBackground';
 import { useQuery } from '@tanstack/react-query';
+import { haptics } from '@/utils/haptics';
 import listIcon from '@/assets/list-icon.png';
 
 interface FolderItem {
@@ -198,6 +199,7 @@ const FeedListsCarousel = memo(() => {
           <button
             key={list.id}
             onClick={() => {
+              haptics.selection();
               // Dispatch event to open folder modal directly in FeedPage
               // This keeps the feed mounted and preserves scroll position
               window.dispatchEvent(new CustomEvent('feed:open-folder', { 

@@ -15,10 +15,10 @@ import { type SaveTag, normalizeSaveTag } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { storeFeedScrollAnchor } from '@/utils/feedScroll';
+import { haptics } from '@/utils/haptics';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
-
 // Map save tags to their icons
 const SAVE_TAG_ICONS: Record<SaveTag, string> = {
   been: saveTagBeen,
@@ -219,6 +219,8 @@ const UserVisitedCard = memo(({
     e.stopPropagation();
     if (!user?.id) return;
 
+    haptics.selection();
+
     try {
       const { error } = await supabase
         .from('follows')
@@ -229,6 +231,7 @@ const UserVisitedCard = memo(({
 
       if (error) throw error;
 
+      haptics.success();
       toast.success(t('followingUser', { defaultValue: 'Now following!' }));
       queryClient.invalidateQueries({ queryKey: ['visited-saves'] });
     } catch (err) {
@@ -263,6 +266,8 @@ const UserVisitedCard = memo(({
   const handleSaveLocation = async (tag: SaveTag) => {
     if (!user?.id || !activity.location_id) return;
 
+    haptics.impact('light');
+
     try {
       const { error } = await supabase
         .from('user_saved_locations')
@@ -274,6 +279,7 @@ const UserVisitedCard = memo(({
 
       if (error) throw error;
 
+      haptics.success();
       setIsSaved(true);
       setSavedTag(normalizeSaveTag(tag) as SaveTag);
       toast.success(t('locationSaved', { defaultValue: 'Location saved!' }));
@@ -306,6 +312,7 @@ const UserVisitedCard = memo(({
     e.stopPropagation();
     if (!user?.id || !activity.location_id || isLiking) return;
 
+    haptics.impact('light');
     setIsLiking(true);
     try {
       const result = await locationInteractionService.toggleLocationLike(activity.location_id);

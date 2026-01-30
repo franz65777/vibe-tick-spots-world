@@ -25,6 +25,7 @@ import { storeFeedScrollAnchor } from '@/utils/feedScroll';
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
 import { useBatchEngagementStates } from '@/hooks/useBatchEngagementStates';
 import FeedPostSkeleton from '@/components/feed/FeedPostSkeleton';
+import { haptics } from '@/utils/haptics';
 
 // Lazy load heavy components
 const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
@@ -411,6 +412,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
   };
 
   const toggleCaption = (postId: string) => {
+    haptics.selection();
     setExpandedCaptions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(postId)) {
@@ -423,6 +425,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
   };
 
   const handleCommentClick = async (postId: string) => {
+    haptics.impact('light');
     setCommentPostId(postId);
     setCommentsLoading(true);
     setCommentDrawerOpen(true);
@@ -473,6 +476,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
   };
 
   const handleShareClick = (postId: string) => {
+    haptics.impact('light');
     setSharePostId(postId);
     setShareModalOpen(true);
   };
@@ -564,7 +568,10 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
                 [background-image:linear-gradient(hsl(var(--popover)),hsl(var(--popover))),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
                 [background-origin:border-box] [background-clip:padding-box,border-box]">
                 <DropdownMenuItem 
-                  onClick={() => setFeedType('forYou')}
+                  onClick={() => {
+                    haptics.selection();
+                    setFeedType('forYou');
+                  }}
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
@@ -573,7 +580,10 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => setFeedType('promotions')}
+                  onClick={() => {
+                    haptics.selection();
+                    setFeedType('promotions');
+                  }}
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
@@ -632,6 +642,38 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
                 let postIdx = 0;
                 let visitedIdx = 0;
                 
+                // Helper to handle double-tap like on posts
+                const handleDoubleTapLike = async (postId: string) => {
+                  if (!user?.id) return;
+                  
+                  try {
+                    // Check if already liked
+                    const isAlreadyLiked = batchEngagement?.likedPostIds.has(postId);
+                    if (isAlreadyLiked) return;
+                    
+                    // Insert like
+                    await supabase.from('post_likes').insert({ 
+                      user_id: user.id, 
+                      post_id: postId 
+                    });
+                    
+                    // Optimistically update query cache
+                    queryClient.setQueryData<any[]>(queryKey, (prev) => {
+                      if (!Array.isArray(prev)) return prev;
+                      return prev.map((p: any) =>
+                        p.id === postId
+                          ? { ...p, likes_count: (p.likes_count || 0) + 1 }
+                          : p
+                      );
+                    });
+                    
+                    // Invalidate batch engagement to update liked status
+                    queryClient.invalidateQueries({ queryKey: ['batch-engagement'] });
+                  } catch (error) {
+                    console.error('Error double-tap like:', error);
+                  }
+                };
+                
                 // Helper to render a post
                 const renderPost = (entry: typeof mergedFeed[0], key: string) => {
                   const item = entry.data;
@@ -659,6 +701,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
                         onCommentClick={handleCommentClick}
                         onShareClick={handleShareClick}
                         onToggleCaption={toggleCaption}
+                        onDoubleTapLike={handleDoubleTapLike}
                       />
                     </Suspense>
                   );

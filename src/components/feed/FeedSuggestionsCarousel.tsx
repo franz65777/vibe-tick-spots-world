@@ -9,6 +9,7 @@ import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import { type SaveTag } from '@/utils/saveTags';
 import { toast } from 'sonner';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { haptics } from '@/utils/haptics';
 import locationPinIcon from '@/assets/location-pin-icon.png';
 import { filterValidUUIDs } from '@/utils/uuidValidation';
 
@@ -484,6 +485,7 @@ const FeedSuggestionsCarousel = memo(() => {
       return;
     }
 
+    haptics.impact('light');
     try {
       let locationId = loc.id;
 
@@ -529,6 +531,7 @@ const FeedSuggestionsCarousel = memo(() => {
 
       if (error) throw error;
 
+      haptics.success();
       toast.success(t('locationSaved', { ns: 'common' }));
 
       // Remove from cached suggestions + refetch to ensure excludes are recalculated
@@ -579,9 +582,9 @@ const FeedSuggestionsCarousel = memo(() => {
 
   // Handle location click - same behavior as post location clicks
   const handleLocationClick = useCallback((loc: SuggestedLocation, idx: number) => {
+    haptics.impact('light');
     // Save clicked index for scroll restoration
     sessionStorage.setItem('suggestions_clicked_index', String(idx));
-
     // Save an anchor (top visible feed post + its visual offset) so we restore the *exact* same point
     const container = document.querySelector('[data-feed-scroll-container]') as HTMLDivElement | null;
     if (container) {
