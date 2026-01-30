@@ -58,6 +58,26 @@ interface PostsGridProps {
   excludeUserId?: string;
 }
 
+// Helper: Extract first photo URL from JSONB photos field (Google Maps format)
+const extractFirstPhotoUrl = (photos: any): string | null => {
+  if (!photos) return null;
+  if (Array.isArray(photos)) {
+    for (const p of photos) {
+      const url = typeof p === 'string' ? p : (p?.url || p?.photo_reference);
+      if (typeof url === 'string' && url.trim()) return url;
+    }
+  }
+  return null;
+};
+
+// Determine which thumbnail to show: 1) business photo  2) Google photo  3) category icon
+const getLocationThumbnail = (location: any): string | null => {
+  if (location?.image_url) return location.image_url;
+  const googlePhoto = extractFirstPhotoUrl(location?.photos);
+  if (googlePhoto) return googlePhoto;
+  return null;
+};
+
 /**
  * PostsGrid - Optimized with infinite scroll
  * 
@@ -392,13 +412,21 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       }}
                       className="shrink-0"
                     >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage 
-                          src={getCategoryImage(post.locations?.category || 'restaurant')}
-                          alt={post.locations?.category || 'restaurant'}
-                          className="object-contain p-1"
-                        />
-                        <AvatarFallback className="bg-primary/10">
+                      <Avatar className="h-10 w-10 rounded-xl overflow-hidden">
+                        {getLocationThumbnail(post.locations) ? (
+                          <AvatarImage 
+                            src={getLocationThumbnail(post.locations)!}
+                            alt={post.locations?.name || 'Location'}
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <AvatarImage 
+                            src={getCategoryImage(post.locations?.category || 'restaurant')}
+                            alt={post.locations?.category || 'restaurant'}
+                            className="object-contain p-1"
+                          />
+                        )}
+                        <AvatarFallback className="bg-primary/10 rounded-xl">
                           {(() => {
                             const CategoryIcon = getCategoryIcon(post.locations?.category || 'restaurant');
                             return <CategoryIcon className="w-5 h-5 text-primary" />;
