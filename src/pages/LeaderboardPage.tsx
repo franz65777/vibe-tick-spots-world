@@ -46,11 +46,11 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
         filter={filter}
       />
 
-      <div className="relative min-h-screen pb-safe">
+      <div className="relative h-screen flex flex-col">
         {/* Unified frosted glass background */}
         <FrostedGlassBackground className="fixed" />
         {/* Content wrapper */}
-        <div className="relative z-10 min-h-screen pb-safe">
+        <div className="relative z-10 flex flex-col h-full overflow-hidden">
         {/* Minimal Header */}
         <div 
           className="sticky top-0 z-10 pb-4"
@@ -131,10 +131,10 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
           </div>
         </div>
 
-      {/* Leaderboard List */}
-      <div className="pt-4 px-4">
+      {/* Leaderboard List - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 pb-safe">
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="flex items-center gap-3 py-3">
                 <Skeleton className="w-8 h-6 rounded" />
@@ -164,7 +164,7 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4 pb-20">
             {users.map((item) => {
               const isSelf = currentUser?.id === item.id;
               const rowClasses = `flex items-center gap-3 py-3 transition-colors rounded-lg ${isSelf ? 'cursor-default' : 'cursor-pointer hover:bg-muted/30'}`;

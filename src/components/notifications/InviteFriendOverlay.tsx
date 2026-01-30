@@ -8,14 +8,14 @@ import AvatarStack from '@/components/common/AvatarStack';
 import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
 import spottLogoTransparent from '@/assets/spott-logo-transparent-v3.png';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-// Placeholder download link - update when app is in stores
-const DOWNLOAD_LINK = 'https://spott.app/download';
 
 // Real avatars for the "find friends" section
 const placeholderAvatars = [
@@ -35,9 +35,31 @@ const placeholderAvatars = [
 
 const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { checkContacts, loading, matches, permissionDenied, error, isNativePlatform } = usePhoneContacts();
   const [showContactsFound, setShowContactsFound] = useState(false);
   const [foundContacts, setFoundContacts] = useState<FoundContact[]>([]);
+  
+  // Fetch user's invite code for personalized referral link
+  const { data: profile } = useQuery({
+    queryKey: ['user-invite-code', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('invite_code')
+        .eq('id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id && isOpen,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Generate personalized download link with referral code
+  const downloadLink = profile?.invite_code 
+    ? `https://spott.app/download?ref=${profile.invite_code}`
+    : 'https://spott.app/download';
   
   const didSetModalOpenRef = useRef(false);
 
@@ -85,7 +107,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
   const handleInvite = async () => {
     const shareText = t('inviteShareMessage', { 
       ns: 'invite', 
-      defaultValue: `Join me on SPOTT to discover the best places! Download the app: ${DOWNLOAD_LINK}`,
+      defaultValue: `Join me on SPOTT to discover the best places! Download the app: ${downloadLink}`,
     });
     
     if (navigator.share) {
@@ -93,7 +115,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
         await navigator.share({
           title: 'SPOTT',
           text: shareText,
-          url: DOWNLOAD_LINK,
+          url: downloadLink,
         });
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {

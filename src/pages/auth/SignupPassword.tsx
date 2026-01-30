@@ -57,6 +57,9 @@ const SignupPassword: React.FC = () => {
       // Store password temporarily for back navigation
       sessionStorage.setItem('signup_password', password);
 
+      // Get referral code if present
+      const referralCode = sessionStorage.getItem('signup_referral_code');
+
       const payload: any = {
         sessionToken,
         fullName,
@@ -65,6 +68,7 @@ const SignupPassword: React.FC = () => {
         gender,
         password,
         language,
+        referralCode, // Include referral code for invite tracking
       };
 
       if (method === 'email') {
@@ -181,6 +185,7 @@ const SignupPassword: React.FC = () => {
       sessionStorage.removeItem('signup_method');
       sessionStorage.removeItem('signup_contact');
       sessionStorage.removeItem('signup_password');
+      sessionStorage.removeItem('signup_referral_code');
 
       toast.success(t('signup:accountCreated'));
       navigate('/');

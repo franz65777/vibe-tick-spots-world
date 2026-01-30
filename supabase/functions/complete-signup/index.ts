@@ -16,6 +16,7 @@ interface CompleteSignupRequest {
   email?: string;
   phone?: string;
   language?: string;
+  referralCode?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -33,7 +34,8 @@ const handler = async (req: Request): Promise<Response> => {
       password,
       email,
       phone,
-      language 
+      language,
+      referralCode
     }: CompleteSignupRequest = await req.json();
 
     // Initialize Supabase Admin Client
@@ -199,11 +201,55 @@ const handler = async (req: Request): Promise<Response> => {
     // Clear session from database
     await supabase.from('otp_codes').delete().eq('id', sessionRecord.id);
 
+    // Handle referral tracking - credit the inviter
+    if (referralCode) {
+      try {
+        console.log("Processing referral code:", referralCode);
+        
+        // Find the inviter by their invite_code
+        const { data: inviter, error: inviterError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('invite_code', referralCode.toUpperCase())
+          .single();
+        
+        if (inviterError) {
+          console.log("Inviter not found for code:", referralCode, inviterError);
+        } else if (inviter) {
+          console.log("Found inviter:", inviter.id);
+          
+          // Update new user's profile with invited_by
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ invited_by: inviter.id })
+            .eq('id', authData.user.id);
+          
+          if (updateError) {
+            console.error("Error setting invited_by:", updateError);
+          } else {
+            // Increment inviter's invited_users_count
+            const { error: rpcError } = await supabase.rpc('increment_invited_count', { 
+              inviter_user_id: inviter.id 
+            });
+            
+            if (rpcError) {
+              console.error("Error incrementing invited count:", rpcError);
+            } else {
+              console.log("✅ Referral credited successfully! Inviter:", inviter.id, "New user:", authData.user.id);
+            }
+          }
+        }
+      } catch (refErr) {
+        // Don't fail signup if referral tracking fails
+        console.error("Referral tracking error:", refErr);
+      }
+    }
+
     console.log("User created successfully:", { userId: authData.user.id, username });
 
     // Return session for auto-login
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         user: authData.user,
         session: session
