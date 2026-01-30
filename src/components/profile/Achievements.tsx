@@ -9,9 +9,10 @@ import { useNavigate } from 'react-router-dom';
 
 interface AchievementsProps {
   userId?: string;
+  hideCoins?: boolean;
 }
 
-const Achievements = ({ userId }: AchievementsProps) => {
+const Achievements = ({ userId, hideCoins = false }: AchievementsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { badges, getBadgeStats, loading } = useUserBadges(userId);
@@ -53,20 +54,22 @@ const Achievements = ({ userId }: AchievementsProps) => {
   return (
     <>
       <div className="px-4 py-4">
-        {/* Header with Coins Button */}
+        {/* Header with Coins Button (only for own profile) */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-foreground">{t('achievements', { ns: 'profile' })}</h2>
             
-            {/* Coins Button */}
-            <button 
-              onClick={() => navigate('/rewards')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs font-bold shadow-sm hover:shadow-md transition-shadow"
-            >
-              <Coins className="w-3.5 h-3.5" />
-              <span>{points.toLocaleString()}</span>
-              <ChevronRight className="w-3 h-3 opacity-70" />
-            </button>
+            {/* Coins Button - Only show for own profile */}
+            {!hideCoins && (
+              <button 
+                onClick={() => navigate('/rewards')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs font-bold shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Coins className="w-3.5 h-3.5" />
+                <span>{points.toLocaleString()}</span>
+                <ChevronRight className="w-3 h-3 opacity-70" />
+              </button>
+            )}
           </div>
           <span className="text-sm text-primary font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
         </div>
