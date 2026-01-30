@@ -537,9 +537,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
 
                 {/* Loading state */}
                 {photosLoading && (
-                  <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
+                  <div className="w-20 h-20 rounded-xl bg-muted animate-pulse flex-shrink-0" />
                 )}
 
                 {/* Nearby Photo Tiles - tap to add */}
@@ -658,8 +656,17 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           {!isListSectionCollapsed && (
             <>
               {foldersLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex gap-3 p-3 rounded-2xl bg-muted/30 border border-border/30 animate-pulse">
+                      <div className="w-16 h-20 rounded-xl bg-muted" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-16 bg-muted rounded" />
+                        <div className="h-4 w-full bg-muted rounded" />
+                      </div>
+                      <div className="w-5 h-5 rounded bg-muted" />
+                    </div>
+                  ))}
                 </div>
               ) : userFolders.length === 0 ? (
                 <div className="py-6 text-center">

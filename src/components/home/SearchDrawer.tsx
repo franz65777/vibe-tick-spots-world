@@ -164,11 +164,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   // Branding logo visibility - show for a few seconds on mount with sliding animation
   const [showLogoInBar, setShowLogoInBar] = useState(showBrandingLogo);
   const [logoSlideProgress, setLogoSlideProgress] = useState(0); // 0 = left (logo visible), 1 = right (logo gone)
+  const [showCenterIcon, setShowCenterIcon] = useState(!showBrandingLogo); // Icon only visible after logo is gone
   
   useEffect(() => {
     if (showBrandingLogo) {
       setShowLogoInBar(true);
       setLogoSlideProgress(0);
+      setShowCenterIcon(false); // Hide centering icon during branding
       
       // Start sliding animation after a brief pause
       const startDelay = setTimeout(() => {
@@ -186,8 +188,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
-            // Animation complete, hide logo
+            // Animation complete, hide logo and show centering icon
             setShowLogoInBar(false);
+            setShowCenterIcon(true);
           }
         };
         
@@ -1060,8 +1063,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
                       e.stopPropagation();
                       handleCurrentLocation(e);
                     }}
-                    disabled={geoLoading}
-                    className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50 pointer-events-auto"
+                    disabled={geoLoading || !showCenterIcon}
+                    className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all duration-300 disabled:opacity-50 pointer-events-auto"
+                    style={{
+                      opacity: showCenterIcon ? 1 : 0,
+                      transform: showCenterIcon ? 'scale(1)' : 'scale(0.8)',
+                      pointerEvents: showCenterIcon ? 'auto' : 'none',
+                    }}
                     aria-label={t('currentLocation', { ns: 'common' })}
                   >
                     <Navigation2

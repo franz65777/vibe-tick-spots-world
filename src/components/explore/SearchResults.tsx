@@ -1,9 +1,9 @@
-
 import React from 'react';
-import { Search, Users, MapPin } from 'lucide-react';
+import { Users, MapPin } from 'lucide-react';
 import CompactLocationCard from './CompactLocationCard';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
+import SearchResultsSkeleton from '@/components/common/skeletons/SearchResultsSkeleton';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
@@ -31,14 +31,7 @@ const SearchResults = ({
   onMessageUser
 }: SearchResultsProps) => {
   if (isSearching) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Searching...</span>
-        </div>
-      </div>
-    );
+    return <SearchResultsSkeleton mode={searchMode} />;
   }
 
   const hasResults = searchMode === 'locations' ? filteredLocations.length > 0 : filteredUsers.length > 0;

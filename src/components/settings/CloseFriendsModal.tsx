@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import closeFriendsIcon from '@/assets/settings-close-friends.png';
 import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface User {
   id: string;
@@ -159,8 +160,8 @@ const CloseFriendsModal: React.FC<CloseFriendsModalProps> = ({ open, onOpenChang
           </SheetHeader>
 
           {loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex-1">
+              <UserListSkeleton count={6} />
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
