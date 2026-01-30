@@ -536,7 +536,7 @@ const CreateListPage = () => {
 
                 {/* Search Bar */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -629,7 +629,7 @@ const CreateListPage = () => {
             <Button
               onClick={handleDelete}
               variant="outline"
-              className="flex-1 h-12 rounded-2xl text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              className="flex-1 h-12 rounded-full text-destructive hover:text-destructive bg-white dark:bg-white/10 border-0 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.06)] hover:bg-destructive/5 transition-all"
               disabled={saving}
             >
               <Trash2 className="h-5 w-5 mr-2" />
@@ -638,7 +638,7 @@ const CreateListPage = () => {
             <Button
               onClick={handleSave}
               disabled={saving || !folderName.trim()}
-              className="flex-1 h-12 rounded-2xl"
+              className="flex-1 h-12 rounded-full shadow-[0_4px_12px_rgba(59,130,246,0.3),0_2px_6px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_16px_rgba(59,130,246,0.4),0_4px_10px_rgba(0,0,0,0.12)] transition-all"
             >
               {saving ? t('saving', 'Saving...') : t('save', 'Save')}
             </Button>
@@ -647,7 +647,7 @@ const CreateListPage = () => {
           <Button
             onClick={handleSave}
             disabled={saving || !folderName.trim()}
-            className="w-full h-12 rounded-2xl"
+            className="w-full h-12 rounded-full shadow-[0_4px_12px_rgba(59,130,246,0.3),0_2px_6px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_16px_rgba(59,130,246,0.4),0_4px_10px_rgba(0,0,0,0.12)] transition-all"
           >
             {saving ? t('creating', 'Creating...') : t('create', 'Create')}
           </Button>

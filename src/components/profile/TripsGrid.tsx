@@ -117,8 +117,12 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                   {folders.map((folder, index) => <div key={`folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow group cursor-pointer shrink-0 w-36 aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
                         {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12 backdrop-blur-[2px]" style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-6" style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
               }}>
                           <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                             {folder.name}
@@ -150,8 +154,12 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                     {savedFolders.map((folder, index) => <div key={`saved-folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer shrink-0 w-36 aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
                         {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12 backdrop-blur-[2px]" style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-6" style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
               }}>
                           <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                             {folder.name}
@@ -174,8 +182,12 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                     {trips.map((trip, index) => <div key={trip.id} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer shrink-0 w-36 aspect-[3/4]" onClick={() => setSelectedTrip(trip)}>
                         {trip.cover_image_url ? <img src={trip.cover_image_url} alt={trip.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />}
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12 backdrop-blur-[2px]" style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-6" style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
               }}>
                           <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                             {trip.name}
@@ -218,8 +230,12 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
               {folders.map((folder, index) => <div key={`folder-${folder.id}`} className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
                   {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                   
-                  <div className="absolute bottom-0 left-0 right-0 p-2 pt-8 backdrop-blur-[2px]" style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+                  <div className="absolute bottom-0 left-0 right-0 p-2 pt-6" style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
           }}>
                     <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                       {folder.name}
@@ -233,8 +249,12 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
               {trips.map((trip, index) => <div key={trip.id} className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer aspect-[3/4]" onClick={() => setSelectedTrip(trip)}>
                   {trip.cover_image_url ? <img src={trip.cover_image_url} alt={trip.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />}
                   
-                  <div className="absolute bottom-0 left-0 right-0 p-2 pt-8 backdrop-blur-[2px]" style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+                  <div className="absolute bottom-0 left-0 right-0 p-2 pt-6" style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            maskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 50%, transparent 100%)'
           }}>
                     <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                       {trip.name}
