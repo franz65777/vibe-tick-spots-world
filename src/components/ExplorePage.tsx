@@ -453,15 +453,19 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
   
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
-      {/* Frosted glass background - matches Add page pattern */}
+      {/* Multi-layer background - unified frosted glass effect */}
       <div className="absolute inset-0 z-0">
-        {/* Base frosted glass - semi-transparent with strong blur */}
-        <div className="absolute inset-0 bg-[#FAF8F5]/70 dark:bg-background/40 backdrop-blur-xl" />
-        {/* Subtle warm gradient overlay (light mode only) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-[#F0EBE3]/30 dark:from-transparent dark:via-transparent dark:to-transparent" />
-        {/* Very subtle grain texture */}
+        {/* Warm base - light: off-white, dark: deep blue */}
+        <div className="absolute inset-0 bg-[#F7F3EC] dark:bg-[#0A1628]" />
+        {/* Subtle vertical gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3] dark:from-[#0D1B2A] dark:via-[#0A1628] dark:to-[#071320]" />
+        {/* Faint vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)] dark:bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+        {/* Frosted glass overlay */}
+        <div className="absolute inset-0 bg-white/40 dark:bg-[#0A1628]/60 backdrop-blur-xl" />
+        {/* Subtle grain/noise */}
         <div 
-          className="absolute inset-0 opacity-[0.02] mix-blend-overlay pointer-events-none"
+          className="absolute inset-0 opacity-[0.025] mix-blend-multiply dark:mix-blend-soft-light pointer-events-none"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
