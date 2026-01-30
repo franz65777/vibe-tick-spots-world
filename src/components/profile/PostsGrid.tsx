@@ -554,6 +554,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
             const { queryClient } = await import('@/lib/queryClient');
             queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
           }}
+          initialPosts={displayedPosts}
         />
       )}
 

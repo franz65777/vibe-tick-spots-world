@@ -45,7 +45,14 @@ const PostItem = memo(({
   return (
     <div
       className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-      onClick={() => onPostClick(post.id)}
+      onClick={() => {
+        // Pre-load images for smoother modal transition
+        post.media_urls.forEach(url => {
+          const img = new Image();
+          img.src = url;
+        });
+        onPostClick(post.id);
+      }}
     >
       {/* Skeleton placeholder - visible until image loads */}
       {!imageLoaded && (
