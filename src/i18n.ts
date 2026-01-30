@@ -294,7 +294,9 @@ const resources = {
         tapCityToSee: 'tap on any of the cities above to see the places there',
         allCities: 'All cities',
         noLocationsInCity: 'No locations in this city'
-      }
+      },
+      public: 'Public',
+      private: 'Private'
     },
     navigation: {
       explore: 'Explore',
@@ -1375,7 +1377,9 @@ const resources = {
         tapCityToSee: 'toca cualquier ciudad para ver los lugares',
         allCities: 'Todas las ciudades',
         noLocationsInCity: 'No hay lugares en esta ciudad'
-      }
+      },
+      public: 'Público',
+      private: 'Privado'
     },
     navigation: {
       explore: 'Explorar',
@@ -2404,7 +2408,9 @@ const resources = {
         tapCityToSee: 'tocca una città per vedere i luoghi',
         allCities: 'Tutte le città',
         noLocationsInCity: 'Nessun luogo in questa città'
-      }
+      },
+      public: 'Pubblico',
+      private: 'Privato'
     },
     navigation: {
       explore: 'Esplora',
@@ -3420,7 +3426,9 @@ const resources = {
         tapCityToSee: 'appuyez sur une ville pour voir les lieux',
         allCities: 'Toutes les villes',
         noLocationsInCity: 'Aucun lieu dans cette ville'
-      }
+      },
+      public: 'Public',
+      private: 'Privé'
     },
     navigation: {
       explore: 'Explorer',
@@ -4303,7 +4311,9 @@ const resources = {
         tapCityToSee: 'tippen Sie auf eine Stadt, um die Orte zu sehen',
         allCities: 'Alle Städte',
         noLocationsInCity: 'Keine Orte in dieser Stadt'
-      }
+      },
+      public: 'Öffentlich',
+      private: 'Privat'
     },
     navigation: {
       explore: 'Erkunden',
@@ -5131,7 +5141,9 @@ const resources = {
         tapCityToSee: 'toque em uma cidade para ver os lugares',
         allCities: 'Todas as cidades',
         noLocationsInCity: 'Nenhum lugar nesta cidade'
-      }
+      },
+      public: 'Público',
+      private: 'Privado'
     },
     navigation: {
       explore: 'Explorar',
@@ -5924,6 +5936,8 @@ const resources = {
         commentDeleted: '评论已删除',
         enterComment: '请输入评论'
       },
+      public: '公开',
+      private: '私密'
     },
     navigation: {
       explore: '探索',
@@ -6617,6 +6631,8 @@ const resources = {
         commentDeleted: 'コメントを削除しました',
         enterComment: 'コメントを入力してください'
       },
+      public: '公開',
+      private: '非公開'
     },
     navigation: {
       explore: '探索',
@@ -7351,7 +7367,9 @@ const resources = {
         tapCityToSee: '도시를 탭하여 장소 보기',
         allCities: '모든 도시',
         noLocationsInCity: '이 도시에 장소가 없습니다'
-      }
+      },
+      public: '공개',
+      private: '비공개'
     },
     navigation: {
       explore: '탐색',
@@ -8069,7 +8087,9 @@ const resources = {
         commentAdded: 'تمت إضافة التعليق!',
         commentDeleted: 'تم حذف التعليق',
         enterComment: 'يرجى إدخال تعليق'
-      }
+      },
+      public: 'عام',
+      private: 'خاص'
     },
     navigation: {
       explore: 'استكشاف',
@@ -8772,7 +8792,9 @@ const resources = {
         tapCityToSee: 'स्थान देखने के लिए किसी शहर पर टैप करें',
         allCities: 'सभी शहर',
         noLocationsInCity: 'इस शहर में कोई स्थान नहीं'
-      }
+      },
+      public: 'सार्वजनिक',
+      private: 'निजी'
     },
     navigation: {
       explore: 'खोजें',
@@ -9493,7 +9515,9 @@ const resources = {
         commentAdded: 'Комментарий добавлен!',
         commentDeleted: 'Комментарий удалён',
         enterComment: 'Пожалуйста, введите комментарий'
-      }
+      },
+      public: 'Публичная',
+      private: 'Частная'
     },
     navigation: {
       explore: 'Обзор',
