@@ -18,6 +18,7 @@ import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import FollowersModal from '@/components/profile/FollowersModal';
 import { useLocationSavers } from '@/hooks/useLocationSavers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import BusinessProfileSkeleton from '@/components/common/skeletons/BusinessProfileSkeleton';
 interface BusinessLocation {
   id: string;
   name: string;
@@ -200,9 +201,7 @@ const BusinessProfilePage = () => {
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
   if (loading) {
-    return <div className="flex items-center justify-center h-screen bg-background">
-        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-      </div>;
+    return <BusinessProfileSkeleton />;
   }
   if (!location) {
     return <div className="flex items-center justify-center h-screen bg-background">

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
 import PostDetailModal from '../explore/PostDetailModal';
 import { useTranslation } from 'react-i18next';
+import { PostsGridSkeleton } from '@/components/common/skeletons/PostsGridSkeleton';
 
 interface TaggedPostsGridProps {
   userId?: string;
@@ -58,11 +58,7 @@ const TaggedPostsGrid = ({ userId }: TaggedPostsGridProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PostsGridSkeleton count={6} />;
   }
 
   if (posts.length === 0) {

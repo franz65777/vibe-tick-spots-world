@@ -8,6 +8,7 @@ import MobileNotificationItem from '@/components/notifications/MobileNotificatio
 import { ArrowLeft, Bell, Check, MapPin, Star, Users, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import NotificationsSkeleton from '@/components/common/skeletons/NotificationsSkeleton';
 
 interface BusinessNotification {
   id: string;
@@ -144,9 +145,7 @@ const BusinessNotificationsPage = () => {
         {/* Notifications List */}
         <div>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
+            <NotificationsSkeleton count={5} />
           ) : notifications.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
