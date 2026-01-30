@@ -1,4 +1,5 @@
 import { X, MapPin, Bookmark, Share2, MoreVertical, Users, Folder, BookmarkCheck, Star, Utensils, Send } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -407,8 +408,8 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
   
   // Show skeleton loading state instead of spinner for smoother UX
   if (loading && !folder) {
-    return (
-      <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    return createPortal(
+      <div className="fixed inset-0 z-[2147483647] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
           <div className="relative aspect-[4/3] bg-muted animate-pulse" />
           <div className="p-6 space-y-4">
@@ -417,18 +418,19 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
             <div className="h-12 bg-muted rounded-xl animate-pulse" />
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
   if (!folder) return null;
 
   const isOwnFolder = folder.user_id === user?.id;
 
-  return (
+  return createPortal(
     <>
       <div 
         className={cn(
-          "fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200",
+          "fixed inset-0 z-[2147483647] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200",
           selectedLocation && "hidden"
         )}
         onClick={handleClose}
@@ -625,7 +627,8 @@ const FolderDetailModal = ({ folderId, isOpen, onClose, onSaveStatusChange, onLo
           zIndex={10010}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 };
 
