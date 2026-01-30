@@ -225,7 +225,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
   if (!isOpen) return null;
 
   const overlay = (
-    <div className={`fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl transition-all duration-200 ease-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`fixed inset-0 z-[2147483640] flex flex-col bg-background/40 backdrop-blur-xl transition-opacity duration-200 ease-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Header */}
       <header 
         className="sticky top-0 z-10"

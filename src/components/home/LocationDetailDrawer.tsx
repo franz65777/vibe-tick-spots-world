@@ -500,15 +500,18 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const handleSave = async (tag: SaveTag) => {
     if (!user?.id || !location) return;
     setLoading(true);
+    
+    // Store original ID for event synchronization
+    const originalLocationId = location.id;
+    
     try {
       let locationIdToSave = location.id;
+      const coordsSource: any = resolvedCoordinates || location.coordinates || {};
+      const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
+      const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
       
       // If location doesn't exist in database, create it first
       if (!locationIdToSave) {
-        const coordsSource: any = resolvedCoordinates || location.coordinates || {};
-        const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
-        const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
-        
         const { data: newLocation, error: createError } = await supabase
           .from('locations')
           .insert({
@@ -543,6 +546,32 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         setIsSaved(true);
         setCurrentSaveTag(tag);
         toast.success(t('locationSaved', { ns: 'common' }));
+        
+        // Emit global event for map synchronization
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { 
+            locationId: locationIdToSave, 
+            isSaved: true, 
+            saveTag: tag,
+            newLocationId: locationIdToSave,
+            oldLocationId: originalLocationId,
+            coordinates: lat && lng ? { lat, lng } : undefined
+          }
+        }));
+        
+        // Also emit for google_place_id if present
+        if ((location as any).google_place_id) {
+          window.dispatchEvent(new CustomEvent('location-save-changed', {
+            detail: { 
+              locationId: (location as any).google_place_id, 
+              isSaved: true, 
+              saveTag: tag,
+              newLocationId: locationIdToSave,
+              oldLocationId: originalLocationId,
+              coordinates: lat && lng ? { lat, lng } : undefined
+            }
+          }));
+        }
       } else {
         toast.error(t('failedToSave', { ns: 'common' }));
       }
@@ -563,6 +592,18 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         setIsSaved(false);
         setCurrentSaveTag('been');
         toast.success(t('locationRemoved', { ns: 'common' }));
+        
+        // Emit global event for map synchronization
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: location.id, isSaved: false }
+        }));
+        
+        // Also emit for google_place_id if present
+        if ((location as any).google_place_id) {
+          window.dispatchEvent(new CustomEvent('location-save-changed', {
+            detail: { locationId: (location as any).google_place_id, isSaved: false }
+          }));
+        }
       }
     } catch (error) {
       console.error('Error unsaving location:', error);
