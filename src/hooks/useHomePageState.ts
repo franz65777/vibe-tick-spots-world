@@ -120,13 +120,9 @@ export function useHomePageState() {
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [showGuidedTour, setShowGuidedTour] = useState(false);
   const [guidedTourStep, setGuidedTourStep] = useState<GuidedTourStep>('profile-photo');
+  // Show branding logo when coming from splash screen (freshSession flag is set by SplashScreen)
   const [showLogo, setShowLogo] = useState(() => {
-    const hasShownLogo = sessionStorage.getItem('hasShownSpottLogo');
-    if (!hasShownLogo) {
-      sessionStorage.setItem('hasShownSpottLogo', 'true');
-      return true;
-    }
-    return false;
+    return sessionStorage.getItem('freshSession') === 'true';
   });
   
   // Add overlay state moved to AddOverlayContext (AuthenticatedLayout level)
