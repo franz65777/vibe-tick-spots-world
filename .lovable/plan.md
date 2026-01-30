@@ -1,191 +1,78 @@
 
-# Explore Page Improvements Plan
+# Simplify Explore Page Background
 
-## Overview
-This plan updates the Explore page search bar to match the Home page style (lens emoji, theme-aware colors) and implements additional UI/UX improvements for a more polished, native-like experience.
+## Current Issue
+The Explore page has a **two-component structure**:
+1. A warm off-white background layer (`#F7F3EC` with gradient/vignette/grain)
+2. A **separate glass container card** with margins, rounded corners, borders, and shadow
 
----
+The user wants a **single multi-layer background** matching the Add page pattern - which uses a unified frosted glass approach without a separate container card.
 
-## 1. Search Bar Redesign (ExploreHeaderBar.tsx)
-
-### Current State
-- Uses the Lucide `Search` icon with `text-muted-foreground` styling
-- Input has `bg-muted/50 border-border` colors
-- Doesn't match the Home page SearchDrawer pattern
-
-### Target Style (matching SearchDrawer.tsx)
-The Home page uses:
-```
-// Collapsed state (pill-shaped)
-bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700
-
-// Expanded input
-bg-white dark:bg-background border border-border/40 dark:border-input
-
-// Lens emoji instead of icon
-🔍 (emoji, not Lucide icon)
-```
-
-### Implementation
-Update `ExploreHeaderBar.tsx`:
-- Replace Lucide `Search` icon with 🔍 emoji
-- Change input styling to:
-  - Light mode: `bg-white border border-border/40`
-  - Dark mode: `bg-background dark:border-input`
-- Round corners: `rounded-3xl` (matching the pill shape)
-- Focus states: `focus:ring-2 focus:ring-primary focus:border-transparent`
-- Remove the current `bg-muted/50 border-border` styling
-
----
-
-## 2. Add Haptic Feedback
-
-### Missing Haptic Touchpoints
-The Explore page currently has no haptic feedback. Add haptics to:
-
-| Component | Interaction | Haptic Type |
-|-----------|-------------|-------------|
-| `ExploreHeaderBar` | Swipe Discovery button tap | `impact('light')` |
-| `ExplorePage` | User card click | `selection()` |
-| `ExplorePage` | Follow button toggle | `impact('light')` |
-| `ExplorePage` | Search history item click | `selection()` |
-| `ExplorePage` | Clear all history | `warning()` |
-| `ExplorePage` | Delete single history item | `selection()` |
-| `UserCard` | Follow/Unfollow toggle | `impact('light')` |
-| `UserCard` | Row tap (profile navigation) | `selection()` |
-
----
-
-## 3. UI Polish Improvements
-
-### 3.1 Search Input Loading State
-Add a subtle loading indicator when searching (like the SearchDrawer has):
-- Show a small spinner inside the input when `isSearching` is true
-- Position: absolute right side of input
-
-### 3.2 Cancel Button Enhancement
-Current cancel button appears instantly. Improve with:
-- Smooth slide-in animation when appearing
-- Match the styling of the Home page close button
-
-### 3.3 Swipe Discovery Button Polish
-- Add subtle press animation: `active:scale-95`
-- Add haptic feedback on tap
-
-### 3.4 Empty State Improvements (NoResults)
-The current "No Results" state is basic. Enhance with:
-- Larger, more expressive illustration
-- Secondary action: "Try a different search"
-- Animate entrance with fade-in-up
-
-### 3.5 User Card Story Ring
-Currently uses a simple ring. Match the Home page story ring styling:
-- Use gradient ring for active stories (like Instagram)
-- Add subtle pulse animation for active stories
-
----
-
-## 4. UX Flow Improvements
-
-### 4.1 Auto-Focus Improvement
-Currently auto-focuses with a 100ms delay. Improve:
-- Use `requestAnimationFrame` for smoother focus
-- Add keyboard-aware padding when input is focused
-
-### 4.2 Clear Search Enhancement
-Add haptic feedback when clearing search:
-```typescript
-const clearSearch = () => {
-  haptics.selection();
-  setSearchQuery('');
-  setFilteredUsers([]);
-  searchInputRef.current?.blur();
-};
-```
-
-### 4.3 Search Suggestions Debounce
-Currently 500ms delay on search. Optimize:
-- Reduce to 150-200ms for snappier feel
-- Add immediate visual feedback while searching
-
----
-
-## 5. Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/explore/ExploreHeaderBar.tsx` | Restyle search bar, add haptics |
-| `src/components/ExplorePage.tsx` | Add haptics to user interactions, improve animations |
-| `src/components/explore/UserCard.tsx` | Add haptics to follow/navigation |
-| `src/components/explore/NoResults.tsx` | Enhance empty state UI |
-
----
-
-## 6. Technical Implementation Details
-
-### ExploreHeaderBar.tsx Changes
-
+## Target Pattern (AddPageOverlay)
+The Add page uses a simple single-layer approach:
 ```tsx
-// Before
-<Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-<Input
-  className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-2xl"
-/>
-
-// After
-<span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base">🔍</span>
-<Input
-  className="pl-12 pr-4 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm"
-/>
+<div className="fixed inset-0 z-[...] flex flex-col bg-background/40 backdrop-blur-xl">
+  {/* Content directly inside - no separate container */}
+</div>
 ```
 
-### Haptics Integration
+## Solution
+Merge the background layers into a single multi-layer effect without the extra glass container card:
 
+### Changes to ExplorePage.tsx
+
+**Remove:**
+- The separate `glass container card` div with `mx-3 my-2 rounded-3xl shadow-[...] border border-white/30`
+- The separate `glass effect background` div
+- The extra `content wrapper` div
+
+**Replace with:**
+Single unified background structure:
 ```tsx
-// Add to ExplorePage.tsx
-import { haptics } from '@/utils/haptics';
-
-// In handleUserClick
-const handleUserClick = useCallback(async (userId: string) => {
-  haptics.selection();
-  // ... existing code
-}, [...]);
-
-// In handleFollowUser
-const handleFollowUser = useCallback(async (userId: string) => {
-  haptics.impact('light');
-  // ... existing code
-}, [...]);
-
-// In clearAllHistory
-const clearAllHistory = async () => {
-  haptics.warning();
-  // ... existing code
-};
+<div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
+  {/* Multi-layer background - all in one container */}
+  <div className="absolute inset-0 z-0">
+    {/* Warm base */}
+    <div className="absolute inset-0 bg-[#F7F3EC] dark:bg-background" />
+    {/* Subtle vertical gradient */}
+    <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3] dark:from-background dark:via-background dark:to-background" />
+    {/* Faint vignette */}
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)] dark:opacity-50" />
+    {/* Frosted glass overlay */}
+    <div className="absolute inset-0 bg-white/40 dark:bg-background/60 backdrop-blur-xl" />
+    {/* Subtle grain/noise */}
+    <div 
+      className="absolute inset-0 opacity-[0.025] mix-blend-multiply pointer-events-none"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,...")`
+      }}
+    />
+  </div>
+  
+  {/* Content - directly z-10, no extra wrapper */}
+  <div className="relative z-10 flex flex-col h-full">
+    {/* Header, content, etc. */}
+  </div>
+</div>
 ```
 
----
+### Key Differences
+| Current | New |
+|---------|-----|
+| 5 nested divs for background | 1 container with 5 layers |
+| Separate glass card with margins | Full-bleed background |
+| `mx-3 my-2` margins creating inset | Content goes edge-to-edge |
+| `rounded-3xl` border | No border container |
+| 2 content wrappers | 1 content wrapper |
 
-## 7. Summary of Benefits
+### Dark Mode Support
+The layers include `dark:` variants so the effect works in both themes:
+- Base: `dark:bg-background`
+- Gradient: `dark:from-background dark:via-background dark:to-background`
+- Glass: `dark:bg-background/60`
 
-| Improvement | Impact |
-|-------------|--------|
-| Unified search bar style | Visual consistency with Home page |
-| Haptic feedback | Native iOS/Android feel |
-| Loading indicators | Better feedback during search |
-| Story ring enhancement | Modern, Instagram-like appearance |
-| Animation polish | Smoother, more premium interactions |
-| Auto-focus improvements | Better keyboard handling |
-
----
-
-## 8. Testing Checklist
-- Search bar matches Home page style in light mode
-- Search bar matches Home page style in dark mode
-- Haptic feedback triggers on all interactions (test on device)
-- Loading spinner appears during search
-- Cancel button animates smoothly
-- User cards have proper story ring styling
-- Follow button has haptic feedback
-- Clear history has warning haptic
-- Empty state looks polished
+### File Changes
+**src/components/ExplorePage.tsx** - lines ~455-480:
+- Remove glass container card structure
+- Merge into single multi-layer background
+- Keep content wrapper as single z-10 div
