@@ -473,10 +473,8 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       onSuccess?.();
       onClose();
       
-      // Close add page and return to map if sharing content
-      if (isSharing) {
-        window.dispatchEvent(new CustomEvent('close-add-overlay'));
-      }
+      // Always close add page and return to map after save
+      window.dispatchEvent(new CustomEvent('close-add-overlay'));
     } catch (error) {
       console.error('Error saving contribution:', error);
       toast.error(t('saveFailed', { ns: 'explore', defaultValue: 'Failed to save. Please try again.' }));
