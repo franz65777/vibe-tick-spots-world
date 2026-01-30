@@ -29,24 +29,36 @@ export const useFollowList = (
     queryFn: async () => {
       if (!userId) return [];
 
-      // 1. Fetch base follow data with profile join
-      const column = type === 'followers' ? 'follower_id' : 'following_id';
-      const fkRef = type === 'followers' ? 'follows_follower_id_fkey' : 'follows_following_id_fkey';
+      // 1. Fetch follow relationships first (simple query, no join issues)
+      const targetColumn = type === 'followers' ? 'follower_id' : 'following_id';
+      const filterColumn = type === 'followers' ? 'following_id' : 'follower_id';
       
-      const { data: followData, error } = await supabase
+      const { data: followData, error: followError } = await supabase
         .from('follows')
-        .select(`${column}, profiles!${fkRef}(id, username, avatar_url)`)
-        .eq(type === 'followers' ? 'following_id' : 'follower_id', userId);
+        .select(targetColumn)
+        .eq(filterColumn, userId);
 
-      if (error) {
-        console.error('Error fetching follow list:', error);
+      if (followError) {
+        console.error('Error fetching follow relationships:', followError);
         return [];
       }
 
-      const users = (followData || []).map((f: any) => f.profiles).filter(Boolean);
-      if (users.length === 0) return [];
+      const userIds = (followData || []).map((f: any) => f[targetColumn]).filter(Boolean);
+      if (userIds.length === 0) return [];
 
-      const userIds = users.map((u: any) => u.id);
+      // 2. Fetch profiles for those user IDs separately (more reliable than join)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return [];
+      }
+
+      const users = (profilesData || []).filter(Boolean);
+      if (users.length === 0) return [];
 
       // 2. Parallel fetch: saved places counts + following status + privacy + pending requests
       const [savedPlacesResult, userSavedLocsResult, followingStatusResult, privacyResult, pendingRequestsResult] = await Promise.all([
