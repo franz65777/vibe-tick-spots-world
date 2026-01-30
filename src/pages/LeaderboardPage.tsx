@@ -11,6 +11,7 @@ import CitySelectionModal from '@/components/explore/CitySelectionModal';
 import { translateCityName } from '@/utils/cityTranslations';
 import { useAuth } from '@/contexts/AuthContext';
 import leaderboardTrophy from '@/assets/leaderboard-trophy.png';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface LeaderboardPageProps {
   onClose?: () => void;
@@ -46,12 +47,8 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
       />
 
       <div className="relative min-h-screen pb-safe">
-        {/* Subtle gradient base */}
-        <div className="fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
-        </div>
-        {/* Frosted glass overlay */}
-        <div className="fixed inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
+        {/* Unified frosted glass background */}
+        <FrostedGlassBackground className="fixed" />
         {/* Content wrapper */}
         <div className="relative z-10 min-h-screen pb-safe">
         {/* Minimal Header */}

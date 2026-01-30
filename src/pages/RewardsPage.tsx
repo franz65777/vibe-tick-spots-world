@@ -5,6 +5,7 @@ import { useSuperUser } from '@/hooks/useSuperUser';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface Reward {
   id: string;
@@ -92,10 +93,11 @@ const RewardsPage = () => {
 
   return (
     <SwipeBackWrapper onBack={() => navigate('/profile?tab=badges')}>
-    <div className="h-full bg-background flex flex-col overflow-hidden">
+    <div className="relative h-full flex flex-col overflow-hidden">
+      <FrostedGlassBackground />
       {/* Header */}
       <div 
-        className="sticky top-0 z-10 bg-background/70 backdrop-blur-md"
+        className="sticky top-0 z-10"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="px-4 py-3">
