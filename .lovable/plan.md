@@ -1,160 +1,118 @@
 
+## Plan: Improve UserProfilePage Buttons & Replace Loading Spinners with Skeletons
 
-## Plan: Update UserProfilePage to Match ProfilePage Design & Functionality
-
-The current `UserProfilePage` is significantly behind the `ProfilePage` implementation. This plan will bring feature and visual parity between both pages.
-
----
-
-### Current Differences Identified
-
-| Feature | ProfilePage | UserProfilePage |
-|---------|-------------|-----------------|
-| **Stats Layout** | Horizontal: "6 Follower 4 Seguiti 19 Salvati" | Vertical: "6 Follower" below each number |
-| **Coins Display** | Hidden for other users via `hideCoins` | Still visible in Achievements tab modal |
-| **Tab Swipe Navigation** | Uses `SwipeableTabContent` for iOS-style swiping | Direct rendering, no swipe support |
-| **Tab Bar Hide on Scroll** | Uses `useScrollHide` - tabs hide when scrolling | Tabs always visible |
-| **Category Cards Styling** | Modern glass: `bg-white/60 shadow-sm backdrop-blur-sm` | Outdated: `bg-gray-200/40` |
-| **Overall Architecture** | Clean component-based with `ProfileHeader` | Inline JSX for header section |
+Based on my analysis of the codebase, I've identified two distinct improvements to implement.
 
 ---
 
-### Implementation Steps
+### Issue 1: Follow Buttons Don't Match City Pills Style
 
-#### 1. Refactor Header to Match ProfilePage Layout
+**Current State:**
+The follow button on UserProfilePage has a pill shape (`rounded-full`) but uses heavy gradient styling and shadows that don't match the simple, clean city filter pills aesthetic.
 
-**File: `src/components/UserProfilePage.tsx`**
+**City Pills Reference (from PostsGrid.tsx):**
+- Active: `bg-black text-white`
+- Inactive: `bg-white/80 dark:bg-white/15 text-gray-600 shadow-sm backdrop-blur-sm border border-white/50`
+- Size: `px-4 py-2 rounded-full text-sm font-semibold`
 
-The stats section (followers/following/saved) currently uses vertical layout. Update to horizontal inline layout:
+**Current Button Style (UserProfilePage lines 288-301):**
+- Uses heavy gradients (`bg-gradient-to-b from-blue-500...`)
+- Complex shadows (`shadow-[0_4px_14px_rgba(37,99,235,0.35)]`)
+- Doesn't match the clean, minimal aesthetic of city pills
 
-```jsx
-// Current (vertical):
-<div className="flex gap-3 text-sm mt-2">
-  <button>
-    <span className="font-bold">{profile.followers_count || 0}</span>{' '}
-    <span className="text-muted-foreground">Follower</span>
-  </button>
-  ...
-</div>
+**Proposed Changes:**
 
-// Updated (horizontal, matching ProfileHeader.tsx):
-<div className="flex gap-3 mt-2">
-  <button className="flex items-center gap-1" onClick={...}>
-    <span className="text-sm font-bold text-foreground">{profile.followers_count || 0}</span>
-    <span className="text-sm text-muted-foreground">Follower</span>
-  </button>
-  ...
-</div>
-```
+1. **Follow Button** - Match city pill style:
+   - Not following: `bg-black text-white` (solid, like active city pill)
+   - Already following: `bg-white/80 text-gray-700 border border-white/50 shadow-sm backdrop-blur-sm`
+   - Pending request: Same as "already following" with slightly different text color
 
-#### 2. Update Category Cards Styling
+2. **Message Button** - Cleaner style:
+   - Match the inactive pill aesthetic: `bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm`
 
-**File: `src/components/UserProfilePage.tsx` (lines ~437-517)**
+---
 
-Change card styling from outdated gray to modern glass effect:
+### Issue 2: Loading Spinners Create Poor UX
 
-```jsx
-// Current:
-className="... bg-gray-200/40 dark:bg-slate-800/65 ..."
+**Current State:**
+UserProfilePage shows a spinning loader while data loads (lines 245-254), creating an unpleasant "loading wheel" experience when navigating between pages.
 
-// Updated (matching ProfileHeader):
-className="... bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm ..."
-```
+**Better Approach (already used in ProfilePage):**
+ProfilePage uses `ProfileSkeleton` which shows a structural skeleton UI with shimmer animation, giving immediate visual feedback while content loads.
 
-#### 3. Add Swipeable Tab Navigation
+**Proposed Changes:**
 
-**File: `src/components/UserProfilePage.tsx`**
+1. **Create UserProfileSkeleton component** - Similar to ProfileSkeleton but adapted for the UserProfilePage layout:
+   - Back arrow placeholder
+   - Username skeleton in header
+   - Avatar skeleton
+   - Stats row skeleton (horizontal layout)
+   - Category cards skeleton row
+   - Tabs skeleton
+   - Posts grid skeleton with shimmer animation
 
-Add imports:
-```jsx
-import SwipeableTabContent from './common/SwipeableTabContent';
-import { useIsMobile } from '@/hooks/use-mobile';
-```
+2. **Replace spinner in UserProfilePage** - Use the new skeleton instead of the spinner for a much smoother perceived loading experience.
 
-Replace the current tab content rendering with `SwipeableTabContent`:
-```jsx
-// Create tabsConfig similar to ProfilePage
-const tabsConfig = useMemo(() => [
-  { key: 'posts', content: <PostsGrid userId={userId} /> },
-  { key: 'trips', content: <TripsGrid userId={userId} /> },
-  { key: 'badges', content: <Achievements userId={userId} hideCoins /> },
-  { key: 'tagged', content: <TaggedPostsGrid userId={userId} /> },
-], [userId]);
+---
 
-// Replace renderTabContent() with:
-<SwipeableTabContent
-  tabs={tabsConfig}
-  activeTab={activeTab}
-  onTabChange={setActiveTab}
-  enabled={isMobile}
-/>
-```
+### Technical Implementation
 
-#### 4. Add Tab Bar Hide-on-Scroll
+**File: `src/components/profile/UserProfileSkeleton.tsx`** (New File)
+Create a skeleton component matching UserProfilePage layout with shimmer animation.
 
 **File: `src/components/UserProfilePage.tsx`**
 
-Add import and hook:
-```jsx
-import { useScrollHide } from '@/hooks/useScrollHide';
-
-// Inside component:
-const { hidden: tabsHidden, setScrollContainer, resetHidden } = useScrollHide({ 
-  threshold: 50, 
-  enabled: isMobile 
-});
-```
-
-Wrap ProfileTabs with animated container:
-```jsx
-<div 
-  className="will-change-transform overflow-hidden"
-  style={{
-    transform: tabsHidden ? 'translateY(-100%)' : 'translateY(0)',
-    maxHeight: tabsHidden ? 0 : 60,
-    opacity: tabsHidden ? 0 : 1,
-    marginBottom: tabsHidden ? -8 : 0,
-    transition: 'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), ...',
-  }}
+1. **Update button styling (lines 288-316):**
+```tsx
+// Follow Button - City pill style
+<Button
+  onClick={handleFollowToggle}
+  disabled={followLoading}
+  className={cn(
+    "rounded-full font-semibold h-9 px-5 text-sm transition-all duration-200 active:scale-[0.97]",
+    profile.is_following 
+      ? "bg-white/80 dark:bg-white/15 text-gray-700 dark:text-gray-200 border border-white/50 dark:border-white/20 shadow-sm backdrop-blur-sm hover:bg-white/90 dark:hover:bg-white/20" 
+      : profile.follow_request_status === 'pending'
+        ? "bg-white/80 dark:bg-white/15 text-gray-500 dark:text-gray-300 border border-white/50 dark:border-white/20 shadow-sm backdrop-blur-sm"
+        : "bg-black text-white hover:bg-gray-900"
+  )}
 >
-  <ProfileTabs activeTab={activeTab} onTabChange={handleTabChange} />
-</div>
+  {getFollowButtonText()}
+</Button>
+
+// Message Button - Pill style
+<Button 
+  variant="ghost" 
+  size="icon" 
+  className="h-9 w-9 rounded-full bg-white/80 dark:bg-white/15 hover:bg-white/90 dark:hover:bg-white/20 border border-white/50 dark:border-white/20 shadow-sm backdrop-blur-sm transition-all duration-200 active:scale-[0.95]" 
+  onClick={...}
+>
+  <MessageCircle className="w-4 h-4 text-gray-700 dark:text-gray-200" />
+</Button>
 ```
 
-#### 5. Hide Coins in Achievements for Other Users
+2. **Replace loading spinner with skeleton (lines 245-254):**
+```tsx
+import UserProfileSkeleton from './profile/UserProfileSkeleton';
 
-The code already passes `hideCoins={!isOwnProfile}` to the Achievements component in the badges modal (line 587). However, when showing Achievements in the tab content, it doesn't pass this prop.
-
-**File: `src/components/UserProfilePage.tsx`**
-
-Update the tab content to consistently hide coins:
-```jsx
-// In tabsConfig:
-{ key: 'badges', content: <Achievements userId={userId} hideCoins /> }
+if (loading) {
+  return <UserProfileSkeleton />;
+}
 ```
 
 ---
 
 ### Files to Modify
 
-1. **`src/components/UserProfilePage.tsx`** - Main refactor:
-   - Add imports for `SwipeableTabContent`, `useIsMobile`, `useScrollHide`, `useMemo`, `useCallback`
-   - Update stats layout to horizontal
-   - Update category cards styling to glass effect
-   - Add `tabsConfig` with `useMemo`
-   - Replace tab content with `SwipeableTabContent`
-   - Add scroll-hide functionality for tabs
-   - Ensure `hideCoins` is passed to Achievements in all contexts
+1. **`src/components/profile/UserProfileSkeleton.tsx`** (New) - Skeleton component with shimmer animation
+2. **`src/components/UserProfilePage.tsx`** - Update button styling + replace spinner with skeleton
 
 ---
 
 ### Expected Outcome
 
 After these changes:
-- Stats will display horizontally (matching own profile)
-- Category cards will have modern glass styling
-- Users can swipe between tabs (Posts, Trips, Badges, Tagged)
-- Tab bar will hide when scrolling through content
-- Coins will be hidden when viewing other users' achievements
-- Consistent visual and functional parity with ProfilePage
-
+- Follow/Message buttons will have a clean, minimal pill style matching the city filter chips
+- Page transitions will feel instant with skeleton UI instead of spinning loaders
+- Consistent visual language across the app
+- Perceived load time reduced from ~800ms (spinner) to ~100ms (skeleton appears instantly)
