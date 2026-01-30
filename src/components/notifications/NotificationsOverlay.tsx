@@ -204,7 +204,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
             className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
             aria-label={t('inviteFriend', { ns: 'invite', defaultValue: 'Invite a Friend' })}
           >
-            <img src={addFriendIcon} alt="" className="w-6 h-6" />
+            <img src={addFriendIcon} alt="" className="w-5 h-5" />
           </button>
         </div>
       </header>
