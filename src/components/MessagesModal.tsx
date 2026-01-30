@@ -15,6 +15,7 @@ import PlaceMessageCard from './messages/PlaceMessageCard';
 import PostMessageCard from './messages/PostMessageCard';
 import ProfileMessageCard from './messages/ProfileMessageCard';
 import { useNavigate } from 'react-router-dom';
+import MessagesListSkeleton from '@/components/common/skeletons/MessagesListSkeleton';
 
 interface MessagesModalProps {
   isOpen: boolean;
@@ -271,9 +272,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
 
             <ScrollArea className="flex-1">
               {searching ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
+                <MessagesListSkeleton count={4} />
               ) : searchResults.length > 0 ? (
                 <div className="p-2">
                   {searchResults.map((profile) => (
@@ -320,9 +319,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
         {view === 'threads' && (
           <ScrollArea className="flex-1 bg-gray-50 dark:bg-gray-950">
             {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
+              <MessagesListSkeleton count={6} />
             ) : threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <p className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -379,9 +376,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
           <div className="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-950">
             <div className="flex-1 overflow-y-auto p-4">
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
+                <MessagesListSkeleton count={4} />
               ) : (
                 <div className="space-y-4">
                   {messages.map((message) => {

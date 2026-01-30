@@ -185,12 +185,15 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           const eased = 1 - Math.pow(1 - progress, 3);
           setLogoSlideProgress(eased);
           
+          // Show centering icon immediately when logo is fully gone
+          if (eased >= 1 && !showCenterIcon) {
+            setShowCenterIcon(true);
+          }
+          
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
-            // Animation complete, hide logo and show centering icon
             setShowLogoInBar(false);
-            setShowCenterIcon(true);
           }
         };
         

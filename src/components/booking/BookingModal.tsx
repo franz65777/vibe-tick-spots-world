@@ -151,8 +151,10 @@ const BookingModal = ({ isOpen, onClose, locationId, locationName }: BookingModa
                 {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} • {partySize} {partySize === 1 ? 'Guest' : 'Guests'}
               </Label>
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="grid grid-cols-3 gap-2 py-4">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div key={i} className="h-9 rounded-md bg-muted animate-pulse" style={{ animationDelay: `${i * 50}ms` }} />
+                  ))}
                 </div>
               ) : timeSlots.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
