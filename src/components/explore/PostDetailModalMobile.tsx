@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Star, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,7 +62,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [shareOpen, setShareOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
-  const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
+  // Use ref instead of state to avoid infinite re-render loops when carousel calls setApi
+  const carouselApisRef = useRef<Record<string, any>>({});
   const [currentMediaIndexes, setCurrentMediaIndexes] = useState<Record<string, number>>({});
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -486,8 +487,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                       className="w-full" 
                       gutter={false}
                       setApi={(api) => {
-                        setCarouselApis(prev => ({ ...prev, [post.id]: api }));
-                        if (api) {
+                        // Store in ref to avoid re-render loops
+                        if (api && carouselApisRef.current[post.id] !== api) {
+                          carouselApisRef.current[post.id] = api;
                           api.on('select', () => {
                             setCurrentMediaIndexes(prev => ({ 
                               ...prev, 

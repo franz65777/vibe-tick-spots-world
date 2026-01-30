@@ -1,19 +1,56 @@
-
 import { useState } from 'react';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import AchievementDetailModal from './AchievementDetailModal';
 
+interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: 'explorer' | 'social' | 'foodie' | 'engagement' | 'streak' | 'milestone' | 'planner';
+  level: 'bronze' | 'silver' | 'gold' | 'platinum';
+  gradient: string;
+  earned: boolean;
+  progress?: number;
+  maxProgress?: number;
+  earnedDate?: string;
+  nextBadgeId?: string;
+  currentLevel?: number;
+  levels?: {
+    level: number;
+    name: string;
+    requirement: number;
+    earned: boolean;
+    earnedDate?: string;
+  }[];
+}
+
 interface BadgeDisplayProps {
+  // Option 1: Pass badges directly (used by ProfileHeader)
+  badges?: Badge[];
+  // Option 2: Fetch by userId (used by UserProfilePage)
   userId?: string;
   onBadgesClick?: () => void;
 }
 
-const BadgeDisplay = ({ userId, onBadgesClick }: BadgeDisplayProps) => {
-  const { badges, loading } = useUserBadges(userId);
-  const [selectedBadge, setSelectedBadge] = useState(null);
+/**
+ * BadgeDisplay - Supports both prop-based and fetch-based usage
+ * 
+ * PERFORMANCE: 
+ * - When badges prop is provided, uses it directly (no fetch)
+ * - When userId is provided, fetches badges via useUserBadges
+ * - This allows ProfileHeader to pass badges from parent (eliminating duplicate queries)
+ *   while UserProfilePage can still fetch independently
+ */
+const BadgeDisplay = ({ badges: badgesProp, userId, onBadgesClick }: BadgeDisplayProps) => {
+  // Only fetch if badges not provided as prop
+  const { badges: fetchedBadges, loading } = useUserBadges(userId);
+  const badges = badgesProp || fetchedBadges;
+  
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleBadgeClick = (badge) => {
+  const handleBadgeClick = (badge: Badge) => {
     setSelectedBadge(badge);
     setIsModalOpen(true);
   };
@@ -22,7 +59,8 @@ const BadgeDisplay = ({ userId, onBadgesClick }: BadgeDisplayProps) => {
   const displayBadges = earnedBadges.slice(0, 2);
   const remainingCount = earnedBadges.length - displayBadges.length;
 
-  if (loading) {
+  // Show loading skeleton only when fetching (not when using props)
+  if (!badgesProp && loading) {
     return (
       <div className="flex gap-0.5">
         <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
