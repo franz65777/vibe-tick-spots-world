@@ -1,139 +1,123 @@
 
-# Update Remaining Components with Transparent Backgrounds
+# Fix White Backgrounds and Enhance Pills/Glassmorphism Across App
 
-## Problem
-Multiple components still have solid white/opaque backgrounds that conflict with the new unified frosted glass background. This creates an inconsistent visual experience with visible white cards/sections on the frosted glass base.
-
-## Components to Update
-
-### 1. Profile Page Components
-
-#### ProfileHeader.tsx
-- **Issue**: `bg-background` on main container and skeleton
-- **Lines**: 139, 179
-- **Fix**: Remove `bg-background` - let it be transparent over the FrostedGlassBackground
-
-#### ProfileTabs.tsx
-- **Issue**: `bg-gray-100/60` on the tab container
-- **Lines**: 28
-- **Fix**: Change to `bg-white/30 dark:bg-white/10` for better transparency with the frosted glass
-
-#### Achievements.tsx
-- **Issue**: `bg-background` on loading skeleton and main container
-- **Lines**: 35, 55
-- **Fix**: Remove `bg-background` to inherit frosted glass
-
-#### PostsGrid.tsx
-- **Issue**: `bg-background` on sticky filter header, `bg-white/80` on inactive chips
-- **Lines**: 240, 285, 301
-- **Fix**: 
-  - Sticky header: Change to `bg-white/60 dark:bg-white/10 backdrop-blur-md`
-  - Chips: Change inactive to `bg-white/50 dark:bg-white/10`
-
-### 2. Modal/Overlay Pages
-
-#### FollowersModal.tsx
-- **Issue**: `bg-background` on fixed container
-- **Lines**: 683
-- **Fix**: Add FrostedGlassBackground component + make content container transparent
-
-#### SavedLocationsList.tsx
-- **Issue**: `bg-background` on fixed container and headers
-- **Lines**: 553, 565, 594
-- **Fix**: Add FrostedGlassBackground component + make content containers transparent
-
-### 3. Feed Components
-
-#### CityStatsCard.tsx
-- **Issue**: Already uses `bg-white/60 dark:bg-white/10` which is good
-- **Status**: ✅ No changes needed
-
-#### UserVisitedCard.tsx
-- **Issue**: Already uses `bg-white/60 dark:bg-white/10` which is good
-- **Status**: ✅ No changes needed
+## Overview
+This plan addresses three main issues:
+1. **Remaining white backgrounds** - Profile stats cards, category cards, and tab container still have solid backgrounds
+2. **Pills visibility** - Add subtle shadows to pills/chips across the app for better visibility on the frosted glass background
+3. **Settings modals** - All settings sub-pages need the FrostedGlassBackground and proper z-index handling
 
 ---
 
-## Implementation Details
+## 1. Profile Page Components
 
-### ProfileHeader.tsx
+### ProfileHeader.tsx - Category Cards
+**Current**: `bg-gray-200/40 dark:bg-slate-800/65` (opaque)
+**New**: `bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm`
+
+Lines 261, 274, 287, 300 need updating.
+
+### ProfileTabs.tsx - Tab Container
+**Current**: Already updated to glass effect, but needs subtle shadow.
+**Line 28**: Add `shadow-sm` to the outer container for better definition.
+
+---
+
+## 2. FollowersModal.tsx - Tab Pills and Search
+
+### Tab Pills (Lines 708-744)
+**Current**:
+- Active: `bg-foreground text-background`
+- Inactive: `bg-muted/60 text-muted-foreground`
+
+**New** (with shadows for visibility):
+- Active: `bg-foreground text-background shadow-md`
+- Inactive: `bg-white/60 dark:bg-white/10 text-muted-foreground shadow-sm backdrop-blur-sm`
+
+### Search Input (Line 757)
+**Current**: `bg-muted/50 border-0`
+**New**: `bg-white/60 dark:bg-white/10 border-0 shadow-sm backdrop-blur-sm`
+
+---
+
+## 3. Settings Modals - Add FrostedGlassBackground
+
+All settings modals use Sheet with `bg-background` (from sheet.tsx base styles). We need to:
+1. Override the Sheet's solid background
+2. Add FrostedGlassBackground to each modal
+3. Ensure headers use glass effect instead of solid `bg-background`
+
+### Files to Update:
+| File | Changes |
+|------|---------|
+| `EditProfileModal.tsx` | Add FrostedGlassBackground, update header and footer |
+| `LanguageModal.tsx` | Add FrostedGlassBackground, update header |
+| `MutedLocationsModal.tsx` | Add FrostedGlassBackground, update header |
+| `CloseFriendsModal.tsx` | Add FrostedGlassBackground, update header |
+| `PrivacySettingsModal.tsx` | Add FrostedGlassBackground, update header |
+| `AdminBusinessRequestsModal.tsx` | Add FrostedGlassBackground |
+| `AdminAnalyticsModal.tsx` | Add FrostedGlassBackground, update header |
+| `BusinessAccountManagement.tsx` | Add FrostedGlassBackground, update header |
+
+### Pattern for Each Modal:
 ```tsx
-// Line 139 - skeleton
-<div className="pt-1 pb-2">  // Remove bg-background
-
-// Line 179 - main
-<div className="pt-1 pb-2">  // Remove bg-background
-```
-
-### ProfileTabs.tsx
-```tsx
-// Line 28
-<div className="flex bg-white/30 dark:bg-white/10 backdrop-blur-md rounded-xl p-0.5 shadow-inner border border-white/30 dark:border-white/10">
-```
-
-### Achievements.tsx
-```tsx
-// Line 35 - loading
-<div className="px-4 py-4">  // Remove bg-background
-
-// Line 55 - main
-<div className="px-4 py-4">  // Remove bg-background
-```
-
-### PostsGrid.tsx
-```tsx
-// Line 240 - sticky filter header
-<div className="sticky top-0 z-20 -mx-4 px-4 pb-3 bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-b-2xl">
-
-// Lines 285, 301 - inactive chips
-"bg-white/50 dark:bg-white/10 text-gray-500 shadow-sm"
-```
-
-### FollowersModal.tsx
-```tsx
-// Line 683 - add FrostedGlassBackground
-<div className="fixed inset-0 z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
+<SheetContent side="bottom" className="h-full p-0 [&>button]:hidden !bg-transparent">
   <FrostedGlassBackground />
-  <div className="relative z-10 flex flex-col h-full">
-    {/* existing content */}
+  <div className="relative z-10 h-full flex flex-col">
+    <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
+      {/* Remove bg-background from header */}
+    </SheetHeader>
+    {/* Content */}
   </div>
-</div>
+</SheetContent>
 ```
 
-### SavedLocationsList.tsx
-```tsx
-// Line 553 - add FrostedGlassBackground
-<div ref={containerRef} className="fixed inset-0 z-[9999] flex flex-col">
-  <FrostedGlassBackground />
-  <div className="relative z-10 flex flex-col h-full">
-    {/* Line 565 - header: remove bg-background */}
-    <div className="sticky top-0 z-40 mt-2.5">
-    
-    {/* Line 594 - filters: remove bg-background */}
-    <div className={`px-4 pb-2 space-y-3 transition-all duration-300 ...`}>
-  </div>
-</div>
-```
+---
+
+## 4. Global Pills/Chips Enhancement
+
+### PostsGrid.tsx - City Filter Chips
+**Lines 285, 301**: Already using `bg-white/50 dark:bg-white/10`
+**Add**: `shadow-sm` for better visibility
+
+### Buttons in Language Modal
+**Line 67-72**: Update border and add shadow for better definition on glass background.
+
+---
+
+## 5. Technical Details
+
+### Sheet Background Override
+The Sheet component has `bg-background` in its base styles (sheet.tsx line 32). We override this per-modal using `!bg-transparent` on SheetContent.
+
+### Z-Index for Settings
+The settings modals use Sheet which renders via Portal at z-50. This should be sufficient, but we ensure the FrostedGlassBackground is positioned correctly with z-0 and content at z-10.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/profile/ProfileHeader.tsx` | Remove `bg-background` from containers |
-| `src/components/profile/ProfileTabs.tsx` | Update tab container to glass effect |
-| `src/components/profile/Achievements.tsx` | Remove `bg-background` from containers |
-| `src/components/profile/PostsGrid.tsx` | Update sticky header and chips to glass effect |
-| `src/components/profile/FollowersModal.tsx` | Add FrostedGlassBackground + transparent content |
-| `src/components/profile/SavedLocationsList.tsx` | Add FrostedGlassBackground + transparent content |
+| File | Action |
+|------|--------|
+| `src/components/profile/ProfileHeader.tsx` | Update category cards to glass effect with shadow |
+| `src/components/profile/ProfileTabs.tsx` | Add shadow to container |
+| `src/components/profile/FollowersModal.tsx` | Update tab pills and search with shadows |
+| `src/components/profile/PostsGrid.tsx` | Add shadows to city chips |
+| `src/components/settings/EditProfileModal.tsx` | Add FrostedGlassBackground, glass headers |
+| `src/components/settings/LanguageModal.tsx` | Add FrostedGlassBackground, glass headers |
+| `src/components/settings/MutedLocationsModal.tsx` | Add FrostedGlassBackground, glass headers |
+| `src/components/settings/CloseFriendsModal.tsx` | Add FrostedGlassBackground, glass headers |
+| `src/components/settings/PrivacySettingsModal.tsx` | Add FrostedGlassBackground, glass headers |
+| `src/components/settings/AdminBusinessRequestsModal.tsx` | Add FrostedGlassBackground |
+| `src/components/settings/AdminAnalyticsModal.tsx` | Add FrostedGlassBackground, glass header |
+| `src/components/settings/BusinessAccountManagement.tsx` | Add FrostedGlassBackground, glass header |
 
 ---
 
 ## Visual Result
 
 After these changes:
-- **Profile page**: All sections (header, tabs, achievements, posts grid) will blend seamlessly with the frosted glass background
-- **Followers/Following modal**: Will have the unified frosted glass effect like other overlays
-- **Saved locations list**: Will match the frosted glass aesthetic
-- **Consistent dark mode**: All components will use the theme-aware glass effect
+- **Profile page**: Category cards blend with frosted glass background
+- **All pills/chips**: Subtle shadows for better visibility and depth
+- **Settings sub-pages**: Consistent frosted glass aesthetic throughout
+- **Dark mode**: All components use theme-aware transparency
