@@ -170,12 +170,63 @@ export const useProfileAggregated = (userId?: string) => {
     }
   }, [queryClient, targetUserId]);
 
+  const updateStatsOptimistically = useCallback((delta: Partial<ProfileStats>) => {
+    if (!targetUserId) return;
+
+    queryClient.setQueryData<any>(['profile-aggregated', targetUserId], (old) => {
+      if (!old) return old;
+      const prev = old?.stats ?? { followersCount: 0, followingCount: 0, postsCount: 0, locationsCount: 0 };
+      return {
+        ...old,
+        stats: {
+          ...prev,
+          followersCount: Math.max(0, prev.followersCount + (delta.followersCount ?? 0)),
+          followingCount: Math.max(0, prev.followingCount + (delta.followingCount ?? 0)),
+          postsCount: prev.postsCount,
+          locationsCount: prev.locationsCount,
+        },
+      };
+    });
+  }, [queryClient, targetUserId]);
+
   // Subscribe to relevant realtime events
-  useRealtimeEvent(['follow_insert', 'follow_delete'], useCallback((payload: any) => {
-    if (payload.following_id === targetUserId || payload.follower_id === targetUserId) {
-      invalidate();
+  // NOTE: useRealtimeEvent passa solo payload (non event type), quindi separiamo i casi.
+
+  // Someone followed the target user -> followersCount +1
+  useRealtimeEvent('follow_insert', useCallback((payload: any) => {
+    if (!targetUserId) return;
+    if (payload?.following_id === targetUserId) {
+      updateStatsOptimistically({ followersCount: +1 });
+      return;
     }
-  }, [targetUserId, invalidate]));
+    // Fallback
+    if (payload?.following_id === targetUserId || payload?.follower_id === targetUserId) invalidate();
+  }, [targetUserId, invalidate, updateStatsOptimistically]));
+
+  // Someone unfollowed the target user -> followersCount -1
+  useRealtimeEvent('follow_delete', useCallback((payload: any) => {
+    if (!targetUserId) return;
+    if (payload?.following_id === targetUserId) {
+      updateStatsOptimistically({ followersCount: -1 });
+      return;
+    }
+    if (payload?.following_id === targetUserId || payload?.follower_id === targetUserId) invalidate();
+  }, [targetUserId, invalidate, updateStatsOptimistically]));
+
+  // Current user followed/unfollowed someone -> followingCount +/-1 (solo quando stiamo guardando il profilo corrente)
+  useRealtimeEvent('follow_by_me_insert', useCallback((_payload: any) => {
+    if (!targetUserId) return;
+    if (user?.id && user.id === targetUserId) {
+      updateStatsOptimistically({ followingCount: +1 });
+    }
+  }, [targetUserId, user?.id, updateStatsOptimistically]));
+
+  useRealtimeEvent('follow_by_me_delete', useCallback((_payload: any) => {
+    if (!targetUserId) return;
+    if (user?.id && user.id === targetUserId) {
+      updateStatsOptimistically({ followingCount: -1 });
+    }
+  }, [targetUserId, user?.id, updateStatsOptimistically]));
 
   useRealtimeEvent(['saved_location_insert', 'saved_location_delete', 'saved_place_insert', 'saved_place_delete'], useCallback((payload: any) => {
     if (payload?.user_id === targetUserId) {
