@@ -1,128 +1,111 @@
 
 
-## Piano: Fase 3 - Sostituzione Spinner Rimanenti + Miglioramento Logo Sliding
+## Piano: Fase 4 - Fix Timing Icona Centratura + Spinner Rimanenti
 
 ---
 
-### Parte 1: Spinner Rimanenti da Sostituire (10 file)
-
-| File | Riga | Stato Attuale | Soluzione |
-|------|------|---------------|-----------|
-| `src/components/notifications/NotificationsOverlay.tsx` | 257-262 | Spinner notifiche | `NotificationsSkeleton` |
-| `src/components/settings/CloseFriendsModal.tsx` | 161-164 | Spinner lista amici | `UserListSkeleton` |
-| `src/components/explore/PostDetailModal.tsx` | 322-330 | Spinner modale post | Creare `PostDetailSkeleton` |
-| `src/components/explore/SearchResults.tsx` | 33-41 | Spinner ricerca | `SearchResultsSkeleton` |
-| `src/components/home/QuickAddPinModal.tsx` | 341-347 | Spinner luoghi | `LocationCardsSkeleton` |
-| `src/components/explore/LocationContributionModal.tsx` | 539-543, 660-663 | Spinner foto/folders | Skeleton inline |
-| `src/components/explore/LeafletExploreMap.tsx` | 269-276 | Spinner mappa | `MapLoadingSkeleton` |
-
----
-
-### Parte 2: Miglioramento Logo Sliding nella Search Bar
+### Parte 1: Correzione Timing Icona Centratura in SearchDrawer.tsx
 
 **Problema Attuale:**
-L'icona di centratura (Navigation2) usa `opacity: logoSlideProgress`, il che significa che inizia a comparire subito quando il logo inizia a scivolare, creando una sovrapposizione visiva confusa.
+L'icona di centratura appare solo dopo che l'animazione del logo è completamente finita (4 secondi + 800ms di pausa = circa 5 secondi totali). Il codice attuale (linea 192-193) imposta `setShowCenterIcon(true)` solo al termine dell'animazione.
 
 **Soluzione:**
-Mostrare l'icona di centratura SOLO dopo che il logo è completamente sparito (quando `logoSlideProgress === 1`), usando una transizione di fade-in separata.
+Mostrare l'icona **immediatamente** quando `logoSlideProgress` raggiunge 1 (logo completamente sparito), senza attendere la fine del delay. Possiamo farlo aggiungendo un check durante l'animazione stessa.
 
-**Implementazione in `SearchDrawer.tsx`:**
-
+**Implementazione:**
 ```tsx
-// Stato per controllare quando l'icona può apparire
-const [showCenterIcon, setShowCenterIcon] = useState(!showBrandingLogo);
-
-// Aggiornare useEffect per settare showCenterIcon quando l'animazione è completa
-useEffect(() => {
-  if (showBrandingLogo) {
-    setShowCenterIcon(false);
-    // ... resto dell'animazione del logo ...
-    // Al termine dell'animazione:
+// Modifica in SearchDrawer.tsx (linee 180-194)
+const animate = () => {
+  const elapsed = Date.now() - startTime;
+  const progress = Math.min(elapsed / duration, 1);
+  const eased = 1 - Math.pow(1 - progress, 3);
+  setLogoSlideProgress(eased);
+  
+  // Mostra l'icona di centratura non appena il logo è completamente fuori (eased >= 1)
+  if (eased >= 1 && !showCenterIcon) {
     setShowCenterIcon(true);
   }
-}, [showBrandingLogo]);
+  
+  if (progress < 1) {
+    requestAnimationFrame(animate);
+  } else {
+    setShowLogoInBar(false);
+  }
+};
+```
 
-// Nel JSX, avvolgere l'icona con una transizione separata:
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    handleCurrentLocation(e);
-  }}
-  disabled={geoLoading || !showCenterIcon}
-  className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all duration-300 disabled:opacity-50 pointer-events-auto"
-  style={{
-    opacity: showCenterIcon ? 1 : 0,
-    transform: showCenterIcon ? 'scale(1)' : 'scale(0.8)',
-    pointerEvents: showCenterIcon ? 'auto' : 'none',
-  }}
->
-  <Navigation2 ... />
-</button>
+Questo garantisce che l'icona appaia **istantaneamente** quando il logo scompare, senza alcun ritardo.
+
+---
+
+### Parte 2: Spinner Rimanenti da Sostituire (15 file)
+
+| File | Linea | Contesto | Soluzione |
+|------|-------|----------|-----------|
+| `src/components/MessagesModal.tsx` | 273-276, 322-325, 381-384 | Lista messaggi/thread/chat | Creare `MessagesListSkeleton` |
+| `src/pages/business/PublicBusinessProfilePage.tsx` | 178-183 | Pagina profilo business pubblica | Usare `BusinessProfileSkeleton` |
+| `src/pages/AdminAnalyticsPage.tsx` | 34-40 | Pagina analytics admin | Usare `AnalyticsSkeleton` |
+| `src/pages/business/BusinessMessagesPage.tsx` | 216-219 | Lista messaggi business | Usare `MessagesListSkeleton` |
+| `src/components/booking/BookingModal.tsx` | 153-157 | Time slots loading | Creare `TimeSlotsSkeleton` inline |
+| `src/components/explore/LocationShareModal.tsx` | 274-277 | Lista utenti share | Usare `UserListSkeleton` |
+
+---
+
+### Nuovo Componente Skeleton da Creare
+
+**`src/components/common/skeletons/MessagesListSkeleton.tsx`**
+```
+Struttura per thread messages:
+- Avatar skeleton (48px)
+- Username skeleton
+- Message preview skeleton
+- Timestamp skeleton
+- Ripetere 5-6 volte con animazione shimmer staggerata
 ```
 
 ---
 
-### Nuovi Componenti Skeleton da Creare
+### Spinner da Mantenere (UX Appropriata)
 
-**1. `src/components/common/skeletons/PostDetailSkeleton.tsx`**
-```
-Struttura:
-- Header skeleton (avatar + username)
-- Immagine grande skeleton
-- Riga azioni skeleton
-- Caption skeleton
-- Commenti skeleton (3 righe)
-```
+Questi spinner rimangono perché sono feedback per azioni utente:
 
-**2. `src/components/common/skeletons/MapLoadingSkeleton.tsx`**
-```
-Struttura:
-- Sfondo grigio con pattern a tile
-- Pulsante shimmer in alto a sinistra
-- Animazione pulse leggera
-```
+| File | Motivo |
+|------|--------|
+| `SignupStart.tsx` (linea 255, 280) | Check username inline |
+| `AdminToolsSection.tsx` (linea 152) | Bottone "Esegui" tool |
+| `SeedingDashboard.tsx` (linee 190, 204, 380, 387) | Bottoni avvio/in corso seeding |
+| `LocationDataFix.tsx` | Bottoni scansione/correzione |
+| `LocationShareModal.tsx` (linea 441) | Bottone invio |
+| `PostsGrid.tsx` (linee 375, 578, 638) | Infinite scroll + bottone delete |
+| `CityAutocompleteBar.tsx` (linea 225) | Search inline indicator |
+| `GoogleMapsImportModal.tsx` | Bottone import |
+| `EditProfileModal.tsx` | Bottone salvataggio |
+| `InviteFriendOverlay.tsx` | Bottone invito |
+| `ShareModal.tsx` (linea 280) | Bottone invio |
 
 ---
 
 ### File da Creare
 
-1. `src/components/common/skeletons/PostDetailSkeleton.tsx`
-2. `src/components/common/skeletons/MapLoadingSkeleton.tsx`
+1. `src/components/common/skeletons/MessagesListSkeleton.tsx`
 
 ### File da Modificare
 
-1. `src/components/notifications/NotificationsOverlay.tsx` - Usare `NotificationsSkeleton`
-2. `src/components/settings/CloseFriendsModal.tsx` - Usare `UserListSkeleton`
-3. `src/components/explore/PostDetailModal.tsx` - Usare `PostDetailSkeleton`
-4. `src/components/explore/SearchResults.tsx` - Usare `SearchResultsSkeleton`
-5. `src/components/home/QuickAddPinModal.tsx` - Usare `LocationCardsSkeleton`
-6. `src/components/explore/LocationContributionModal.tsx` - Skeleton inline per foto e folders
-7. `src/components/explore/LeafletExploreMap.tsx` - Usare `MapLoadingSkeleton`
-8. `src/components/home/SearchDrawer.tsx` - Migliorare timing icona centratura
-
----
-
-### Spinner che Rimangono (Appropriati per UX)
-
-Questi spinner sono appropriati e non verranno modificati:
-
-| File | Motivo |
-|------|--------|
-| `QuickAddPinModal.tsx` (riga 416) | Spinner dentro bottone "Save" durante azione |
-| `CloseFriendsModal.tsx` (righe 204, 240) | Spinner bottoni "Add/Remove" durante azione |
-| `LocationContributionModal.tsx` (riga 763) | Spinner bottone "Share" durante invio |
-| `InviteFriendOverlay.tsx` | Spinner bottone durante invio invito |
-| `EditProfileModal.tsx` | Spinner bottone durante salvataggio |
-| `PostEditor.tsx` | Spinner bottone "Sharing..." durante pubblicazione |
+1. `src/components/home/SearchDrawer.tsx` - Fix timing icona centratura
+2. `src/components/MessagesModal.tsx` - Usare `MessagesListSkeleton` (3 posizioni)
+3. `src/pages/business/PublicBusinessProfilePage.tsx` - Usare `BusinessProfileSkeleton`
+4. `src/pages/AdminAnalyticsPage.tsx` - Usare `AnalyticsSkeleton`
+5. `src/pages/business/BusinessMessagesPage.tsx` - Usare `MessagesListSkeleton`
+6. `src/components/booking/BookingModal.tsx` - Skeleton inline per time slots
+7. `src/components/explore/LocationShareModal.tsx` - Usare `UserListSkeleton`
 
 ---
 
 ### Risultato Atteso
 
 Dopo queste modifiche:
-- **Zero spinner** visibili durante il caricamento di pagine/modali
-- L'icona di centratura appare **solo dopo** che il logo è completamente scomparso
-- Transizione fluida con fade-in dell'icona
-- Skeleton shimmer consistenti in tutta l'app
-- Percezione di velocità migliorata
+- L'icona di centratura appare **istantaneamente** quando il logo scompare (zero delay)
+- Tutti gli spinner di caricamento pagina/modale sostituiti con skeleton shimmer
+- Percezione di velocità migliorata in tutta l'app
+- Pattern consistente per tutti i loading state
 
