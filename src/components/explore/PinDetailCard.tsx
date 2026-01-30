@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapPin, Navigation, Bookmark, BookmarkCheck, ChevronLeft, ChevronDown, Share2, Star, Check, Camera, BellOff, Bell, Calendar, MessageCircle } from 'lucide-react';
+import { PostsGridSkeleton, ReviewListSkeleton } from '@/components/common/skeletons/PostsGridSkeleton';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -1776,9 +1777,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   {activeTab === 'posts' ? (
                     <div className="px-4 pt-1.5 pb-4">
                       {postsLoading && posts.length === 0 ? (
-                        <div className="flex justify-center py-8">
-                          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                        </div>
+                        <PostsGridSkeleton count={4} />
                       ) : posts.length === 0 ? (
                         <div className="py-8 text-center">
                           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
@@ -1845,9 +1844,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                   ) : (
                     <div className="px-4 py-4">
                       {reviewsLoading ? (
-                        <div className="flex justify-center py-8">
-                          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                        </div>
+                        <ReviewListSkeleton count={3} />
                       ) : reviews.length === 0 ? (
                         <div className="py-8 text-center">
                           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">

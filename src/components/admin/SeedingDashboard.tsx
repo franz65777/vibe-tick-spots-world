@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin, Users, Sparkles, Globe, Play, Eye, RefreshCw, CheckCircle2, AlertCircle, StopCircle, ShieldCheck, XCircle, Ban, DollarSign } from 'lucide-react';
+import BusinessDashboardSkeleton from '@/components/common/skeletons/BusinessDashboardSkeleton';
 import { getSeedingStats, runFullSeeding } from '@/services/lazyPhotoService';
 import { toast } from 'sonner';
 
@@ -133,13 +134,7 @@ export const SeedingDashboard = () => {
   };
 
   if (loading && !stats) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <BusinessDashboardSkeleton />;
   }
 
   const enrichmentPercent = stats ? 

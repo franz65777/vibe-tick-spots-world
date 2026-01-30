@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 import { invalidateFollowList } from '@/hooks/useFollowList';
 
 interface Liker {
@@ -217,9 +218,7 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
 
         <div className="flex-1 overflow-y-auto px-4 pb-6">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
+            <UserListSkeleton count={6} />
           ) : filteredLikers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {searchQuery ? t('noResults', { ns: 'common', defaultValue: 'No results' }) : t('noLikesYet', { ns: 'common', defaultValue: 'No likes yet' })}

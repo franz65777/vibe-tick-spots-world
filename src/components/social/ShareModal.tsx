@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 import { useTranslation } from 'react-i18next';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -157,9 +158,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
 
               <ScrollArea className="flex-1 px-4">
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
+                  <UserListSkeleton count={6} showButton={false} />
                 ) : (
                   <>
                     {/* Frequent Contacts Section */}

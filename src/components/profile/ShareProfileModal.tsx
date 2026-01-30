@@ -11,6 +11,7 @@ import { messageService } from '@/services/messageService';
 import { toast } from 'sonner';
 import { useUIState } from '@/contexts/UIStateContext';
 import { useFrequentContacts } from '@/hooks/useFrequentContacts';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface ShareProfileModalProps {
   isOpen: boolean;
@@ -198,9 +199,7 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
 
         <ScrollArea className="flex-1 px-4">
           {loading || frequentLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <UserListSkeleton count={5} showButton={false} />
           ) : (
             <div className="space-y-6 pb-4">
               {/* When searching, show only All Contacts */}
