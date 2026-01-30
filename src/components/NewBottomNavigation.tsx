@@ -196,8 +196,8 @@ const NewBottomNavigation = () => {
         aria-hidden={shouldHideNav}
       >
         <div className="w-full px-4 pb-[env(safe-area-inset-bottom)]">
-          <div className="relative bg-white dark:bg-zinc-900 rounded-[28px] mx-2 mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)]">
-            <div className="h-[60px] flex items-center justify-around px-3">
+          <div className="relative bg-white dark:bg-zinc-900 rounded-full mx-4 mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)]">
+            <div className="h-[52px] flex items-center justify-around px-4">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const isProfileTab = item.path === '/profile';
@@ -247,7 +247,7 @@ const NewBottomNavigation = () => {
                       undefined
                     }
                     className={cn(
-                      "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 transition-all duration-200 active:scale-95"
+                      "flex items-center justify-center min-w-[48px] transition-all duration-200 active:scale-95"
                     )}
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}
@@ -282,12 +282,6 @@ const NewBottomNavigation = () => {
                         />
                       </div>
                     )}
-                    <span className={cn(
-                      "text-[10px] font-medium transition-colors duration-200",
-                      isActive ? 'text-primary' : 'text-muted-foreground'
-                    )}>
-                      {item.label}
-                    </span>
                   </button>
                 );
               })}
