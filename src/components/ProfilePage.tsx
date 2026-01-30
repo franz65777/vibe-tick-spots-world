@@ -1,16 +1,17 @@
-import { useState, useEffect, memo, lazy, Suspense } from 'react';
+import { useState, useEffect, memo, lazy } from 'react';
 import { useProfileAggregated } from '@/hooks/useProfileAggregated';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
+import { useIsMobile } from '@/hooks/use-mobile';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileTabs from './profile/ProfileTabs';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import ProfileSkeleton from './ProfileSkeleton';
-import TabContentSkeleton from './profile/TabContentSkeleton';
+import SwipeableTabContent from './common/SwipeableTabContent';
 
 // Lazy load tab content for bundle splitting
 const PostsGrid = lazy(() => import('./profile/PostsGrid'));
@@ -30,6 +31,7 @@ const TaggedPostsGrid = lazy(() => import('./profile/TaggedPostsGrid'));
 const ProfilePage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { profile, loading, error, refetch } = useProfileAggregated();
   const navigate = useNavigate();
   const location = useLocation();
@@ -135,24 +137,12 @@ const ProfilePage = memo(() => {
     );
   }
 
-  const renderTabContent = () => {
-    return (
-      <Suspense fallback={<TabContentSkeleton />}>
-        {activeTab === 'posts' && (
-          <div className="h-full overflow-y-auto pb-20">
-            <PostsGrid />
-          </div>
-        )}
-        {activeTab === 'trips' && <TripsGrid />}
-        {activeTab === 'badges' && <Achievements userId={user?.id} />}
-        {activeTab === 'tagged' && (
-          <div className="h-full overflow-y-auto pb-20">
-            <TaggedPostsGrid />
-          </div>
-        )}
-      </Suspense>
-    );
-  };
+  const tabsConfig = [
+    { key: 'posts', content: <div className="h-full overflow-y-auto pb-20"><PostsGrid /></div> },
+    { key: 'trips', content: <TripsGrid /> },
+    { key: 'badges', content: <Achievements userId={user?.id} /> },
+    { key: 'tagged', content: <div className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
+  ];
 
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
@@ -178,10 +168,13 @@ const ProfilePage = memo(() => {
         hasNewBadges={hasNewBadges}
       />
       
-      {/* Tab Content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {renderTabContent()}
-      </div>
+      {/* Tab Content - Swipeable on mobile */}
+      <SwipeableTabContent
+        tabs={tabsConfig}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        enabled={isMobile}
+      />
 
       <FollowersModal 
         isOpen={modalState.isOpen}
