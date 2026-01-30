@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AvatarCropEditor } from './AvatarCropEditor';
 import { useQueryClient } from '@tanstack/react-query';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -272,13 +273,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
       )}
       
       <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
-        <div className="h-full flex flex-col">
-          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10 bg-background">
+      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden !bg-transparent">
+        <FrostedGlassBackground />
+        <div className="relative z-10 h-full flex flex-col">
+          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onOpenChange(false)}
-                className="p-2 hover:bg-muted rounded-full transition-colors"
+                className="p-2 hover:bg-muted/50 rounded-full transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -389,7 +391,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           </div>
 
           {/* Save Button - Fixed at bottom */}
-          <div className="p-4 bg-background">
+          <div className="p-4 bg-white/60 dark:bg-white/10 backdrop-blur-md">
             <Button
               onClick={handleSave}
               disabled={isLoading || isUploading || !username.trim() || !!usernameError}

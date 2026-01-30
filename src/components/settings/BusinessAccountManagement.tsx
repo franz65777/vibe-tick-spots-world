@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from 'date-fns';
 import { it } from 'date-fns/locale';
 import businessIcon from '@/assets/settings-business.png';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface BusinessAccountManagementProps {
   open: boolean;
@@ -98,15 +99,16 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
-        <div className="h-full flex flex-col">
-          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10 bg-background">
+      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden !bg-transparent">
+        <FrostedGlassBackground />
+        <div className="relative z-10 h-full flex flex-col">
+          <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onOpenChange(false)}
-                className="shrink-0"
+                className="shrink-0 hover:bg-muted/50"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>

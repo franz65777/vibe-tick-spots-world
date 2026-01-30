@@ -708,8 +708,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
                 className={cn(
                   "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shrink-0",
                   activeTab === 'mutuals' 
-                    ? "bg-foreground text-background" 
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    ? "bg-foreground text-background shadow-md" 
+                    : "bg-white/60 dark:bg-white/10 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-white/80 dark:hover:bg-white/15"
                 )}
               >
                 <span className="font-semibold">{mutualsCount}</span>
@@ -722,8 +722,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shrink-0",
                 activeTab === 'following' 
-                  ? "bg-foreground text-background" 
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                  ? "bg-foreground text-background shadow-md" 
+                  : "bg-white/60 dark:bg-white/10 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-white/80 dark:hover:bg-white/15"
               )}
             >
               <span className="font-semibold">{effectiveFollowingCount}</span>
@@ -735,8 +735,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shrink-0",
                 activeTab === 'followers' 
-                  ? "bg-foreground text-background" 
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                  ? "bg-foreground text-background shadow-md" 
+                  : "bg-white/60 dark:bg-white/10 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-white/80 dark:hover:bg-white/15"
               )}
             >
               <span className="font-semibold">{effectiveFollowersCount}</span>
@@ -754,7 +754,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               placeholder={t('search', { ns: 'common' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 rounded-full bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
+              className="pl-9 h-10 rounded-full bg-white/60 dark:bg-white/10 border-0 shadow-sm backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-primary/50"
             />
             {searchQuery && (
               <button 
