@@ -32,7 +32,7 @@ const Achievements = ({ userId }: AchievementsProps) => {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 bg-background">
+      <div className="px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">{t('achievements', { ns: 'profile' })}</h2>
           <div className="w-16 h-4 bg-muted rounded animate-pulse"></div>
@@ -52,7 +52,7 @@ const Achievements = ({ userId }: AchievementsProps) => {
 
   return (
     <>
-      <div className="px-4 py-4 bg-background">
+      <div className="px-4 py-4">
         {/* Header with Coins Button */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
