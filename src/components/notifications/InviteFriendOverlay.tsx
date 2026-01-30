@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { usePhoneContacts, FoundContact } from '@/hooks/usePhoneContacts';
@@ -8,7 +8,6 @@ import AvatarStack from '@/components/common/AvatarStack';
 import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
 import spottLogoColorful from '@/assets/spott-logo-colorful.png';
-import syncContactsIcon from '@/assets/icons/sync-contacts.png';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
@@ -223,7 +222,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
                 <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
               ) : (
               <>
-                  <img src={syncContactsIcon} alt="" className="w-5 h-5 mr-2" />
+                  <UserPlus className="w-5 h-5 mr-2" />
                   {t('checkContacts', { ns: 'invite', defaultValue: 'sync contacts' })}
                 </>
               )}
