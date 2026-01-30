@@ -274,7 +274,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
           {/* City Filter Chips */}
           {citiesWithCounts.length > 0 && (
-            <div className="flex-1 overflow-x-auto scrollbar-hide">
+            <div className="flex-1 overflow-x-auto scrollbar-hide pr-4">
               <div className="flex gap-2">
                 {/* All chip */}
                 <button
@@ -534,8 +534,8 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
         )
       )}
       
-      {/* Infinite scroll trigger */}
-      <div ref={loadMoreRef} className="py-4 flex justify-center">
+      {/* Infinite scroll trigger + bottom spacing for navigation bar */}
+      <div ref={loadMoreRef} className="pb-24 pt-4 flex justify-center">
         {isFetchingNextPage && (
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         )}
@@ -564,8 +564,19 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       )}
 
       {/* Delete Confirmation Dialog */}
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        {/* Hide bottom navigation when dialog is open */}
+        {postToDelete && (
+          <style>{`
+            [class*="bottom-navigation"],
+            [class*="NewBottomNavigation"],
+            [class*="BusinessBottomNavigation"],
+            nav[class*="fixed bottom"],
+            div[class*="fixed bottom-0"] {
+              display: none !important;
+            }
+          `}</style>
+        )}
         <AlertDialogContent className="w-[280px] rounded-3xl p-5 bg-background/80 backdrop-blur-xl border-white/20 shadow-2xl">
           <AlertDialogHeader className="text-center space-y-1">
             <AlertDialogTitle className="text-base font-medium">
