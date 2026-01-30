@@ -1,120 +1,160 @@
 
 
-## Plan: Enhance Review Cards Section Visual Design
+## Plan: Update UserProfilePage to Match ProfilePage Design & Functionality
 
-The current review cards have a clean design but could benefit from visual enhancements to make them more engaging and modern. Here's a comprehensive improvement plan.
-
----
-
-### Current Issues Observed
-
-1. **Flat appearance** - Cards lack depth and visual interest
-2. **Small thumbnails** - Location images are only 40px, making them hard to appreciate
-3. **Limited visual hierarchy** - Rating and category blend together
-4. **Basic card styling** - Simple border with white background feels dated
-5. **Caption text could be more prominent** - Review text doesn't stand out
+The current `UserProfilePage` is significantly behind the `ProfilePage` implementation. This plan will bring feature and visual parity between both pages.
 
 ---
 
-### Proposed Improvements
+### Current Differences Identified
 
-#### 1. Enhanced Card Container
-- Add subtle gradient background or soft shadow for depth
-- Increase padding for better spacing
-- Add a subtle hover/active state with scale animation
-- Use softer border radius for a more modern feel
-
-#### 2. Larger, More Prominent Thumbnails
-- Increase from 40px to 56px (14x14 in Tailwind)
-- Add a subtle ring/border for definition
-- Add shadow to make images pop
-- Maintain rounded-xl corners
-
-#### 3. Improved Rating Badge
-- Make the rating more prominent with a pill-style container
-- Add subtle background color based on rating
-- Slightly larger font for better visibility
-
-#### 4. Better Typography Hierarchy
-- Location name: Slightly larger, bolder
-- City: Keep subtle but add a small icon tint
-- Caption: Warmer text color, better line height
-
-#### 5. Visual Polish
-- Add subtle category icon accent color to card border or accent area
-- Animate cards on scroll with staggered fade-in
-- Add re-visit badge styling improvements
+| Feature | ProfilePage | UserProfilePage |
+|---------|-------------|-----------------|
+| **Stats Layout** | Horizontal: "6 Follower 4 Seguiti 19 Salvati" | Vertical: "6 Follower" below each number |
+| **Coins Display** | Hidden for other users via `hideCoins` | Still visible in Achievements tab modal |
+| **Tab Swipe Navigation** | Uses `SwipeableTabContent` for iOS-style swiping | Direct rendering, no swipe support |
+| **Tab Bar Hide on Scroll** | Uses `useScrollHide` - tabs hide when scrolling | Tabs always visible |
+| **Category Cards Styling** | Modern glass: `bg-white/60 shadow-sm backdrop-blur-sm` | Outdated: `bg-gray-200/40` |
+| **Overall Architecture** | Clean component-based with `ProfileHeader` | Inline JSX for header section |
 
 ---
 
-### Technical Changes
+### Implementation Steps
 
-**File: `src/components/profile/PostsGrid.tsx`**
+#### 1. Refactor Header to Match ProfilePage Layout
 
-**Card Container (lines ~387-394):**
+**File: `src/components/UserProfilePage.tsx`**
+
+The stats section (followers/following/saved) currently uses vertical layout. Update to horizontal inline layout:
+
 ```jsx
-// Before
-"relative bg-background border border-border rounded-xl p-3"
+// Current (vertical):
+<div className="flex gap-3 text-sm mt-2">
+  <button>
+    <span className="font-bold">{profile.followers_count || 0}</span>{' '}
+    <span className="text-muted-foreground">Follower</span>
+  </button>
+  ...
+</div>
 
-// After  
-"relative bg-gradient-to-br from-white to-gray-50/80 dark:from-zinc-900 dark:to-zinc-800/80 
- border border-white/60 dark:border-zinc-700/50 rounded-2xl p-4 
- shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]
- transition-all duration-200 active:scale-[0.99]"
+// Updated (horizontal, matching ProfileHeader.tsx):
+<div className="flex gap-3 mt-2">
+  <button className="flex items-center gap-1" onClick={...}>
+    <span className="text-sm font-bold text-foreground">{profile.followers_count || 0}</span>
+    <span className="text-sm text-muted-foreground">Follower</span>
+  </button>
+  ...
+</div>
 ```
 
-**Thumbnail Size (line ~415):**
-```jsx
-// Before
-<Avatar className="h-10 w-10 rounded-xl overflow-hidden">
+#### 2. Update Category Cards Styling
 
-// After
-<Avatar className="h-14 w-14 rounded-2xl overflow-hidden shadow-md ring-2 ring-white/80 dark:ring-zinc-700/50">
+**File: `src/components/UserProfilePage.tsx` (lines ~437-517)**
+
+Change card styling from outdated gray to modern glass effect:
+
+```jsx
+// Current:
+className="... bg-gray-200/40 dark:bg-slate-800/65 ..."
+
+// Updated (matching ProfileHeader):
+className="... bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm ..."
 ```
 
-**Location Name (line ~458):**
-```jsx
-// Before
-className="font-semibold text-sm hover:opacity-70"
+#### 3. Add Swipeable Tab Navigation
 
-// After
-className="font-bold text-[15px] hover:opacity-70 tracking-tight"
+**File: `src/components/UserProfilePage.tsx`**
+
+Add imports:
+```jsx
+import SwipeableTabContent from './common/SwipeableTabContent';
+import { useIsMobile } from '@/hooks/use-mobile';
 ```
 
-**Rating Badge (lines ~468-486):**
+Replace the current tab content rendering with `SwipeableTabContent`:
 ```jsx
-// Before - just positioned top-right
-<div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
+// Create tabsConfig similar to ProfilePage
+const tabsConfig = useMemo(() => [
+  { key: 'posts', content: <PostsGrid userId={userId} /> },
+  { key: 'trips', content: <TripsGrid userId={userId} /> },
+  { key: 'badges', content: <Achievements userId={userId} hideCoins /> },
+  { key: 'tagged', content: <TaggedPostsGrid userId={userId} /> },
+], [userId]);
 
-// After - styled pill with background
-<div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-  <div className={cn(
-    "flex items-center gap-1.5 px-2.5 py-1 rounded-full",
-    "bg-gradient-to-r shadow-sm",
-    post.rating >= 8 ? "from-green-50 to-green-100/80 dark:from-green-900/30 dark:to-green-800/20" :
-    post.rating >= 5 ? "from-amber-50 to-orange-100/80 dark:from-amber-900/30 dark:to-amber-800/20" :
-    "from-red-50 to-red-100/80 dark:from-red-900/30 dark:to-red-800/20"
-  )}>
+// Replace renderTabContent() with:
+<SwipeableTabContent
+  tabs={tabsConfig}
+  activeTab={activeTab}
+  onTabChange={setActiveTab}
+  enabled={isMobile}
+/>
 ```
 
-**Caption styling (line ~498):**
-```jsx
-// Before
-<p className="text-sm text-foreground text-left">
+#### 4. Add Tab Bar Hide-on-Scroll
 
-// After
-<p className="text-sm text-foreground/90 text-left leading-relaxed mt-1.5">
+**File: `src/components/UserProfilePage.tsx`**
+
+Add import and hook:
+```jsx
+import { useScrollHide } from '@/hooks/useScrollHide';
+
+// Inside component:
+const { hidden: tabsHidden, setScrollContainer, resetHidden } = useScrollHide({ 
+  threshold: 50, 
+  enabled: isMobile 
+});
 ```
+
+Wrap ProfileTabs with animated container:
+```jsx
+<div 
+  className="will-change-transform overflow-hidden"
+  style={{
+    transform: tabsHidden ? 'translateY(-100%)' : 'translateY(0)',
+    maxHeight: tabsHidden ? 0 : 60,
+    opacity: tabsHidden ? 0 : 1,
+    marginBottom: tabsHidden ? -8 : 0,
+    transition: 'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), ...',
+  }}
+>
+  <ProfileTabs activeTab={activeTab} onTabChange={handleTabChange} />
+</div>
+```
+
+#### 5. Hide Coins in Achievements for Other Users
+
+The code already passes `hideCoins={!isOwnProfile}` to the Achievements component in the badges modal (line 587). However, when showing Achievements in the tab content, it doesn't pass this prop.
+
+**File: `src/components/UserProfilePage.tsx`**
+
+Update the tab content to consistently hide coins:
+```jsx
+// In tabsConfig:
+{ key: 'badges', content: <Achievements userId={userId} hideCoins /> }
+```
+
+---
+
+### Files to Modify
+
+1. **`src/components/UserProfilePage.tsx`** - Main refactor:
+   - Add imports for `SwipeableTabContent`, `useIsMobile`, `useScrollHide`, `useMemo`, `useCallback`
+   - Update stats layout to horizontal
+   - Update category cards styling to glass effect
+   - Add `tabsConfig` with `useMemo`
+   - Replace tab content with `SwipeableTabContent`
+   - Add scroll-hide functionality for tabs
+   - Ensure `hideCoins` is passed to Achievements in all contexts
 
 ---
 
 ### Expected Outcome
 
 After these changes:
-- Cards will have premium depth with subtle gradients and shadows
-- Larger thumbnails (56px) will showcase location photos better
-- Rating badges will be more prominent with color-coded backgrounds
-- Better typography hierarchy makes content scannable
-- Smooth micro-interactions on tap/hover
-- Overall more polished, app-like feel
+- Stats will display horizontally (matching own profile)
+- Category cards will have modern glass styling
+- Users can swipe between tabs (Posts, Trips, Badges, Tagged)
+- Tab bar will hide when scrolling through content
+- Coins will be hidden when viewing other users' achievements
+- Consistent visual and functional parity with ProfilePage
 
