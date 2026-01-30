@@ -1,110 +1,99 @@
 
-# Reduce Vertical Spacing & Fix iOS-Style Hide-on-Scroll
+# Logo Animation & Feed UI Integration Plan
 
 ## Overview
-This plan fixes two issues:
-1. Too much vertical blank space between the three profile sections (stats cards, tabs, filter bar)
-2. The hide-on-scroll for ProfileTabs doesn't work smoothly in iOS style
+This plan addresses two issues:
+1. The search bar branding logo slides too quickly (currently 2.5s, needs to be slower)
+2. Posts and reviews in the feed have stark white backgrounds that clash with the warm frosted glass aesthetic (`#F5F1EA`)
 
 ---
 
-## Issue 1: Reduce Vertical Spacing
+## Change 1: Slower Logo Animation
 
-### Current Spacing Analysis
-Looking at the image, excessive spacing comes from:
-- `ProfileHeader`: `pt-1 pb-2` (bottom padding)
-- `ProfileTabs`: `px-3 mb-4` (4 units = 16px bottom margin)
-- `PostsGrid` sticky filter: `pb-3 pt-2` (top and bottom padding)
+**Current State:**
+- Animation duration: 2500ms (2.5 seconds)
+- Initial delay: 500ms
 
-### Solution
-Reduce padding/margins at each level:
+**New State:**
+- Animation duration: 4000ms (4 seconds) — 60% slower, creating a more elegant reveal
+- Initial delay: 800ms — slightly longer pause before slide begins
 
-| Component | Current | New |
-|-----------|---------|-----|
-| ProfileHeader | `pb-2` | `pb-1` |
-| ProfileTabs | `mb-4` | `mb-2` |
-| PostsGrid sticky filter | `pb-3 pt-2` | `pb-2 pt-1` |
+**File:** `src/components/home/SearchDrawer.tsx`
+
+---
+
+## Change 2: Integrated Feed Post Styling
+
+The goal is to make posts feel like they belong on the frosted glass background rather than floating on stark white cards.
+
+### Option A: Glassmorphism Card Style (Recommended)
+Transform post cards to use semi-transparent backgrounds with subtle borders, matching the `UserVisitedCard` which already uses:
+```
+bg-white/60 dark:bg-white/10 backdrop-blur-md 
+border border-white/40 dark:border-white/20 
+rounded-xl shadow-lg shadow-black/5
+```
+
+This creates a cohesive "floating glass" aesthetic across the entire feed.
+
+### Visual Comparison
+
+| Current | Proposed |
+|---------|----------|
+| Solid white `bg-background` | Semi-transparent `bg-white/70 dark:bg-white/10` |
+| No blur effect | `backdrop-blur-sm` for subtle depth |
+| Sharp contrast with page | Soft border `border-white/40` |
+| No rounding | Rounded corners `rounded-2xl` with shadow |
 
 ### Files to Modify
-- `src/components/profile/ProfileHeader.tsx` - Line 179: `pb-2` → `pb-1`
-- `src/components/profile/ProfileTabs.tsx` - Line 27: `mb-4` → `mb-2`
-- `src/components/profile/PostsGrid.tsx` - Line 240: `pb-3 pt-2` → `pb-2 pt-1`
+
+**1. FeedPostItem.tsx** (main feed posts)
+- Change `bg-background` to glassmorphism styling
+- Add subtle margin for card separation
+- Add rounded corners and soft shadow
+
+**2. FeedPostSkeleton.tsx** (loading state)
+- Match the glassmorphism styling of actual posts
+- Keep shimmer animation intact
+
+**3. FeedListsCarousel.tsx** (Lists section)
+- Add subtle section background using glassmorphism card wrapper
+- Creates visual separation while maintaining the frosted aesthetic
 
 ---
 
-## Issue 2: Fix iOS-Style Hide-on-Scroll
+## Technical Implementation
 
-### Root Cause
-The current implementation attaches scroll listeners to wrapper divs defined in `tabsConfig`. However, these divs are placed inside `SwipeableTabContent` which uses a flex layout with `overflow-hidden`. The actual scrollable area is the `PostsGrid` or other tab content's inner container.
-
-The issue is that:
-1. The wrapper div with `overflow-y-auto` is there, but scroll events may not propagate correctly
-2. The `useScrollHide` hook updates are not smooth because the transition uses CSS properties that cause layout recalculations
-
-### Solution
-Create a smoother, more native iOS-like animation by:
-
-1. **Use CSS `will-change` and GPU-accelerated transforms** - Make the hide/show transition smoother
-2. **Improve scroll handling** - Add better debouncing and smoother state transitions
-3. **Use spring-like easing** - Match iOS's natural deceleration curve
-
-### Technical Changes
-
-**ProfilePage.tsx Animation Container**
-Replace the current inline styles with optimized GPU-accelerated animation:
-
+### FeedPostItem Changes
 ```tsx
-<div 
-  className={cn(
-    "will-change-transform transition-all duration-200",
-    tabsHidden ? "opacity-0 -translate-y-full h-0 overflow-hidden" : "opacity-100 translate-y-0"
-  )}
-  style={{
-    transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', // iOS spring curve
-  }}
->
-  <ProfileTabs ... />
+// Before (line 287)
+className="post-compact bg-background"
+
+// After
+className="post-compact bg-white/70 dark:bg-zinc-900/70 
+           backdrop-blur-sm mx-4 my-3 rounded-2xl 
+           border border-white/40 dark:border-white/20 
+           shadow-sm overflow-hidden"
+```
+
+### FeedPostSkeleton Changes
+```tsx
+// Match the glassmorphism styling
+<article className="post-compact bg-white/70 dark:bg-zinc-900/70 
+                    backdrop-blur-sm mx-4 my-3 rounded-2xl 
+                    border border-white/40 dark:border-white/20 
+                    shadow-sm overflow-hidden">
+```
+
+### FeedListsCarousel Section Wrapper
+```tsx
+// Wrap in a glassmorphism container
+<div className="mx-4 my-3 py-4 bg-white/60 dark:bg-zinc-900/60 
+                backdrop-blur-sm rounded-2xl 
+                border border-white/40 dark:border-white/20">
+  {/* Existing content */}
 </div>
 ```
-
-**useScrollHide.ts Improvements**
-1. Add velocity-based hiding (smoother detection)
-2. Use smaller delta threshold (2px instead of 5px)
-3. Add hysteresis to prevent jitter
-4. Debounce state updates
-
-```typescript
-// Track velocity for smoother detection
-const velocityRef = useRef(0);
-const lastTimeRef = useRef(Date.now());
-
-const handleScroll = useCallback(() => {
-  const container = scrollContainerRef.current;
-  if (!container) return;
-
-  const currentScrollY = container.scrollTop;
-  const currentTime = Date.now();
-  const timeDelta = currentTime - lastTimeRef.current;
-  
-  // Calculate velocity (px/ms)
-  const velocity = (currentScrollY - lastScrollY.current) / Math.max(timeDelta, 1);
-  velocityRef.current = velocity;
-  
-  // Smoother threshold-based detection
-  if (velocity > 0.3 && currentScrollY > threshold) {
-    setHidden(true);
-  } else if (velocity < -0.2 || currentScrollY < 20) {
-    setHidden(false);
-  }
-  
-  lastScrollY.current = currentScrollY;
-  lastTimeRef.current = currentTime;
-}, [threshold]);
-```
-
-### Files to Modify
-- `src/hooks/useScrollHide.ts` - Improve scroll detection with velocity
-- `src/components/ProfilePage.tsx` - Use GPU-accelerated transitions with iOS easing
 
 ---
 
@@ -112,8 +101,15 @@ const handleScroll = useCallback(() => {
 
 | File | Change |
 |------|--------|
-| `ProfileHeader.tsx` | Reduce `pb-2` → `pb-1` |
-| `ProfileTabs.tsx` | Reduce `mb-4` → `mb-2` |
-| `PostsGrid.tsx` | Reduce sticky filter padding `pb-3 pt-2` → `pb-2 pt-1` |
-| `useScrollHide.ts` | Add velocity-based detection for smoother behavior |
-| `ProfilePage.tsx` | Use GPU-accelerated transforms with iOS spring curve |
+| `SearchDrawer.tsx` | Increase animation duration from 2500ms → 4000ms, delay from 500ms → 800ms |
+| `FeedPostItem.tsx` | Replace `bg-background` with glassmorphism card styling |
+| `FeedPostSkeleton.tsx` | Match glassmorphism styling for loading states |
+| `FeedListsCarousel.tsx` | Wrap section in glassmorphism container for visual cohesion |
+
+---
+
+## Visual Result
+- Posts will appear as floating glass cards on the warm frosted background
+- Consistent aesthetic with `UserVisitedCard` which already uses this style
+- The "Liste per te" section will have a subtle glass container
+- Logo animation will feel more elegant and deliberate
