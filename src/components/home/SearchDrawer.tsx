@@ -17,6 +17,7 @@ import { searchNearbyByCategory, type NearbySearchResult, type NearbyPrompt as N
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 import { useOptimizedPlacesSearch, type SearchResult } from '@/hooks/useOptimizedPlacesSearch';
+import spottLogoColorful from '@/assets/spott-logo-colorful.png';
 
 interface PopularSpot {
   id: string;
@@ -87,6 +88,7 @@ interface SearchDrawerProps {
   onDrawerStateChange?: (isOpen: boolean) => void;
   registerReopenTrending?: (reopenFn: () => void) => void;
   registerCloseDrawer?: (closeFn: () => void) => void;
+  showBrandingLogo?: boolean;
 }
 
 // Nearby prompts - main categories + subcategories with emojis
@@ -139,6 +141,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   onDrawerStateChange,
   registerReopenTrending,
   registerCloseDrawer,
+  showBrandingLogo = false,
 }) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -156,6 +159,19 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
   const [isLoading, setIsLoading] = useState(false);
   const [internalQuery, setInternalQuery] = useState('');
+  
+  // Branding logo visibility - show for a few seconds on mount
+  const [showLogoInBar, setShowLogoInBar] = useState(showBrandingLogo);
+  
+  useEffect(() => {
+    if (showBrandingLogo) {
+      setShowLogoInBar(true);
+      const timer = setTimeout(() => {
+        setShowLogoInBar(false);
+      }, 3000); // Show logo for 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [showBrandingLogo]);
   
   // Drag state (Pointer Events for reliable mobile swipe)
   const [dragProgress, setDragProgress] = useState(0);
@@ -992,31 +1008,44 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             onTouchCancel={handleTouchEnd}
           />
           <div className="relative flex items-center h-12 pointer-events-none">
-            {/* Left area - pin + city name */}
-            <div className="h-full pl-4 flex items-center flex-1">
-              <span className="text-lg leading-none">🔎</span>
-              <span className="ml-3 text-base font-medium text-white dark:text-gray-900 leading-none">
-                {currentCity || t('searchCities', { ns: 'home' })}
-              </span>
-            </div>
+            {showLogoInBar ? (
+              /* Branding logo - centered in bar */
+              <div className="w-full flex items-center justify-center">
+                <img 
+                  src={spottLogoColorful} 
+                  alt="SPOTT" 
+                  className="h-8 w-auto animate-pulse"
+                />
+              </div>
+            ) : (
+              <>
+                {/* Left area - pin + city name */}
+                <div className="h-full pl-4 flex items-center flex-1">
+                  <span className="text-lg leading-none">🔎</span>
+                  <span className="ml-3 text-base font-medium text-white dark:text-gray-900 leading-none">
+                    {currentCity || t('searchCities', { ns: 'home' })}
+                  </span>
+                </div>
 
-            {/* Repositioning button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCurrentLocation(e);
-              }}
-              disabled={geoLoading}
-              className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50 pointer-events-auto"
-              aria-label={t('currentLocation', { ns: 'common' })}
-            >
-              <Navigation2
-                className={cn(
-                  "w-5 h-5 transition-colors rotate-45",
-                  isCenteredOnUser ? 'text-blue-400 fill-blue-400' : 'text-blue-400'
-                )}
-              />
-            </button>
+                {/* Repositioning button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCurrentLocation(e);
+                  }}
+                  disabled={geoLoading}
+                  className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50 pointer-events-auto"
+                  aria-label={t('currentLocation', { ns: 'common' })}
+                >
+                  <Navigation2
+                    className={cn(
+                      "w-5 h-5 transition-colors rotate-45",
+                      isCenteredOnUser ? 'text-blue-400 fill-blue-400' : 'text-blue-400'
+                    )}
+                  />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

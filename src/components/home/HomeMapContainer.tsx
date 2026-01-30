@@ -25,6 +25,7 @@ interface HomeMapContainerProps {
   registerCloseSelectedPlace?: (closeFn: () => void) => void;
   onMapCenterChange?: (center: { lat: number; lng: number }) => void;
   registerReopenSearchDrawer?: (reopenFn: () => void) => void;
+  showBrandingLogo?: boolean;
 }
 
 const HomeMapContainer = memo((props: HomeMapContainerProps) => {
@@ -45,6 +46,7 @@ const HomeMapContainer = memo((props: HomeMapContainerProps) => {
     registerCloseSelectedPlace,
     onMapCenterChange,
     registerReopenSearchDrawer,
+    showBrandingLogo,
     ...mapProps
   } = props;
   
@@ -71,6 +73,7 @@ const HomeMapContainer = memo((props: HomeMapContainerProps) => {
         registerCloseSelectedPlace={registerCloseSelectedPlace}
         onMapCenterChange={onMapCenterChange}
         registerReopenSearchDrawer={registerReopenSearchDrawer}
+        showBrandingLogo={showBrandingLogo}
       />
     </div>
   );

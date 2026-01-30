@@ -9,7 +9,7 @@ import ModalsManager from './home/ModalsManager';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchOnboardingStatus, fetchLocationById } from '@/lib/coalescedFetchers';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
-import SpottLogo from './common/SpottLogo';
+
 import OnboardingModal from './onboarding/OnboardingModal';
 import GuidedTour, { GuidedTourStep } from './onboarding/GuidedTour';
 import { Geolocation } from "@capacitor/geolocation";
@@ -838,6 +838,7 @@ const HomePage = memo(() => {
                   setMapCenter(center);
                 }}
                 registerReopenSearchDrawer={(fn) => { reopenSearchDrawerRef.current = fn; }}
+                showBrandingLogo={showLogo}
               />
             </Suspense>
           </div>
@@ -965,8 +966,7 @@ const HomePage = memo(() => {
         }}
       />
 
-      {/* Spott Logo on app launch */}
-      <SpottLogo showOnMount={showLogo} duration={4000} />
+      {/* Branding logo now rendered inside SearchDrawer */}
       
       {/* Add Page Overlay and Contribution Modal moved to AuthenticatedLayout */}
       </div>
