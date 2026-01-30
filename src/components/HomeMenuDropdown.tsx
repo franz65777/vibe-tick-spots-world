@@ -54,7 +54,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               onClose();
             }}
             className={cn(
-              "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200",
+              "flex items-center gap-2.5 px-3 py-2 rounded-full transition-all duration-200",
               "bg-white dark:bg-zinc-900",
               "shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
               "dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)]",
@@ -65,8 +65,8 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
             }}
             tabIndex={isOpen ? 0 : -1}
           >
-            <img src={option.icon} alt="" className="w-8 h-8 object-contain" loading="eager" />
-            <span className="font-semibold text-base whitespace-nowrap text-foreground pr-2">
+            <img src={option.icon} alt="" className="w-6 h-6 object-contain" loading="eager" />
+            <span className="font-medium text-sm whitespace-nowrap text-foreground pr-1">
               {option.label}
             </span>
           </button>
