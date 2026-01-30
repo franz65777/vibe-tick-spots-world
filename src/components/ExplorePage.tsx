@@ -453,30 +453,27 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
   
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
-      {/* Warm off-white background with vertical gradient and vignette */}
-      <div className="absolute inset-0 z-0 bg-[#F7F3EC]">
+      {/* Multi-layer background - unified frosted glass effect */}
+      <div className="absolute inset-0 z-0">
+        {/* Warm base */}
+        <div className="absolute inset-0 bg-[#F7F3EC] dark:bg-background" />
         {/* Subtle vertical gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3]" />
-        {/* Faint vignette effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)]" />
-        {/* Subtle grain/noise overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3] dark:from-background dark:via-background dark:to-background" />
+        {/* Faint vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)] dark:opacity-50" />
+        {/* Frosted glass overlay */}
+        <div className="absolute inset-0 bg-white/40 dark:bg-background/60 backdrop-blur-xl" />
+        {/* Subtle grain/noise */}
         <div 
-          className="absolute inset-0 opacity-[0.03] mix-blend-multiply pointer-events-none"
+          className="absolute inset-0 opacity-[0.025] mix-blend-multiply pointer-events-none"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
       </div>
-      {/* Dark mode fallback */}
-      <div className="absolute inset-0 z-0 hidden dark:block bg-background" />
       
-      {/* Glass container card */}
-      <div className="relative z-10 flex flex-col h-full mx-3 my-2 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/30">
-        {/* Glass effect background */}
-        <div className="absolute inset-0 bg-white/55 dark:bg-background/70 backdrop-blur-[20px] backdrop-saturate-[1.2]" />
-        
-        {/* Content wrapper */}
-        <div className="relative z-10 flex flex-col h-full">
+      {/* Content - directly on z-10 */}
+      <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
@@ -736,7 +733,6 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
           navigate('/');
         }}
       />
-        </div>
       </div>
     </div>
   );
