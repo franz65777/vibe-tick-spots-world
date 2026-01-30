@@ -119,6 +119,16 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Listen for close-add-overlay event from LocationContributionModal
+  useEffect(() => {
+    const handleCloseAddOverlay = () => {
+      onClose();
+    };
+    
+    window.addEventListener('close-add-overlay', handleCloseAddOverlay);
+    return () => window.removeEventListener('close-add-overlay', handleCloseAddOverlay);
+  }, [onClose]);
+
   // Cleanup on unmount only
   useEffect(() => {
     return () => {

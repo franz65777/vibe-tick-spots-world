@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Camera, Plus, ChevronRight, ChevronDown, Lock, FolderPlus, Link as LinkIcon, Video } from 'lucide-react';
+import { X, Camera, Plus, ChevronRight, ChevronDown, Lock, FolderPlus, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
@@ -136,7 +136,6 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const [descriptionText, setDescriptionText] = useState('');
   const [userFolders, setUserFolders] = useState<UserFolder[]>([]);
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
-  const [folderNotes, setFolderNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [foldersLoading, setFoldersLoading] = useState(true);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
@@ -259,7 +258,6 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       setSelectedPhotos([]);
       setDescriptionText('');
       setSelectedFolders(new Set());
-      setFolderNotes({});
       setShowAllPhotos(false);
       setRating(undefined);
       clearPhotos();
@@ -458,6 +456,11 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
       toast.success(t('contributionSaved', { ns: 'explore', defaultValue: 'Saved!' }));
       onSuccess?.();
       onClose();
+      
+      // Close add page and return to map if sharing content
+      if (isSharing) {
+        window.dispatchEvent(new CustomEvent('close-add-overlay'));
+      }
     } catch (error) {
       console.error('Error saving contribution:', error);
       toast.error(t('saveFailed', { ns: 'explore', defaultValue: 'Failed to save. Please try again.' }));
@@ -632,35 +635,49 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           </div>
         </div>
 
-        {/* Already in Lists Section - Outside collapsible */}
+        {/* Already in Lists Section - Outside collapsible, styled like Best night out in Dublin */}
         {userFolders.filter(f => f.hasLocation).length > 0 && (
           <div className="px-4 py-3 border-b border-border/30">
-            <div className="text-sm font-medium text-muted-foreground mb-2">
-              {t('alreadySavedIn', { ns: 'explore', defaultValue: 'already saved in' })}
-            </div>
             <div className="space-y-2">
               {userFolders.filter(f => f.hasLocation).map((folder) => (
                 <div
                   key={folder.id}
                   className="flex items-center gap-3 p-2 rounded-xl bg-primary/10 border border-primary/30"
                 >
-                  {/* Folder Cover */}
+                  {/* Folder Cover - matching Dublin style */}
                   <div
-                    className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0"
-                    style={{
-                      background: folder.cover_url
-                        ? `url(${folder.cover_url}) center/cover`
-                        : `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
+                    className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative"
+                  >
+                    {folder.cover_url ? (
+                      <img 
+                        src={folder.cover_url} 
+                        alt={folder.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div 
+                        className="w-full h-full"
+                        style={{
+                          background: `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
                             folder.color ? folder.color + '99' : '#60a5fa'
                           })`,
-                    }}
-                  />
+                        }}
+                      >
+                        <div className="w-full h-full bg-gradient-to-t from-black/50 p-2 flex flex-col justify-end">
+                          <span className="text-white text-[10px] font-medium line-clamp-2">
+                            {folder.name}
+                          </span>
+                          {folder.icon && <span className="text-xs">{folder.icon}</span>}
+                          <span className="text-white/70 text-[9px]">
+                            {folder.location_count || 0} {t('places', { ns: 'common', defaultValue: 'places' })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      {folder.is_private && <Lock className="w-3 h-3 text-muted-foreground" />}
-                      <span className="text-sm font-medium truncate">{folder.name}</span>
-                    </div>
-                    <span className="text-xs text-primary">{t('alreadyInList', { ns: 'explore', defaultValue: 'already in this list' })}</span>
+                    <span className="text-sm font-semibold truncate block">{folder.name}</span>
+                    <span className="text-xs text-primary">{t('alreadyInList', { ns: 'explore', defaultValue: 'già in questa lista' })}</span>
                   </div>
                   <Checkbox
                     checked={selectedFolders.has(folder.id)}
@@ -724,73 +741,65 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {userFolders.filter(f => !f.hasLocation).map((folder) => {
                     const isSelected = selectedFolders.has(folder.id);
                     return (
                       <div
                         key={folder.id}
+                        onClick={() => toggleFolderSelection(folder.id)}
                         className={cn(
-                          'flex gap-3 p-3 rounded-2xl transition-all',
+                          'flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer',
                           isSelected
                             ? 'bg-primary/10 border border-primary/30'
                             : 'bg-muted/30 border border-border/30'
                         )}
                       >
-                        {/* Folder Cover */}
-                        <div
-                          className="w-16 h-20 rounded-xl overflow-hidden flex-shrink-0"
-                          style={{
-                            background: folder.cover_url
-                              ? `url(${folder.cover_url}) center/cover`
-                              : `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
+                        {/* Folder Cover - simplified style */}
+                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative">
+                          {folder.cover_url ? (
+                            <img 
+                              src={folder.cover_url} 
+                              alt={folder.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div 
+                              className="w-full h-full"
+                              style={{
+                                background: `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
                                   folder.color ? folder.color + '99' : '#60a5fa'
                                 })`,
-                          }}
-                        >
-                          <div className="w-full h-full bg-gradient-to-t from-black/50 p-2 flex flex-col justify-end">
-                            <span className="text-white text-[10px] font-medium line-clamp-2">
-                              {folder.name}
-                            </span>
-                            <span className="text-white/70 text-[9px]">
-                              {folder.location_count || 0} {t('places', { ns: 'common', defaultValue: 'places' })}
-                            </span>
-                          </div>
+                              }}
+                            >
+                              <div className="w-full h-full bg-gradient-to-t from-black/50 p-2 flex flex-col justify-end">
+                                <span className="text-white text-[10px] font-medium line-clamp-2">
+                                  {folder.name}
+                                </span>
+                                {folder.icon && <span className="text-xs">{folder.icon}</span>}
+                                <span className="text-white/70 text-[9px]">
+                                  {folder.location_count || 0} {t('places', { ns: 'common', defaultValue: 'places' })}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Folder Details */}
+                        {/* Folder Name and Privacy */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
                             {folder.is_private && <Lock className="w-3 h-3" />}
                             <span>{folder.is_private ? t('private', { defaultValue: 'private' }) : t('public', { defaultValue: 'public' })}</span>
                           </div>
-
-                          <input
-                            placeholder={t('addANote', { ns: 'explore', defaultValue: 'add a note' })}
-                            value={folderNotes[folder.id] || ''}
-                            onChange={(e) =>
-                              setFolderNotes((prev) => ({
-                                ...prev,
-                                [folder.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full text-sm bg-transparent border-b border-border/50 py-1 outline-none placeholder:text-muted-foreground/50"
-                          />
-
-                          <button className="flex items-center gap-1 text-xs text-muted-foreground mt-2 hover:text-foreground transition-colors">
-                            <LinkIcon className="w-3 h-3" />
-                            <span>{t('addLink', { defaultValue: 'add a link' })}</span>
-                          </button>
+                          <span className="text-sm font-semibold truncate block">{folder.name}</span>
                         </div>
 
                         {/* Checkbox */}
-                        <div className="flex items-center">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleFolderSelection(folder.id)}
-                            className="w-5 h-5"
-                          />
-                        </div>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleFolderSelection(folder.id)}
+                          className="w-5 h-5"
+                        />
                       </div>
                     );
                   })}
