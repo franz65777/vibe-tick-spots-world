@@ -8,6 +8,8 @@ export interface FollowUser {
   avatar_url: string | null;
   isFollowing: boolean;
   savedPlacesCount: number;
+  isPrivate: boolean;
+  followRequestPending: boolean;
 }
 
 /**
@@ -46,8 +48,8 @@ export const useFollowList = (
 
       const userIds = users.map((u: any) => u.id);
 
-      // 2. Parallel fetch: saved places counts + following status (all at once)
-      const [savedPlacesResult, userSavedLocsResult, followingStatusResult] = await Promise.all([
+      // 2. Parallel fetch: saved places counts + following status + privacy + pending requests
+      const [savedPlacesResult, userSavedLocsResult, followingStatusResult, privacyResult, pendingRequestsResult] = await Promise.all([
         supabase.from('saved_places').select('user_id').in('user_id', userIds),
         supabase.from('user_saved_locations').select('user_id').in('user_id', userIds),
         currentUser 
@@ -56,6 +58,18 @@ export const useFollowList = (
               .select('following_id')
               .eq('follower_id', currentUser.id)
               .in('following_id', userIds)
+          : Promise.resolve({ data: [] }),
+        supabase
+          .from('user_privacy_settings')
+          .select('user_id, is_private')
+          .in('user_id', userIds),
+        currentUser
+          ? supabase
+              .from('friend_requests')
+              .select('requested_id')
+              .eq('requester_id', currentUser.id)
+              .eq('status', 'pending')
+              .in('requested_id', userIds)
           : Promise.resolve({ data: [] }),
       ]);
 
@@ -72,12 +86,25 @@ export const useFollowList = (
         (followingStatusResult.data || []).map((f: any) => f.following_id)
       );
 
+      // Privacy status map
+      const privacyMap = new Map<string, boolean>();
+      (privacyResult.data || []).forEach((p: any) => {
+        privacyMap.set(p.user_id, p.is_private ?? false);
+      });
+
+      // Pending requests set
+      const pendingRequestsSet = new Set(
+        (pendingRequestsResult.data || []).map((r: any) => r.requested_id)
+      );
+
       return users.map((u: any) => ({
         id: u.id,
         username: u.username || 'User',
         avatar_url: u.avatar_url,
         isFollowing: followingSet.has(u.id),
         savedPlacesCount: savedCounts.get(u.id) || 0,
+        isPrivate: privacyMap.get(u.id) ?? false,
+        followRequestPending: pendingRequestsSet.has(u.id),
       }));
     },
     enabled: enabled && !!userId,

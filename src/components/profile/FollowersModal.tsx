@@ -1,4 +1,4 @@
-import { ArrowLeft, Search, MapPin, X, Check, UserPlus } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, X, Check, UserPlus, Clock } from 'lucide-react';
 import { haptics } from '@/utils/haptics';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,11 +11,14 @@ import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
-import { useFollowList } from '@/hooks/useFollowList';
+import { useFollowList, FollowUser } from '@/hooks/useFollowList';
 import { useQueryClient } from '@tanstack/react-query';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
+import { UnfollowConfirmDialog } from './UnfollowConfirmDialog';
+import { RemoveFollowerConfirmDialog } from './RemoveFollowerConfirmDialog';
+import { toast } from 'sonner';
 
 interface FollowersModalProps {
   isOpen: boolean;
@@ -31,6 +34,8 @@ interface UserWithFollowStatus {
   avatar_url: string | null;
   isFollowing?: boolean;
   savedPlacesCount?: number;
+  isPrivate?: boolean;
+  followRequestPending?: boolean;
 }
 
 type TabType = 'mutuals' | 'following' | 'followers';
@@ -78,6 +83,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    type: 'unfollow' | 'remove-follower' | null;
+    user: UserWithFollowStatus | null;
+  }>({ type: null, user: null });
   
   // Use optimized React Query hooks for data fetching
   const { 
@@ -194,11 +205,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  const unfollowUser = async (targetId: string) => {
+  // Unfollow but keep user in the list (for Following tab)
+  const unfollowUserKeepInList = async (targetId: string) => {
     if (!currentUser) return;
 
     try {
-      // Optimistic update
+      // Optimistic update - only update isFollowing status, don't remove from list
       updateFollowerStatus(targetId, false);
       updateFollowingStatus(targetId, false);
       
@@ -215,10 +227,46 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         console.error('Error unfollowing user:', error);
       } else {
         onFollowChange?.();
-        queryClient.invalidateQueries({ queryKey: ['follow-list'] });
+        // Don't invalidate cache immediately to keep user visible in list
       }
     } catch (error) {
       console.error('Error unfollowing user:', error);
+    }
+  };
+
+  // Send follow request for private profiles
+  const sendFollowRequest = async (targetId: string) => {
+    if (!currentUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('friend_requests')
+        .insert({
+          requester_id: currentUser.id,
+          requested_id: targetId,
+          status: 'pending',
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          // Duplicate request
+          toast.info(t('userProfile.requestAlreadySent', { ns: 'common', defaultValue: 'Richiesta già inviata' }));
+        } else {
+          console.error('Error sending follow request:', error);
+          toast.error(t('userProfile.requestFailed', { ns: 'common', defaultValue: 'Errore nell\'invio della richiesta' }));
+        }
+        return;
+      }
+
+      // Update local state to show pending icon
+      queryClient.setQueryData<FollowUser[]>(
+        ['follow-list', targetUserId, 'following'],
+        (old) => old?.map(u => u.id === targetId ? { ...u, followRequestPending: true } : u)
+      );
+      
+      toast.success(t('userProfile.requestSent', { ns: 'common', defaultValue: 'Richiesta inviata' }));
+    } catch (error) {
+      console.error('Error sending follow request:', error);
     }
   };
 
@@ -309,11 +357,28 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       setTimeout(() => setIsAnimating(false), 200);
       
       if (isOwnProfile && activeTab === 'followers') {
-        await removeFollower(user.id);
+        // Remove follower - always show confirmation
+        setConfirmDialog({ type: 'remove-follower', user });
       } else if (user.isFollowing) {
-        await unfollowUser(user.id);
+        // Unfollow
+        if (user.isPrivate) {
+          // Private profile - show confirmation
+          setConfirmDialog({ type: 'unfollow', user });
+        } else {
+          // Public profile - unfollow directly but keep in list
+          await unfollowUserKeepInList(user.id);
+        }
+      } else if (user.followRequestPending) {
+        // Already has pending request - do nothing or show info
+        toast.info(t('userProfile.requestPending', { ns: 'common', defaultValue: 'Richiesta in attesa di approvazione' }));
       } else {
-        await followUser(user.id);
+        // Follow
+        if (user.isPrivate) {
+          // Private profile - send follow request (don't bypass)
+          await sendFollowRequest(user.id);
+        } else {
+          await followUser(user.id);
+        }
       }
     };
 
@@ -324,6 +389,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       }
       if (user.isFollowing) {
         return { icon: Check, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600' };
+      }
+      if (user.followRequestPending) {
+        return { icon: Clock, color: 'bg-amber-500', hoverColor: 'hover:bg-amber-600' };
       }
       return { icon: UserPlus, color: 'bg-primary', hoverColor: 'hover:bg-primary/90' };
     };
@@ -592,6 +660,34 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
           onStoryViewed={() => {}}
         />
       )}
+
+      {/* Unfollow Confirmation Dialog */}
+      <UnfollowConfirmDialog
+        isOpen={confirmDialog.type === 'unfollow' && !!confirmDialog.user}
+        onClose={() => setConfirmDialog({ type: null, user: null })}
+        onConfirm={async () => {
+          if (confirmDialog.user) {
+            await unfollowUserKeepInList(confirmDialog.user.id);
+          }
+          setConfirmDialog({ type: null, user: null });
+        }}
+        avatarUrl={confirmDialog.user?.avatar_url || null}
+        username={confirmDialog.user?.username || ''}
+      />
+
+      {/* Remove Follower Confirmation Dialog */}
+      <RemoveFollowerConfirmDialog
+        isOpen={confirmDialog.type === 'remove-follower' && !!confirmDialog.user}
+        onClose={() => setConfirmDialog({ type: null, user: null })}
+        onConfirm={async () => {
+          if (confirmDialog.user) {
+            await removeFollower(confirmDialog.user.id);
+          }
+          setConfirmDialog({ type: null, user: null });
+        }}
+        avatarUrl={confirmDialog.user?.avatar_url || null}
+        username={confirmDialog.user?.username || ''}
+      />
     </>
   );
 };
