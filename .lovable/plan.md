@@ -1,166 +1,167 @@
 
-# Piano: Miglioramento Pulsanti Segui/Rimuovi in Follower/Seguiti
 
-## Requisiti
+# Piano: Correzione UX Reload su Unfollow
 
-1. **Pagina Seguiti (Following Tab)**:
-   - Quando si smette di seguire qualcuno (click sul ✓ verde), **mantenere il profilo visibile** nella lista
-   - Cambiare l'icona da ✓ (verde) a + (blu) per permettere di seguire nuovamente
-   - Se il profilo è **privato**, mostrare dialogo di conferma prima di smettere di seguire
+## Problema Identificato
 
-2. **Pagina Follower (Followers Tab)**:
-   - Mostrare dialogo di conferma prima di rimuovere un follower
+Quando si clicca su "smetti di seguire" (unfollow), avviene questo flusso:
 
-3. **Profili Privati**:
-   - Quando si smette di seguire un profilo privato e si vuole ri-seguire, **non bypassare** il processo di accettazione
-   - L'utente deve inviare una nuova richiesta di follow che necessita approvazione
+1. **Optimistic update** → UI aggiornata istantaneamente (✓)
+2. **Query al database** → Dati salvati (✓)
+3. **`queryClient.invalidateQueries()`** → **PROBLEMA**: forza un refetch completo dei dati
+4. **Loading state** → La lista mostra lo skeleton/spinner mentre ricarica
+5. **Dati ricaricati** → La lista riappare
 
-## Analisi Tecnica
+Il problema è la chiamata a `invalidateQueries()` dopo ogni operazione, che annulla il beneficio dell'optimistic update.
 
-### Stato Attuale
-- `FollowersModal.tsx` non include informazione `is_private` per gli utenti nella lista
-- L'unfollow rimuove l'utente dalla lista (comportamento attuale non desiderato per la tab "following")
-- Non c'è dialogo di conferma per rimuovere follower
-- `UnfollowConfirmDialog.tsx` esiste già e può essere riutilizzato
-
-### Modifiche Necessarie
-
-**1. Estendere `useFollowList.ts` per includere `is_private`**
+## Posizioni del Problema nel Codice
 
 ```tsx
-export interface FollowUser {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-  isFollowing: boolean;
-  savedPlacesCount: number;
-  isPrivate: boolean;  // <- NUOVO
-}
+// Linea 201 - followUser
+queryClient.invalidateQueries({ queryKey: ['follow-list'] });
 
-// Nella queryFn, aggiungere fetch dei privacy settings
-const [savedPlacesResult, userSavedLocsResult, followingStatusResult, privacyResult] = await Promise.all([
-  // ... existing queries ...
-  supabase
-    .from('user_privacy_settings')
-    .select('user_id, is_private')
-    .in('user_id', userIds),
-]);
-
-// Creare Map per privacy
-const privacyMap = new Map<string, boolean>();
-(privacyResult.data || []).forEach((p: any) => {
-  privacyMap.set(p.user_id, p.is_private ?? false);
-});
-
-// Nel return
-return users.map((u: any) => ({
-  // ... existing fields ...
-  isPrivate: privacyMap.get(u.id) ?? false,
-}));
+// Linea 285 - removeFollower  
+queryClient.invalidateQueries({ queryKey: ['follow-list'] });
 ```
 
-**2. Creare `RemoveFollowerConfirmDialog.tsx`**
+La funzione `unfollowUserKeepInList` (linea 209-235) **NON** chiama `invalidateQueries` ed è corretta. Però le altre funzioni lo fanno.
 
-Nuovo componente simile a `UnfollowConfirmDialog` ma con testo specifico per la rimozione follower:
+## Soluzione
+
+### 1. Rimuovere `invalidateQueries` dalle operazioni dirette
+
+Le operazioni follow/unfollow/remove già fanno optimistic updates. Non serve invalidare la cache immediatamente.
 
 ```tsx
-// src/components/profile/RemoveFollowerConfirmDialog.tsx
-interface RemoveFollowerConfirmDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  avatarUrl: string | null;
-  username: string;
+// Prima (followUser, linea 199-201):
+} else {
+  onFollowChange?.();
+  queryClient.invalidateQueries({ queryKey: ['follow-list'] });
 }
 
-export const RemoveFollowerConfirmDialog: React.FC<RemoveFollowerConfirmDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  avatarUrl,
-  username,
-}) => {
-  const { t } = useTranslation();
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[2100] flex items-center justify-center px-6" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-sm bg-background rounded-3xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-col items-center pt-8 pb-6 px-6">
-          <Avatar className="w-20 h-20 border-2 border-background mb-4">
-            <AvatarImage src={avatarUrl || undefined} alt={username} />
-            <AvatarFallback>{username?.substring(0, 2).toUpperCase() || 'U'}</AvatarFallback>
-          </Avatar>
-          <p className="text-center text-foreground text-base leading-relaxed">
-            {t('userProfile.removeFollowerConfirmMessage', { 
-              ns: 'common',
-              username: username,
-              defaultValue: `Vuoi rimuovere ${username} dai tuoi follower?`
-            })}
-          </p>
-        </div>
-        
-        <div className="px-6 pb-6 flex flex-col gap-3">
-          <button onClick={onConfirm} className="w-full py-3.5 bg-destructive/10 text-destructive font-semibold text-base rounded-2xl">
-            {t('userProfile.removeFollower', { ns: 'common', defaultValue: 'Rimuovi' })}
-          </button>
-          <button onClick={onClose} className="w-full py-3.5 bg-muted text-foreground font-medium text-base rounded-2xl">
-            {t('userProfile.cancel', { ns: 'common' })}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+// Dopo:
+} else {
+  onFollowChange?.();
+  // Non invalidare - l'optimistic update è sufficiente
+  // Il refetch avverrà automaticamente quando staleTime scade
+}
 ```
 
-**3. Modificare `FollowersModal.tsx`**
-
-Aggiungere stato per dialog di conferma e modificare logica:
+### 2. Rimuovere `invalidateQueries` da `removeFollower`
 
 ```tsx
-// Nuovi stati
-const [confirmDialog, setConfirmDialog] = useState<{
-  type: 'unfollow' | 'remove-follower' | null;
-  user: UserWithFollowStatus | null;
-}>({ type: null, user: null });
+// Prima (linea 282-285):
+if (!error) {
+  removeFollowerFromList(followerId);
+  setFollowersCount(prev => Math.max(0, prev - 1));
+  onFollowChange?.();
+  queryClient.invalidateQueries({ queryKey: ['follow-list'] });
+}
 
-// In UserGridCard, modificare handleActionClick
-const handleActionClick = async (e: React.MouseEvent) => {
-  e.stopPropagation();
-  haptics.selection();
-  setIsAnimating(true);
-  setTimeout(() => setIsAnimating(false), 200);
-  
-  if (isOwnProfile && activeTab === 'followers') {
-    // Rimuovere follower - SEMPRE mostrare conferma
-    setConfirmDialog({ type: 'remove-follower', user });
-  } else if (user.isFollowing) {
-    // Smettere di seguire
-    if (user.isPrivate) {
-      // Profilo privato - mostrare conferma
-      setConfirmDialog({ type: 'unfollow', user });
+// Dopo:
+if (!error) {
+  removeFollowerFromList(followerId);
+  setFollowersCount(prev => Math.max(0, prev - 1));
+  onFollowChange?.();
+  // Optimistic update già fatto con removeFollowerFromList
+}
+```
+
+### 3. Aggiungere `updateFollowingStatus` per aggiornare followingCount
+
+Quando si fa unfollow nella tab "following", dobbiamo anche aggiornare il counter:
+
+```tsx
+// In unfollowUserKeepInList, aggiungere dopo successo:
+if (!error) {
+  onFollowChange?.();
+  setFollowingCount(prev => Math.max(0, prev - 1));
+}
+```
+
+### 4. Aggiornare counter anche su follow
+
+```tsx
+// In followUser, dopo successo:
+if (!error) {
+  onFollowChange?.();
+  setFollowingCount(prev => prev + 1);
+}
+```
+
+## Flusso Corretto Dopo la Fix
+
+```
+Click unfollow:
+  1. Haptic feedback
+  2. Optimistic update (cache aggiornata)
+  3. UI mostra immediatamente icona + (follow)
+  4. Query al database in background
+  5. Counter aggiornato
+  6. NESSUN refetch/reload
+```
+
+## Quando Invalidare Veramente?
+
+Solo quando necessario per sincronizzare dati che potrebbero essere cambiati da altri (es. quando si riapre il modal dopo un po'):
+
+```tsx
+// Nel useFollowList hook, lo staleTime di 60s già gestisce questo
+staleTime: 60 * 1000, // Dopo 1 minuto, i dati verranno refreshati automaticamente
+```
+
+## File da Modificare
+
+| File | Modifiche |
+|------|-----------|
+| `src/components/profile/FollowersModal.tsx` | Rimuovere `invalidateQueries` da `followUser` e `removeFollower`, aggiungere update dei counter |
+
+## Codice Completo delle Modifiche
+
+### followUser (linee 178-206)
+
+```tsx
+const followUser = async (targetId: string) => {
+  if (!currentUser) return;
+
+  try {
+    // Optimistic update
+    updateFollowerStatus(targetId, true);
+    updateFollowingStatus(targetId, true);
+    
+    const { error } = await supabase
+      .from('follows')
+      .insert({
+        follower_id: currentUser.id,
+        following_id: targetId,
+      });
+
+    if (error) {
+      // Revert on error
+      updateFollowerStatus(targetId, false);
+      updateFollowingStatus(targetId, false);
+      console.error('Error following user:', error);
     } else {
-      // Profilo pubblico - unfollow diretto ma MANTIENI nella lista
-      await handleUnfollowKeepInList(user.id);
+      // Update counter
+      setFollowingCount(prev => prev + 1);
+      onFollowChange?.();
+      // NO invalidateQueries - optimistic update is sufficient
     }
-  } else {
-    // Seguire
-    if (user.isPrivate) {
-      // Inviare richiesta di follow (NON bypass)
-      await sendFollowRequest(user.id);
-    } else {
-      await followUser(user.id);
-    }
+  } catch (error) {
+    console.error('Error following user:', error);
   }
 };
+```
 
-// Nuova funzione per unfollow che mantiene l'utente nella lista
-const handleUnfollowKeepInList = async (targetId: string) => {
+### unfollowUserKeepInList (linee 208-235)
+
+```tsx
+const unfollowUserKeepInList = async (targetId: string) => {
+  if (!currentUser) return;
+
   try {
-    // Aggiorna solo lo stato isFollowing, NON rimuovere dalla lista
+    // Optimistic update - only update isFollowing status, don't remove from list
+    updateFollowerStatus(targetId, false);
     updateFollowingStatus(targetId, false);
     
     const { error } = await supabase
@@ -170,107 +171,53 @@ const handleUnfollowKeepInList = async (targetId: string) => {
       .eq('following_id', targetId);
 
     if (error) {
+      // Revert on error
+      updateFollowerStatus(targetId, true);
       updateFollowingStatus(targetId, true);
-      console.error('Error unfollowing:', error);
+      console.error('Error unfollowing user:', error);
     } else {
+      // Update counter
+      setFollowingCount(prev => Math.max(0, prev - 1));
       onFollowChange?.();
+      // NO invalidateQueries - user stays in list with + icon
     }
   } catch (error) {
-    console.error('Error unfollowing:', error);
+    console.error('Error unfollowing user:', error);
   }
 };
+```
 
-// Nuova funzione per inviare richiesta follow (profili privati)
-const sendFollowRequest = async (targetId: string) => {
+### removeFollower (linee 273-292)
+
+```tsx
+const removeFollower = async (followerId: string) => {
+  if (!currentUser) return;
+
   try {
-    // Creare friend_request invece di follow diretto
-    const { error } = await supabase
-      .from('friend_requests')
-      .insert({
-        requester_id: currentUser.id,
-        requested_id: targetId,
-        status: 'pending',
-      });
+    const { error } = await supabase.rpc('remove_follower', {
+      follower_user_id: followerId
+    });
 
-    if (error) {
-      console.error('Error sending follow request:', error);
-      return;
+    if (!error) {
+      removeFollowerFromList(followerId);
+      setFollowersCount(prev => Math.max(0, prev - 1));
+      onFollowChange?.();
+      // NO invalidateQueries - optimistic update already done
+    } else {
+      console.error('Error removing follower:', error);
     }
-
-    // Aggiornare UI per mostrare stato "pending"
-    // L'icona cambierà da + a un indicatore di "richiesta inviata"
-    toast.success(t('userProfile.requestSent', { ns: 'common' }));
   } catch (error) {
-    console.error('Error sending follow request:', error);
+    console.error('Error removing follower:', error);
   }
 };
 ```
 
-**4. Aggiungere stato `followRequestPending` all'interfaccia**
+## Impatto
 
-```tsx
-export interface FollowUser {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-  isFollowing: boolean;
-  savedPlacesCount: number;
-  isPrivate: boolean;
-  followRequestPending?: boolean;  // <- per mostrare icona diversa
-}
-```
+| Azione | Prima | Dopo |
+|--------|-------|------|
+| Unfollow pubblico | Reload con spinner ~500ms | Istantaneo |
+| Unfollow privato (con dialog) | Reload con spinner ~500ms | Istantaneo |
+| Follow | Reload con spinner ~500ms | Istantaneo |
+| Rimuovi follower | Reload con spinner ~500ms | Istantaneo |
 
-**5. Modificare icona overlay per richieste pending**
-
-```tsx
-const getActionIcon = () => {
-  if (isOwnProfile && activeTab === 'followers') {
-    return { icon: X, color: 'bg-destructive', hoverColor: 'hover:bg-destructive/90' };
-  }
-  if (user.isFollowing) {
-    return { icon: Check, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600' };
-  }
-  if (user.followRequestPending) {
-    // Richiesta inviata - icona orologio/pending
-    return { icon: Clock, color: 'bg-amber-500', hoverColor: 'hover:bg-amber-600' };
-  }
-  return { icon: UserPlus, color: 'bg-primary', hoverColor: 'hover:bg-primary/90' };
-};
-```
-
-## Flusso Utente Finale
-
-### Tab "Seguiti" (Following)
-```
-Click ✓ verde su profilo pubblico:
-  → Smette di seguire
-  → Profilo RESTA nella lista con icona +
-  → Click + per ri-seguire istantaneamente
-
-Click ✓ verde su profilo privato:
-  → Mostra dialogo conferma: "Smettere di seguire @username?"
-  → Se conferma: profilo resta con icona +
-  → Click + invia RICHIESTA (non follow diretto)
-  → Icona diventa ⏱ (pending)
-```
-
-### Tab "Follower"
-```
-Click X rosso su qualsiasi follower:
-  → Mostra dialogo conferma: "Rimuovere @username dai follower?"
-  → Se conferma: rimuove dalla lista
-```
-
-## File da Modificare
-
-| File | Modifiche |
-|------|-----------|
-| `src/hooks/useFollowList.ts` | Aggiungere `isPrivate` e `followRequestPending` alla query |
-| `src/components/profile/FollowersModal.tsx` | Logica dialoghi, mantenere utenti in lista, richieste follow |
-| `src/components/profile/RemoveFollowerConfirmDialog.tsx` | **NUOVO** - Dialogo conferma rimozione follower |
-
-## Note Tecniche
-
-1. **Cache Invalidation**: Dopo unfollow su profilo privato, non invalidare subito la cache per permettere di vedere l'icona + aggiornata
-2. **Richieste Pending**: Per determinare se c'è una richiesta pending, dobbiamo fare una query aggiuntiva alla tabella `friend_requests`
-3. **Traduzioni**: Aggiungere nuove chiavi i18n per i messaggi dei dialoghi
