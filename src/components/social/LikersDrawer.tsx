@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Search } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateFollowList } from '@/hooks/useFollowList';
 
 interface Liker {
   user_id: string;
@@ -27,6 +29,7 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [likers, setLikers] = useState<Liker[]>([]);
   const [filteredLikers, setFilteredLikers] = useState<Liker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,6 +170,11 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
           ? { ...l, is_followed: !l.is_followed }
           : l
       ));
+
+      // Invalidate follow-list cache so FollowersModal shows the updated list
+      if (user?.id) {
+        invalidateFollowList(queryClient, user.id, 'following');
+      }
     } catch (error) {
       console.error('Error toggling follow:', error);
     } finally {

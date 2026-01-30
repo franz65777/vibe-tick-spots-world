@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { sendLocalizedNotification } from '@/services/notificationLocalizationService';
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateFollowList } from '@/hooks/useFollowList';
 
 interface UserProfile {
   id: string;
@@ -26,6 +28,7 @@ interface UserProfile {
 
 export const useUserProfile = (userId?: string) => {
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -384,6 +387,11 @@ export const useUserProfile = (userId?: string) => {
               }
             : null
         );
+
+        // Invalidate follow-list cache so FollowersModal shows the new follow
+        if (currentUser?.id) {
+          invalidateFollowList(queryClient, currentUser.id, 'following');
+        }
       }
     } catch (error) {
       console.error('Error following user:', error);
@@ -430,6 +438,11 @@ export const useUserProfile = (userId?: string) => {
         followers_count: Math.max(0, prev.followers_count - 1),
         can_view_content: !prev.is_private // If private, can't view after unfollowing
       } : null);
+
+      // Invalidate follow-list cache so FollowersModal reflects the unfollow
+      if (currentUser?.id) {
+        invalidateFollowList(queryClient, currentUser.id, 'following');
+      }
     } catch (error) {
       console.error('Error unfollowing user:', error);
     } finally {

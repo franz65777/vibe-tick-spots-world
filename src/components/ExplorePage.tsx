@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateFollowList } from '@/hooks/useFollowList';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { useUserSearchHistory } from '@/hooks/useUserSearchHistory';
@@ -44,6 +46,7 @@ interface ExplorePageProps {
 const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
@@ -296,6 +299,9 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
       const {
         data: existingFollow
       } = await supabase.from('follows').select('id').eq('follower_id', user.id).eq('following_id', userId).maybeSingle();
+      
+      const wasFollowing = !!existingFollow;
+      
       if (existingFollow) {
         await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', userId);
       } else {
@@ -304,6 +310,10 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
           following_id: userId
         });
       }
+
+      // Invalidate follow-list cache so FollowersModal shows the updated list
+      invalidateFollowList(queryClient, user.id, 'following');
+
       // Refresh current search results to reflect new follow state
       if (searchQuery.trim()) {
         const results = await performSearch(searchQuery);
@@ -317,7 +327,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
     } catch (error) {
       console.error('Error toggling follow:', error);
     }
-  }, [user, searchQuery, performSearch, fetchSuggestions]);
+  }, [user, searchQuery, performSearch, fetchSuggestions, queryClient]);
   const handleMessageUser = (userId: string) => {
     console.log('Message user:', userId);
   };
