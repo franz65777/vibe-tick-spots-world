@@ -1,155 +1,165 @@
 
-# Piano: Ottimizzazione Performance Pagina Profilo
+# Piano: Migliorare la Fluidita del Loading Post dal Profilo
 
-## Problemi Identificati
+## Problema Attuale
 
-### 1. BUG CRITICO: Infinite Loop nel Carousel
-I log mostrano `Maximum update depth exceeded` causato da `setApi` nel carousel di `PostDetailModalMobile.tsx`. Quando il carousel chiama `setApi(api)`, questo causa un re-render che ricrea l'api, innescando un loop infinito.
+Quando clicchi su un post dalla griglia del profilo:
+1. Il modal mostra una **rotella di loading** per 1-3 secondi
+2. Nel frattempo, **ricarica tutti i dati del post** (che sono gia stati caricati!)
+3. Esperienza utente poco fluida
 
-### 2. Settings Button Appare in Ritardo
-Il pulsante settings e' dentro `ProfileHeader` che mostra `ProfileHeaderSkeleton` quando `loading && !profile`. Il settings button dovrebbe essere sempre visibile, indipendentemente dallo stato di loading.
+## Analisi Tecnica
 
-### 3. Query Duplicate
-- `ProfilePage.tsx` chiama `useProfileAggregated()`
-- `ProfileHeader.tsx` chiama di nuovo `useProfileAggregated()` separatamente
-- `PostsGrid.tsx` chiama `useOptimizedProfile()` (terza query profilo!)
-- `BadgeDisplay` chiama `useUserBadges()` (quarta query parallela!)
-
-### 4. useStories Sempre Attivo
-Il hook `useStories` viene chiamato sempre in `ProfileHeader` anche se serve solo per l'avatar ring. E' un fetch non necessario per la maggior parte degli utenti.
-
----
-
-## Soluzioni Proposte
-
-### Fix 1: Risolvere Infinite Loop Carousel
-
-Modificare `PostDetailModalMobile.tsx` per usare un ref stabile invece di state per il carousel API:
-
-```tsx
-// Prima (causa loop)
-const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
-
-// Dopo (stabile)
-const carouselApisRef = useRef<Record<string, any>>({});
+### Flusso Attuale (Lento)
+```text
+Click post -> Modal apre -> Spinner -> Fetch posts -> Fetch profiles -> Fetch locations -> Mostra contenuto
+              [~0ms]        [~2000ms di attesa]                                         [Content visibile]
 ```
 
-### Fix 2: Settings Button Sempre Visibile
+### Dati Gia Disponibili
+Quando clicchi su un post, `PostsGrid` ha gia caricato:
+- `media_urls[]` - Le immagini del post
+- `profiles` - Username e avatar
+- `locations` - Nome, citta, coordinate
+- `likes_count`, `comments_count`
+- `caption`, `rating`, `created_at`
 
-Estrarre il settings button fuori dalla logica condizionale del `ProfileHeader`. Renderizzarlo sempre nella parte destra, indipendentemente dallo stato di loading:
+Questi dati vengono ignorati e il modal li ricarica da zero!
 
-```tsx
-// ProfileHeader.tsx
-const ProfileHeader = ({ ... }) => {
-  // ... hooks ...
+## Soluzione Proposta
 
-  // Settings button SEMPRE visibile
-  const SettingsButton = (
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      className="h-10 w-10 p-0"
-      onClick={() => navigate('/settings')}
-    >
-      <img src={settingsIcon} alt="Settings" className="w-9 h-9" />
-    </Button>
-  );
+### 1. Passare i Post Pre-caricati al Modal
 
-  if (loading && !profile) {
-    return (
-      <div className="pt-1 pb-2 bg-background">
-        <div className="flex items-start gap-3 px-3">
-          {/* Skeleton content */}
-          <Skeleton className="w-16 h-16 rounded-full" />
-          <div className="flex-1">...</div>
-          {/* Settings sempre visibile anche durante loading */}
-          <div className="shrink-0">{SettingsButton}</div>
-        </div>
-      </div>
-    );
-  }
-  // ...
-};
-```
-
-### Fix 3: Eliminare Query Duplicate
-
-Passare i dati del profilo come props invece di ri-fetchare:
+Modificare `PostsGrid` per passare l'intero array di post gia caricati al modal:
 
 ```tsx
-// ProfilePage.tsx
-const { profile, stats, categoryCounts, loading } = useProfileAggregated();
-
-<ProfileHeader
-  profile={profile}
-  stats={stats}
-  categoryCounts={categoryCounts}
-  loading={loading}
-  // ...altri props
+// PostsGrid.tsx
+<PostDetailModalMobile
+  postId={selectedPostId}
+  userId={targetUserId}
+  isOpen={!!selectedPostId}
+  onClose={() => setSelectedPostId(null)}
+  initialPosts={displayedPosts}  // <- NUOVO: passa i dati gia caricati
 />
 ```
 
-Rimuovere `useProfileAggregated()` e `useOptimizedProfile()` dai componenti figli.
+### 2. Usare i Dati Iniziali nel Modal
 
-### Fix 4: Lazy Load Stories
-
-Caricare le stories solo se l'utente ha un avatar cliccabile:
+Modificare `PostDetailModalMobile` per accettare e usare i post pre-caricati:
 
 ```tsx
-// Solo fetch stories quando necessario
-const { stories } = useStories({ 
-  enabled: !!profile?.avatar_url 
-});
+// PostDetailModalMobile.tsx
+interface PostDetailModalMobileProps {
+  // ... props esistenti
+  initialPosts?: PostData[];  // <- NUOVO
+}
+
+export const PostDetailModalMobile = ({ ..., initialPosts }: PostDetailModalMobileProps) => {
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && postId) {
+      // Se abbiamo dati iniziali, usali immediatamente
+      if (initialPosts && initialPosts.length > 0) {
+        setPosts(initialPosts);
+        setLoading(false);
+        return;
+      }
+      // Altrimenti, carica da network (fallback per altri entry points)
+      loadPostData();
+    }
+  }, [isOpen, postId, initialPosts]);
 ```
 
-### Fix 5: Consolidare Badge Query
+### 3. Sostituire Spinner con Skeleton UI
 
-Spostare `useUserBadges` nel `ProfilePage` e passare i badge come props a `BadgeDisplay`:
+Se per qualche motivo il loading e ancora necessario, mostrare skeleton che imita il layout del post invece di spinner:
 
 ```tsx
-// ProfilePage.tsx
-const { badges } = useUserBadges(user?.id);
+// Prima (spinner generico)
+<div className="fixed inset-0 ... flex items-center justify-center">
+  <div className="w-8 h-8 border-2 ... animate-spin" />
+</div>
 
-<ProfileHeader badges={badges} />
+// Dopo (skeleton strutturato)
+<div className="fixed inset-0 ... overflow-y-auto">
+  {/* Header skeleton */}
+  <div className="sticky top-0 ...">
+    <div className="flex items-center gap-2">
+      <div className="w-5 h-5 bg-muted rounded shimmer-skeleton" />
+      <div className="h-5 w-20 bg-muted rounded shimmer-skeleton" />
+    </div>
+  </div>
+  
+  {/* Post skeleton */}
+  <article className="post-compact">
+    <div className="post-compact-header">
+      <div className="h-10 w-10 rounded-full bg-muted shimmer-skeleton" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-28 bg-muted rounded shimmer-skeleton" />
+        <div className="h-3 w-36 bg-muted rounded shimmer-skeleton" />
+      </div>
+    </div>
+    <div className="aspect-square w-full bg-muted shimmer-skeleton" />
+    <div className="post-compact-actions space-y-2">
+      <div className="flex gap-1.5">
+        <div className="h-9 w-12 bg-muted rounded-lg shimmer-skeleton" />
+        <div className="h-9 w-14 bg-muted rounded-lg shimmer-skeleton" />
+      </div>
+    </div>
+  </article>
+</div>
 ```
 
----
+### 4. Pre-caricare Immagini (Opzionale)
 
-## Riepilogo Modifiche
+Per una transizione ancora piu fluida, pre-caricare le immagini del post cliccato:
 
-| File | Modifica |
-|------|----------|
-| `PostDetailModalMobile.tsx` | Fix infinite loop carousel con useRef |
-| `ProfileHeader.tsx` | Settings button sempre montato, props invece di hooks |
-| `ProfilePage.tsx` | Passare profile/badges come props ai figli |
-| `ProfileHeaderSkeleton.tsx` | Mostrare settings button reale invece di skeleton |
-| `PostsGrid.tsx` | Rimuovere useOptimizedProfile, ricevere userId come prop |
-| `BadgeDisplay.tsx` | Ricevere badges come prop invece di useUserBadges |
-
----
+```tsx
+// VirtualizedPostGrid.tsx - nel click handler
+const handleClick = async (postId: string) => {
+  // Trova il post e pre-carica le sue immagini
+  const clickedPost = posts.find(p => p.id === postId);
+  if (clickedPost) {
+    clickedPost.media_urls.forEach(url => {
+      const img = new Image();
+      img.src = url;
+    });
+  }
+  onPostClick(postId);
+};
+```
 
 ## Impatto Atteso
 
 | Metrica | Prima | Dopo |
 |---------|-------|------|
-| Query Supabase all'apertura | 8-10 | 2-3 |
-| Tempo caricamento header | ~600ms | ~150ms |
-| Settings button visibile | Dopo 500ms+ | Istantaneo |
-| Console errors | "Maximum update depth" | Nessuno |
-| Re-render componenti | 4-5 per cambio stato | 1-2 |
+| Tempo prima di vedere contenuto | ~2000ms | ~50ms |
+| Richieste network | 3-4 query Supabase | 0 query |
+| Esperienza visiva | Spinner -> contenuto improvviso | Transizione fluida |
+| Layout shift | Alto (contenuto appare tutto insieme) | Zero |
 
----
+## File da Modificare
+
+| File | Modifica |
+|------|----------|
+| `src/components/profile/PostsGrid.tsx` | Passare `initialPosts` al modal |
+| `src/components/explore/PostDetailModalMobile.tsx` | Accettare e usare `initialPosts`, skeleton UI |
+| `src/components/profile/VirtualizedPostGrid.tsx` | Pre-caricamento immagini (opzionale) |
 
 ## Dettagli Tecnici
 
-### Infinite Loop Fix
-Il problema e' che `setApi(api)` viene chiamato in un `useEffect` del carousel, ma `setApi` e' una nuova funzione ad ogni render (perche' viene da `useState`). Usando `useRef` per memorizzare gli api objects, evitiamo i re-render e il loop.
+### Compatibilita con Altri Entry Points
+Il modal puo essere aperto da vari punti:
+- Pagina profilo (usa `initialPosts`)
+- Mappa/pin (usa `locationId`, carica da network)
+- Link diretto (usa `postId`, carica da network)
 
-### Props Drilling vs Context
-Per questa ottimizzazione uso props drilling perche':
-1. I dati fluiscono in una sola direzione (ProfilePage -> Header -> Badge)
-2. Non ci sono componenti deeply nested
-3. E' piu' esplicito e debuggabile
+La prop `initialPosts` e opzionale, quindi il fallback al loading normale rimane per gli altri casi.
 
-### Caching React Query
-Le query gia' usano `staleTime` e `gcTime` appropriati. Il problema non e' il caching ma il numero di query duplicate che partono in parallelo.
+### Gestione Memoria
+I post sono gia in memoria grazie a React Query in `useOptimizedPosts`. Passarli al modal non aumenta l'uso di memoria perche sono riferimenti agli stessi oggetti.
+
+### Sincronizzazione Dati
+Se i dati cambiano mentre il modal e aperto (es. nuovo like), il modal mantiene la sua copia locale. Questo e gia il comportamento attuale e va bene per la durata tipica di visualizzazione.
