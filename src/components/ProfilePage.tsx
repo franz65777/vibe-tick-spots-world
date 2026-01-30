@@ -189,14 +189,15 @@ const ProfilePage = memo(() => {
         onBadgesClick={() => setActiveTab('badges')}
       />
       
-      {/* ProfileTabs - iOS-style hide on scroll */}
+      {/* ProfileTabs - iOS-style hide on scroll with GPU acceleration */}
       <div 
-        className="transition-all duration-300 ease-out overflow-hidden"
+        className="will-change-transform overflow-hidden"
         style={{
           transform: tabsHidden ? 'translateY(-100%)' : 'translateY(0)',
           maxHeight: tabsHidden ? 0 : 60,
           opacity: tabsHidden ? 0 : 1,
           marginBottom: tabsHidden ? -8 : 0,
+          transition: 'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms cubic-bezier(0.32, 0.72, 0, 1), max-height 200ms cubic-bezier(0.32, 0.72, 0, 1), margin-bottom 200ms cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >
         <ProfileTabs
