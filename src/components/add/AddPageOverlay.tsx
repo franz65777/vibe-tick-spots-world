@@ -1,12 +1,13 @@
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, MapPin, Loader2 } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 import OptimizedPlacesAutocomplete, { SearchResult } from '@/components/OptimizedPlacesAutocomplete';
 import { useTranslation } from 'react-i18next';
 import addPageHero from '@/assets/add-hero-cards.png';
 import { Geolocation } from '@capacitor/geolocation';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { haptics } from '@/utils/haptics';
+import SearchResultsSkeleton from '@/components/common/skeletons/SearchResultsSkeleton';
 
 interface SelectedLocation {
   id?: string;
@@ -189,9 +190,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
       {searchData.isSearching && (searchData.results.length > 0 || searchData.isLoading) && (
         <div className="px-3 mt-2 max-h-[70vh] overflow-y-auto scrollbar-hide z-[2147483641]">
           {searchData.isLoading && searchData.results.length === 0 && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
+            <SearchResultsSkeleton mode="locations" />
           )}
           
           {searchData.results.map((result) => {

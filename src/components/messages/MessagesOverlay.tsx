@@ -30,6 +30,7 @@ import VirtualizedThreadList from '@/components/messages/VirtualizedThreadList';
 import VirtualizedMessageList from '@/components/messages/VirtualizedMessageList';
 import MessageOptionsOverlay from '@/components/messages/MessageOptionsOverlay';
 import { useMessagesOverlay } from '@/contexts/MessagesOverlayContext';
+import AvatarGridSkeleton from '@/components/common/skeletons/AvatarGridSkeleton';
 
 // Helper to extract the first photo URL from the locations.photos JSONB column
 const extractFirstPhotoUrl = (photos: unknown): string | null => {
@@ -789,9 +790,7 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
                         {t('frequentContacts', { ns: 'messages' })}
                       </h3>
                       {frequentLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        </div>
+                        <AvatarGridSkeleton count={4} />
                       ) : frequentContacts.length > 0 ? (
                         <div className="flex flex-wrap gap-4 justify-center px-4">
                           {frequentContacts.map(contact => (
@@ -823,9 +822,7 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
                         {t('suggestedContacts', { ns: 'messages' })}
                       </h3>
                       {suggestedLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        </div>
+                        <AvatarGridSkeleton count={4} />
                       ) : suggestedContacts.length > 0 ? (
                         <div className="flex flex-wrap gap-4 justify-center px-4">
                           {suggestedContacts.map(contact => (

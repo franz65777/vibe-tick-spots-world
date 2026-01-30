@@ -1,10 +1,11 @@
 
 import { useState } from 'react';
-import { X, UserPlus, UserMinus, Shield } from 'lucide-react';
+import { X, UserPlus, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { sendLocalizedNotification } from '@/services/notificationLocalizationService';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface FriendRequestsModalProps {
   isOpen: boolean;
@@ -72,9 +73,7 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
         <ScrollArea className="h-[calc(80vh-80px)]">
           <div className="p-4 space-y-4">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-              </div>
+              <UserListSkeleton count={4} showButton={true} />
             ) : pendingRequests.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <UserPlus className="w-12 h-12 mx-auto mb-4 text-gray-400" />
