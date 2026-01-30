@@ -198,7 +198,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         };
         
         requestAnimationFrame(animate);
-      }, 50); // Minimal delay for initial render
+      }, 800); // 800ms delay as per user requirement
       
       return () => clearTimeout(startDelay);
     }
