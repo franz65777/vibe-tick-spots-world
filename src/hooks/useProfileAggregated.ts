@@ -189,6 +189,16 @@ export const useProfileAggregated = (userId?: string) => {
     });
   }, [queryClient, targetUserId]);
 
+  // Public helpers (used by FollowersModal) to ensure header counts update immediately
+  // even if realtime events are delayed/missed.
+  const adjustFollowingCount = useCallback((delta: number) => {
+    updateStatsOptimistically({ followingCount: delta });
+  }, [updateStatsOptimistically]);
+
+  const adjustFollowersCount = useCallback((delta: number) => {
+    updateStatsOptimistically({ followersCount: delta });
+  }, [updateStatsOptimistically]);
+
   // Subscribe to relevant realtime events
   // NOTE: useRealtimeEvent passa solo payload (non event type), quindi separiamo i casi.
 
@@ -248,5 +258,7 @@ export const useProfileAggregated = (userId?: string) => {
     loading: isLoading,
     error: error?.message,
     refetch,
+    adjustFollowingCount,
+    adjustFollowersCount,
   };
 };

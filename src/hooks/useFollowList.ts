@@ -12,6 +12,8 @@ export interface FollowUser {
   followRequestPending: boolean;
 }
 
+const dedupe = (ids: string[]) => Array.from(new Set(ids));
+
 /**
  * Optimized hook for fetching followers/following lists with React Query caching.
  * Parallelizes all queries for maximum performance.
@@ -43,7 +45,10 @@ export const useFollowList = (
         return [];
       }
 
-      const userIds = (followData || []).map((f: any) => f[targetColumn]).filter(Boolean);
+      // NOTE: Some installations may have duplicate follow rows or orphaned follow rows.
+      // We dedupe IDs for stable UI and later add placeholders for missing profiles.
+      const rawUserIds = (followData || []).map((f: any) => f[targetColumn]).filter(Boolean);
+      const userIds = dedupe(rawUserIds);
       if (userIds.length === 0) return [];
 
       // 2. Fetch profiles for those user IDs separately (more reliable than join)
@@ -58,7 +63,15 @@ export const useFollowList = (
       }
 
       const users = (profilesData || []).filter(Boolean);
-      if (users.length === 0) return [];
+      // If profiles are missing (deleted profile row or restricted by RLS), keep a placeholder
+      // so the list length matches the follow count shown elsewhere.
+      const returnedIds = new Set(users.map((u: any) => u.id));
+      const missingUsers = userIds
+        .filter((id) => !returnedIds.has(id))
+        .map((id) => ({ id, username: 'User', avatar_url: null }));
+
+      const allUsers = [...users, ...missingUsers];
+      if (allUsers.length === 0) return [];
 
       // 2. Parallel fetch: saved places counts + following status + privacy + pending requests
       const [savedPlacesResult, userSavedLocsResult, followingStatusResult, privacyResult, pendingRequestsResult] = await Promise.all([
@@ -109,7 +122,7 @@ export const useFollowList = (
         (pendingRequestsResult.data || []).map((r: any) => r.requested_id)
       );
 
-      return users.map((u: any) => ({
+      return allUsers.map((u: any) => ({
         id: u.id,
         username: u.username || 'User',
         avatar_url: u.avatar_url,
