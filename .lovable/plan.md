@@ -1,177 +1,185 @@
 
-# Plan: Optimize Lists Loading with Skeleton UI and React Query Caching
 
-## Problem Analysis
+# Plan: iOS-Style Swipe Navigation Between Profile Tabs
 
-The `TripsGrid` component (which shows "Lists" on the profile) is slow because:
+## Overview
 
-1. **No caching**: Uses `useState` + `useEffect` instead of React Query, so data refetches on every mount
-2. **Sequential N+1 queries**: The `loadFolders` function makes multiple sequential database calls:
-   - 1 query for folders
-   - N queries for location counts (one per folder)
-   - N queries for folder location IDs
-   - N queries for location details (categories, images)
-   - Additional queries for saved folders from other users
-3. **Blocking spinner**: Shows a full-screen spinner that blocks the UI while loading
+Implement a smooth iOS-like horizontal swipe gesture to navigate between the 4 profile tabs (Posts, Trips/Lists, Badges, Tagged). The swipe will allow users to slide their finger left/right to move between tabs with visual feedback and animation.
 
-## Solution Overview
+## Challenge: Conflicts with Horizontal Scroll
 
-| Issue | Fix |
-|-------|-----|
-| No caching | Migrate to `useQuery` from TanStack Query |
-| N+1 queries | Batch all count queries with `.in()` filter |
-| Blocking UI | Replace spinner with shimmer skeleton that mimics card layout |
+The **Trips/Lists tab** contains horizontal scrolling carousels for "My Lists" and "Saved Lists". We need to prevent conflicts between:
+- Tab swipe navigation (swipe left/right to change tabs)
+- Card carousel scroll (swipe left/right to see more cards)
+
+**Solution**: Use edge-based detection - only trigger tab swipe when:
+1. Touch starts outside of horizontal scroll areas, OR
+2. Touch starts from screen edges (leftmost 30px or rightmost 30px), OR
+3. Vertical content is not scrollable horizontally at touch point
 
 ## Technical Implementation
 
-### 1. Create Lists Skeleton Component
+### 1. Create `useSwipeTabs` Hook
 
-**New file: `src/components/profile/ListsGridSkeleton.tsx`**
+**New file: `src/hooks/useSwipeTabs.ts`**
 
-A skeleton that mimics the horizontal scroll rows with card placeholders:
-
-```tsx
-import { Skeleton } from '@/components/ui/skeleton';
-
-const ListsGridSkeleton = () => {
-  return (
-    <div className="px-4 pt-1">
-      {/* Row 1: "My Lists" section */}
-      <Skeleton className="h-4 w-16 mb-2 rounded" />
-      <div className="flex gap-3 overflow-x-hidden pb-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div 
-            key={i}
-            className="shrink-0 w-36 aspect-[4/5] rounded-2xl bg-muted relative overflow-hidden"
-          >
-            {/* Shimmer effect */}
-            <div 
-              className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] 
-                         bg-gradient-to-r from-transparent via-foreground/5 to-transparent"
-              style={{ animationDelay: `${i * 100}ms` }}
-            />
-            {/* Bottom text placeholder */}
-            <div className="absolute bottom-0 left-0 right-0 p-2 space-y-1">
-              <div className="bg-white/20 rounded h-3 w-20" />
-              <div className="bg-white/15 rounded h-2 w-12" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-```
-
-### 2. Create Optimized Folders Hook
-
-**New file: `src/hooks/useOptimizedFolders.ts`**
-
-Uses React Query with:
-- Parallel batch queries to eliminate N+1
-- 2-minute staleTime for instant re-renders
-- Background refetch for freshness
+A custom hook that:
+- Detects horizontal swipe gestures on the tab content area
+- Returns current transform offset for visual feedback during swipe
+- Calls `onTabChange` when swipe threshold is met
+- Respects horizontal scroll containers by checking if the touch target or its parents have `overflow-x: auto/scroll`
 
 ```tsx
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+interface UseSwipeTabsOptions {
+  tabs: string[];
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  enabled?: boolean;
+  threshold?: number; // percentage of screen width (default 0.25 = 25%)
+}
 
-export const useOptimizedFolders = (userId?: string, isOwnProfile = true) => {
-  return useQuery({
-    queryKey: ['folders', userId, isOwnProfile],
-    queryFn: async () => {
-      if (!userId) return { folders: [], savedFolders: [] };
-
-      // 1) Fetch all folders in one query
-      let query = supabase.from('saved_folders').select('*').eq('user_id', userId);
-      if (!isOwnProfile) query = query.eq('is_private', false);
-      
-      const { data: folders } = await query.order('created_at', { ascending: false });
-      if (!folders?.length) return { folders: [], savedFolders: [] };
-
-      // 2) Batch query for ALL folder location counts
-      const folderIds = folders.map(f => f.id);
-      const [countsRes, previewLocsRes] = await Promise.all([
-        supabase.from('folder_locations')
-          .select('folder_id')
-          .in('folder_id', folderIds),
-        supabase.from('folder_locations')
-          .select('folder_id, location_id')
-          .in('folder_id', folderIds)
-          .limit(100) // reasonable limit for preview images
-      ]);
-
-      // Count locations per folder
-      const countMap = new Map<string, number>();
-      (countsRes.data || []).forEach(fl => {
-        countMap.set(fl.folder_id, (countMap.get(fl.folder_id) || 0) + 1);
-      });
-
-      // 3) Batch query for location images
-      const locationIds = [...new Set((previewLocsRes.data || []).map(fl => fl.location_id))];
-      const { data: locations } = locationIds.length 
-        ? await supabase.from('locations')
-            .select('id, category, image_url')
-            .in('id', locationIds)
-        : { data: [] };
-      
-      const locationMap = new Map(locations?.map(l => [l.id, l]) || []);
-
-      // 4) Enrich folders with counts and images
-      const enrichedFolders = folders.map(folder => {
-        const folderLocs = (previewLocsRes.data || [])
-          .filter(fl => fl.folder_id === folder.id);
-        const firstLoc = folderLocs[0] ? locationMap.get(folderLocs[0].location_id) : null;
-        
-        return {
-          ...folder,
-          locations_count: countMap.get(folder.id) || 0,
-          cover_image_url: folder.cover_image_url || firstLoc?.image_url || null,
-        };
-      });
-
-      return { folders: enrichedFolders, savedFolders: [] };
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes - shows cached data instantly
-    gcTime: 10 * 60 * 1000,   // 10 minutes in memory
-    enabled: !!userId,
-  });
-};
-```
-
-### 3. Update TripsGrid Component
-
-**File: `src/components/profile/TripsGrid.tsx`**
-
-Key changes:
-- Import new hook and skeleton
-- Replace spinner with skeleton UI
-- Use optimistic cached data
-
-```tsx
-// At top of file
-import ListsGridSkeleton from './ListsGridSkeleton';
-import { useOptimizedFolders } from '@/hooks/useOptimizedFolders';
-
-// Replace the loading state (lines 201-205)
-if (isLoading || foldersLoading) {
-  return <ListsGridSkeleton />;
+// Returns
+interface UseSwipeTabsReturn {
+  containerRef: React.RefObject<HTMLDivElement>;
+  offset: number;        // Current drag offset in pixels
+  isSwiping: boolean;    // Whether user is actively swiping
+  direction: 'left' | 'right' | null;
 }
 ```
 
-## Performance Improvements
+Key logic:
+- On `touchstart`: Record start position, check if target is inside scrollable container
+- On `touchmove`: Calculate delta, skip if inside scrollable container that can scroll in swipe direction
+- On `touchend`: If delta exceeds threshold (25% screen width), change tab; otherwise spring back
+- CSS transform is applied for 60fps animation during drag
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Database queries | 1 + N*3 (up to 12+ queries) | 4 batched queries |
-| Initial load | Blocking spinner ~800ms | Skeleton appears <50ms |
-| Return visits | Full refetch every time | Instant from cache |
-| Perceived speed | Slow due to spinner | Smooth with shimmer animation |
+### 2. Create `SwipeableTabContent` Component
+
+**New file: `src/components/common/SwipeableTabContent.tsx`**
+
+A wrapper component that:
+- Renders all 4 tab contents side-by-side (off-screen until active)
+- Applies CSS transform based on active tab index
+- Shows smooth spring animation on tab change
+- Handles swipe gesture via `useSwipeTabs`
+
+```tsx
+interface SwipeableTabContentProps {
+  tabs: { key: string; content: React.ReactNode }[];
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  enabled?: boolean;
+}
+```
+
+Structure:
+```text
+┌─────────────────────────────────────────────────────────┐
+│ Container (overflow: hidden)                            │
+│ ┌─────────┬─────────┬─────────┬─────────┐              │
+│ │  Posts  │  Trips  │ Badges  │ Tagged  │ ← Inner flex │
+│ │  (100%) │  (100%) │  (100%) │  (100%) │   container  │
+│ └─────────┴─────────┴─────────┴─────────┘              │
+│         ← CSS translateX based on activeTab            │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 3. Update ProfilePage.tsx
+
+Modify the tab content rendering to use the new swipeable wrapper:
+
+**Before (current):**
+```tsx
+<div className="flex-1 min-h-0 overflow-hidden">
+  {renderTabContent()}
+</div>
+```
+
+**After:**
+```tsx
+<SwipeableTabContent
+  tabs={[
+    { key: 'posts', content: <PostsGrid /> },
+    { key: 'trips', content: <TripsGrid /> },
+    { key: 'badges', content: <Achievements userId={user?.id} /> },
+    { key: 'tagged', content: <TaggedPostsGrid /> },
+  ]}
+  activeTab={activeTab}
+  onTabChange={setActiveTab}
+  enabled={isMobile}
+/>
+```
+
+### 4. Handle Horizontal Scroll Conflict
+
+The `useSwipeTabs` hook will include smart detection:
+
+```tsx
+const isInsideHorizontalScroll = (element: HTMLElement): boolean => {
+  let current: HTMLElement | null = element;
+  while (current) {
+    const style = window.getComputedStyle(current);
+    const overflowX = style.overflowX;
+    if (overflowX === 'auto' || overflowX === 'scroll') {
+      // Check if this element can actually scroll
+      if (current.scrollWidth > current.clientWidth) {
+        return true;
+      }
+    }
+    current = current.parentElement;
+  }
+  return false;
+};
+
+// In touchmove handler:
+if (isInsideHorizontalScroll(e.target as HTMLElement)) {
+  // Check scroll position - only allow tab swipe if at edge of scrollable content
+  const scrollContainer = findScrollableParent(e.target);
+  if (scrollContainer) {
+    const atLeftEdge = scrollContainer.scrollLeft === 0;
+    const atRightEdge = scrollContainer.scrollLeft >= 
+      scrollContainer.scrollWidth - scrollContainer.clientWidth - 1;
+    
+    // Only allow tab swipe if trying to swipe "past" the edge
+    if (deltaX > 0 && !atLeftEdge) return; // swiping right but not at left edge
+    if (deltaX < 0 && !atRightEdge) return; // swiping left but not at right edge
+  }
+}
+```
+
+This means:
+- If you're in the Lists tab and swipe on the cards, it scrolls the cards
+- If you're at the **end** of the card list and swipe left again, it goes to Badges tab
+- If you're at the **start** of the card list and swipe right, it goes to Posts tab
+
+## Visual Feedback
+
+During swipe:
+- Content follows finger with slight resistance (0.5x movement for "rubberband" feel)
+- Adjacent tab content partially visible during drag
+- On release: spring animation to final position (300ms, ease-out-cubic)
+
+## Performance Considerations
+
+1. **Lazy rendering preserved**: Tab contents still use `lazy()` and `Suspense`
+2. **GPU acceleration**: Use `transform: translateX()` for 60fps animations
+3. **Will-change hint**: Apply `will-change: transform` during swipe only
+4. **Passive listeners**: Use passive touch listeners where possible
 
 ## Files to Create/Modify
 
-1. **Create**: `src/components/profile/ListsGridSkeleton.tsx`
-2. **Create**: `src/hooks/useOptimizedFolders.ts`
-3. **Modify**: `src/components/profile/TripsGrid.tsx`
-   - Replace `loadFolders` with `useOptimizedFolders` hook
-   - Replace spinner with skeleton component
+| File | Action | Description |
+|------|--------|-------------|
+| `src/hooks/useSwipeTabs.ts` | Create | Swipe gesture detection hook |
+| `src/components/common/SwipeableTabContent.tsx` | Create | Wrapper for swipeable tabs |
+| `src/components/ProfilePage.tsx` | Modify | Integrate swipeable wrapper |
+
+## Summary
+
+This implementation provides:
+- Smooth iOS-style swipe between tabs
+- Smart conflict resolution with horizontal scroll containers
+- Visual feedback during gesture
+- Spring animation on release
+- Mobile-only activation (desktop uses tab clicks)
+
