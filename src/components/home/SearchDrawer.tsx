@@ -171,9 +171,9 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       
       // Start sliding animation after a brief pause
       const startDelay = setTimeout(() => {
-        // Animate slide from 0 to 1 over ~2.5 seconds
+        // Animate slide from 0 to 1 over 4 seconds (slower, more elegant)
         const startTime = Date.now();
-        const duration = 2500;
+        const duration = 4000;
         
         const animate = () => {
           const elapsed = Date.now() - startTime;
@@ -191,7 +191,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         };
         
         requestAnimationFrame(animate);
-      }, 500); // Brief pause before sliding starts
+      }, 800); // Longer pause before sliding starts
       
       return () => clearTimeout(startDelay);
     }

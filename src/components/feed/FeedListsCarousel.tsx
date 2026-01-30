@@ -186,7 +186,7 @@ const FeedListsCarousel = memo(() => {
   if (isLoading || lists.length === 0) return null;
 
   return (
-    <div className="py-4">
+    <div className="mx-4 my-3 py-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-white/40 dark:border-white/20">
       {/* Header */}
       <div className="px-4 mb-3 flex items-center gap-2">
         <img src={listIcon} alt="" className="w-5 h-5 object-contain" />
