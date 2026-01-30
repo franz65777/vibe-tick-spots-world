@@ -56,7 +56,7 @@ export const useOptimizedPosts = (userId?: string) => {
       const [profileRes, locationsRes, likesCountRes, commentsCountRes] = await Promise.all([
         supabase.from('profiles').select('id,username,avatar_url,full_name').eq('id', userId).maybeSingle(),
         locationIds.length
-          ? supabase.from('locations').select('id,name,address,city,category,latitude,longitude').in('id', locationIds)
+          ? supabase.from('locations').select('id,name,address,city,category,latitude,longitude,image_url,photos').in('id', locationIds)
           : Promise.resolve({ data: [], error: null }),
         supabase
           .from('post_likes')
