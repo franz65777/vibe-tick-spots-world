@@ -142,6 +142,14 @@ const ProfilePage = memo(() => {
     setIsLocationsListOpen(true);
   };
 
+  // Memoize tabsConfig BEFORE any early returns (React hooks rule)
+  const tabsConfig = useMemo(() => [
+    { key: 'posts', content: <div ref={activeTab === 'posts' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
+    { key: 'trips', content: <div ref={activeTab === 'trips' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><TripsGrid /></div> },
+    { key: 'badges', content: <div ref={activeTab === 'badges' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><Achievements userId={user?.id} /></div> },
+    { key: 'tagged', content: <div ref={activeTab === 'tagged' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
+  ], [activeTab, user?.id, scrollContainerRef]);
+
   // Mostra skeleton solo al primo caricamento - React Query gestisce il resto
   if (loading && !profile) {
     return <ProfileSkeleton />;
@@ -161,14 +169,6 @@ const ProfilePage = memo(() => {
       </div>
     );
   }
-
-  // Memoize tabsConfig with activeTab to ensure correct scroll container is attached
-  const tabsConfig = useMemo(() => [
-    { key: 'posts', content: <div ref={activeTab === 'posts' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
-    { key: 'trips', content: <div ref={activeTab === 'trips' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><TripsGrid /></div> },
-    { key: 'badges', content: <div ref={activeTab === 'badges' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><Achievements userId={user?.id} /></div> },
-    { key: 'tagged', content: <div ref={activeTab === 'tagged' ? scrollContainerRef : undefined} className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
-  ], [activeTab, user?.id, scrollContainerRef]);
 
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">

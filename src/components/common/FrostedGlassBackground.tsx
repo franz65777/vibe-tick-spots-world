@@ -20,19 +20,10 @@ interface FrostedGlassBackgroundProps {
 const FrostedGlassBackground: React.FC<FrostedGlassBackgroundProps> = ({ className = '' }) => {
   return (
     <div className={`absolute inset-0 z-0 ${className}`}>
-      {/* Warm base - light: off-white, dark: theme background */}
-      <div className="absolute inset-0 bg-[#F7F3EC] dark:bg-background" />
+      {/* Solid uniform background - light: warm off-white, dark: theme background */}
+      <div className="absolute inset-0 bg-[#F5F1EA] dark:bg-background" />
       
-      {/* Subtle vertical gradient - light mode only */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3] dark:from-transparent dark:via-transparent dark:to-transparent" />
-      
-      {/* Faint vignette for depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)] dark:opacity-30" />
-      
-      {/* Frosted glass overlay - the key effect */}
-      <div className="absolute inset-0 bg-white/40 dark:bg-background/40 backdrop-blur-xl" />
-      
-      {/* Subtle grain/noise texture */}
+      {/* Subtle grain/noise texture for depth */}
       <div 
         className="absolute inset-0 opacity-[0.02] mix-blend-overlay pointer-events-none"
         style={{
