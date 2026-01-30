@@ -275,18 +275,18 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           {/* City Filter Chips */}
           {citiesWithCounts.length > 0 && (
             <div className="flex-1 overflow-x-auto scrollbar-hide">
-              <div className="flex gap-1.5">
+              <div className="flex gap-3">
                 {/* All chip */}
                 <button
                   onClick={() => setSelectedCity(null)}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0 flex items-center gap-1.5",
+                    "px-5 py-2.5 rounded-2xl text-base font-medium transition-all flex-shrink-0 flex items-center gap-2",
                     !selectedCity
-                      ? "bg-foreground text-background shadow-md"
-                      : "bg-white/90 text-muted-foreground shadow-sm hover:shadow-md hover:bg-white"
+                      ? "bg-black text-white shadow-lg"
+                      : "bg-white text-gray-400 shadow-md hover:shadow-lg"
                   )}
                 >
-                  <Globe className="w-3 h-3" />
+                  <Globe className="w-5 h-5" />
                   {t('all', { ns: 'common', defaultValue: 'all' })}
                 </button>
                 
@@ -296,10 +296,10 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     key={city}
                     onClick={() => setSelectedCity(city)}
                     className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0 whitespace-nowrap",
+                      "px-5 py-2.5 rounded-2xl text-base font-medium transition-all flex-shrink-0 whitespace-nowrap",
                       selectedCity === city
-                        ? "bg-foreground text-background shadow-md"
-                        : "bg-white/90 text-muted-foreground shadow-sm hover:shadow-md hover:bg-white"
+                        ? "bg-black text-white shadow-lg"
+                        : "bg-white text-gray-400 shadow-md hover:shadow-lg"
                     )}
                   >
                     {translateCityName(city, i18n.language).toLowerCase()}
