@@ -40,7 +40,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
       {/* Dropdown Menu - matches bottom nav pill style */}
       <div 
         className={cn(
-          "fixed bottom-24 left-6 z-[151] flex flex-col gap-2 transition-all duration-200",
+          "fixed bottom-[88px] left-6 z-[151] flex flex-col gap-1.5 transition-all duration-200",
           isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
         aria-hidden={!isOpen}
@@ -54,7 +54,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               onClose();
             }}
             className={cn(
-              "flex items-center gap-2.5 px-3 py-2 rounded-full transition-all duration-200",
+              "flex items-center gap-3 px-3.5 py-2.5 rounded-full transition-all duration-200",
               "bg-white dark:bg-zinc-900",
               "shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
               "dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)]",
@@ -65,8 +65,8 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
             }}
             tabIndex={isOpen ? 0 : -1}
           >
-            <img src={option.icon} alt="" className="w-6 h-6 object-contain" loading="eager" />
-            <span className="font-medium text-sm whitespace-nowrap text-foreground pr-1">
+            <img src={option.icon} alt="" className="w-7 h-7 object-contain" loading="eager" />
+            <span className="font-medium text-[15px] whitespace-nowrap text-foreground pr-1">
               {option.label}
             </span>
           </button>
