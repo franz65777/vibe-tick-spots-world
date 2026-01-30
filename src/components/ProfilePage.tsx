@@ -35,7 +35,7 @@ const ProfilePage = memo(() => {
   const isMobile = useIsMobile();
   
   // SINGLE source of truth for profile data
-  const { profile, stats, categoryCounts, loading, error, refetch } = useProfileAggregated();
+  const { profile, stats, categoryCounts, loading, error, refetch, adjustFollowingCount, adjustFollowersCount } = useProfileAggregated();
   
   // SINGLE source of truth for badges
   const { badges } = useUserBadges();
@@ -193,6 +193,8 @@ const ProfilePage = memo(() => {
         initialTab={modalState.type || 'followers'}
         // Evita refetch che causa "flash" di loading: i contatori vengono aggiornati via cache + realtime
         onFollowChange={() => {}}
+        onAdjustFollowingCount={adjustFollowingCount}
+        onAdjustFollowersCount={adjustFollowersCount}
       />
 
       <SavedLocationsList
