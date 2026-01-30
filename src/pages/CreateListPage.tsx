@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Search, Trash2, Plus, MapPin, Upload } from 'lucide-react';
+import { X, Search, Trash2, Plus, MapPin, Upload, Check } from 'lucide-react';
 import iconPublic from '@/assets/icon-public.png';
 import iconPrivate from '@/assets/icon-private.png';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,22 @@ interface ImportedPlace {
   placeId?: string;
   category?: string;
 }
+
+// Helper to extract first photo URL from photos array
+const extractFirstPhotoUrl = (photos: any): string | null => {
+  if (!photos || !Array.isArray(photos) || photos.length === 0) return null;
+  const first = photos[0];
+  if (typeof first === 'string') return first;
+  if (first?.url) return first.url;
+  if (first?.photo_reference) return first.photo_reference;
+  return null;
+};
+
+// Helper to get location thumbnail with priority: business photo -> Google photo -> null
+const getLocationThumbnail = (location: any): string | null => {
+  if (location?.image_url) return location.image_url;
+  return extractFirstPhotoUrl(location?.photos);
+};
 
 const CreateListPage = () => {
   const { t } = useTranslation('createList');
@@ -77,7 +93,8 @@ const CreateListPage = () => {
             name,
             category,
             city,
-            image_url
+            image_url,
+            photos
           )
         `)
         .eq('user_id', user.id);
@@ -339,9 +356,9 @@ const CreateListPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[10001] flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
+    <div className="fixed inset-0 z-[10001] flex flex-col bg-[#F5F1EA] dark:bg-background">
+      {/* Header with glassmorphism */}
+      <div className="flex items-center justify-between px-4 py-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] bg-background/60 backdrop-blur-xl border-b border-border/30">
         <button
           onClick={handleClose}
           className="p-2 hover:bg-accent rounded-full transition-colors"
@@ -381,7 +398,7 @@ const CreateListPage = () => {
               {!isEditMode && (
                 <button
                   onClick={() => setShowImportModal(true)}
-                  className="w-full bg-muted/50 rounded-xl p-4 flex items-center gap-4 hover:bg-muted transition-colors"
+                  className="w-full bg-white/60 dark:bg-white/10 backdrop-blur-sm rounded-xl p-4 flex items-center gap-4 hover:bg-white/80 dark:hover:bg-white/20 transition-colors shadow-sm"
                 >
                   <div className="w-12 h-12 rounded-lg bg-background shadow-sm flex items-center justify-center flex-shrink-0">
                     <svg viewBox="0 0 48 48" className="w-8 h-8">
@@ -413,7 +430,7 @@ const CreateListPage = () => {
                   onChange={(e) => setFolderName(e.target.value)}
                   placeholder={t('listNamePlaceholder', 'e.g. ❤️ Favorites, 🍕 To try...')}
                   maxLength={50}
-                  className="h-11 rounded-lg"
+                  className="h-12 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-border/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_2px_hsl(var(--primary)/0.2)]"
                 />
               </div>
 
@@ -423,7 +440,7 @@ const CreateListPage = () => {
                   {t('coverImage', 'Cover image (optional)')}
                 </label>
                 {coverImageUrl ? (
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm">
                     <img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
                     <button
                       onClick={() => setCoverImageUrl('')}
@@ -434,7 +451,7 @@ const CreateListPage = () => {
                   </div>
                 ) : (
                   <label className="block cursor-pointer">
-                    <div className="h-20 rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
+                    <div className="h-24 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-2 border-dashed border-border/50 flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors shadow-sm">
                       {uploadingCover ? (
                         <span className="text-sm text-muted-foreground">
                           {t('uploading', 'Uploading...')}
@@ -459,8 +476,8 @@ const CreateListPage = () => {
                 )}
               </div>
 
-              {/* Privacy Status */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              {/* Privacy Status Card */}
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm shadow-sm">
                 {isPrivate ? (
                   <img src={iconPrivate} alt="Private" className="h-7 w-auto" />
                 ) : (
@@ -478,7 +495,7 @@ const CreateListPage = () => {
                     <label className="text-sm font-medium text-muted-foreground">
                       {t('importedPlaces', 'Imported places')}
                     </label>
-                    <span className="text-xs text-primary font-medium">
+                    <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
                       {importedPlaces.length}
                     </span>
                   </div>
@@ -488,7 +505,7 @@ const CreateListPage = () => {
                         key={idx}
                         className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-3"
                       >
-                        <div className="shrink-0 bg-primary/10 rounded-xl p-2">
+                        <div className="shrink-0 bg-primary/10 rounded-xl w-12 h-12 flex items-center justify-center">
                           <MapPin className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -524,13 +541,13 @@ const CreateListPage = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaces', 'Search places...')}
-                    className="pl-10 h-10 rounded-lg"
+                    className="pl-10 h-11 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm border-border/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]"
                   />
                 </div>
 
                 {/* Selected Count */}
                 {selectedLocationIds.length > 0 && (
-                  <div className="text-sm text-primary font-medium">
+                  <div className="text-sm text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full inline-block">
                     {t('placesSelected', { count: selectedLocationIds.length, defaultValue: '{{count}} places selected' })}
                   </div>
                 )}
@@ -549,20 +566,32 @@ const CreateListPage = () => {
                     filteredLocations.map((place: any) => {
                       const idToCheck = place.location_id || place.id;
                       const isSelected = selectedLocationIds.includes(idToCheck);
+                      const thumbnailUrl = getLocationThumbnail(place);
+                      
                       return (
                         <button
                           type="button"
                           key={place.id}
                           onClick={() => toggleLocationSelection(place.id, place.location_id)}
-                          className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all ${
+                          className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all shadow-sm ${
                             isSelected 
-                              ? 'bg-primary/10 border border-primary/30' 
-                              : 'bg-muted/50 border border-transparent hover:border-border'
+                              ? 'bg-primary/10 border-2 border-primary/40' 
+                              : 'bg-white/60 dark:bg-white/10 backdrop-blur-sm border-2 border-transparent hover:border-border/50'
                           }`}
                         >
-                          <div className="shrink-0 bg-muted rounded-lg p-1.5">
-                            <CategoryIcon category={place.category} className="w-6 h-6" />
-                          </div>
+                          {/* Thumbnail with photo or category icon */}
+                          {thumbnailUrl ? (
+                            <img 
+                              src={thumbnailUrl} 
+                              alt={place.name}
+                              className="w-12 h-12 rounded-xl object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                              <CategoryIcon category={place.category} className="w-6 h-6" />
+                            </div>
+                          )}
+                          
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{place.name}</p>
                             {place.city && (
@@ -571,14 +600,16 @@ const CreateListPage = () => {
                               </p>
                             )}
                           </div>
+                          
+                          {/* Checkbox */}
                           <div
-                            className={`ml-2 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            className={`ml-2 h-6 w-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                               isSelected 
                                 ? 'border-primary bg-primary text-primary-foreground' 
-                                : 'border-muted-foreground/30'
+                                : 'border-muted-foreground/30 bg-background'
                             }`}
                           >
-                            {isSelected && <span className="text-[10px] font-bold">✓</span>}
+                            {isSelected && <Check className="h-3.5 w-3.5" />}
                           </div>
                         </button>
                       );
@@ -592,7 +623,7 @@ const CreateListPage = () => {
       </ScrollArea>
 
       {/* Footer Actions */}
-      <div className="p-4 pb-safe flex gap-3">
+      <div className="p-4 pb-safe flex gap-3 bg-background/60 backdrop-blur-xl border-t border-border/30">
         {isEditMode ? (
           <>
             <Button
