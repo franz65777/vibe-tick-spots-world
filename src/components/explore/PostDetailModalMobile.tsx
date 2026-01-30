@@ -24,6 +24,7 @@ interface PostDetailModalMobileProps {
   onClose: () => void;
   showBackButton?: boolean;
   backLabel?: string;
+  initialPosts?: any[]; // Pre-loaded posts for instant display
 }
 
 interface PostData {
@@ -52,7 +53,7 @@ interface PostData {
   } | null;
 }
 
-export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onClose, showBackButton, backLabel }: PostDetailModalMobileProps) => {
+export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onClose, showBackButton, backLabel, initialPosts }: PostDetailModalMobileProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -70,6 +71,39 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   useEffect(() => {
     if (isOpen && postId) {
+      // If we have pre-loaded posts (from profile grid), use them instantly
+      if (initialPosts && initialPosts.length > 0) {
+        // Transform to match PostData format
+        const formattedPosts = initialPosts.map(post => ({
+          id: post.id,
+          user_id: post.user_id,
+          caption: post.caption,
+          media_urls: post.media_urls || [],
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          saves_count: post.saves_count || 0,
+          shares_count: post.shares_count || 0,
+          rating: post.rating,
+          created_at: post.created_at,
+          location_id: post.location_id,
+          profiles: post.profiles || { username: 'User', avatar_url: null },
+          locations: post.locations || null,
+        })) as PostData[];
+        
+        // Reorder with clicked post in context
+        const initialPostIndex = formattedPosts.findIndex(p => p.id === postId);
+        if (initialPostIndex !== -1) {
+          const newerPosts = formattedPosts.slice(0, initialPostIndex);
+          const clickedPost = formattedPosts[initialPostIndex];
+          const olderPosts = formattedPosts.slice(initialPostIndex + 1);
+          setPosts([...newerPosts, clickedPost, ...olderPosts]);
+        } else {
+          setPosts(formattedPosts);
+        }
+        setLoading(false);
+        return;
+      }
+      // Fallback: load from network (for other entry points)
       loadPostData();
     }
   }, [isOpen, postId]);
@@ -393,8 +427,40 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
-    <div className="fixed inset-0 z-[2147483647] bg-background flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="fixed inset-0 z-[2147483647] bg-background overflow-y-auto scrollbar-hide">
+      {/* Skeleton Header with iOS safe area */}
+      <div 
+        className="bg-background sticky top-0 z-50 flex items-center px-4 py-3"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 bg-muted rounded shimmer-skeleton" />
+          <div className="h-5 w-20 bg-muted rounded shimmer-skeleton" />
+        </div>
+      </div>
+      
+      {/* Skeleton Post */}
+      <article className="post-compact pb-2">
+        <div className="post-compact-header flex items-center gap-3 px-4 py-3">
+          <div className="h-10 w-10 rounded-full bg-muted shimmer-skeleton" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-28 bg-muted rounded shimmer-skeleton" />
+            <div className="h-3 w-36 bg-muted rounded shimmer-skeleton" />
+          </div>
+        </div>
+        <div className="aspect-square w-full bg-muted shimmer-skeleton" />
+        <div className="px-4 py-3 space-y-3">
+          <div className="flex gap-2">
+            <div className="h-9 w-14 bg-muted rounded-lg shimmer-skeleton" />
+            <div className="h-9 w-16 bg-muted rounded-lg shimmer-skeleton" />
+            <div className="h-9 w-12 bg-muted rounded-lg shimmer-skeleton" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 w-full bg-muted rounded shimmer-skeleton" />
+            <div className="h-3 w-3/4 bg-muted rounded shimmer-skeleton" />
+          </div>
+        </div>
+      </article>
     </div>
   ) : (
 
