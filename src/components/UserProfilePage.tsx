@@ -29,6 +29,7 @@ import SwipeableTabContent from './common/SwipeableTabContent';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useScrollHide } from '@/hooks/useScrollHide';
 import TabContentSkeleton from './profile/TabContentSkeleton';
+import UserProfileSkeleton from './profile/UserProfileSkeleton';
 
 // Lazy load tab content for bundle splitting
 const PostsGrid = lazy(() => import('./profile/PostsGrid'));
@@ -243,14 +244,7 @@ const UserProfilePage = () => {
   }, [activeTab, userId, scrollContainerRef, canViewContent, PrivateAccountPlaceholder]);
 
   if (loading) {
-    return (
-      <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
-        <FrostedGlassBackground />
-        <div className="relative z-10 flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+    return <UserProfileSkeleton />;
   }
 
   if (error || !profile) {
@@ -284,26 +278,25 @@ const UserProfilePage = () => {
             </div>
             {!isOwnProfile && (
               <div className="flex items-center gap-2">
-                {/* Follow Button - Enhanced styling */}
+                {/* Follow Button - City pill style */}
                 <Button
                   onClick={handleFollowToggle}
                   disabled={followLoading}
-                  variant={getFollowButtonVariant()}
                   className={`rounded-full font-semibold h-9 px-5 text-sm transition-all duration-200 active:scale-[0.97] ${
                     profile.is_following 
-                      ? 'bg-gray-200 dark:bg-secondary text-gray-700 dark:text-secondary-foreground border border-gray-300 dark:border-gray-600 shadow-sm hover:bg-gray-300 dark:hover:bg-secondary/80' 
+                      ? 'bg-white/80 dark:bg-white/15 text-gray-700 dark:text-gray-200 border border-white/50 dark:border-white/20 shadow-sm backdrop-blur-sm hover:bg-white/90 dark:hover:bg-white/20' 
                       : profile.follow_request_status === 'pending'
-                        ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground border border-gray-300 dark:border-gray-600'
-                        : 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] hover:from-blue-600 hover:to-blue-700'
+                        ? 'bg-white/80 dark:bg-white/15 text-gray-500 dark:text-gray-300 border border-white/50 dark:border-white/20 shadow-sm backdrop-blur-sm'
+                        : 'bg-black text-white hover:bg-gray-900'
                   }`}
                 >
                   {getFollowButtonText()}
                 </Button>
-                {/* Message Button - Enhanced styling */}
+                {/* Message Button - City pill style */}
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-10 w-10 rounded-full bg-gray-100 dark:bg-secondary/50 hover:bg-gray-200 dark:hover:bg-secondary border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 active:scale-[0.95]" 
+                  className="h-9 w-9 rounded-full bg-white/80 dark:bg-white/15 hover:bg-white/90 dark:hover:bg-white/20 border border-white/50 dark:border-white/20 shadow-sm backdrop-blur-sm transition-all duration-200 active:scale-[0.95]" 
                   onClick={() => navigate('/messages', {
                     state: {
                       initialUserId: userId,
@@ -312,7 +305,7 @@ const UserProfilePage = () => {
                   })} 
                   title={t('userProfile.sendMessage', { ns: 'common' })}
                 >
-                  <MessageCircle className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                  <MessageCircle className="w-4 h-4 text-gray-700 dark:text-gray-200" />
                 </Button>
                 {/* More Options Menu */}
                 <DropdownMenu>
