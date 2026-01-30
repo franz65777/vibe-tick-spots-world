@@ -37,14 +37,26 @@ const CommunityChampions = ({
   
   return (
     <div className="flex justify-center w-full">
-      <Button
+      <button
         onClick={() => navigate('/leaderboard')}
-        variant="outline"
-        className="w-fit px-4 rounded-xl border-border bg-background hover:bg-muted/50 h-12 font-semibold text-base"
+        className="relative h-14 px-6 rounded-2xl font-bold text-lg
+                   bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 
+                   hover:from-amber-500 hover:via-yellow-500 hover:to-orange-500
+                   shadow-lg shadow-amber-500/30 
+                   border border-white/40
+                   text-amber-900
+                   transition-all duration-200 ease-out
+                   hover:scale-105 hover:shadow-xl hover:shadow-amber-500/40
+                   active:scale-95
+                   flex items-center justify-center gap-2"
       >
-        <img src={leaderboardTrophy} alt="" className="w-9 h-9 mr-2" />
-        {t('leaderboard', { ns: 'common' })}
-      </Button>
+        <img 
+          src={leaderboardTrophy} 
+          alt="" 
+          className="w-10 h-10 drop-shadow-md animate-bounce-gentle" 
+        />
+        <span className="drop-shadow-sm">{t('leaderboard', { ns: 'common' })}</span>
+      </button>
     </div>
   );
 };

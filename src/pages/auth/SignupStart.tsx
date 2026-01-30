@@ -42,6 +42,16 @@ const SignupStart: React.FC = () => {
     document.title = `${t('auth:signUp')} - Spott`;
   }, [t]);
 
+  // Capture referral code from URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      sessionStorage.setItem('signup_referral_code', refCode);
+      console.log('📧 Referral code captured:', refCode);
+    }
+  }, []);
+
   // Reset exists state when switching methods
   useEffect(() => {
     setExists(null);

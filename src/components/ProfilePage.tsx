@@ -1,10 +1,11 @@
-import { useState, useEffect, memo, lazy } from 'react';
+import { useState, useEffect, memo, lazy, useCallback } from 'react';
 import { useProfileAggregated } from '@/hooks/useProfileAggregated';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useScrollHide } from '@/hooks/useScrollHide';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileTabs from './profile/ProfileTabs';
 import FollowersModal from './profile/FollowersModal';
@@ -62,6 +63,18 @@ const ProfilePage = memo(() => {
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
 
+  // iOS-style hide-on-scroll for ProfileTabs
+  const { hidden: tabsHidden, setScrollContainer, resetHidden } = useScrollHide({ 
+    threshold: 50, 
+    enabled: isMobile 
+  });
+
+  // Reset hidden state when tab changes
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    resetHidden();
+  }, [resetHidden]);
+
   // Handle opening folder from message share or returning from rewards
   useEffect(() => {
     const state = location.state as any;
@@ -72,7 +85,7 @@ const ProfilePage = memo(() => {
       window.history.replaceState({}, document.title);
     }
     if (state?.activeTab) {
-      setActiveTab(state.activeTab);
+      handleTabChange(state.activeTab);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -83,14 +96,14 @@ const ProfilePage = memo(() => {
     const urlTab = params.get('tab');
 
     if (urlTab === 'posts' || urlTab === 'trips' || urlTab === 'badges' || urlTab === 'tagged') {
-      setActiveTab(urlTab);
+      handleTabChange(urlTab);
     } else {
-      setActiveTab('posts');
+      handleTabChange('posts');
     }
 
     setModalState({ isOpen: false, type: null });
     setIsLocationsListOpen(false);
-  }, [user?.id, location.search]);
+  }, [user?.id, location.search, handleTabChange]);
 
   // Track new badges
   useEffect(() => {
@@ -117,12 +130,17 @@ const ProfilePage = memo(() => {
   };
 
   const handlePostsClick = () => {
-    setActiveTab('posts');
+    handleTabChange('posts');
   };
 
   const handleLocationsClick = () => {
     setIsLocationsListOpen(true);
   };
+
+  // Create scroll container callback for each tab
+  const getScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
+    setScrollContainer(element);
+  }, [setScrollContainer]);
 
   // Mostra skeleton solo al primo caricamento - React Query gestisce il resto
   if (loading && !profile) {
@@ -145,10 +163,10 @@ const ProfilePage = memo(() => {
   }
 
   const tabsConfig = [
-    { key: 'posts', content: <div className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
-    { key: 'trips', content: <TripsGrid /> },
-    { key: 'badges', content: <Achievements userId={user?.id} /> },
-    { key: 'tagged', content: <div className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
+    { key: 'posts', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
+    { key: 'trips', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><TripsGrid /></div> },
+    { key: 'badges', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><Achievements userId={user?.id} /></div> },
+    { key: 'tagged', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
   ];
 
   return (
@@ -170,17 +188,28 @@ const ProfilePage = memo(() => {
         onBadgesClick={() => setActiveTab('badges')}
       />
       
-      <ProfileTabs
-        activeTab={activeTab} 
-        onTabChange={setActiveTab}
-        hasNewBadges={hasNewBadges}
-      />
+      {/* ProfileTabs - iOS-style hide on scroll */}
+      <div 
+        className="transition-all duration-300 ease-out overflow-hidden"
+        style={{
+          transform: tabsHidden ? 'translateY(-100%)' : 'translateY(0)',
+          maxHeight: tabsHidden ? 0 : 60,
+          opacity: tabsHidden ? 0 : 1,
+          marginBottom: tabsHidden ? -8 : 0,
+        }}
+      >
+        <ProfileTabs
+          activeTab={activeTab} 
+          onTabChange={handleTabChange}
+          hasNewBadges={hasNewBadges}
+        />
+      </div>
       
       {/* Tab Content - Swipeable on mobile */}
       <SwipeableTabContent
         tabs={tabsConfig}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         enabled={isMobile}
       />
 

@@ -3562,6 +3562,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_invited_count: {
+        Args: { inviter_user_id: string }
+        Returns: undefined
+      }
       is_verified_business: {
         Args: { business_user_id: string }
         Returns: boolean
