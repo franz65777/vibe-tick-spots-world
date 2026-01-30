@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw, Loader2 } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw, Loader2, Globe } from 'lucide-react';
 import deleteIcon from '@/assets/icon-delete.png';
 import cameraIcon3d from '@/assets/icon-camera-3d.png';
 import starIcon3d from '@/assets/icon-star-3d.png';
@@ -275,33 +275,34 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           {/* City Filter Chips */}
           {citiesWithCounts.length > 0 && (
             <div className="flex-1 overflow-x-auto scrollbar-hide">
-              <div className="flex gap-1.5 pb-1">
+              <div className="flex gap-2">
                 {/* All chip */}
                 <button
                   onClick={() => setSelectedCity(null)}
                   className={cn(
-                    "px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex-shrink-0",
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all flex-shrink-0 flex items-center gap-2",
                     !selectedCity
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                      ? "bg-foreground text-background shadow-lg"
+                      : "bg-background text-muted-foreground border border-border hover:bg-muted/50"
                   )}
                 >
-                  {t('all', { ns: 'common', defaultValue: 'All' })}
+                  <Globe className="w-4 h-4" />
+                  {t('all', { ns: 'common', defaultValue: 'all' })}
                 </button>
                 
                 {/* City chips */}
-                {citiesWithCounts.map(({ city, count }) => (
+                {citiesWithCounts.map(({ city }) => (
                   <button
                     key={city}
                     onClick={() => setSelectedCity(city)}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex-shrink-0 whitespace-nowrap",
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap",
                       selectedCity === city
-                        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
-                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                        ? "bg-foreground text-background shadow-lg"
+                        : "bg-background text-muted-foreground border border-border hover:bg-muted/50"
                     )}
                   >
-                    {translateCityName(city, i18n.language)} ({count})
+                    {translateCityName(city, i18n.language).toLowerCase()}
                   </button>
                 ))}
               </div>
