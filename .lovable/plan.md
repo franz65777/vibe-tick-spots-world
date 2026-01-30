@@ -1,86 +1,105 @@
 
-# Piano: Invalidare la cache follow-list quando si segue una nuova persona
 
-## Problema
-Quando l'utente segue una nuova persona da:
-- `ExplorePage` (handleFollowUser)
-- `UserProfilePage` (followUser via useUserProfile)
-- `NotificationItem` (handleFollowClick)
-- Altri componenti
+# Piano: Fix Feed Vuoto
 
-La cache React Query per `['follow-list', userId, 'following']` non viene invalidata. Quindi quando l'utente apre il `FollowersModal`, vede ancora la lista vecchia (7 seguiti invece di 8) perché la cache è ancora valida (staleTime: 60 secondi).
+## Problema identificato
+
+La pagina Feed mostra "Il tuo feed è vuoto" anche se il database contiene 13+ post che dovrebbero essere visualizzati.
+
+## Causa radice
+
+Conflitto tra `initialData` e `refetchOnMount: false` in `useOptimizedFeed.ts`:
+
+1. **`initialData` restituisce `[]`** - Quando la cache localStorage è assente o più vecchia di 2 secondi (linea 96), la funzione restituisce un array vuoto
+2. **`refetchOnMount: false`** (linea 84) - Dice a React Query di NON fare refetch quando il componente viene montato
+3. **Risultato**: React Query vede che `initialData` ha fornito dati (anche se vuoti), e non avvia il fetch reale
+
+Questo significa che se l'utente naviga al feed e la cache localStorage è scaduta o inesistente, il feed rimane vuoto indefinitamente.
 
 ## Soluzione
 
-### Strategia: Invalidare la cache dopo ogni follow
-Quando l'utente corrente segue qualcuno, invalidare la cache `['follow-list', currentUserId, 'following']` in modo che alla prossima apertura del modal venga ricaricata la lista aggiornata.
+Modificare la logica in `useOptimizedFeed.ts` per garantire che il feed venga caricato correttamente:
+
+### Opzione scelta: Rimuovere `refetchOnMount: false` e usare `placeholderData` invece di `initialData`
+
+La differenza tra `initialData` e `placeholderData`:
+- **`initialData`**: React Query considera questi come "dati reali" e rispetta `staleTime`
+- **`placeholderData`**: Mostra dati temporanei mentre il fetch è in corso, ma avvia sempre il fetch
 
 ### Implementazione
 
-**1. Creare una utility centralizzata per invalidare la cache follow-list**
-
-Aggiungere una funzione esportata in `useFollowList.ts`:
-
 ```typescript
-export const invalidateFollowList = (
-  queryClient: ReturnType<typeof useQueryClient>,
-  userId: string,
-  type: 'followers' | 'following'
-) => {
-  queryClient.invalidateQueries({ queryKey: ['follow-list', userId, type] });
+export const useOptimizedFeed = () => {
+  const { user } = useAuth();
+
+  const { data: posts = [], isLoading, isFetching } = useQuery({
+    queryKey: ['feed', user?.id],
+    queryFn: async () => {
+      // ... logica esistente ...
+    },
+    enabled: !!user?.id,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes in memory
+    // RIMOSSO: refetchOnMount: false - questo bloccava il fetch quando initialData era vuoto
+    refetchOnMount: true, // Esplicito: fetch sempre al mount se stale
+    // CAMBIATO: da initialData a placeholderData
+    // placeholderData non viene considerato "dati reali" quindi non blocca il fetch
+    placeholderData: () => {
+      if (!user?.id) return [];
+      try {
+        const cachedRaw = localStorage.getItem(`feed_cache_${user.id}`);
+        if (!cachedRaw) return undefined; // undefined = no placeholder
+        
+        const cached = JSON.parse(cachedRaw) as { ts?: number; data?: any[] };
+        const ageMs = Date.now() - (cached.ts || 0);
+        
+        // Mostra placeholder solo se cache < 5 minuti (non 2 secondi)
+        if (!cached.ts || ageMs > 5 * 60 * 1000) return undefined;
+        return Array.isArray(cached.data) ? cached.data : undefined;
+      } catch {
+        return undefined;
+      }
+    },
+  });
+
+  return {
+    posts,
+    loading: isLoading || (isFetching && posts.length === 0),
+  };
 };
 ```
 
-**2. Invalidare la cache in `useUserProfile.ts` dopo followUser**
+### Modifiche chiave
 
-Nel metodo `followUser()` di `useUserProfile.ts`, dopo il successo dell'inserimento del follow:
-- Importare `queryClient` 
-- Chiamare `invalidateFollowList(queryClient, currentUser.id, 'following')`
+| Prima | Dopo |
+|-------|------|
+| `refetchOnMount: false` | `refetchOnMount: true` (o omesso) |
+| `initialData: () => ...` | `placeholderData: () => ...` |
+| Cache valida per 2s | Cache placeholder valida per 5 minuti |
+| Restituisce `[]` se cache scaduta | Restituisce `undefined` se cache scaduta |
 
-Questo garantisce che quando l'utente torna al proprio profilo e apre il modal "Seguiti", la lista venga ricaricata.
+### Perché funziona
 
-**3. Invalidare la cache in `ExplorePage.tsx` dopo handleFollowUser**
+1. **`placeholderData`** mostra immediatamente i dati cached (se disponibili) per UX istantanea
+2. **`refetchOnMount: true`** (default) garantisce che il fetch parta sempre
+3. **`staleTime: 3 minuti`** evita refetch inutili se i dati sono ancora freschi
+4. **Restituire `undefined`** (non `[]`) quando non c'è cache valida permette lo skeleton loading corretto
 
-Nel metodo `handleFollowUser()`, dopo il toggle del follow:
-- Se è un nuovo follow (non esistente prima), invalidare `['follow-list', currentUser.id, 'following']`
+## File da modificare
 
-**4. Considerare altri punti di follow**
-Verificare e aggiungere invalidation anche in:
-- `NotificationItem` (handleFollowClick)
-- `ContactsFoundView` (handleFollow)
-- `LikersDrawer` (handleFollowToggle)
+- `src/hooks/useOptimizedFeed.ts`
 
-### Dettagli tecnici
+## Benefici
 
-**File da modificare:**
-1. `src/hooks/useFollowList.ts` - Aggiungere export della funzione `invalidateFollowList`
-2. `src/hooks/useUserProfile.ts` - Chiamare invalidazione dopo follow
-3. `src/components/ExplorePage.tsx` - Chiamare invalidazione dopo follow
-4. `src/components/notifications/MobileNotificationItem.tsx` - Chiamare invalidazione dopo follow
-5. `src/components/notifications/ContactsFoundView.tsx` - Chiamare invalidazione dopo follow
-6. `src/components/social/LikersDrawer.tsx` - Chiamare invalidazione dopo follow
+- Il feed si carica sempre correttamente
+- UX istantanea grazie a placeholderData (dati cached mostrati subito)
+- Nessun impatto su performance (staleTime evita refetch inutili)
+- Fix del bug senza side effects
 
-### Flusso dopo la modifica
+## Test da fare
 
-```text
-1. Utente segue @newuser dalla UserProfilePage
-2. useUserProfile.followUser() → DB insert → successo
-3. Chiama invalidateFollowList(queryClient, currentUser.id, 'following')
-4. La cache viene marcata come stale
-5. Utente torna al proprio profilo → apre modal "Seguiti"
-6. React Query rileva che la cache è stale → ricarica la lista
-7. @newuser appare subito nella lista
-```
+- [ ] Navigare al feed → post visibili
+- [ ] Refresh della pagina → post visibili  
+- [ ] Clear localStorage → feed si carica comunque
+- [ ] Tornare al feed da altra pagina → dati cached mostrati + eventuale aggiornamento
 
-### Alternativa considerata (scartata)
-Potrei anche aggiungere il nuovo utente direttamente alla cache (optimistic update), ma:
-- Richiede conoscere tutti i dati del profilo (avatar, username, savedPlacesCount, etc.)
-- È più complesso e soggetto a errori
-- L'invalidazione è più semplice e affidabile
-
-### Checklist verifica
-- [ ] Segui un utente da ExplorePage → apri modal seguiti → l'utente appare
-- [ ] Segui un utente da UserProfilePage → apri modal seguiti → l'utente appare  
-- [ ] Segui un utente da notifiche → apri modal seguiti → l'utente appare
-- [ ] Il count nel pill tab è corretto
-- [ ] Nessun flash eccessivo durante il reload (la lista viene ricaricata solo se necessario)
