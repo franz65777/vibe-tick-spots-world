@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo, memo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2 } from 'lucide-react';
@@ -116,7 +115,6 @@ const MobileNotificationItem = ({
   prefetchedData
 }: MobileNotificationItemProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   
   // Determine target user ID for this notification
@@ -513,24 +511,6 @@ const MobileNotificationItem = ({
       return;
     }
     
-    // Handle grouped likes or comments - navigate to post
-    if ((notification.type === 'like' || notification.type === 'comment') && notification.data?.post_id) {
-      navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
-      return;
-    }
-    // Handle location_share - open location detail card
-    if (notification.type === 'location_share') {
-      if (notification.data?.location_id) {
-        // Navigate to home with specific location to open
-        navigate('/', { 
-          state: { 
-            openLocationId: notification.data.location_id,
-            fromNotifications: true 
-          } 
-        });
-      }
-      return;
-    }
     onAction(notification);
   };
 
@@ -543,8 +523,8 @@ const MobileNotificationItem = ({
     if (hasActiveStory && userStories.length > 0) {
       setShowStories(true);
     } else {
-      // Open profile
-      navigate(`/profile/${targetUserId}`);
+      // Delegate navigation to parent so it can close the overlay first
+      onAction({ ...notification, __nav: { kind: 'profile', userId: targetUserId } });
     }
   };
 
@@ -552,14 +532,14 @@ const MobileNotificationItem = ({
     e.stopPropagation();
     e.preventDefault();
     if (targetUserId) {
-      navigate(`/profile/${targetUserId}`);
+      onAction({ ...notification, __nav: { kind: 'profile', userId: targetUserId } });
     }
   };
 
   const handlePostClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (notification.data?.post_id) {
-      navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
+      onAction({ ...notification, __nav: { kind: 'post', postId: notification.data.post_id } });
     }
   };
 
@@ -810,7 +790,7 @@ const MobileNotificationItem = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    if (firstUserId) navigate(`/profile/${firstUserId}`);
+                    if (firstUserId) onAction({ ...notification, __nav: { kind: 'profile', userId: firstUserId } });
                   }}
                   data-username-click="true"
                 >
@@ -828,7 +808,7 @@ const MobileNotificationItem = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    if (firstUserId) navigate(`/profile/${firstUserId}`);
+                    if (firstUserId) onAction({ ...notification, __nav: { kind: 'profile', userId: firstUserId } });
                   }}
                   data-username-click="true"
                 >
@@ -849,7 +829,7 @@ const MobileNotificationItem = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      if (firstUserId) navigate(`/profile/${firstUserId}`);
+                      if (firstUserId) onAction({ ...notification, __nav: { kind: 'profile', userId: firstUserId } });
                     }}
                     data-username-click="true"
                   >
@@ -993,7 +973,7 @@ const MobileNotificationItem = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  if (user.id) navigate(`/profile/${user.id}`);
+                  if (user.id) onAction({ ...notification, __nav: { kind: 'profile', userId: user.id } });
                 }}
                 data-avatar-click="true"
               >
