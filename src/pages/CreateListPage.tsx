@@ -623,13 +623,13 @@ const CreateListPage = () => {
       </ScrollArea>
 
       {/* Footer Actions */}
-      <div className="p-4 pb-safe flex gap-3 bg-background/60 backdrop-blur-xl border-t border-border/30">
+      <div className="p-4 pb-safe flex gap-4">
         {isEditMode ? (
           <>
             <Button
               onClick={handleDelete}
-              variant="ghost"
-              className="flex-1 h-12 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
+              variant="outline"
+              className="flex-1 h-12 rounded-full bg-white dark:bg-zinc-800 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/40 hover:bg-destructive/5 shadow-[0_2px_8px_rgba(239,68,68,0.15),0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(239,68,68,0.25),0_2px_6px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all font-medium"
               disabled={saving}
             >
               <Trash2 className="h-5 w-5 mr-2" />
@@ -638,8 +638,7 @@ const CreateListPage = () => {
             <Button
               onClick={handleSave}
               disabled={saving || !folderName.trim()}
-              variant="ghost"
-              className="flex-1 h-12 rounded-full text-primary hover:text-primary hover:bg-primary/10 font-semibold transition-all"
+              className="flex-1 h-12 rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(59,130,246,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_rgba(59,130,246,0.4),0_2px_8px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all font-semibold"
             >
               {saving ? t('saving', 'Saving...') : t('save', 'Save')}
             </Button>
@@ -648,8 +647,7 @@ const CreateListPage = () => {
           <Button
             onClick={handleSave}
             disabled={saving || !folderName.trim()}
-            variant="ghost"
-            className="w-full h-12 rounded-full text-primary hover:text-primary hover:bg-primary/10 font-semibold transition-all"
+            className="w-full h-12 rounded-full bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(59,130,246,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_rgba(59,130,246,0.4),0_2px_8px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all font-semibold"
           >
             {saving ? t('creating', 'Creating...') : t('create', 'Create')}
           </Button>
