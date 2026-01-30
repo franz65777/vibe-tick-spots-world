@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import SwipeCategoryFilter from './SwipeCategoryFilter';
 import { allowedCategories, type AllowedCategory } from '@/utils/allowedCategories';
 import { useRealtimeEvent } from '@/hooks/useCentralizedRealtime';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface SwipeLocation {
   id: string;
@@ -664,7 +665,10 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
 
   return (
-    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden safe-area-pt">
+    <div className="fixed inset-0 w-full z-50 flex flex-col overflow-hidden safe-area-pt">
+      {/* Frosted glass background */}
+      <FrostedGlassBackground />
+      
       {/* Header with back button - compact for more space */}
       <div className="bg-transparent px-4 py-2.5 flex items-center gap-3 relative z-10 safe-area-pt">
         <button
@@ -679,7 +683,7 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
       {/* Followed Users Row - only show if there are locations to swipe */}
       {followedUsers.length > 0 && filteredLocations.length > 0 && (
-        <div className="bg-background px-4 pt-2 pb-3 overflow-visible relative z-30">
+        <div className="relative z-10 px-4 pt-2 pb-3 overflow-visible">
           <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pt-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
