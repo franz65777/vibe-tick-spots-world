@@ -223,7 +223,12 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
               
               if (firstLocationData?.locations) {
                 const loc = firstLocationData.locations as any;
-                coverUrl = loc.image_url || (loc.photos?.[0]?.url || loc.photos?.[0]?.photo_reference);
+                // Handle photos as array of strings OR objects with url/photo_reference
+                const firstPhoto = loc.photos?.[0];
+                const photoUrl = typeof firstPhoto === 'string' 
+                  ? firstPhoto 
+                  : (firstPhoto?.url || firstPhoto?.photo_reference || null);
+                coverUrl = loc.image_url || photoUrl;
               }
             }
 

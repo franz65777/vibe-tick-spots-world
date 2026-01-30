@@ -22,6 +22,21 @@ interface OptimizedFoldersResult {
   savedFolders: FolderWithDetails[];
 }
 
+// Helper to extract first photo URL from locations.photos (can be array of strings or objects)
+const extractFirstPhotoUrl = (photos: unknown): string | null => {
+  if (!photos) return null;
+  if (!Array.isArray(photos)) return null;
+  if (photos.length === 0) return null;
+  
+  const first = photos[0];
+  if (typeof first === 'string') return first;
+  if (typeof first === 'object' && first !== null) {
+    // Handle {url: string} or {photo_reference: string} patterns
+    return (first as any).url || (first as any).photo_reference || null;
+  }
+  return null;
+};
+
 export const useOptimizedFolders = (userId?: string, currentUserId?: string) => {
   const isOwnProfile = !userId || userId === currentUserId;
 
@@ -58,17 +73,17 @@ export const useOptimizedFolders = (userId?: string, currentUserId?: string) => 
         countMap.set(fl.folder_id, (countMap.get(fl.folder_id) || 0) + 1);
       });
 
-      // 3) Batch query for location images
+      // 3) Batch query for location images - NOW INCLUDING photos field
       const locationIds = [...new Set(((previewLocsRes.data as any[]) || []).map((fl: any) => fl.location_id))];
       const { data: locations } = locationIds.length 
         ? await supabase.from('locations')
-            .select('id, category, image_url')
+            .select('id, category, image_url, photos')
             .in('id', locationIds)
         : { data: [] };
       
       const locationMap = new Map((locations || []).map(l => [l.id, l]));
 
-      // 4) Enrich folders with counts and images
+      // 4) Enrich folders with counts and images (with photos fallback)
       const enrichedFolders: FolderWithDetails[] = (folders || []).map(folder => {
         const folderLocs = ((previewLocsRes.data as any[]) || [])
           .filter((fl: any) => fl.folder_id === folder.id);
@@ -77,12 +92,18 @@ export const useOptimizedFolders = (userId?: string, currentUserId?: string) => 
           .map((fl: any) => locationMap.get(fl.location_id)?.category)
           .filter(Boolean) as string[];
         
+        // Cover fallback: folder.cover_image_url -> firstLoc.image_url -> firstLoc.photos[0]
+        const coverUrl = folder.cover_image_url 
+          || firstLoc?.image_url 
+          || extractFirstPhotoUrl(firstLoc?.photos) 
+          || null;
+        
         return {
           ...folder,
           locations_count: countMap.get(folder.id) || 0,
           location_categories: categories,
-          cover_image_url: folder.cover_image_url || firstLoc?.image_url || null,
-          cover_image: folder.cover_image_url || firstLoc?.image_url || null,
+          cover_image_url: coverUrl,
+          cover_image: coverUrl,
         };
       });
 
@@ -121,9 +142,10 @@ export const useOptimizedFolders = (userId?: string, currentUserId?: string) => 
               otherCountMap.set(fl.folder_id, (otherCountMap.get(fl.folder_id) || 0) + 1);
             });
 
+            // Get location details with photos
             const otherLocationIds = [...new Set(((otherPreviewRes.data as any[]) || []).map((fl: any) => fl.location_id))];
             const { data: otherLocations } = otherLocationIds.length
-              ? await supabase.from('locations').select('id, image_url').in('id', otherLocationIds)
+              ? await supabase.from('locations').select('id, image_url, photos').in('id', otherLocationIds)
               : { data: [] };
             
             const otherLocationMap = new Map((otherLocations || []).map(l => [l.id, l]));
@@ -135,10 +157,16 @@ export const useOptimizedFolders = (userId?: string, currentUserId?: string) => 
               const firstLoc = folderLocs[0] ? otherLocationMap.get(folderLocs[0].location_id) : null;
               const creator = creatorMap.get(folder.user_id);
 
+              // Cover fallback for saved folders too
+              const coverUrl = folder.cover_image_url 
+                || firstLoc?.image_url 
+                || extractFirstPhotoUrl(firstLoc?.photos) 
+                || null;
+
               return {
                 ...folder,
                 locations_count: otherCountMap.get(folder.id) || 0,
-                cover_image_url: folder.cover_image_url || firstLoc?.image_url || null,
+                cover_image_url: coverUrl,
                 creator: creator ? { username: creator.username, avatar_url: creator.avatar_url } : undefined,
               };
             });
