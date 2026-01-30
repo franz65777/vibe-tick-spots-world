@@ -142,7 +142,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [rating, setRating] = useState<number | undefined>(undefined);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
-  const [isListSectionCollapsed, setIsListSectionCollapsed] = useState(false);
+  const [isListSectionCollapsed, setIsListSectionCollapsed] = useState(true); // Start collapsed
 
   // Determine if user is sharing public content (photos, description, or rating)
   const isSharing = selectedPhotos.length > 0 || descriptionText.trim().length > 0 || rating !== undefined;
@@ -427,13 +427,14 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           }
         }
 
-        // Create post with photos and/or description
-        if (mediaUrls.length > 0 || descriptionText.trim()) {
+        // Create post with photos and/or description and/or rating
+        if (mediaUrls.length > 0 || descriptionText.trim() || rating !== undefined) {
           const { error: postError } = await supabase.from('posts').insert({
             user_id: user.id,
             location_id: locationId,
             caption: descriptionText.trim() || null,
-            media_urls: mediaUrls.length > 0 ? mediaUrls : null,
+            media_urls: mediaUrls.length > 0 ? mediaUrls : [],
+            rating: rating || null,
           });
 
           if (postError) throw postError;
@@ -631,6 +632,47 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           </div>
         </div>
 
+        {/* Already in Lists Section - Outside collapsible */}
+        {userFolders.filter(f => f.hasLocation).length > 0 && (
+          <div className="px-4 py-3 border-b border-border/30">
+            <div className="text-sm font-medium text-muted-foreground mb-2">
+              {t('alreadySavedIn', { ns: 'explore', defaultValue: 'already saved in' })}
+            </div>
+            <div className="space-y-2">
+              {userFolders.filter(f => f.hasLocation).map((folder) => (
+                <div
+                  key={folder.id}
+                  className="flex items-center gap-3 p-2 rounded-xl bg-primary/10 border border-primary/30"
+                >
+                  {/* Folder Cover */}
+                  <div
+                    className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0"
+                    style={{
+                      background: folder.cover_url
+                        ? `url(${folder.cover_url}) center/cover`
+                        : `linear-gradient(135deg, ${folder.color || '#a78bfa'}, ${
+                            folder.color ? folder.color + '99' : '#60a5fa'
+                          })`,
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {folder.is_private && <Lock className="w-3 h-3 text-muted-foreground" />}
+                      <span className="text-sm font-medium truncate">{folder.name}</span>
+                    </div>
+                    <span className="text-xs text-primary">{t('alreadyInList', { ns: 'explore', defaultValue: 'already in this list' })}</span>
+                  </div>
+                  <Checkbox
+                    checked={selectedFolders.has(folder.id)}
+                    onCheckedChange={() => toggleFolderSelection(folder.id)}
+                    className="w-5 h-5"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Add to List Section */}
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-3">
@@ -652,7 +694,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
             </button>
           </div>
 
-          {/* Folders List - Collapsible */}
+          {/* Folders List - Collapsible (only folders without the location) */}
           {!isListSectionCollapsed && (
             <>
               {foldersLoading ? (
@@ -668,10 +710,13 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                     </div>
                   ))}
                 </div>
-              ) : userFolders.length === 0 ? (
+              ) : userFolders.filter(f => !f.hasLocation).length === 0 ? (
                 <div className="py-6 text-center">
                   <p className="text-sm text-muted-foreground mb-3">
-                    {t('noListsYet', { ns: 'explore', defaultValue: "You don't have any lists yet" })}
+                    {userFolders.length === 0 
+                      ? t('noListsYet', { ns: 'explore', defaultValue: "You don't have any lists yet" })
+                      : t('alreadyInAllLists', { ns: 'explore', defaultValue: "Already in all your lists" })
+                    }
                   </p>
                   <Button variant="outline" size="sm" onClick={handleCreateList}>
                     <FolderPlus className="w-4 h-4 mr-2" />
@@ -680,7 +725,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {userFolders.map((folder) => {
+                  {userFolders.filter(f => !f.hasLocation).map((folder) => {
                     const isSelected = selectedFolders.has(folder.id);
                     return (
                       <div
@@ -718,9 +763,6 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                           <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                             {folder.is_private && <Lock className="w-3 h-3" />}
                             <span>{folder.is_private ? t('private', { defaultValue: 'private' }) : t('public', { defaultValue: 'public' })}</span>
-                            {folder.hasLocation && (
-                              <span className="ml-1 text-primary">• {t('alreadyInList', { ns: 'explore', defaultValue: 'already in this list' })}</span>
-                            )}
                           </div>
 
                           <input
