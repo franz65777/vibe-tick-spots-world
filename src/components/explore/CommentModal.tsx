@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { getDateFnsLocale } from '@/utils/dateFnsLocales';
+import CommentsSkeleton from '@/components/common/skeletons/CommentsSkeleton';
 
 interface CommentModalProps {
   isOpen: boolean;
@@ -73,9 +73,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <CommentsSkeleton count={4} />
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />

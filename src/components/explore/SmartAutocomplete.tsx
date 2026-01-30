@@ -256,9 +256,16 @@ const SmartAutocomplete = ({
       {query.trim() && (
         <div className="p-3">
           {loading ? (
-            <div className="flex items-center justify-center py-6">
-              <div className="w-6 h-6 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="ml-3 text-sm text-gray-600 dark:text-gray-300">Searching...</span>
+            <div className="space-y-1 p-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl animate-pulse">
+                  <div className="w-10 h-10 bg-muted rounded-xl" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-4 bg-muted rounded w-28" />
+                    <div className="h-3 bg-muted rounded w-40" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : results.length > 0 ? (
             <div>

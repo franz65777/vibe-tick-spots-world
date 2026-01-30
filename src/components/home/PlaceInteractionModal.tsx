@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Users, MessageSquare, Send, Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { commentService, Comment } from '@/services/commentService';
 import { messageService } from '@/services/messageService';
 import { useAuth } from '@/contexts/AuthContext';
+import CommentsSkeleton from '@/components/common/skeletons/CommentsSkeleton';
 
 interface PlaceInteractionModalProps {
   isOpen: boolean;
@@ -114,9 +114,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                  </div>
+                  <CommentsSkeleton count={3} />
                 ) : comments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />

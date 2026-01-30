@@ -7,6 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
+import AnalyticsSkeleton from '@/components/common/skeletons/AnalyticsSkeleton';
 
 interface AnalyticsData {
   totalSaves: number;
@@ -269,14 +270,7 @@ const BusinessAnalyticsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('loadingAnalytics', { ns: 'business' })}</p>
-        </div>
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   if (!analytics) {

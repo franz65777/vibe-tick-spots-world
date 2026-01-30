@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { MapPin, Users, Sparkles } from 'lucide-react';
 import LocationCard from './LocationCard';
 import UserCard from './UserCard';
 import { CategoryType } from './CategoryFilter';
+import LocationCardsSkeleton from '@/components/common/skeletons/LocationCardsSkeleton';
 
 interface RecommendationsSectionProps {
   searchMode: 'locations' | 'users';
@@ -33,14 +33,7 @@ const RecommendationsSection = ({
   onMessageUser
 }: RecommendationsSectionProps) => {
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Loading recommendations...</span>
-        </div>
-      </div>
-    );
+    return <LocationCardsSkeleton count={4} layout="grid" />;
   }
 
   // Filter locations by selected categories - ensure selectedCategories is always an array

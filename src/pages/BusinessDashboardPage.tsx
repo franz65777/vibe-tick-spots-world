@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import BusinessDashboard from '@/components/business/BusinessDashboard';
 import { supabase } from '@/integrations/supabase/client';
+import BusinessDashboardSkeleton from '@/components/common/skeletons/BusinessDashboardSkeleton';
 
 const BusinessDashboardPage = () => {
   const { user } = useAuth();
@@ -91,11 +91,7 @@ const BusinessDashboardPage = () => {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <BusinessDashboardSkeleton />;
   }
 
   if (!businessData) {

@@ -94,8 +94,22 @@ const BusinessClaimPage = () => {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="border border-border rounded-xl p-4 animate-pulse">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-muted" />
+                        <div className="h-5 w-36 bg-muted rounded" />
+                      </div>
+                      <div className="h-4 w-24 bg-muted rounded" />
+                      <div className="h-3 w-32 bg-muted rounded" />
+                    </div>
+                    <div className="h-6 w-20 rounded-full bg-muted" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : claims.length === 0 ? (
             <div className="text-center py-12">

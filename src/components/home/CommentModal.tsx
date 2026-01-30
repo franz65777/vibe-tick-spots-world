@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X, Send, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -6,6 +5,7 @@ import { commentService, Comment } from '@/services/commentService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import CommentsSkeleton from '@/components/common/skeletons/CommentsSkeleton';
 
 interface Place {
   id: string;
@@ -107,9 +107,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
         {/* Comments List */}
         <ScrollArea className="flex-1 p-4">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <CommentsSkeleton count={4} />
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No comments yet. Be the first to share your thoughts!</p>

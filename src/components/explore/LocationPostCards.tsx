@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
+import LocationCardsSkeleton from '@/components/common/skeletons/LocationCardsSkeleton';
 
 interface LocationWithPosts {
   id: string;
@@ -138,14 +139,7 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Loading location libraries...</span>
-        </div>
-      </div>
-    );
+    return <LocationCardsSkeleton count={4} layout="horizontal" />;
   }
 
   if (locations.length === 0) {
