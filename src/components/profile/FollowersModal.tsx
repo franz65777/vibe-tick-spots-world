@@ -19,6 +19,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { UnfollowConfirmDialog } from './UnfollowConfirmDialog';
 import { RemoveFollowerConfirmDialog } from './RemoveFollowerConfirmDialog';
 import { toast } from 'sonner';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface FollowersModalProps {
   isOpen: boolean;
@@ -680,7 +681,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         }
       `}</style>
       
-      <div className="fixed inset-0 bg-background z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
+      <div className="fixed inset-0 z-[2000] flex flex-col pt-[env(safe-area-inset-top)]">
+        <FrostedGlassBackground />
+        <div className="relative z-10 flex flex-col flex-1">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
@@ -875,6 +878,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         avatarUrl={confirmDialog.user?.avatar_url || null}
         username={confirmDialog.user?.username || ''}
       />
+      </div>
     </>
   );
 };

@@ -136,7 +136,7 @@ const ProfileHeader = ({
   // Show skeleton with REAL settings button during loading
   if (loading && !profile) {
     return (
-      <div className="pt-1 pb-2 bg-background">
+      <div className="pt-1 pb-2">
         {/* Main row: Avatar + Name/Stats + Badges + Settings */}
         <div className="flex items-start gap-3 px-3">
           {/* Avatar skeleton */}
@@ -176,7 +176,7 @@ const ProfileHeader = ({
   }
 
   return (
-    <div className="pt-1 pb-2 bg-background">
+    <div className="pt-1 pb-2">
       {/* Main row: Avatar + Name/Stats + Badges + Settings */}
       <div className="flex items-start gap-3 px-3">
         {/* Avatar */}

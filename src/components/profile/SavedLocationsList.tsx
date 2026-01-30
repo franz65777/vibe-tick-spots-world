@@ -35,6 +35,7 @@ import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 // Helper to extract the first photo URL from the locations.photos JSONB column
 const extractFirstPhotoUrl = (photos: unknown): string | null => {
@@ -550,7 +551,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
         onFolderSelect={handleFolderSelect}
       />
       
-      <div ref={containerRef} className="fixed inset-0 bg-background z-[9999] flex flex-col">
+      <div ref={containerRef} className="fixed inset-0 z-[9999] flex flex-col">
+        <FrostedGlassBackground />
+        <div className="relative z-10 flex flex-col flex-1">
         
         <style>{`
           [class*="bottom-navigation"],
@@ -562,7 +565,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
         `}</style>
       
       {/* Header */}
-      <div className="bg-background sticky top-0 z-40 mt-2.5">
+      <div className="sticky top-0 z-40 mt-2.5">
         <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
@@ -591,7 +594,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
       </div>
 
       {/* Search and Filters */}
-      <div className={`bg-background px-4 pb-2 space-y-3 transition-all duration-300 ${showFilters ? 'opacity-100 max-h-[500px]' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+      <div className={`px-4 pb-2 space-y-3 transition-all duration-300 ${showFilters ? 'opacity-100 max-h-[500px]' : 'opacity-0 max-h-0 overflow-hidden'}`}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -780,6 +783,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
         )}
       </div>
       </div>
+    </div>
     </>
   );
 };
