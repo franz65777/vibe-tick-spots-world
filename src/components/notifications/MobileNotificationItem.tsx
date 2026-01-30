@@ -6,6 +6,8 @@ import reviewIcon from '@/assets/review-icon.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateFollowList } from '@/hooks/useFollowList';
 import StoriesViewer from '@/components/StoriesViewer';
 import { PrefetchedData } from '@/hooks/useNotificationData';
 
@@ -116,6 +118,7 @@ const MobileNotificationItem = ({
 }: MobileNotificationItemProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   // Determine target user ID for this notification
   const notificationUserId = notification.type === 'location_share' 
@@ -559,6 +562,8 @@ const MobileNotificationItem = ({
         if (error) throw error;
 
         setIsFollowing(false);
+        // Invalidate follow-list cache
+        invalidateFollowList(queryClient, user.id, 'following');
         toast.success(t('unfollowed', { ns: 'common' }));
       } else if (followRequestSent) {
         // Already sent a follow request - cancel it
@@ -644,6 +649,8 @@ const MobileNotificationItem = ({
         });
 
         setIsFollowing(true);
+        // Invalidate follow-list cache so FollowersModal shows the new follow
+        invalidateFollowList(queryClient, user.id, 'following');
         toast.success(t('following', { ns: 'common' }));
       }
     } catch (error) {

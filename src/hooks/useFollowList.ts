@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -171,4 +171,17 @@ export const prefetchFollowList = (
     queryKey: ['follow-list', userId, type],
     staleTime: 60 * 1000,
   });
+};
+
+/**
+ * Invalidate follow list cache after follow/unfollow actions.
+ * Call this from any component after following/unfollowing a user
+ * to ensure the FollowersModal shows the updated list.
+ */
+export const invalidateFollowList = (
+  queryClient: QueryClient | ReturnType<typeof useQueryClient>,
+  userId: string,
+  type: 'followers' | 'following'
+) => {
+  queryClient.invalidateQueries({ queryKey: ['follow-list', userId, type] });
 };

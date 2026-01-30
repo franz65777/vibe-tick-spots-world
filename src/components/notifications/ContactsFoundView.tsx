@@ -7,6 +7,8 @@ import { FoundContact } from '@/hooks/usePhoneContacts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateFollowList } from '@/hooks/useFollowList';
 
 interface ContactsFoundViewProps {
   contacts: FoundContact[];
@@ -16,6 +18,7 @@ interface ContactsFoundViewProps {
 const ContactsFoundView: React.FC<ContactsFoundViewProps> = ({ contacts, onClose }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
 
@@ -45,6 +48,10 @@ const ContactsFoundView: React.FC<ContactsFoundViewProps> = ({ contacts, onClose
       }
 
       setFollowedIds(prev => new Set(prev).add(contactId));
+      // Invalidate follow-list cache so FollowersModal shows the new follow
+      if (user?.id) {
+        invalidateFollowList(queryClient, user.id, 'following');
+      }
       toast.success(t('followed', { ns: 'invite', defaultValue: 'Followed!' }));
     } catch (err) {
       console.error('Error following user:', err);
