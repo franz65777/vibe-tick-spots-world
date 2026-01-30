@@ -7,7 +7,7 @@ import { usePhoneContacts, FoundContact } from '@/hooks/usePhoneContacts';
 import AvatarStack from '@/components/common/AvatarStack';
 import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
-import spottLogoColorful from '@/assets/spott-logo-colorful.png';
+import spottLogoTransparent from '@/assets/spott-logo-transparent.png';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
@@ -169,7 +169,7 @@ const InviteFriendOverlay = memo(({ isOpen, onClose }: InviteFriendOverlayProps)
             {/* SPOTT Logo */}
             <div className="flex justify-center mb-4">
               <img 
-                src={spottLogoColorful} 
+                src={spottLogoTransparent} 
                 alt="SPOTT" 
                 className="h-24 w-auto animate-bounce-gentle"
               />
