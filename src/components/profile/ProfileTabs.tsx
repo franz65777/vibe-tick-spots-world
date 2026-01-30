@@ -24,7 +24,7 @@ const ProfileTabs = ({
 }: ProfileTabsProps) => {
   const { t } = useTranslation();
   return (
-    <div className="px-3 mb-4">
+    <div className="px-3 mb-2">
       <div className="flex bg-white/60 dark:bg-zinc-800/80 backdrop-blur-md rounded-xl p-0.5 shadow-sm border border-white/40 dark:border-white/10">
         <button
           onClick={() => onTabChange('posts')}

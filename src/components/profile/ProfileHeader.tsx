@@ -176,7 +176,7 @@ const ProfileHeader = ({
   }
 
   return (
-    <div className="pt-1 pb-2">
+    <div className="pt-1 pb-1">
       {/* Main row: Avatar + Name/Stats + Badges + Settings */}
       <div className="flex items-start gap-3 px-3">
         {/* Avatar */}
