@@ -478,6 +478,24 @@ export const useUserProfile = (userId?: string) => {
     }
   };
 
+  // Optimistic update for following count (used by FollowersModal)
+  const adjustFollowingCount = useCallback((delta: number) => {
+    setProfile((prev) =>
+      prev
+        ? { ...prev, following_count: Math.max(0, prev.following_count + delta) }
+        : prev
+    );
+  }, []);
+
+  // Optimistic update for followers count (used by FollowersModal)
+  const adjustFollowersCount = useCallback((delta: number) => {
+    setProfile((prev) =>
+      prev
+        ? { ...prev, followers_count: Math.max(0, prev.followers_count + delta) }
+        : prev
+    );
+  }, []);
+
   return {
     profile,
     loading,
@@ -487,5 +505,7 @@ export const useUserProfile = (userId?: string) => {
     cancelFollowRequest,
     followLoading,
     refreshCounts,
+    adjustFollowingCount,
+    adjustFollowersCount,
   };
 };

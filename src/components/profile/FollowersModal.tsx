@@ -26,6 +26,8 @@ interface FollowersModalProps {
   initialTab?: 'followers' | 'following' | 'mutuals';
   userId?: string;
   onFollowChange?: () => void;
+  onAdjustFollowingCount?: (delta: number) => void;
+  onAdjustFollowersCount?: (delta: number) => void;
 }
 
 interface UserWithFollowStatus {
@@ -295,7 +297,7 @@ TabGridContent.displayName = 'TabGridContent';
 // ===============================
 // Main FollowersModal Component
 // ===============================
-const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onFollowChange }: FollowersModalProps) => {
+const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onFollowChange, onAdjustFollowingCount, onAdjustFollowersCount }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
@@ -427,11 +429,16 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         console.error('Error following user:', error);
       } else {
         // Re-follow: remove from unfollowedIds if was previously unfollowed in this session
+        const wasUnfollowed = unfollowedIds.has(targetId);
         setUnfollowedIds(prev => {
           const next = new Set(prev);
           next.delete(targetId);
           return next;
         });
+        // Update profile header count if this is a new follow (not re-follow)
+        if (!wasUnfollowed) {
+          onAdjustFollowingCount?.(1);
+        }
         onFollowChange?.();
       }
     } catch (error) {
@@ -462,6 +469,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
       } else {
         // Track this user as unfollowed for this session (affects count, removed on close)
         setUnfollowedIds(prev => new Set(prev).add(targetId));
+        // Update profile header count immediately
+        onAdjustFollowingCount?.(-1);
         onFollowChange?.();
       }
     } catch (error) {
@@ -517,6 +526,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         removeFollowerFromList(followerId);
         // Track for count (already removed from list visually)
         setRemovedFollowerIds(prev => new Set(prev).add(followerId));
+        // Update profile header count immediately
+        onAdjustFollowersCount?.(-1);
         onFollowChange?.();
         // No invalidateQueries - optimistic update already done
       } else {
