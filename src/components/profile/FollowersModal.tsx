@@ -196,9 +196,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         updateFollowingStatus(targetId, false);
         console.error('Error following user:', error);
       } else {
+        // Update counter - no invalidateQueries to avoid reload
+        setFollowingCount(prev => prev + 1);
         onFollowChange?.();
-        // Invalidate to refresh data
-        queryClient.invalidateQueries({ queryKey: ['follow-list'] });
       }
     } catch (error) {
       console.error('Error following user:', error);
@@ -226,8 +226,9 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         updateFollowingStatus(targetId, true);
         console.error('Error unfollowing user:', error);
       } else {
+        // Update counter - no invalidateQueries to avoid reload
+        setFollowingCount(prev => Math.max(0, prev - 1));
         onFollowChange?.();
-        // Don't invalidate cache immediately to keep user visible in list
       }
     } catch (error) {
       console.error('Error unfollowing user:', error);
@@ -282,7 +283,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         removeFollowerFromList(followerId);
         setFollowersCount(prev => Math.max(0, prev - 1));
         onFollowChange?.();
-        queryClient.invalidateQueries({ queryKey: ['follow-list'] });
+        // No invalidateQueries - optimistic update already done
       } else {
         console.error('Error removing follower:', error);
       }
