@@ -8,6 +8,7 @@ import { Calendar, Users, TrendingUp, Activity, MapPin, Zap, Settings2, BarChart
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DataFixUtility from '@/components/admin/DataFixUtility';
+import AnalyticsSkeleton from '@/components/common/skeletons/AnalyticsSkeleton';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -32,11 +33,7 @@ export default function AdminAnalyticsPage() {
   } = useRetentionAnalytics(startDate, endDate);
 
   if (adminLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   if (!isAdmin) {

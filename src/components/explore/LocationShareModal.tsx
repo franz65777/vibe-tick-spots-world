@@ -3,7 +3,7 @@ import { Drawer } from 'vaul';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, X, Search, Link as LinkIcon, MessageCircle, Send, Check } from 'lucide-react';
+import { X, Search, Link as LinkIcon, MessageCircle, Send, Check, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 import { messageService } from '@/services/messageService';
 import { useTranslation } from 'react-i18next';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface LocationShareModalProps {
   isOpen: boolean;
@@ -272,9 +273,7 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
 
           <ScrollArea className="flex-1 px-4">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
+              <UserListSkeleton count={5} showButton={false} />
             ) : (
               <>
                 {/* When searching, show only All Contacts */}

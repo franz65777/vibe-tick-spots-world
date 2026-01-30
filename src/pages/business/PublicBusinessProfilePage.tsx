@@ -11,6 +11,7 @@ import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { useTranslation } from 'react-i18next';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import { useAuth } from '@/contexts/AuthContext';
+import BusinessProfileSkeleton from '@/components/common/skeletons/BusinessProfileSkeleton';
 
 interface BusinessProfile {
   id: string;
@@ -176,11 +177,7 @@ const PublicBusinessProfilePage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-      </div>
-    );
+    return <BusinessProfileSkeleton />;
   }
 
   if (!businessProfile) {

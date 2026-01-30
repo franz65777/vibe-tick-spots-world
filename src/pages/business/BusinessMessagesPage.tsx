@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { messageService, MessageThread } from '@/services/messageService';
 import StoriesViewer from '@/components/StoriesViewer';
 import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
+import MessagesListSkeleton from '@/components/common/skeletons/MessagesListSkeleton';
 
 interface Message {
   id: string;
@@ -214,9 +215,7 @@ const BusinessMessagesPage = () => {
         {/* Messages List */}
         <div>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
+            <MessagesListSkeleton count={6} />
           ) : messages.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
