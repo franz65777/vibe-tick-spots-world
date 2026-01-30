@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import mapIcon from '@/assets/icon-map-search.png';
 import shareLocationIcon from '@/assets/share-location-icon.png';
+import { haptics } from '@/utils/haptics';
 
 interface HomeMenuDropdownProps {
   isOpen: boolean;
@@ -36,11 +37,11 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
         />
       )}
       
-      {/* Dropdown Menu - always mounted, hidden with CSS for instant loading */}
+      {/* Dropdown Menu - matches bottom nav pill style */}
       <div 
         className={cn(
-          "fixed bottom-20 left-8 z-[151] flex flex-col gap-2 pb-2 transition-all duration-200",
-          isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+          "fixed bottom-24 left-6 z-[151] flex flex-col gap-2 transition-all duration-200",
+          isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
         aria-hidden={!isOpen}
       >
@@ -48,23 +49,24 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
           <button
             key={option.id}
             onClick={() => {
+              haptics.selection();
               onSelectOption(option.id);
               onClose();
             }}
             className={cn(
-               "relative flex items-center gap-3 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200",
-               "bg-background/95 backdrop-blur-xl",
-               "hover:bg-accent/80 active:scale-95",
-               "overflow-hidden"
-             )}
+              "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200",
+              "bg-white dark:bg-zinc-900",
+              "shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
+              "dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)]",
+              "hover:scale-[1.02] active:scale-95"
+            )}
             style={{
               transitionDelay: isOpen ? `${index * 50}ms` : '0ms'
             }}
             tabIndex={isOpen ? 0 : -1}
           >
-            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-            <img src={option.icon} alt="" className="w-10 h-10 object-contain" loading="eager" />
-            <span className="font-medium text-sm whitespace-nowrap text-foreground">
+            <img src={option.icon} alt="" className="w-8 h-8 object-contain" loading="eager" />
+            <span className="font-semibold text-base whitespace-nowrap text-foreground pr-2">
               {option.label}
             </span>
           </button>
