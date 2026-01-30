@@ -146,23 +146,25 @@ const SettingsPage: React.FC = () => {
     <SwipeBackWrapper onBack={handleBack}>
     <div className="relative h-screen flex flex-col">
       <FrostedGlassBackground />
-      {/* Header with back button */}
-      <div 
-        className="flex items-center gap-3 px-4 pb-4 sticky top-0 z-10"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
-      >
-        <button
-          onClick={handleBack}
-          className="p-2 hover:bg-muted rounded-full transition-colors"
+      {/* Content wrapper with proper z-index */}
+      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+        {/* Header with back button */}
+        <div 
+          className="flex items-center gap-3 px-4 pb-4"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
         >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-2xl font-bold">{t('title', { ns: 'settings' })}</h1>
-      </div>
+          <button
+            onClick={handleBack}
+            className="p-2 hover:bg-muted rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold">{t('title', { ns: 'settings' })}</h1>
+        </div>
 
-      {/* Settings content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-0">
+        {/* Settings content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-0">
             {/* Edit Profile Setting */}
             <button
               onClick={() => setEditProfileModalOpen(true)}
@@ -310,19 +312,20 @@ const SettingsPage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
             )}
+          </div>
         </div>
-      </div>
 
-      {/* Logout Button */}
-      <div className="p-4 pb-24">
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive dark:bg-gray-800 dark:hover:bg-gray-700"
-        >
-          <LogOut className="w-5 h-5 mr-2" />
-          {t('logout', { ns: 'common' })}
-        </Button>
+        {/* Logout Button */}
+        <div className="p-4 pb-24">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive dark:bg-gray-800 dark:hover:bg-gray-700"
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            {t('logout', { ns: 'common' })}
+          </Button>
+        </div>
       </div>
 
       {/* Modals */}
