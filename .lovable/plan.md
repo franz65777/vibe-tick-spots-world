@@ -1,111 +1,177 @@
 
+# Plan: Optimize Lists Loading with Skeleton UI and React Query Caching
 
-# Plan: Fix Dropdown, Divider, and Bottom Spacing Issues
+## Problem Analysis
 
-## Issue Analysis
+The `TripsGrid` component (which shows "Lists" on the profile) is slow because:
 
-### Issue 1: Dropdown Icon Lag and Background
-The dropdown currently:
-- Uses `<img>` tags that load lazily, causing icons to flicker
-- Has a transparent/blurry background (`bg-muted/10 backdrop-blur-md`) that looks unfinished
+1. **No caching**: Uses `useState` + `useEffect` instead of React Query, so data refetches on every mount
+2. **Sequential N+1 queries**: The `loadFolders` function makes multiple sequential database calls:
+   - 1 query for folders
+   - N queries for location counts (one per folder)
+   - N queries for folder location IDs
+   - N queries for location details (categories, images)
+   - Additional queries for saved folders from other users
+3. **Blocking spinner**: Shows a full-screen spinner that blocks the UI while loading
 
-**Solution**: 
-- Preload the icon images at module level (already imported but need to ensure they're ready)
-- Use a solid white background with proper shadow for the dropdown
+## Solution Overview
 
-### Issue 2: Sharp Divider Line
-The current header area with dropdown and pills has no visual separator from the content below. The user wants a **rounded divider line** that integrates better.
-
-**Solution**: 
-- Add a subtle rounded divider below the filter row using a rounded-full element with low height
-
-### Issue 3: Posts Scroll Too Far Up (Bottom Spacing)
-Looking at the code:
-- `ProfilePage.tsx` line 142: `pb-[calc(5.5rem+env(safe-area-inset-bottom))]` - this is the parent container padding
-- But the `loadMoreRef` div only has `py-4` which doesn't create enough bottom spacing
-
-The posts can scroll too far up, leaving excessive space between content and the bottom navigation bar.
-
-**Solution**:
-- The parent already has the correct padding. The issue is the `loadMoreRef` trigger element position
-- Remove duplicate bottom padding from PostsGrid and rely on parent container
-- Add overscroll-behavior to prevent over-scrolling
-
----
+| Issue | Fix |
+|-------|-----|
+| No caching | Migrate to `useQuery` from TanStack Query |
+| N+1 queries | Batch all count queries with `.in()` filter |
+| Blocking UI | Replace spinner with shimmer skeleton that mimics card layout |
 
 ## Technical Implementation
 
-### File: `src/components/profile/PostsGrid.tsx`
+### 1. Create Lists Skeleton Component
 
-#### 1. Dropdown Improvements (lines 244-272)
+**New file: `src/components/profile/ListsGridSkeleton.tsx`**
 
-**Current**:
+A skeleton that mimics the horizontal scroll rows with card placeholders:
+
 ```tsx
-<DropdownMenuContent align="start" className="w-48 bg-background z-50 rounded-lg">
+import { Skeleton } from '@/components/ui/skeleton';
+
+const ListsGridSkeleton = () => {
+  return (
+    <div className="px-4 pt-1">
+      {/* Row 1: "My Lists" section */}
+      <Skeleton className="h-4 w-16 mb-2 rounded" />
+      <div className="flex gap-3 overflow-x-hidden pb-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div 
+            key={i}
+            className="shrink-0 w-36 aspect-[4/5] rounded-2xl bg-muted relative overflow-hidden"
+          >
+            {/* Shimmer effect */}
+            <div 
+              className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] 
+                         bg-gradient-to-r from-transparent via-foreground/5 to-transparent"
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+            {/* Bottom text placeholder */}
+            <div className="absolute bottom-0 left-0 right-0 p-2 space-y-1">
+              <div className="bg-white/20 rounded h-3 w-20" />
+              <div className="bg-white/15 rounded h-2 w-12" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 ```
 
-**Change to**:
+### 2. Create Optimized Folders Hook
+
+**New file: `src/hooks/useOptimizedFolders.ts`**
+
+Uses React Query with:
+- Parallel batch queries to eliminate N+1
+- 2-minute staleTime for instant re-renders
+- Background refetch for freshness
+
 ```tsx
-<DropdownMenuContent 
-  align="start" 
-  className="w-48 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-xl z-50 rounded-xl overflow-hidden"
->
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export const useOptimizedFolders = (userId?: string, isOwnProfile = true) => {
+  return useQuery({
+    queryKey: ['folders', userId, isOwnProfile],
+    queryFn: async () => {
+      if (!userId) return { folders: [], savedFolders: [] };
+
+      // 1) Fetch all folders in one query
+      let query = supabase.from('saved_folders').select('*').eq('user_id', userId);
+      if (!isOwnProfile) query = query.eq('is_private', false);
+      
+      const { data: folders } = await query.order('created_at', { ascending: false });
+      if (!folders?.length) return { folders: [], savedFolders: [] };
+
+      // 2) Batch query for ALL folder location counts
+      const folderIds = folders.map(f => f.id);
+      const [countsRes, previewLocsRes] = await Promise.all([
+        supabase.from('folder_locations')
+          .select('folder_id')
+          .in('folder_id', folderIds),
+        supabase.from('folder_locations')
+          .select('folder_id, location_id')
+          .in('folder_id', folderIds)
+          .limit(100) // reasonable limit for preview images
+      ]);
+
+      // Count locations per folder
+      const countMap = new Map<string, number>();
+      (countsRes.data || []).forEach(fl => {
+        countMap.set(fl.folder_id, (countMap.get(fl.folder_id) || 0) + 1);
+      });
+
+      // 3) Batch query for location images
+      const locationIds = [...new Set((previewLocsRes.data || []).map(fl => fl.location_id))];
+      const { data: locations } = locationIds.length 
+        ? await supabase.from('locations')
+            .select('id, category, image_url')
+            .in('id', locationIds)
+        : { data: [] };
+      
+      const locationMap = new Map(locations?.map(l => [l.id, l]) || []);
+
+      // 4) Enrich folders with counts and images
+      const enrichedFolders = folders.map(folder => {
+        const folderLocs = (previewLocsRes.data || [])
+          .filter(fl => fl.folder_id === folder.id);
+        const firstLoc = folderLocs[0] ? locationMap.get(folderLocs[0].location_id) : null;
+        
+        return {
+          ...folder,
+          locations_count: countMap.get(folder.id) || 0,
+          cover_image_url: folder.cover_image_url || firstLoc?.image_url || null,
+        };
+      });
+
+      return { folders: enrichedFolders, savedFolders: [] };
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - shows cached data instantly
+    gcTime: 10 * 60 * 1000,   // 10 minutes in memory
+    enabled: !!userId,
+  });
+};
 ```
 
-Also add `loading="eager"` and proper sizing to ensure icons are always ready:
+### 3. Update TripsGrid Component
+
+**File: `src/components/profile/TripsGrid.tsx`**
+
+Key changes:
+- Import new hook and skeleton
+- Replace spinner with skeleton UI
+- Use optimistic cached data
+
 ```tsx
-<img src={cameraIcon3d} alt="" className="w-6 h-6 object-contain" loading="eager" />
-<img src={starIcon3d} alt="" className="w-6 h-6 object-contain" loading="eager" />
+// At top of file
+import ListsGridSkeleton from './ListsGridSkeleton';
+import { useOptimizedFolders } from '@/hooks/useOptimizedFolders';
+
+// Replace the loading state (lines 201-205)
+if (isLoading || foldersLoading) {
+  return <ListsGridSkeleton />;
+}
 ```
 
-Increase padding on menu items:
-```tsx
-<DropdownMenuItem className="cursor-pointer focus:bg-accent flex items-center gap-3 px-3 py-2.5">
-```
+## Performance Improvements
 
-#### 2. Rounded Divider (after line 314, after the filter row)
+| Metric | Before | After |
+|--------|--------|-------|
+| Database queries | 1 + N*3 (up to 12+ queries) | 4 batched queries |
+| Initial load | Blocking spinner ~800ms | Skeleton appears <50ms |
+| Return visits | Full refetch every time | Instant from cache |
+| Perceived speed | Slow due to spinner | Smooth with shimmer animation |
 
-Add a soft rounded divider line:
-```tsx
-{/* Soft rounded divider */}
-<div className="flex justify-center pt-3 pb-2">
-  <div className="w-12 h-1 bg-gray-200/60 dark:bg-gray-700/60 rounded-full" />
-</div>
-```
+## Files to Create/Modify
 
-#### 3. Bottom Scroll Stop Fix
-
-The parent container in `ProfilePage.tsx` already has:
-```tsx
-<div className="h-full overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
-```
-
-The issue is that `PostsGrid` has its own bottom padding in the `loadMoreRef`. We need to adjust the scroll behavior:
-
-**In PostsGrid.tsx**, update the wrapper to respect scroll boundaries:
-```tsx
-<div className="px-4 overscroll-contain">
-```
-
-And move the infinite scroll trigger to be minimal:
-```tsx
-<div ref={loadMoreRef} className="h-4 flex items-center justify-center">
-```
-
----
-
-## Summary of Changes
-
-| Location | Change |
-|----------|--------|
-| Lines 257 | Solid white dropdown background with shadow and rounded-xl |
-| Lines 260-270 | Larger icons (w-6 h-6), eager loading, more padding on items |
-| After line 314 | New rounded divider element |
-| Line 239 | Add `overscroll-contain` to prevent over-scrolling |
-| Line 541 | Reduce loadMoreRef padding to `h-4` (minimal trigger height) |
-
----
-
-## Files to Modify
-- `src/components/profile/PostsGrid.tsx`
-
+1. **Create**: `src/components/profile/ListsGridSkeleton.tsx`
+2. **Create**: `src/hooks/useOptimizedFolders.ts`
+3. **Modify**: `src/components/profile/TripsGrid.tsx`
+   - Replace `loadFolders` with `useOptimizedFolders` hook
+   - Replace spinner with skeleton component
