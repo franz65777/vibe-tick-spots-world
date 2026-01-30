@@ -319,7 +319,7 @@ const SettingsPage: React.FC = () => {
         <div className="p-4 pb-24 flex justify-center">
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center gap-2 rounded-full py-3 px-5 bg-destructive text-white text-sm font-medium shadow-[0_4px_16px_rgba(239,68,68,0.3),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4),0_4px_12px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all duration-200"
+            className="flex items-center justify-center gap-2 rounded-full py-3.5 px-8 bg-destructive text-white font-medium shadow-[0_4px_16px_rgba(239,68,68,0.3),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4),0_4px_12px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
             {t('logout', { ns: 'common' })}
