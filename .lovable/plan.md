@@ -1,216 +1,180 @@
 
 
-## Plan: Replace All Loading Spinners with Skeleton UIs Across the App
+## Plan: Replace Remaining Loading Spinners with Skeleton UIs (Phase 2)
 
-Based on my analysis, I found **92 files** with loading spinners (animate-spin patterns). I've categorized them by priority and impact to systematically replace each one with appropriate skeleton UI components.
-
----
-
-### Classification of Loading Spinners
-
-#### **Type 1: Page/Section Loading (HIGH PRIORITY - Replace with Skeleton)**
-These show a spinner while content loads, creating poor perceived performance:
-
-| File | Location | Solution |
-|------|----------|----------|
-| `src/pages/BusinessDashboardPage.tsx` (line 96) | Full page loading | Create `BusinessDashboardSkeleton` |
-| `src/pages/BusinessClaimPage.tsx` (line 97) | Claims list loading | Create `ClaimsListSkeleton` |
-| `src/pages/business/BusinessAnalyticsPage.tsx` (line 275) | Analytics loading | Create `AnalyticsSkeleton` |
-| `src/pages/PrivacySettingsPage.tsx` (line 135) | Settings loading | Create `SettingsSkeleton` |
-| `src/components/NotificationsModal.tsx` (line 96) | Notifications loading | Create `NotificationsSkeleton` |
-| `src/components/explore/ExploreResults.tsx` (line 22) | Search results loading | Use inline skeleton list |
-| `src/components/explore/VirtualizedPostGrid.tsx` (lines 148, 235) | Posts/Reviews loading | Use existing `PostsGridSkeleton` |
-| `src/components/explore/LocationGrid.tsx` (line 494) | Locations loading | Create `LocationGridSkeleton` |
-| `src/components/explore/RecommendationsSection.tsx` (line 39) | Recommendations loading | Create inline skeleton cards |
-| `src/components/explore/LocationPostCards.tsx` (line 144) | Location cards loading | Create inline skeleton |
-| `src/components/SimpleHomePage.tsx` (line 93) | Places loading | Create inline skeleton |
-| `src/components/explore/ShareModal.tsx` (line 194) | Users list loading | Create `UserListSkeleton` |
-| `src/components/profile/FolderSavedByModal.tsx` (line 168) | Saved by users loading | Use `UserListSkeleton` |
-
-#### **Type 2: Modal Content Loading (MEDIUM PRIORITY - Replace with Skeleton)**
-| File | Location | Solution |
-|------|----------|----------|
-| `src/components/home/CommentModal.tsx` (line 111) | Comments loading | Create `CommentsSkeleton` |
-| `src/components/explore/CommentModal.tsx` (line 77) | Comments loading | Use same `CommentsSkeleton` |
-| `src/components/home/PlaceInteractionModal.tsx` (line 118) | Comments loading | Use `CommentsSkeleton` |
-| `src/components/explore/SmartAutocomplete.tsx` (line 260) | Search loading | Create inline skeleton |
-
-#### **Type 3: Button/Action Spinners (KEEP AS-IS)**
-These show inside buttons during submission actions - this is appropriate UX:
-- `src/components/CreateStoryModal.tsx` - Publishing story
-- `src/components/ProfilePictureEditor.tsx` - Uploading photo
-- `src/components/home/CommentModal.tsx` (line 188) - Submitting comment
-- `src/components/explore/CommentModal.tsx` (line 133) - Submitting comment
-- `src/components/notifications/ContactsFoundView.tsx` - Following user
-- `src/components/onboarding/GuidedTour.tsx` - Uploading photo
-- `src/components/list/GoogleMapsImportModal.tsx` - Importing
-- `src/components/business/BusinessMarketingCreator.tsx` - Publishing
-- `src/components/admin/AdminToolsSection.tsx` - Executing tool
-- `src/components/add/AddPageOverlay.tsx` - Loading search (inline with results)
-
-#### **Type 4: Map/Pull-to-Refresh (KEEP AS-IS)**
-These are appropriate contextual indicators:
-- `src/components/home/MapSection.tsx` (line 795) - "Loading locations" inline indicator
-- `src/pages/DiscoverPage.tsx` (line 80) - Pull-to-refresh indicator
+The first phase replaced spinners in 17 files. I've identified **14 additional files** still using loading spinners that should be replaced with skeleton UIs.
 
 ---
 
-### Implementation Strategy
+### Remaining Files with Loading Spinners
 
-#### Phase 1: Create Shared Skeleton Components
+| File | Line | Current State | Solution |
+|------|------|---------------|----------|
+| `src/pages/NotificationsPage.tsx` | 147-152 | Full page spinner | Use `NotificationsSkeleton` |
+| `src/components/social/LikersDrawer.tsx` | 219-222 | Modal content spinner | Create `LikersListSkeleton` |
+| `src/pages/business/BusinessProfilePage.tsx` | 202-205 | Full page spinner | Create `BusinessProfileSkeleton` |
+| `src/components/profile/ShareProfileModal.tsx` | 200-203 | Modal content spinner | Use `UserListSkeleton` |
+| `src/components/explore/PinDetailCard.tsx` | 1778-1781, 1847-1850 | Posts/Reviews tab spinners | Use `PostsGridSkeleton` and `CommentsSkeleton` |
+| `src/components/social/ShareModal.tsx` | 159-162 | Users list spinner | Use `UserListSkeleton` |
+| `src/pages/business/BusinessNotificationsPage.tsx` | 146-149 | Notifications list spinner | Use `NotificationsSkeleton` |
+| `src/components/profile/TaggedPostsGrid.tsx` | 60-65 | Grid loading spinner | Use `PostsGridSkeleton` |
+| `src/components/admin/SeedingDashboard.tsx` | 137-140 | Dashboard spinner | Use `BusinessDashboardSkeleton` |
+| `src/components/admin/LocationDataFix.tsx` | Button spinners only | Keep as-is (action feedback) |
 
-**1. `src/components/common/skeletons/NotificationsSkeleton.tsx`**
+---
+
+### Implementation Details
+
+#### 1. NotificationsPage.tsx (line 147-152)
+Replace the centered spinner with `NotificationsSkeleton`:
 ```tsx
-// Shimmer skeleton for notifications list
-- Avatar placeholder
-- Text lines placeholder
-- Timestamp placeholder
-- Repeat 5 times with staggered animation
+// Replace:
+<div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+
+// With:
+<NotificationsSkeleton count={6} />
 ```
 
-**2. `src/components/common/skeletons/CommentsSkeleton.tsx`**
+#### 2. LikersDrawer.tsx (line 219-222)
+Use the existing `UserListSkeleton` component:
 ```tsx
-// Shimmer skeleton for comments
-- Avatar + username + timestamp row
-- Text content lines
-- Repeat 4 times
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
+
+// Replace spinner with:
+<UserListSkeleton count={6} />
 ```
 
-**3. `src/components/common/skeletons/UserListSkeleton.tsx`**
-```tsx
-// For share modal, saved by modal, etc.
-- Avatar + name row
-- Repeat 6 times
-```
-
-**4. `src/components/common/skeletons/LocationCardsSkeleton.tsx`**
-```tsx
-// For location grid, recommendations
-- Thumbnail + name + category
-- Repeat 6 items
-```
-
-**5. `src/components/common/skeletons/SettingsSkeleton.tsx`**
-```tsx
-// For settings pages
-- Toggle row skeletons
-```
-
-**6. `src/components/common/skeletons/BusinessDashboardSkeleton.tsx`**
-```tsx
-// For business dashboard
+#### 3. BusinessProfilePage.tsx (line 202-205)
+Create a new `BusinessProfileSkeleton` with:
+- Hero image skeleton
+- Business info section skeleton
 - Stats cards skeleton
-- Claims list skeleton
+- Action buttons skeleton
+
+#### 4. ShareProfileModal.tsx (line 200-203)
+Use existing `UserListSkeleton`:
+```tsx
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
+
+// Replace spinner with:
+<UserListSkeleton count={5} />
 ```
 
-#### Phase 2: Update Each File
+#### 5. PinDetailCard.tsx (lines 1778-1781, 1847-1850)
+Two spinners in tab content:
+- **Posts tab**: Use `PostsGridSkeleton`
+- **Reviews tab**: Use `CommentsSkeleton`
 
-**Files to Update (17 total):**
+```tsx
+import PostsGridSkeleton from '@/components/common/skeletons/PostsGridSkeleton';
+import CommentsSkeleton from '@/components/common/skeletons/CommentsSkeleton';
 
-1. **`src/pages/BusinessDashboardPage.tsx`**
-   - Replace spinner with `BusinessDashboardSkeleton`
+// Posts loading:
+{postsLoading && posts.length === 0 ? (
+  <PostsGridSkeleton count={4} columns={2} />
+) : ...}
 
-2. **`src/pages/BusinessClaimPage.tsx`**
-   - Replace spinner with claims list skeleton
+// Reviews loading:
+{reviewsLoading ? (
+  <CommentsSkeleton count={3} />
+) : ...}
+```
 
-3. **`src/pages/business/BusinessAnalyticsPage.tsx`**
-   - Replace spinner with analytics skeleton
+#### 6. ShareModal.tsx (line 159-162)
+Use `UserListSkeleton`:
+```tsx
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
-4. **`src/pages/PrivacySettingsPage.tsx`**
-   - Replace spinner with `SettingsSkeleton`
+// Replace spinner with:
+<UserListSkeleton count={6} />
+```
 
-5. **`src/components/NotificationsModal.tsx`**
-   - Replace spinner with `NotificationsSkeleton`
+#### 7. BusinessNotificationsPage.tsx (line 146-149)
+Use `NotificationsSkeleton`:
+```tsx
+import NotificationsSkeleton from '@/components/common/skeletons/NotificationsSkeleton';
 
-6. **`src/components/explore/ExploreResults.tsx`**
-   - Replace spinner with user list skeleton cards
+// Replace spinner with:
+<NotificationsSkeleton count={5} />
+```
 
-7. **`src/components/explore/VirtualizedPostGrid.tsx`** (2 instances)
-   - Replace spinner with `PostsGridSkeleton` (already exists)
+#### 8. TaggedPostsGrid.tsx (line 60-65)
+Use `PostsGridSkeleton`:
+```tsx
+import PostsGridSkeleton from '@/components/common/skeletons/PostsGridSkeleton';
 
-8. **`src/components/explore/LocationGrid.tsx`**
-   - Replace spinner with `LocationCardsSkeleton`
+if (loading) {
+  return <PostsGridSkeleton count={6} columns={2} />;
+}
+```
 
-9. **`src/components/explore/RecommendationsSection.tsx`**
-   - Replace spinner with inline skeleton cards
+#### 9. SeedingDashboard.tsx (line 137-140)
+Use `BusinessDashboardSkeleton`:
+```tsx
+import BusinessDashboardSkeleton from '@/components/common/skeletons/BusinessDashboardSkeleton';
 
-10. **`src/components/explore/LocationPostCards.tsx`**
-    - Replace spinner with location cards skeleton
-
-11. **`src/components/SimpleHomePage.tsx`**
-    - Replace spinner with inline grid skeleton
-
-12. **`src/components/explore/ShareModal.tsx`**
-    - Replace spinner with `UserListSkeleton`
-
-13. **`src/components/profile/FolderSavedByModal.tsx`**
-    - Replace spinner with `UserListSkeleton`
-
-14. **`src/components/home/CommentModal.tsx`**
-    - Replace spinner with `CommentsSkeleton`
-
-15. **`src/components/explore/CommentModal.tsx`**
-    - Replace spinner with `CommentsSkeleton`
-
-16. **`src/components/home/PlaceInteractionModal.tsx`**
-    - Replace spinner with `CommentsSkeleton`
-
-17. **`src/components/explore/SmartAutocomplete.tsx`**
-    - Replace spinner with inline search skeleton
+// Replace Card with spinner:
+<BusinessDashboardSkeleton />
+```
 
 ---
 
-### What Will NOT Be Changed
+### New Skeleton Component Needed
 
-These spinners are **appropriate** and will be kept:
-
-| Location | Reason |
-|----------|--------|
-| Button submit states (comment, upload, publish) | User needs feedback that action is processing |
-| Pull-to-refresh indicator | Standard mobile pattern |
-| Map "Loading locations" indicator | Small contextual indicator, not full-screen |
-| RefreshCw icons (admin dashboards) | Icon rotation, not blocking content |
+**`src/components/common/skeletons/BusinessProfileSkeleton.tsx`**
+```tsx
+// Structure:
+- Full-width hero image placeholder (aspect-[3/1])
+- Business avatar overlapping hero
+- Business name skeleton
+- Category badge skeleton  
+- Stats row (3 cards)
+- Action buttons row skeleton
+- Menu items skeleton
+```
 
 ---
 
 ### Files to Create
 
-1. `src/components/common/skeletons/NotificationsSkeleton.tsx`
-2. `src/components/common/skeletons/CommentsSkeleton.tsx`
-3. `src/components/common/skeletons/UserListSkeleton.tsx`
-4. `src/components/common/skeletons/LocationCardsSkeleton.tsx`
-5. `src/components/common/skeletons/SettingsSkeleton.tsx`
-6. `src/components/common/skeletons/BusinessDashboardSkeleton.tsx`
-7. `src/components/common/skeletons/AnalyticsSkeleton.tsx`
+1. `src/components/common/skeletons/BusinessProfileSkeleton.tsx`
 
 ### Files to Modify
 
-1. `src/pages/BusinessDashboardPage.tsx`
-2. `src/pages/BusinessClaimPage.tsx`
-3. `src/pages/business/BusinessAnalyticsPage.tsx`
-4. `src/pages/PrivacySettingsPage.tsx`
-5. `src/components/NotificationsModal.tsx`
-6. `src/components/explore/ExploreResults.tsx`
-7. `src/components/explore/VirtualizedPostGrid.tsx`
-8. `src/components/explore/LocationGrid.tsx`
-9. `src/components/explore/RecommendationsSection.tsx`
-10. `src/components/explore/LocationPostCards.tsx`
-11. `src/components/SimpleHomePage.tsx`
-12. `src/components/explore/ShareModal.tsx`
-13. `src/components/profile/FolderSavedByModal.tsx`
-14. `src/components/home/CommentModal.tsx`
-15. `src/components/explore/CommentModal.tsx`
-16. `src/components/home/PlaceInteractionModal.tsx`
-17. `src/components/explore/SmartAutocomplete.tsx`
+1. `src/pages/NotificationsPage.tsx` - Use NotificationsSkeleton
+2. `src/components/social/LikersDrawer.tsx` - Use UserListSkeleton
+3. `src/pages/business/BusinessProfilePage.tsx` - Use BusinessProfileSkeleton
+4. `src/components/profile/ShareProfileModal.tsx` - Use UserListSkeleton
+5. `src/components/explore/PinDetailCard.tsx` - Use PostsGridSkeleton + CommentsSkeleton
+6. `src/components/social/ShareModal.tsx` - Use UserListSkeleton
+7. `src/pages/business/BusinessNotificationsPage.tsx` - Use NotificationsSkeleton
+8. `src/components/profile/TaggedPostsGrid.tsx` - Use PostsGridSkeleton
+9. `src/components/admin/SeedingDashboard.tsx` - Use BusinessDashboardSkeleton
+
+---
+
+### Spinners Being Kept (Appropriate UX)
+
+These spinners are inside buttons/actions and provide important feedback:
+
+| File | Purpose |
+|------|---------|
+| `src/components/admin/LocationDataFix.tsx` | "Scanning..." and "Correction..." button states |
+| `src/components/OptimizedPlacesAutocomplete.tsx` | Inline search loading indicator (small, non-blocking) |
+| `src/components/explore/UserCard.tsx` | Follow button loading state |
+| `src/components/business/NotificationComposer.tsx` | "Sending..." button state |
+| `src/components/social/ShareModal.tsx` (line 281) | "Sending" button state |
+| `src/pages/ShareLocationPage.tsx` | Search and submit button states |
+| `src/pages/auth/SignupStart.tsx` | Username availability check (inline) |
+| `src/components/home/MapSection.tsx` | "Loading locations" inline indicator |
 
 ---
 
 ### Expected Outcome
 
-After these changes:
-- No visible spinning loader circles when navigating between pages
-- Instant shimmer skeletons that match the structure of content being loaded
-- Perceived load time reduced from ~800ms (spinner) to ~100ms (skeleton appears instantly)
-- Button spinners preserved for action feedback (appropriate UX)
-- Consistent skeleton design language across the entire app
+After this phase:
+- 9 more components will use skeleton UIs instead of spinners
+- Complete elimination of full-page/modal-blocking loading spinners
+- Consistent shimmer animation across the entire app
+- Perceived load time improvement across all sections
 
