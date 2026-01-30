@@ -74,26 +74,22 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => setFilter(filter === 'all' ? 'following' : 'all')}
-                className="flex-1 px-4 py-2.5 rounded-xl text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left backdrop-blur-md bg-gray-200/40 dark:bg-slate-800/65"
-                style={{
-                  border: '1.5px solid transparent',
-                  backgroundImage: 'linear-gradient(var(--background), var(--background)), linear-gradient(135deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.2))',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box'
-                }}
+                className="flex-1 px-4 py-3 rounded-full text-foreground text-sm font-semibold 
+                           bg-background dark:bg-slate-800 
+                           shadow-md hover:shadow-lg
+                           border border-border/30
+                           transition-all duration-200 text-left"
               >
                 {filter === 'all' ? t('allMembers', { ns: 'leaderboard' }) : t('following', { ns: 'common' })}
               </button>
 
               <button
                 onClick={() => setIsCityModalOpen(true)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left backdrop-blur-md bg-gray-200/40 dark:bg-slate-800/65"
-                style={{
-                  border: '1.5px solid transparent',
-                  backgroundImage: 'linear-gradient(var(--background), var(--background)), linear-gradient(135deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.2))',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box'
-                }}
+                className="flex-1 px-4 py-3 rounded-full text-foreground text-sm font-semibold 
+                           bg-background dark:bg-slate-800 
+                           shadow-md hover:shadow-lg
+                           border border-border/30
+                           transition-all duration-200 text-left"
               >
                 {getCityDisplayName()}
               </button>
@@ -101,28 +97,28 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
 
             {/* Metric Tabs */}
             <Tabs value={metric} onValueChange={(v) => setMetric(v as LeaderboardMetric)} className="w-full">
-              <TabsList className="w-full grid grid-cols-4 h-auto bg-muted/50 p-1 rounded-xl">
+              <TabsList className="w-full grid grid-cols-4 h-auto bg-background dark:bg-slate-800 p-1.5 rounded-full shadow-md border border-border/30">
                 <TabsTrigger 
                   value="saved" 
-                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="rounded-full py-2.5 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
                 >
                   {t('saved', { ns: 'leaderboard' })}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="invited" 
-                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="rounded-full py-2.5 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
                 >
                   {t('invited', { ns: 'leaderboard' })}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="posts" 
-                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="rounded-full py-2.5 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
                 >
                   {t('posts', { ns: 'leaderboard' })}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="reviews" 
-                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="rounded-full py-2.5 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
                 >
                   {t('reviews', { ns: 'leaderboard' })}
                 </TabsTrigger>

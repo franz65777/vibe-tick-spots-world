@@ -42,6 +42,7 @@ const AuthenticatedLayoutContent: React.FC = () => {
   const isShareLocationRoute = location.pathname === '/share-location';
   const isRewardsRoute = location.pathname === '/rewards';
   const isUserPlacesRoute = location.pathname.startsWith('/user-places');
+  const isLeaderboardRoute = location.pathname === '/leaderboard';
   const isHomePage = location.pathname === '/';
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [isPhotoSelection, setIsPhotoSelection] = useState(false);
@@ -148,7 +149,7 @@ const AuthenticatedLayoutContent: React.FC = () => {
 
   const shouldHideNav = isDiscoverRoute || isSettingsRoute || isPrivacySettingsRoute || isEditProfileRoute || 
     isCreateTripRoute || isCreateListRoute || isSaveLocationRoute || isShareLocationRoute ||
-    isUserPlacesRoute || isRewardsRoute || isMapExpanded || isPhotoSelection || isFolderModalOpen || isOnboardingOpen || isShareProfileOpen || isSplashOpen;
+    isUserPlacesRoute || isRewardsRoute || isLeaderboardRoute || isMapExpanded || isPhotoSelection || isFolderModalOpen || isOnboardingOpen || isShareProfileOpen || isSplashOpen;
 
   return (
     <div className="min-h-screen bg-background">
