@@ -1,217 +1,147 @@
 
-## Piano: Fase 7 - Fix Timing Logo 800ms + Spinner Notifiche + Sincronizzazione Salvataggio dalla Ricerca
+Obiettivo (immediato)
+- Sistemare il “Salva” nella Add page: oggi fallisce (quindi non chiude) perché l’insert in `folder_locations` viene bloccato da RLS.
+- Far comparire le immagini “autogenerate” (come Torino) ovunque: sia nella Add flow (lista selezione) sia nelle card liste del profilo.
+- Migliorare la UI delle card liste (meno “bianco”, più “card-like” e leggibile).
 
----
+Contesto (debug già trovato)
+- Nei console logs compare: `new row violates row-level security policy (USING expression) for table "folder_locations"`.
+  Questo spiega perfettamente:
+  1) “Il salvataggio non funziona”
+  2) “Il tasto salva non fa chiudere la pagina add” (perché va in catch e non arriva al close).
 
-### Problema 1: Delay 800ms per il Logo
+------------------------------------------------------------
+1) Fix SALVATAGGIO Add Page (RLS su folder_locations)
+Cosa fare
+A. Verificare configurazione RLS su `folder_locations`
+- Se RLS è ON (lo è, visto l’errore), dobbiamo aggiungere policy per:
+  - INSERT (per aggiungere una location a una cartella)
+  - SELECT (per poter leggere righe quando serve)
+  - DELETE (per rimuovere una location da una cartella, se previsto)
+  - (eventuale UPDATE se in futuro serve; oggi usiamo upsert)
 
-**Situazione Attuale:**
-Il delay iniziale in `SearchDrawer.tsx` è di 50ms (linea 201).
+B. Creare policy “solo proprietario cartella”
+- Consentire insert/select/delete su `folder_locations` solo se la cartella (`saved_folders.id = folder_locations.folder_id`) appartiene a `auth.uid()`.
 
-**Soluzione:**
-Cambiare il delay da 50ms a 800ms come richiesto dall'utente.
+SQL (indicativo, da mettere in migration)
+- Abilitazione RLS (se non già abilitata)
+- Policy INSERT:
+  - WITH CHECK: EXISTS saved_folders WHERE saved_folders.id = folder_locations.folder_id AND saved_folders.user_id = auth.uid()
+- Policy SELECT:
+  - USING: EXISTS saved_folders ... stesso controllo
+- Policy DELETE:
+  - USING: EXISTS saved_folders ... stesso controllo
 
-**File:** `src/components/home/SearchDrawer.tsx` (linea 201)
+Risultato atteso
+- `upsert(folder_locations)` dal `LocationContributionModal` non fallisce più.
+- Al click su “Salva”:
+  - la location viene realmente aggiunta alla lista
+  - la modal si chiude
+  - l’utente torna alla mappa (il close-add-overlay event rimane ok)
 
-```tsx
-// Prima
-}, 50); // Minimal delay for initial render
+Nota importante
+- Dopo questo fix, il comportamento “chiudi la pagina dopo Salva” funzionerà automaticamente, perché oggi non ci arriva mai al “success path” (va in catch).
 
-// Dopo
-}, 800); // 800ms delay as per user requirement
-```
+------------------------------------------------------------
+2) Fix IMMAGINI liste autogenerate (Torino non mostra cover)
+Perché succede oggi
+- Nel profilo (`useOptimizedFolders`) la cover viene calcolata come:
+  - folder.cover_image_url || firstLoc.image_url || null
+- Ma per molte location “autogenerate”:
+  - `locations.image_url` è null
+  - le foto sono in `locations.photos` (array di URL in storage)
+- Quindi la cover resta null e viene mostrato il gradiente.
 
----
+Soluzione (backend read + mapping)
+A. Aggiornare `useOptimizedFolders`
+- Quando carichiamo le locations, includere anche `photos`:
+  - `select('id, category, image_url, photos')`
+- Implementare una piccola funzione helper (o riusare lo stesso pattern già usato altrove) per estrarre “prima foto” da `photos`.
+- Impostare cover così:
+  - `cover_image_url: folder.cover_image_url || firstLoc.image_url || extractFirstPhotoUrl(firstLoc.photos) || null`
+- Fare lo stesso anche per `savedFolders` (le liste salvate di altri utenti), perché usano la stessa logica.
 
-### Problema 2: Rotella di Loading nella Pagina Notifiche
+B. Aggiornare anche `LocationContributionModal` (lista selezione cartelle)
+- Attualmente tenta una join `folder_locations -> locations(...)` che probabilmente non funziona (nel typegen non c’è la relationship verso `locations`).
+- Convertire la logica in “batch query” (più efficiente e affidabile):
+  1) carico tutte le cartelle (saved_folders)
+  2) carico tutte le `folder_locations` per quei folder_id (già lo facciamo per count/hasLocation in modo N+1: lo miglioreremo)
+  3) prendo un location_id “preview” per cartella (prima location)
+  4) faccio una query `locations` con `in(locationIds)` e prendo `image_url, photos`
+  5) calcolo `cover_url` come sopra
 
-**Analisi:**
-Ho verificato che `NotificationsOverlay.tsx` usa già `NotificationsSkeleton` per il loading (linea 261-262). Tuttavia, l'hook `useNotificationData` (che pre-carica i dati per ogni notifica) parte con `loading: true` e impiega tempo per caricare.
+Risultato atteso
+- Torino (e simili) mostrerà una foto reale (presa da `locations.photos[0]`) invece del gradiente, sia:
+  - nella selezione liste della Add flow
+  - nelle card liste del profilo
+  - in eventuali altri punti che usano `useOptimizedFolders`
 
-**Il problema reale:**
-Quando l'overlay si apre, sia `useNotifications` che `useNotificationData` partono con `loading: true`. Questo causa:
-1. Prima si vede lo skeleton delle notifiche (da `useNotifications.loading`)
-2. Poi quando le notifiche arrivano ma `useNotificationData.loading` è ancora true, l'overlay potrebbe mostrare contenuto incompleto o flash
+------------------------------------------------------------
+3) “Salva” deve chiudere davvero la pagina Add (UX)
+Cosa fare (oltre al fix RLS)
+- Mantenere l’attuale comportamento nel `LocationContributionModal`:
+  - `onClose()` per chiudere la contribution modal
+  - dispatch `close-add-overlay` per chiudere Add overlay (anche se spesso è già chiusa)
+- Aggiungere un feedback più chiaro in caso di errore:
+  - se fallisce l’upsert, mostrare toast specifico: “Non posso salvare in questa lista” (utile se RLS o altro torna a fallire)
+- (Opzionale) Dopo l’upsert, triggerare un invalidation/refresh locale delle liste per far vedere subito i check, ma non è indispensabile se l’overlay si chiude.
 
-**Soluzione:**
-Verificare che l'overlay non mostri uno stato intermedio problematico. Il componente `VirtualizedNotificationsList` riceve `prefetchedData` che include un flag `loading`. Se questo è true mentre le notifiche sono già caricate, potrebbe causare un comportamento strano.
+------------------------------------------------------------
+4) Migliorare look delle “card liste” (meno spazio bianco)
+Dove intervenire
+- Le card liste nel profilo sembrano essere in `src/components/profile/TripsGrid.tsx` (row “My Lists” / “Saved Lists”).
+- Dallo screenshot e dal codice attuale, il “bianco” percepito può essere:
+  - overlay inferiore con padding alto (pt-12) che “mangia” area immagine
+  - testo/meta poco denso e con spazi generosi
+  - shadow e rounding ok ma composizione migliorabile
 
-Dopo ulteriore analisi, noto che `MobileNotificationItem` usa `prefetchedData.loading` per decidere cosa mostrare. Se l'utente vede ancora una "rotella", potrebbe essere uno dei bottoni di azione (Follow, Accept, etc.) che mostrano uno spinner durante il caricamento.
+Interventi UI proposti (senza cambiare layout generale)
+- Ridurre la fascia overlay:
+  - diminuire `pt-12` a qualcosa tipo `pt-8` o `pt-6`
+  - usare overlay più “pulito”: gradient + blur leggero ma meno alto
+- Rendere il titolo più leggibile e compatto:
+  - mantenere 2 righe ma ridurre leading e padding
+- Aggiungere micro-badge sopra immagine (opzionale):
+  - conteggio luoghi (pill piccola)
+  - privacy icon già presente, ok, ma possiamo allinearla meglio
+- Uniformare copertine:
+  - garantire `object-cover`
+  - placeholder gradiente coerente quando manca immagine
 
-**Verifica necessaria:** Il problema potrebbe essere nella transizione dell'overlay stesso. Il Double RAF pattern applicato in Fase 6 dovrebbe gestire questo, ma potrebbe esserci un problema di timing.
+Risultato atteso
+- Card più “piene”, meno “vuoto” e più simili a quelle “best night out in dublin” come stile di densità (immagine protagonista, overlay testo compatto).
 
-**Azione:** Aggiungere un controllo per evitare di mostrare l'overlay vuoto durante il caricamento iniziale e assicurarsi che lo skeleton venga mostrato immediatamente.
+------------------------------------------------------------
+5) Test end-to-end (obbligatorio)
+Scenario da testare (flow completo)
+1) Apri Add overlay → scegli un luogo
+2) Seleziona una lista
+3) Premi “Salva”
+Atteso:
+- niente errori in console
+- la modal si chiude e torni alla mappa
+- riaprendo la lista dal profilo o da dove preferisci, la location è presente
+4) Verifica copertina lista Torino:
+- deve mostrare una foto reale (da `locations.photos`) e non il gradiente
 
----
+------------------------------------------------------------
+File coinvolti (previsti)
+- Database / Supabase migrations:
+  - Nuova migration per RLS policies su `folder_locations`
+- Frontend:
+  - `src/hooks/useOptimizedFolders.ts` (cover fallback usando `photos`)
+  - `src/components/explore/LocationContributionModal.tsx` (fetch cover/list batch + stop join non funzionante)
+  - `src/components/profile/TripsGrid.tsx` (ritocco UI card liste)
 
-### Problema 3: Conflitti Salvataggio dalla Barra di Ricerca
+Rischi / Edge cases
+- Se alcune locations hanno `photos` non come array di stringhe: gestire anche array di oggetti con `.url` (pattern già usato in altre parti).
+- Se `folder_locations` non ha unique constraint su (folder_id, location_id), l’upsert potrebbe non comportarsi come atteso. Oggi non risulta l’errore, ma se necessario:
+  - aggiungere unique constraint in migration.
+- Performance: la logica attuale in LocationContributionModal fa molte query (N+1). Il refactor batch ridurrà drasticamente le chiamate e renderà l’UI più reattiva.
 
-**Analisi Approfondita:**
-
-Ho esaminato il flusso di salvataggio e identificato il problema principale:
-
-**`LocationDetailDrawer.tsx` (linee 500-555):**
-- Il componente salva correttamente la location nel database
-- **NON emette l'evento `location-save-changed`** dopo il salvataggio!
-- Questo significa che MapSection e LeafletMapSetup non vengono notificati
-
-**Conseguenze:**
-1. **Duplicato del pin**: Il pin temporaneo rimane sulla mappa perché non viene aggiornato con il nuovo ID
-2. **Icona salvataggio non mostrata**: LeafletMapSetup ascolta `location-save-changed` per aggiornare l'icona del marker ma l'evento non arriva mai
-3. **Sincronizzazione rotta**: MapSection aggiorna `selectedPlace` solo quando riceve l'evento
-
-**Confronto con PinDetailCard (funziona correttamente):**
-```tsx
-// PinDetailCard.tsx (linee 908-930)
-window.dispatchEvent(new CustomEvent('location-save-changed', {
-  detail: { 
-    locationId: locationId, 
-    isSaved: true, 
-    saveTag: tag,
-    newLocationId: locationId,
-    oldLocationId: originalPlaceId,
-    coordinates: place.coordinates
-  }
-}));
-```
-
-**Soluzione:**
-Aggiungere l'emissione dell'evento `location-save-changed` in `LocationDetailDrawer.tsx` dopo il salvataggio riuscito, includendo tutti i dettagli necessari per la sincronizzazione.
-
----
-
-### File da Modificare
-
-1. **`src/components/home/SearchDrawer.tsx`**
-   - Linea 201: Cambiare delay da `50` a `800`
-
-2. **`src/components/home/LocationDetailDrawer.tsx`**
-   - Linea ~545: Aggiungere emissione evento `location-save-changed` dopo salvataggio
-   - Includere: `locationId`, `isSaved`, `saveTag`, `newLocationId`, `oldLocationId`, `coordinates`
-   - Linea ~565: Aggiungere emissione evento per unsave
-
----
-
-### Implementazione Dettagliata
-
-**LocationDetailDrawer.tsx - handleSave:**
-
-```tsx
-const handleSave = async (tag: SaveTag) => {
-  if (!user?.id || !location) return;
-  setLoading(true);
-  
-  // Store original ID for event
-  const originalLocationId = location.id;
-  
-  try {
-    let locationIdToSave = location.id;
-    const coordsSource: any = resolvedCoordinates || location.coordinates || {};
-    const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
-    const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
-    
-    // ... existing location creation logic ...
-
-    const saved = await locationInteractionService.saveLocation(locationIdToSave, {
-      // ... existing params ...
-    }, tag);
-    
-    if (saved) {
-      setIsSaved(true);
-      setCurrentSaveTag(tag);
-      toast.success(t('locationSaved', { ns: 'common' }));
-      
-      // Emit global event for map synchronization
-      window.dispatchEvent(new CustomEvent('location-save-changed', {
-        detail: { 
-          locationId: locationIdToSave, 
-          isSaved: true, 
-          saveTag: tag,
-          newLocationId: locationIdToSave,
-          oldLocationId: originalLocationId,
-          coordinates: lat && lng ? { lat, lng } : undefined
-        }
-      }));
-      
-      // Also emit for google_place_id if present
-      if ((location as any).google_place_id) {
-        window.dispatchEvent(new CustomEvent('location-save-changed', {
-          detail: { 
-            locationId: (location as any).google_place_id, 
-            isSaved: true, 
-            saveTag: tag,
-            newLocationId: locationIdToSave,
-            oldLocationId: originalLocationId,
-            coordinates: lat && lng ? { lat, lng } : undefined
-          }
-        }));
-      }
-    } else {
-      toast.error(t('failedToSave', { ns: 'common' }));
-    }
-  } catch (error) {
-    console.error('Error saving location:', error);
-    toast.error(t('failedToSave', { ns: 'common' }));
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-**LocationDetailDrawer.tsx - handleUnsave:**
-
-```tsx
-const handleUnsave = async () => {
-  if (!location?.id) return;
-  setLoading(true);
-  try {
-    const unsaved = await locationInteractionService.unsaveLocation(location.id);
-    if (unsaved) {
-      setIsSaved(false);
-      setCurrentSaveTag('been');
-      toast.success(t('locationRemoved', { ns: 'common' }));
-      
-      // Emit global event for map synchronization
-      window.dispatchEvent(new CustomEvent('location-save-changed', {
-        detail: { locationId: location.id, isSaved: false }
-      }));
-      
-      // Also emit for google_place_id if present
-      if ((location as any).google_place_id) {
-        window.dispatchEvent(new CustomEvent('location-save-changed', {
-          detail: { locationId: (location as any).google_place_id, isSaved: false }
-        }));
-      }
-    }
-  } catch (error) {
-    console.error('Error unsaving location:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
----
-
-### Risultato Atteso
-
-| Problema | Prima | Dopo |
-|----------|-------|------|
-| Delay logo | 50ms | 800ms |
-| Salvataggio da ricerca | Pin duplicato + icona non aggiornata | Sincronizzazione immediata |
-| Icona salvataggio | Non mostrata fino a refresh | Mostrata immediatamente |
-| Evento location-save-changed | Non emesso da LocationDetailDrawer | Emesso correttamente con tutti i dati |
-
----
-
-### Note Tecniche
-
-**Perché il problema non si verifica con PinDetailCard:**
-PinDetailCard (usato quando si clicca un pin sulla mappa) emette correttamente l'evento `location-save-changed` con tutti i dettagli necessari. LocationDetailDrawer (usato dalla ricerca) non lo faceva.
-
-**Flusso di sincronizzazione corretto:**
-1. Utente salva location da LocationDetailDrawer
-2. Evento `location-save-changed` emesso con `newLocationId`, `oldLocationId`, `coordinates`
-3. MapSection riceve evento e aggiorna `selectedPlace.id` con il nuovo ID database
-4. LeafletMapSetup riceve evento e aggiorna l'icona del marker temporaneo
-5. Il pin rimane visibile con l'icona corretta senza duplicati
+Criteri di completamento
+- Nessun errore RLS in console quando salvo in lista.
+- Salvataggio effettivo in lista verificabile riaprendo la lista.
+- Dopo “Salva” si torna sempre alla mappa.
+- Torino (e liste autogenerate) mostrano copertina foto invece del gradiente.
+- Card liste profilo con overlay più compatto e meno bianco.
