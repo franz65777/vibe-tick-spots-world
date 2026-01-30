@@ -79,8 +79,9 @@ export const useOptimizedFeed = () => {
       return enriched;
     },
     enabled: !!user?.id,
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    staleTime: 0, // Force refetch sempre al mount
     gcTime: 10 * 60 * 1000, // 10 minutes in memory
+    refetchOnMount: 'always', // Forza sempre il refetch al mount
     // placeholderData mostra i dati cached mentre il fetch è in corso, ma non blocca il fetch
     placeholderData: () => {
       if (!user?.id) return undefined;
