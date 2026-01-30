@@ -283,7 +283,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
     <article
       id={`feed-post-${postId}`}
       data-feed-post-id={postId}
-      className="post-compact bg-white/70 dark:bg-zinc-900/70 backdrop-blur-sm mx-3 mb-4 rounded-2xl border border-white/40 dark:border-white/20 shadow-sm overflow-hidden"
+      className="post-compact bg-white/60 dark:bg-zinc-900/70 backdrop-blur-md mx-5 rounded-xl border border-white/40 dark:border-white/20 shadow-lg shadow-black/5 dark:shadow-black/20 overflow-hidden"
     >
       {/* Post Header */}
       <div className="post-compact-header flex items-center justify-between">

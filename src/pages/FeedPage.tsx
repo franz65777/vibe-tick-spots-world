@@ -683,24 +683,26 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
                   const saveTag = item.location_id ? (batchEngagement?.savedLocations.get(item.location_id) ?? null) : null;
                   
                   return (
-                    <Suspense key={key} fallback={<FeedPostSkeleton />}>
-                      <FeedPostItem
-                        item={item}
-                        profile={profile}
-                        userHasStory={userHasStory}
-                        postLikes={postLikes}
-                        expandedCaptions={expandedCaptions}
-                        isPromotionFeed={feedType === 'promotions'}
-                        initialIsLiked={isLiked}
-                        initialSaveTag={saveTag}
-                        onAvatarClick={handleAvatarClick}
-                        onLocationClick={handleLocationClick}
-                        onCommentClick={handleCommentClick}
-                        onShareClick={handleShareClick}
-                        onToggleCaption={toggleCaption}
-                        onDoubleTapLike={handleDoubleTapLike}
-                      />
-                    </Suspense>
+                    <div key={key} className="py-1">
+                      <Suspense fallback={<FeedPostSkeleton />}>
+                        <FeedPostItem
+                          item={item}
+                          profile={profile}
+                          userHasStory={userHasStory}
+                          postLikes={postLikes}
+                          expandedCaptions={expandedCaptions}
+                          isPromotionFeed={feedType === 'promotions'}
+                          initialIsLiked={isLiked}
+                          initialSaveTag={saveTag}
+                          onAvatarClick={handleAvatarClick}
+                          onLocationClick={handleLocationClick}
+                          onCommentClick={handleCommentClick}
+                          onShareClick={handleShareClick}
+                          onToggleCaption={toggleCaption}
+                          onDoubleTapLike={handleDoubleTapLike}
+                        />
+                      </Suspense>
+                    </div>
                   );
                 };
                 
