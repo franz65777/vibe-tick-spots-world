@@ -24,32 +24,31 @@ const ProfileTabs = ({
 }: ProfileTabsProps) => {
   const { t } = useTranslation();
   return (
-    <div className="">{/* No padding */}
-      <div className="relative flex bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-xl p-1 mb-4 mx-3">
-        <div className="absolute inset-0 rounded-xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+    <div className="px-3 mb-4">
+      <div className="flex bg-gray-100/60 dark:bg-slate-800/50 backdrop-blur-md rounded-2xl p-1.5 shadow-inner border border-gray-200/50 dark:border-white/5">
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+            "flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
             activeTab === 'posts'
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 scale-[1.02]"
+              : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
           )}
         >
-          <Grid3X3 className="w-4 h-4" />
+          <Grid3X3 className="w-5 h-5" />
           <span className="hidden sm:inline">{t('posts', { ns: 'profile' })}</span>
         </button>
         {showTrips && (
           <button
             onClick={() => onTabChange('trips')}
             className={cn(
-              "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+              "flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
               activeTab === 'trips'
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 scale-[1.02]"
+                : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
             )}
           >
-            <List className="w-4 h-4" />
+            <List className="w-5 h-5" />
             <span className="hidden sm:inline">{t('trips', { ns: 'profile' })}</span>
           </button>
         )}
@@ -57,41 +56,41 @@ const ProfileTabs = ({
           <button
             onClick={() => onTabChange('marketing')}
             className={cn(
-              "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+              "flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
               activeTab === 'marketing'
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 scale-[1.02]"
+                : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
             )}
           >
-            <Megaphone className="w-4 h-4" />
+            <Megaphone className="w-5 h-5" />
             <span className="hidden sm:inline">{t('marketing', { ns: 'profile' })}</span>
           </button>
         )}
         <button
           onClick={() => onTabChange('badges')}
           className={cn(
-            "relative flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+            "relative flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
             activeTab === 'badges'
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 scale-[1.02]"
+              : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
           )}
         >
-          <Award className="w-4 h-4" />
+          <Award className="w-5 h-5" />
           <span className="hidden sm:inline">{t('badges', { ns: 'profile' })}</span>
           {hasNewBadges && activeTab !== 'badges' && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
           )}
         </button>
         <button
           onClick={() => onTabChange('tagged')}
           className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+            "flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
             activeTab === 'tagged'
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 scale-[1.02]"
+              : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
           )}
         >
-          <Tag className="w-4 h-4" />
+          <Tag className="w-5 h-5" />
           <span className="hidden sm:inline">{t('tagged', { ns: 'profile' })}</span>
         </button>
       </div>
