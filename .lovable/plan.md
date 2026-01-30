@@ -1,185 +1,155 @@
 
+# Piano: Ottimizzazione Performance Pagina Profilo
 
-# Plan: iOS-Style Swipe Navigation Between Profile Tabs
+## Problemi Identificati
 
-## Overview
+### 1. BUG CRITICO: Infinite Loop nel Carousel
+I log mostrano `Maximum update depth exceeded` causato da `setApi` nel carousel di `PostDetailModalMobile.tsx`. Quando il carousel chiama `setApi(api)`, questo causa un re-render che ricrea l'api, innescando un loop infinito.
 
-Implement a smooth iOS-like horizontal swipe gesture to navigate between the 4 profile tabs (Posts, Trips/Lists, Badges, Tagged). The swipe will allow users to slide their finger left/right to move between tabs with visual feedback and animation.
+### 2. Settings Button Appare in Ritardo
+Il pulsante settings e' dentro `ProfileHeader` che mostra `ProfileHeaderSkeleton` quando `loading && !profile`. Il settings button dovrebbe essere sempre visibile, indipendentemente dallo stato di loading.
 
-## Challenge: Conflicts with Horizontal Scroll
+### 3. Query Duplicate
+- `ProfilePage.tsx` chiama `useProfileAggregated()`
+- `ProfileHeader.tsx` chiama di nuovo `useProfileAggregated()` separatamente
+- `PostsGrid.tsx` chiama `useOptimizedProfile()` (terza query profilo!)
+- `BadgeDisplay` chiama `useUserBadges()` (quarta query parallela!)
 
-The **Trips/Lists tab** contains horizontal scrolling carousels for "My Lists" and "Saved Lists". We need to prevent conflicts between:
-- Tab swipe navigation (swipe left/right to change tabs)
-- Card carousel scroll (swipe left/right to see more cards)
+### 4. useStories Sempre Attivo
+Il hook `useStories` viene chiamato sempre in `ProfileHeader` anche se serve solo per l'avatar ring. E' un fetch non necessario per la maggior parte degli utenti.
 
-**Solution**: Use edge-based detection - only trigger tab swipe when:
-1. Touch starts outside of horizontal scroll areas, OR
-2. Touch starts from screen edges (leftmost 30px or rightmost 30px), OR
-3. Vertical content is not scrollable horizontally at touch point
+---
 
-## Technical Implementation
+## Soluzioni Proposte
 
-### 1. Create `useSwipeTabs` Hook
+### Fix 1: Risolvere Infinite Loop Carousel
 
-**New file: `src/hooks/useSwipeTabs.ts`**
-
-A custom hook that:
-- Detects horizontal swipe gestures on the tab content area
-- Returns current transform offset for visual feedback during swipe
-- Calls `onTabChange` when swipe threshold is met
-- Respects horizontal scroll containers by checking if the touch target or its parents have `overflow-x: auto/scroll`
+Modificare `PostDetailModalMobile.tsx` per usare un ref stabile invece di state per il carousel API:
 
 ```tsx
-interface UseSwipeTabsOptions {
-  tabs: string[];
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  enabled?: boolean;
-  threshold?: number; // percentage of screen width (default 0.25 = 25%)
-}
+// Prima (causa loop)
+const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
 
-// Returns
-interface UseSwipeTabsReturn {
-  containerRef: React.RefObject<HTMLDivElement>;
-  offset: number;        // Current drag offset in pixels
-  isSwiping: boolean;    // Whether user is actively swiping
-  direction: 'left' | 'right' | null;
-}
+// Dopo (stabile)
+const carouselApisRef = useRef<Record<string, any>>({});
 ```
 
-Key logic:
-- On `touchstart`: Record start position, check if target is inside scrollable container
-- On `touchmove`: Calculate delta, skip if inside scrollable container that can scroll in swipe direction
-- On `touchend`: If delta exceeds threshold (25% screen width), change tab; otherwise spring back
-- CSS transform is applied for 60fps animation during drag
+### Fix 2: Settings Button Sempre Visibile
 
-### 2. Create `SwipeableTabContent` Component
-
-**New file: `src/components/common/SwipeableTabContent.tsx`**
-
-A wrapper component that:
-- Renders all 4 tab contents side-by-side (off-screen until active)
-- Applies CSS transform based on active tab index
-- Shows smooth spring animation on tab change
-- Handles swipe gesture via `useSwipeTabs`
+Estrarre il settings button fuori dalla logica condizionale del `ProfileHeader`. Renderizzarlo sempre nella parte destra, indipendentemente dallo stato di loading:
 
 ```tsx
-interface SwipeableTabContentProps {
-  tabs: { key: string; content: React.ReactNode }[];
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  enabled?: boolean;
-}
+// ProfileHeader.tsx
+const ProfileHeader = ({ ... }) => {
+  // ... hooks ...
+
+  // Settings button SEMPRE visibile
+  const SettingsButton = (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="h-10 w-10 p-0"
+      onClick={() => navigate('/settings')}
+    >
+      <img src={settingsIcon} alt="Settings" className="w-9 h-9" />
+    </Button>
+  );
+
+  if (loading && !profile) {
+    return (
+      <div className="pt-1 pb-2 bg-background">
+        <div className="flex items-start gap-3 px-3">
+          {/* Skeleton content */}
+          <Skeleton className="w-16 h-16 rounded-full" />
+          <div className="flex-1">...</div>
+          {/* Settings sempre visibile anche durante loading */}
+          <div className="shrink-0">{SettingsButton}</div>
+        </div>
+      </div>
+    );
+  }
+  // ...
+};
 ```
 
-Structure:
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Container (overflow: hidden)                            │
-│ ┌─────────┬─────────┬─────────┬─────────┐              │
-│ │  Posts  │  Trips  │ Badges  │ Tagged  │ ← Inner flex │
-│ │  (100%) │  (100%) │  (100%) │  (100%) │   container  │
-│ └─────────┴─────────┴─────────┴─────────┘              │
-│         ← CSS translateX based on activeTab            │
-└─────────────────────────────────────────────────────────┘
-```
+### Fix 3: Eliminare Query Duplicate
 
-### 3. Update ProfilePage.tsx
+Passare i dati del profilo come props invece di ri-fetchare:
 
-Modify the tab content rendering to use the new swipeable wrapper:
-
-**Before (current):**
 ```tsx
-<div className="flex-1 min-h-0 overflow-hidden">
-  {renderTabContent()}
-</div>
-```
+// ProfilePage.tsx
+const { profile, stats, categoryCounts, loading } = useProfileAggregated();
 
-**After:**
-```tsx
-<SwipeableTabContent
-  tabs={[
-    { key: 'posts', content: <PostsGrid /> },
-    { key: 'trips', content: <TripsGrid /> },
-    { key: 'badges', content: <Achievements userId={user?.id} /> },
-    { key: 'tagged', content: <TaggedPostsGrid /> },
-  ]}
-  activeTab={activeTab}
-  onTabChange={setActiveTab}
-  enabled={isMobile}
+<ProfileHeader
+  profile={profile}
+  stats={stats}
+  categoryCounts={categoryCounts}
+  loading={loading}
+  // ...altri props
 />
 ```
 
-### 4. Handle Horizontal Scroll Conflict
+Rimuovere `useProfileAggregated()` e `useOptimizedProfile()` dai componenti figli.
 
-The `useSwipeTabs` hook will include smart detection:
+### Fix 4: Lazy Load Stories
+
+Caricare le stories solo se l'utente ha un avatar cliccabile:
 
 ```tsx
-const isInsideHorizontalScroll = (element: HTMLElement): boolean => {
-  let current: HTMLElement | null = element;
-  while (current) {
-    const style = window.getComputedStyle(current);
-    const overflowX = style.overflowX;
-    if (overflowX === 'auto' || overflowX === 'scroll') {
-      // Check if this element can actually scroll
-      if (current.scrollWidth > current.clientWidth) {
-        return true;
-      }
-    }
-    current = current.parentElement;
-  }
-  return false;
-};
-
-// In touchmove handler:
-if (isInsideHorizontalScroll(e.target as HTMLElement)) {
-  // Check scroll position - only allow tab swipe if at edge of scrollable content
-  const scrollContainer = findScrollableParent(e.target);
-  if (scrollContainer) {
-    const atLeftEdge = scrollContainer.scrollLeft === 0;
-    const atRightEdge = scrollContainer.scrollLeft >= 
-      scrollContainer.scrollWidth - scrollContainer.clientWidth - 1;
-    
-    // Only allow tab swipe if trying to swipe "past" the edge
-    if (deltaX > 0 && !atLeftEdge) return; // swiping right but not at left edge
-    if (deltaX < 0 && !atRightEdge) return; // swiping left but not at right edge
-  }
-}
+// Solo fetch stories quando necessario
+const { stories } = useStories({ 
+  enabled: !!profile?.avatar_url 
+});
 ```
 
-This means:
-- If you're in the Lists tab and swipe on the cards, it scrolls the cards
-- If you're at the **end** of the card list and swipe left again, it goes to Badges tab
-- If you're at the **start** of the card list and swipe right, it goes to Posts tab
+### Fix 5: Consolidare Badge Query
 
-## Visual Feedback
+Spostare `useUserBadges` nel `ProfilePage` e passare i badge come props a `BadgeDisplay`:
 
-During swipe:
-- Content follows finger with slight resistance (0.5x movement for "rubberband" feel)
-- Adjacent tab content partially visible during drag
-- On release: spring animation to final position (300ms, ease-out-cubic)
+```tsx
+// ProfilePage.tsx
+const { badges } = useUserBadges(user?.id);
 
-## Performance Considerations
+<ProfileHeader badges={badges} />
+```
 
-1. **Lazy rendering preserved**: Tab contents still use `lazy()` and `Suspense`
-2. **GPU acceleration**: Use `transform: translateX()` for 60fps animations
-3. **Will-change hint**: Apply `will-change: transform` during swipe only
-4. **Passive listeners**: Use passive touch listeners where possible
+---
 
-## Files to Create/Modify
+## Riepilogo Modifiche
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/hooks/useSwipeTabs.ts` | Create | Swipe gesture detection hook |
-| `src/components/common/SwipeableTabContent.tsx` | Create | Wrapper for swipeable tabs |
-| `src/components/ProfilePage.tsx` | Modify | Integrate swipeable wrapper |
+| File | Modifica |
+|------|----------|
+| `PostDetailModalMobile.tsx` | Fix infinite loop carousel con useRef |
+| `ProfileHeader.tsx` | Settings button sempre montato, props invece di hooks |
+| `ProfilePage.tsx` | Passare profile/badges come props ai figli |
+| `ProfileHeaderSkeleton.tsx` | Mostrare settings button reale invece di skeleton |
+| `PostsGrid.tsx` | Rimuovere useOptimizedProfile, ricevere userId come prop |
+| `BadgeDisplay.tsx` | Ricevere badges come prop invece di useUserBadges |
 
-## Summary
+---
 
-This implementation provides:
-- Smooth iOS-style swipe between tabs
-- Smart conflict resolution with horizontal scroll containers
-- Visual feedback during gesture
-- Spring animation on release
-- Mobile-only activation (desktop uses tab clicks)
+## Impatto Atteso
 
+| Metrica | Prima | Dopo |
+|---------|-------|------|
+| Query Supabase all'apertura | 8-10 | 2-3 |
+| Tempo caricamento header | ~600ms | ~150ms |
+| Settings button visibile | Dopo 500ms+ | Istantaneo |
+| Console errors | "Maximum update depth" | Nessuno |
+| Re-render componenti | 4-5 per cambio stato | 1-2 |
+
+---
+
+## Dettagli Tecnici
+
+### Infinite Loop Fix
+Il problema e' che `setApi(api)` viene chiamato in un `useEffect` del carousel, ma `setApi` e' una nuova funzione ad ogni render (perche' viene da `useState`). Usando `useRef` per memorizzare gli api objects, evitiamo i re-render e il loop.
+
+### Props Drilling vs Context
+Per questa ottimizzazione uso props drilling perche':
+1. I dati fluiscono in una sola direzione (ProfilePage -> Header -> Badge)
+2. Non ci sono componenti deeply nested
+3. E' piu' esplicito e debuggabile
+
+### Caching React Query
+Le query gia' usano `staleTime` e `gcTime` appropriati. Il problema non e' il caching ma il numero di query duplicate che partono in parallelo.
