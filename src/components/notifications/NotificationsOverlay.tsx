@@ -51,8 +51,12 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
       window.dispatchEvent(new CustomEvent('close-filter-dropdown'));
       window.dispatchEvent(new CustomEvent('close-city-selector'));
       window.dispatchEvent(new CustomEvent('close-list-view'));
-      // Trigger fade-in animation
-      requestAnimationFrame(() => setIsVisible(true));
+      // Double RAF: wait for paint before starting transition for smooth fade-in
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
     } else {
       setIsVisible(false);
       if (didSetModalOpenRef.current) {
