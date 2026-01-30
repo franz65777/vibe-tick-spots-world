@@ -274,8 +274,8 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
           {/* City Filter Chips */}
           {citiesWithCounts.length > 0 && (
-            <div className="flex-1 overflow-x-auto scrollbar-hide pr-4">
-              <div className="flex gap-2">
+            <div className="flex-1 overflow-x-auto overflow-y-visible scrollbar-hide py-1">
+              <div className="flex gap-2 pr-4">
                 {/* All chip */}
                 <button
                   onClick={() => setSelectedCity(null)}
@@ -305,6 +305,9 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     {translateCityName(city, i18n.language).toLowerCase()}
                   </button>
                 ))}
+
+                {/* right spacer so last pill doesn't look clipped */}
+                <div className="w-2 shrink-0" aria-hidden />
               </div>
             </div>
           )}
@@ -534,8 +537,8 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
         )
       )}
       
-      {/* Infinite scroll trigger + bottom spacing for navigation bar */}
-      <div ref={loadMoreRef} className="pb-24 pt-4 flex justify-center">
+      {/* Infinite scroll trigger */}
+      <div ref={loadMoreRef} className="py-4 flex justify-center">
         {isFetchingNextPage && (
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         )}
