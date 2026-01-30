@@ -56,10 +56,8 @@ const NewBottomNavigation = () => {
     location.pathname === '/share-location';
 
   // Prefetch profile data when hovering/focusing on Profile tab
-  // This ensures instant loading when user clicks Profile
   const handleProfilePrefetch = useCallback(() => {
     if (user?.id) {
-      // Prefetch the aggregated profile data
       queryClient.prefetchQuery({
         queryKey: ['profile-aggregated', user.id],
         queryFn: async () => {
@@ -84,13 +82,13 @@ const NewBottomNavigation = () => {
   };
 
   const handleProfileLongPressStart = () => {
-    // Only show switch modal if user has a business account
     if (!hasValidBusinessAccount) return;
     
     const timer = setTimeout(() => {
       haptics.impact('heavy');
       setShowSwitchModal(true);
-    }, 800); // 800ms long press
+      setLongPressActivated(true);
+    }, 800);
     setLongPressTimer(timer);
   };
 
@@ -98,17 +96,16 @@ const NewBottomNavigation = () => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
-      // Short tap - navigate to profile
-      if (!showSwitchModal) {
+      if (!showSwitchModal && !longPressActivated) {
         haptics.selection();
         navigate('/profile');
         trackEvent('nav_tab_clicked', { tab: 'profile' });
       }
+      setLongPressActivated(false);
     }
   };
 
   const handleProfileClick = () => {
-    // For users without business account, navigate directly
     if (!hasValidBusinessAccount) {
       haptics.selection();
       navigate('/profile');
@@ -117,8 +114,7 @@ const NewBottomNavigation = () => {
   };
 
   const handleAccountSwitch = (mode: 'personal' | 'business') => {
-    // Note: localStorage only used for UI preference, not authorization
-    // Actual authorization is verified server-side via business_profiles table
+    haptics.success();
     localStorage.setItem('accountMode', mode);
     if (mode === 'business') {
       navigate('/business');
@@ -130,6 +126,7 @@ const NewBottomNavigation = () => {
   };
 
   const handleHomeMenuSelect = (option: 'map' | 'share') => {
+    haptics.selection();
     trackEvent('home_menu_option_selected', { option });
     switch (option) {
       case 'map':
@@ -143,18 +140,18 @@ const NewBottomNavigation = () => {
 
   const navItems = [
     { 
-      icon: <Map size={24} strokeWidth={2} />, 
+      icon: Map, 
       label: t('navigation:explore'), 
       path: '/',
       longPress: true
     },
     { 
-      icon: <Search size={24} strokeWidth={2} />, 
+      icon: Search, 
       label: t('navigation:search'), 
       path: '/explore'
     },
     { 
-      icon: <Plus size={24} strokeWidth={2} />, 
+      icon: Plus, 
       label: t('navigation:add'), 
       path: '/add',
       customAction: () => {
@@ -163,12 +160,12 @@ const NewBottomNavigation = () => {
       }
     },
     { 
-      icon: <Activity size={24} strokeWidth={2} />, 
+      icon: Activity, 
       label: t('navigation:feed'), 
       path: '/feed'
     },
     { 
-      icon: <User size={24} strokeWidth={2} />, 
+      icon: User, 
       label: t('navigation:profile'), 
       path: '/profile'
     },
@@ -198,23 +195,23 @@ const NewBottomNavigation = () => {
         aria-label="Main navigation"
         aria-hidden={shouldHideNav}
       >
-        <div className="w-full px-3 pb-[env(safe-area-inset-bottom)]">
-          <div className="relative bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm">
-            <div className="absolute inset-0 rounded-3xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-            <div className="h-16 flex items-center justify-around px-2">
+        <div className="w-full px-4 pb-[env(safe-area-inset-bottom)]">
+          <div className="relative bg-white dark:bg-zinc-900 rounded-[28px] mx-2 mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.2)]">
+            <div className="h-[60px] flex items-center justify-around px-3">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const isProfileTab = item.path === '/profile';
                 const isHomeTab = item.path === '/';
+                const IconComponent = item.icon;
                 
                 return (
                   <button
                     key={item.path}
                     onClick={() => {
                       if (isHomeTab) {
+                        haptics.impact('light');
                         setShowHomeMenu(!showHomeMenu);
                       } else if (isProfileTab && hasValidBusinessAccount) {
-                        // Long press logic handled separately
                         return;
                       } else if ((item as any).customAction) {
                         (item as any).customAction();
@@ -249,14 +246,16 @@ const NewBottomNavigation = () => {
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
                       undefined
                     }
-                    className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 transition-all duration-200 active:scale-95"
+                    )}
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}
                   >
                     {isProfileTab ? (
                       <div className={cn(
-                        "transition-colors duration-200 flex items-center justify-center",
-                        isActive ? 'text-primary' : 'text-muted-foreground'
+                        "p-1.5 rounded-full transition-all duration-200",
+                        isActive && "bg-primary/10 scale-105"
                       )}>
                         <Avatar className="w-7 h-7">
                           <AvatarImage src={profile?.avatar_url || ''} />
@@ -270,14 +269,21 @@ const NewBottomNavigation = () => {
                       </div>
                     ) : (
                       <div className={cn(
-                        "transition-colors duration-200",
-                        isActive ? 'text-primary' : 'text-muted-foreground'
+                        "p-1.5 rounded-full transition-all duration-200",
+                        isActive && "bg-primary/10 scale-105"
                       )}>
-                        {item.icon}
+                        <IconComponent 
+                          size={26} 
+                          strokeWidth={isActive ? 2.5 : 2}
+                          className={cn(
+                            "transition-colors duration-200",
+                            isActive ? 'text-primary' : 'text-muted-foreground'
+                          )}
+                        />
                       </div>
                     )}
                     <span className={cn(
-                      "text-[11px] font-medium transition-colors duration-200",
+                      "text-[10px] font-medium transition-colors duration-200",
                       isActive ? 'text-primary' : 'text-muted-foreground'
                     )}>
                       {item.label}
