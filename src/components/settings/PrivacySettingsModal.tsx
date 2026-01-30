@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Lock, Eye, ArrowLeft } from 'lucide-react';
 import privacyIcon from '@/assets/icons/privacy-icon.png';
 import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
+import SettingsSkeleton from '@/components/common/skeletons/SettingsSkeleton';
 
 type BeenCardsVisibility = 'everyone' | 'none' | 'close_friends';
 
@@ -134,9 +135,7 @@ const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({ open, onOpe
 
           <div className="flex-1 overflow-y-auto p-4 pb-24">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
+              <SettingsSkeleton rows={2} />
             ) : (
               <div className="space-y-6">
                 {/* Private Account Toggle */}

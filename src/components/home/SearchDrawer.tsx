@@ -172,11 +172,11 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       setLogoSlideProgress(0);
       setShowCenterIcon(false); // Hide centering icon during branding
       
-      // Start sliding animation after a brief pause
+      // Start sliding animation after a brief pause (reduced from 800ms)
       const startDelay = setTimeout(() => {
-        // Animate slide from 0 to 1 over 4 seconds (slower, more elegant)
+        // Animate slide from 0 to 1 over 2 seconds (reduced from 4s)
         const startTime = Date.now();
-        const duration = 4000;
+        const duration = 2000;
         
         const animate = () => {
           const elapsed = Date.now() - startTime;
@@ -185,8 +185,8 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           const eased = 1 - Math.pow(1 - progress, 3);
           setLogoSlideProgress(eased);
           
-          // Show centering icon immediately when logo is fully gone
-          if (eased >= 1 && !showCenterIcon) {
+          // Show centering icon when logo is 60% gone (exits visible area)
+          if (eased >= 0.6 && !showCenterIcon) {
             setShowCenterIcon(true);
           }
           
@@ -198,7 +198,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
         };
         
         requestAnimationFrame(animate);
-      }, 800); // Longer pause before sliding starts
+      }, 200); // Reduced from 800ms
       
       return () => clearTimeout(startDelay);
     }
