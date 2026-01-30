@@ -7,7 +7,7 @@ import { usePhoneContacts, FoundContact } from '@/hooks/usePhoneContacts';
 import AvatarStack from '@/components/common/AvatarStack';
 import ContactsFoundView from '@/components/notifications/ContactsFoundView';
 import { toast } from 'sonner';
-import spottLogoTransparent from '@/assets/spott-logo-transparent-v2.png';
+import spottLogoTransparent from '@/assets/spott-logo-transparent-v3.png';
 
 interface InviteFriendOverlayProps {
   isOpen: boolean;
