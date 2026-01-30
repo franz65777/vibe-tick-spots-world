@@ -28,6 +28,7 @@ import { AvatarPreviewModal } from './profile/AvatarPreviewModal';
 import { UnfollowConfirmDialog } from './profile/UnfollowConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import FrostedGlassBackground from './common/FrostedGlassBackground';
 const UserProfilePage = () => {
   const { t } = useTranslation();
   const { userId } = useParams<{ userId: string }>();
@@ -177,21 +178,27 @@ const UserProfilePage = () => {
     }
   };
   if (loading) {
-    return <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center justify-center h-64">
+    return (
+      <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
+        <FrostedGlassBackground />
+        <div className="relative z-10 flex items-center justify-center h-64">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         </div>
-      </div>;
+      </div>
+    );
   }
   if (error || !profile) {
-    return <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center justify-center h-64">
+    return (
+      <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
+        <FrostedGlassBackground />
+        <div className="relative z-10 flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-destructive mb-4">User not found</p>
             <Button onClick={handleBack}>Go Back</Button>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
   const displayUsername = profile.username || 'Unknown User';
   const renderTabContent = () => {
@@ -222,7 +229,9 @@ const UserProfilePage = () => {
         return <PostsGrid userId={userId} />;
     }
   };
-  return <SwipeBackWrapper onBack={handleBack}><div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
+  return <SwipeBackWrapper onBack={handleBack}><div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)]">
+      <FrostedGlassBackground />
+      <div className="relative z-10 flex flex-col h-full">
       {/* Header - Instagram Style */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-3 flex-1">
@@ -585,6 +594,7 @@ const UserProfilePage = () => {
         avatarUrl={profile.avatar_url}
         username={displayUsername}
       />
+    </div>
     </div></SwipeBackWrapper>;
 };
 export default UserProfilePage;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import SwipeDiscovery from '@/components/home/SwipeDiscovery';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 const DiscoverPage = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -65,8 +66,9 @@ const DiscoverPage = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative"
+      className="relative h-full"
     >
+      <FrostedGlassBackground />
       {pullDistance > 0 && (
         <div 
           className="absolute top-0 left-0 right-0 flex items-center justify-center z-[100] transition-opacity"
@@ -78,10 +80,12 @@ const DiscoverPage = () => {
           <div className={`w-8 h-8 border-4 border-primary border-t-transparent rounded-full ${refreshing ? 'animate-spin' : ''}`} />
         </div>
       )}
-      <SwipeDiscovery 
-        ref={swipeDiscoveryRef} 
-        userLocation={userLocation} 
-      />
+      <div className="relative z-10">
+        <SwipeDiscovery 
+          ref={swipeDiscoveryRef} 
+          userLocation={userLocation} 
+        />
+      </div>
     </div>
   );
 };

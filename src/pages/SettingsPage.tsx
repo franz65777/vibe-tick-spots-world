@@ -26,6 +26,7 @@ import PrivacySettingsModal from '@/components/settings/PrivacySettingsModal';
 import { AdminAnalyticsModal } from '@/components/settings/AdminAnalyticsModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -143,10 +144,11 @@ const SettingsPage: React.FC = () => {
 
   return (
     <SwipeBackWrapper onBack={handleBack}>
-    <div className="h-screen flex flex-col bg-background">
+    <div className="relative h-screen flex flex-col">
+      <FrostedGlassBackground />
       {/* Header with back button */}
       <div 
-        className="flex items-center gap-3 px-4 pb-4 sticky top-0 z-10 bg-background"
+        className="flex items-center gap-3 px-4 pb-4 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <button
