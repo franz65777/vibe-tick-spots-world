@@ -11,6 +11,7 @@ import saveTagToTry from '@/assets/save-tag-to-try.png';
 import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import { Place } from '@/types/place';
 import { formatSearchResultAddress } from '@/utils/addressFormatter';
+import { haptics } from '@/utils/haptics';
 
 // Map tag values to imported icons
 const TAG_ICONS: Record<string, string> = {
@@ -44,7 +45,10 @@ export const LocationListItem = memo(({ place, enrichedAddress, onClick }: Locat
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => {
+        haptics.impact('light');
+        onClick();
+      }}
       className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-white/30 dark:border-slate-600/30 cursor-pointer transition-all duration-200 hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-sm active:scale-[0.98]"
     >
       {/* Thumbnail / Category Icon */}

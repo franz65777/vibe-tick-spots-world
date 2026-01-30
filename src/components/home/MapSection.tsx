@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { haptics } from '@/utils/haptics';
 
 interface FollowedUser {
   id: string;
@@ -601,6 +602,7 @@ const MapSection = ({
           {/* List View Toggle - Simple button, Sheet is rendered separately */}
           <button
             onClick={() => {
+              haptics.impact('light');
               previousOverlayRef.current = 'list';
               setOverlay('list');
             }}
@@ -665,7 +667,10 @@ const MapSection = ({
                 <Button
                   size="sm"
                   variant={activeFilter === 'following' ? 'default' : 'outline'}
-                  onClick={() => setActiveFilter('following')}
+                  onClick={() => {
+                    haptics.selection();
+                    setActiveFilter('following');
+                  }}
                   className={cn(
                     "rounded-full whitespace-nowrap flex-shrink-0 h-8",
                     activeFilter !== 'following' && "bg-white/50 dark:bg-slate-700/50 border-border/30"
@@ -676,7 +681,10 @@ const MapSection = ({
                 <Button
                   size="sm"
                   variant={activeFilter === 'popular' ? 'default' : 'outline'}
-                  onClick={() => setActiveFilter('popular')}
+                  onClick={() => {
+                    haptics.selection();
+                    setActiveFilter('popular');
+                  }}
                   className={cn(
                     "rounded-full whitespace-nowrap flex-shrink-0 h-8",
                     activeFilter !== 'popular' && "bg-white/50 dark:bg-slate-700/50 border-border/30"
@@ -687,7 +695,10 @@ const MapSection = ({
                 <Button
                   size="sm"
                   variant={activeFilter === 'saved' ? 'default' : 'outline'}
-                  onClick={() => setActiveFilter('saved')}
+                  onClick={() => {
+                    haptics.selection();
+                    setActiveFilter('saved');
+                  }}
                   className={cn(
                     "rounded-full whitespace-nowrap flex-shrink-0 h-8",
                     activeFilter !== 'saved' && "bg-white/50 dark:bg-slate-700/50 border-border/30"

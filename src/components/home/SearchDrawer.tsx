@@ -18,6 +18,7 @@ import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 import { useOptimizedPlacesSearch, type SearchResult } from '@/hooks/useOptimizedPlacesSearch';
 import spottLogoTransparent from '@/assets/spott-logo-transparent-v3.png';
+import { haptics } from '@/utils/haptics';
 
 interface PopularSpot {
   id: string;
@@ -838,6 +839,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleCitySelect = (city: { name: string; lat: number; lng: number }) => {
+    haptics.selection();
     const displayName = translateCityName(city.name, i18n.language);
     onCitySelect(displayName, { lat: city.lat, lng: city.lng });
     onSearchChange(displayName);
@@ -845,7 +847,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleLocationResultSelect = async (loc: LocationResult) => {
-    // If this is a Google result without coordinates, fetch details first
+    haptics.selection();
     if (loc.google_place_id && loc.lat === 0 && loc.lng === 0) {
       setIsLoading(true);
       try {
@@ -905,6 +907,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleNearbyPromptClick = async (prompt: NearbyPromptItem) => {
+    haptics.selection();
     console.log('[NearbySearch] Clicked:', prompt.id);
     
     // Get current location or request it
@@ -939,6 +942,7 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const handleNearbyResultSelect = (result: NearbySearchResult) => {
+    haptics.selection();
     onCitySelect(result.city || currentCity, { lat: result.lat, lng: result.lng });
     onSpotSelect?.({
       id: result.id,
@@ -953,11 +957,13 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   };
 
   const clearNearbySearch = () => {
+    haptics.selection();
     setActiveNearbyCategory(null);
     setNearbyResults([]);
   };
 
   const handleSearchBarClick = () => {
+    haptics.impact('light');
     if (drawerMode === 'closed') {
       // Click from closed → open Trending (Photo 1)
       setDrawerMode('trending');

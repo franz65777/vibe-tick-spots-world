@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
+import { haptics } from '@/utils/haptics';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
@@ -254,7 +255,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                   return (
                     <button
                       key={category.id}
-                      onClick={() => toggleCategory(category.id)}
+                      onClick={() => {
+                        haptics.selection();
+                        toggleCategory(category.id);
+                      }}
                       className={cn(
                         "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-200",
                         isSelected && "bg-primary/10"
@@ -279,7 +283,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               
               {selectedCategories.length > 0 && (
                 <button
-                  onClick={clearCategories}
+                  onClick={() => {
+                    haptics.selection();
+                    clearCategories();
+                  }}
                   className="flex-shrink-0 flex items-center justify-center p-1 rounded-lg hover:bg-secondary/50 transition-all duration-200"
                 >
                   <X className="w-4 h-4 text-muted-foreground" />
