@@ -241,25 +241,35 @@ const UserProfilePage = () => {
           <h1 className="text-lg font-semibold">{displayUsername}</h1>
         </div>
         {!isOwnProfile && <div className="flex items-center gap-2">
-            {/* Follow Button */}
+            {/* Follow Button - Enhanced styling */}
             <Button
               onClick={handleFollowToggle}
               disabled={followLoading}
               variant={getFollowButtonVariant()}
-              className={`rounded-full font-medium h-8 px-4 text-sm ${(profile.is_following || profile.follow_request_status === 'pending') ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground' : ''}`}
+              className={`rounded-full font-semibold h-9 px-5 text-sm transition-all duration-200 active:scale-[0.97] ${
+                profile.is_following 
+                  ? 'bg-gray-200 dark:bg-secondary text-gray-700 dark:text-secondary-foreground border border-gray-300 dark:border-gray-600 shadow-sm hover:bg-gray-300 dark:hover:bg-secondary/80' 
+                  : profile.follow_request_status === 'pending'
+                    ? 'bg-gray-200 dark:bg-secondary text-gray-600 dark:text-secondary-foreground border border-gray-300 dark:border-gray-600'
+                    : 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] hover:from-blue-600 hover:to-blue-700'
+              }`}
             >
               {getFollowButtonText()}
             </Button>
-            {/* Message Button */}
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => navigate('/messages', {
-          state: {
-            initialUserId: userId,
-            fromProfileId: userId
-          }
-        })} title={t('userProfile.sendMessage', {
-          ns: 'common'
-        })}>
-              <MessageCircle className="w-6 h-6" />
+            {/* Message Button - Enhanced styling */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 rounded-full bg-gray-100 dark:bg-secondary/50 hover:bg-gray-200 dark:hover:bg-secondary border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 active:scale-[0.95]" 
+              onClick={() => navigate('/messages', {
+                state: {
+                  initialUserId: userId,
+                  fromProfileId: userId
+                }
+              })} 
+              title={t('userProfile.sendMessage', { ns: 'common' })}
+            >
+              <MessageCircle className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </Button>
             {/* More Options Menu */}
             <DropdownMenu>
@@ -382,31 +392,39 @@ const UserProfilePage = () => {
             {profile.bio}
           </p>}
 
-        {/* Mutual Followers */}
-        {!isOwnProfile && mutualFollowers.length > 0 && <div className="flex items-center gap-2 mb-3">
+        {/* Mutual Followers - Compact spacing */}
+        {!isOwnProfile && mutualFollowers.length > 0 && (
+          <div className="flex items-center gap-2 mb-1">
             <div className="flex -space-x-2">
-              {mutualFollowers.map(follower => <button key={follower.id} onClick={() => navigate(`/profile/${follower.id}`)} className="cursor-pointer hover:opacity-80 transition-opacity">
+              {mutualFollowers.map(follower => (
+                <button 
+                  key={follower.id} 
+                  onClick={() => navigate(`/profile/${follower.id}`)} 
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                >
                   <Avatar className="w-6 h-6 border-2 border-background">
                     <AvatarImage src={follower.avatar_url || undefined} />
                     <AvatarFallback className="text-[8px]">
                       {follower.username?.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                </button>)}
+                </button>
+              ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              {t('userProfile.followedBy', {
-            ns: 'common'
-          })}{' '}
-              <button onClick={() => navigate(`/profile/${mutualFollowers[0]?.id}`)} className="font-semibold text-foreground hover:opacity-70 transition-opacity">
+              {t('userProfile.followedBy', { ns: 'common' })}{' '}
+              <button 
+                onClick={() => navigate(`/profile/${mutualFollowers[0]?.id}`)} 
+                className="font-semibold text-foreground hover:opacity-70 transition-opacity"
+              >
                 {mutualFollowers[0]?.username}
               </button>
-              {totalCount > 1 && <span> {t('userProfile.andOthers', {
-              ns: 'common',
-              count: totalCount - 1
-            })}</span>}
+              {totalCount > 1 && (
+                <span> {t('userProfile.andOthers', { ns: 'common', count: totalCount - 1 })}</span>
+              )}
             </p>
-          </div>}
+          </div>
+        )}
 
       </div>
 
@@ -566,7 +584,7 @@ const UserProfilePage = () => {
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
             </div>
 
-            <Achievements userId={userId} />
+            <Achievements userId={userId} hideCoins={!isOwnProfile} />
           </div>
         </div>
       )}
