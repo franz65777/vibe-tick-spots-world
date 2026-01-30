@@ -1,115 +1,150 @@
 
-# Logo Animation & Feed UI Integration Plan
+
+# Bottom Navigation Bar Enhancement Plan
 
 ## Overview
-This plan addresses two issues:
-1. The search bar branding logo slides too quickly (currently 2.5s, needs to be slower)
-2. Posts and reviews in the feed have stark white backgrounds that clash with the warm frosted glass aesthetic (`#F5F1EA`)
+Redesign both `NewBottomNavigation` and `BusinessBottomNavigation` to match the premium floating pill design shown in the reference image. The new design features a clean white background with pronounced shadows for depth, larger icons, and enhanced haptic feedback throughout.
 
 ---
 
-## Change 1: Slower Logo Animation
+## Design Analysis (Reference Image)
 
-**Current State:**
-- Animation duration: 2500ms (2.5 seconds)
-- Initial delay: 500ms
-
-**New State:**
-- Animation duration: 4000ms (4 seconds) — 60% slower, creating a more elegant reveal
-- Initial delay: 800ms — slightly longer pause before slide begins
-
-**File:** `src/components/home/SearchDrawer.tsx`
+The reference shows a **floating pill-shaped navigation bar** with:
+- Solid white/cream background (not translucent)
+- Large, soft drop shadow creating a "floating" effect
+- Generous horizontal padding and rounded corners (pill shape)
+- Larger icons (~26-28px) with good spacing
+- User avatar integrated seamlessly
+- Clean, minimal aesthetic with subtle depth
 
 ---
 
-## Change 2: Integrated Feed Post Styling
+## Implementation Plan
 
-The goal is to make posts feel like they belong on the frosted glass background rather than floating on stark white cards.
+### 1. Enhanced Shadow & Depth Styling
 
-### Option A: Glassmorphism Card Style (Recommended)
-Transform post cards to use semi-transparent backgrounds with subtle borders, matching the `UserVisitedCard` which already uses:
+**Current styling:**
 ```
-bg-white/60 dark:bg-white/10 backdrop-blur-md 
-border border-white/40 dark:border-white/20 
-rounded-xl shadow-lg shadow-black/5
+bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-3xl shadow-sm
 ```
 
-This creates a cohesive "floating glass" aesthetic across the entire feed.
+**New styling:**
+```
+bg-white dark:bg-zinc-900 
+rounded-[28px] 
+shadow-[0_4px_20px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]
+```
 
-### Visual Comparison
-
-| Current | Proposed |
-|---------|----------|
-| Solid white `bg-background` | Semi-transparent `bg-white/70 dark:bg-white/10` |
-| No blur effect | `backdrop-blur-sm` for subtle depth |
-| Sharp contrast with page | Soft border `border-white/40` |
-| No rounding | Rounded corners `rounded-2xl` with shadow |
-
-### Files to Modify
-
-**1. FeedPostItem.tsx** (main feed posts)
-- Change `bg-background` to glassmorphism styling
-- Add subtle margin for card separation
-- Add rounded corners and soft shadow
-
-**2. FeedPostSkeleton.tsx** (loading state)
-- Match the glassmorphism styling of actual posts
-- Keep shimmer animation intact
-
-**3. FeedListsCarousel.tsx** (Lists section)
-- Add subtle section background using glassmorphism card wrapper
-- Creates visual separation while maintaining the frosted aesthetic
+Key changes:
+- Solid white background instead of translucent gray
+- Larger, softer multi-layer shadow for premium floating effect
+- Slightly rounder corners (`rounded-[28px]`) for pill shape
+- Remove gradient border overlay (unnecessary with solid bg)
 
 ---
 
-## Technical Implementation
+### 2. Improved Layout & Spacing
 
-### FeedPostItem Changes
+**Current:**
+- Height: `h-16` (64px)
+- Icon size: 24px
+- Button width: `min-w-[64px]`
+
+**New:**
+- Height: `h-[60px]` — slightly shorter for elegance
+- Icon size: 26px for better visual weight
+- Button width: `min-w-[56px]` with more breathing room
+- Horizontal margin: `mx-4` for better floating appearance
+
+---
+
+### 3. Enhanced Haptic Feedback
+
+Add haptic feedback to **all navigation interactions** (not just some):
+
+| Action | Haptic Type |
+|--------|-------------|
+| Tab tap | `haptics.selection()` — light tap |
+| Add button | `haptics.impact('medium')` — satisfying click |
+| Home menu open | `haptics.impact('light')` — subtle |
+| Long press activate | `haptics.impact('heavy')` — confirmation |
+| Account switch | `haptics.success()` — positive confirmation |
+
+The Business nav is currently missing haptic feedback entirely — this will be added.
+
+---
+
+### 4. Active State Enhancement
+
+**Current:** Simple color change to primary
+
+**New:** Add subtle visual indicator for active tab:
+- Icon wrapper with subtle background circle for active state
+- Smooth scale animation on press
+- Ring/glow effect for active icon
+
 ```tsx
-// Before (line 287)
-className="post-compact bg-background"
-
-// After
-className="post-compact bg-white/70 dark:bg-zinc-900/70 
-           backdrop-blur-sm mx-4 my-3 rounded-2xl 
-           border border-white/40 dark:border-white/20 
-           shadow-sm overflow-hidden"
-```
-
-### FeedPostSkeleton Changes
-```tsx
-// Match the glassmorphism styling
-<article className="post-compact bg-white/70 dark:bg-zinc-900/70 
-                    backdrop-blur-sm mx-4 my-3 rounded-2xl 
-                    border border-white/40 dark:border-white/20 
-                    shadow-sm overflow-hidden">
-```
-
-### FeedListsCarousel Section Wrapper
-```tsx
-// Wrap in a glassmorphism container
-<div className="mx-4 my-3 py-4 bg-white/60 dark:bg-zinc-900/60 
-                backdrop-blur-sm rounded-2xl 
-                border border-white/40 dark:border-white/20">
-  {/* Existing content */}
+<div className={cn(
+  "p-2 rounded-full transition-all duration-200",
+  isActive && "bg-primary/10 scale-105"
+)}>
+  {item.icon}
 </div>
 ```
 
 ---
 
-## Summary of Changes
+## Files to Modify
 
-| File | Change |
-|------|--------|
-| `SearchDrawer.tsx` | Increase animation duration from 2500ms → 4000ms, delay from 500ms → 800ms |
-| `FeedPostItem.tsx` | Replace `bg-background` with glassmorphism card styling |
-| `FeedPostSkeleton.tsx` | Match glassmorphism styling for loading states |
-| `FeedListsCarousel.tsx` | Wrap section in glassmorphism container for visual cohesion |
+### File 1: `src/components/NewBottomNavigation.tsx`
+
+**Changes:**
+1. Update container styling to solid white with enhanced shadow
+2. Remove gradient border overlay
+3. Increase icon size from 24px to 26px
+4. Add active state background circle
+5. Add press animation (`active:scale-95`)
+6. Ensure all nav items trigger haptic feedback
+
+### File 2: `src/components/BusinessBottomNavigation.tsx`
+
+**Changes:**
+1. Match the new styling from NewBottomNavigation
+2. Add haptic feedback to all interactions (currently missing)
+3. Update icon sizes and active states
+4. Convert from edge-to-edge to floating pill design
 
 ---
 
-## Visual Result
-- Posts will appear as floating glass cards on the warm frosted background
-- Consistent aesthetic with `UserVisitedCard` which already uses this style
-- The "Liste per te" section will have a subtle glass container
-- Logo animation will feel more elegant and deliberate
+## Visual Before/After
+
+```text
+BEFORE (Current):
+┌─────────────────────────────────────────────┐
+│  Translucent gray, gradient border, thin    │
+│  shadow, smaller icons, no active indicator │
+└─────────────────────────────────────────────┘
+
+AFTER (New):
+                   ↓ floating gap
+        ╭─────────────────────────╮
+        │   ⬡    🔍    ➕    📊   👤   │  ← solid white
+        ╰─────────────────────────╯     ← soft shadow
+                   ↓ safe area
+```
+
+---
+
+## Technical Summary
+
+| Change | Before | After |
+|--------|--------|-------|
+| Background | `bg-gray-200/40` | `bg-white` |
+| Shadow | `shadow-sm` | Multi-layer soft shadow |
+| Border | Gradient overlay | None |
+| Icons | 24px | 26px |
+| Active state | Color only | Color + bg circle + scale |
+| Haptics (New) | Partial | Complete |
+| Haptics (Business) | None | Complete |
+| Corner radius | `rounded-3xl` | `rounded-[28px]` |
+
