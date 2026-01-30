@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { PostsGridSkeleton, ReviewListSkeleton } from '@/components/common/skeletons/PostsGridSkeleton';
 
 interface Post {
   id: string;
@@ -143,11 +144,7 @@ export const VirtualizedPostGrid = memo(({
   });
 
   if (loading && posts.length === 0) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PostsGridSkeleton count={4} />;
   }
 
   if (posts.length === 0) {
@@ -230,11 +227,7 @@ export const VirtualizedReviewList = memo(({
   });
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <ReviewListSkeleton count={4} />;
   }
 
   if (posts.length === 0) {

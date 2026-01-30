@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationData } from '@/hooks/useNotificationData';
 import VirtualizedNotificationsList from '@/components/notifications/VirtualizedNotificationsList';
+import NotificationsSkeleton from '@/components/common/skeletons/NotificationsSkeleton';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -91,12 +92,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
         {/* Content - Virtualized list for 60fps performance */}
         <div className="flex-1 overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-20 h-full">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-muted-foreground text-sm">Loading notifications…</span>
-              </div>
-            </div>
+            <NotificationsSkeleton count={6} />
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center h-full">
               <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">

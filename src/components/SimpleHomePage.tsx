@@ -89,9 +89,18 @@ const SimpleHomePage = () => {
         
         <div className="flex-1 p-4 overflow-y-auto">
           {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading amazing places...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-lg p-4 shadow border border-border animate-pulse">
+                  <div className="h-5 w-3/4 bg-muted rounded mb-2" />
+                  <div className="h-4 w-1/2 bg-muted rounded mb-2" />
+                  <div className="h-3 w-full bg-muted rounded mb-3" />
+                  <div className="flex items-center gap-4">
+                    <div className="h-3 w-12 bg-muted rounded" />
+                    <div className="h-3 w-16 bg-muted rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-8">

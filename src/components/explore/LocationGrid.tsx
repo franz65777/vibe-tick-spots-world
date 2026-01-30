@@ -16,6 +16,7 @@ import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
+import LocationCardsSkeleton from '@/components/common/skeletons/LocationCardsSkeleton';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -489,11 +490,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LocationCardsSkeleton count={6} layout="grid" />;
   }
 
   // Show "No locations found" when search query exists and no visible results

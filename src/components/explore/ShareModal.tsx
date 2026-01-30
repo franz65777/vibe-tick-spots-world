@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { messageService } from '@/services/messageService';
 import { Place } from '@/types/place';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -190,9 +190,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
           {/* Users list */}
           <div className="max-h-60 overflow-y-auto space-y-2">
             {loading ? (
-              <div className="flex justify-center py-4">
-                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
+              <UserListSkeleton count={5} showButton={false} />
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p className="text-sm">No users found</p>

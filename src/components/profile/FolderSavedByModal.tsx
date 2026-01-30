@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 
 interface FolderSavedByModalProps {
   isOpen: boolean;
@@ -164,9 +165,7 @@ const FolderSavedByModal = ({ isOpen, onClose, folderId }: FolderSavedByModalPro
         <ScrollArea className="h-[calc(80vh-112px)] scrollbar-hide">
           <div className="p-4 space-y-3">
             {loading ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-              </div>
+              <UserListSkeleton count={5} />
             ) : filtered.length === 0 ? (
               <div className="text-center text-muted-foreground py-10">
                 {t('common:noResults', { defaultValue: 'Nessun risultato' })}
