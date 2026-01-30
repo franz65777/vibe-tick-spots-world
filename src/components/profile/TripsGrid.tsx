@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import CreateTripModal from './CreateTripModal';
 import { useTranslation } from 'react-i18next';
 import tripsEmptyImage from '@/assets/trips-empty-state.png';
@@ -13,20 +13,22 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import SavedFoldersDrawer from './SavedFoldersDrawer';
 import FolderEditorPage from './FolderEditorPage';
 import FolderDetailModal from './FolderDetailModal';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import ColorfulGradientBackground from '@/components/common/ColorfulGradientBackground';
+import ListsGridSkeleton from './ListsGridSkeleton';
+import { useOptimizedFolders } from '@/hooks/useOptimizedFolders';
+import { useQueryClient } from '@tanstack/react-query';
+
 interface TripsGridProps {
-  userId?: string; // Optional userId prop to view another user's lists
+  userId?: string;
 }
-const TripsGrid: React.FC<TripsGridProps> = ({
-  userId: propUserId
-}) => {
+
+const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [editingTrip, setEditingTrip] = useState<any>(null);
@@ -35,149 +37,29 @@ const TripsGrid: React.FC<TripsGridProps> = ({
   const [showFolderEditor, setShowFolderEditor] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [viewingFolderId, setViewingFolderId] = useState<string | null>(null);
-  const [folders, setFolders] = useState<any[]>([]);
-  const [foldersLoading, setFoldersLoading] = useState(true);
-  const {
-    t
-  } = useTranslation('trips');
-  const {
-    user
-  } = useAuth();
-  const {
-    trips,
-    isLoading,
-    createTrip,
-    updateTrip,
-    deleteTrip
-  } = useTrips(propUserId || user?.id);
-
-  // Use propUserId if provided, otherwise use authenticated user's id
+  
+  const { t } = useTranslation('trips');
+  const { user } = useAuth();
+  
   const targetUserId = propUserId || user?.id;
   const isOwnProfile = !propUserId || propUserId === user?.id;
-  const [savedFolders, setSavedFolders] = useState<any[]>([]);
-  useEffect(() => {
-    loadFolders();
-  }, [targetUserId, user?.id]);
-  const loadFolders = async () => {
-    if (!targetUserId) return;
-    setFoldersLoading(true);
-    try {
-      // For viewing other users, only load their public folders
-      // For own profile, load all folders
-      let query = supabase.from('saved_folders').select('*').eq('user_id', targetUserId);
-
-      // If viewing another user's profile, filter to only public folders
-      if (!isOwnProfile) {
-        query = query.eq('is_private', false);
-      }
-      const {
-        data,
-        error
-      } = await query.order('created_at', {
-        ascending: false
-      });
-      if (error) throw error;
-
-      // Get location counts for each folder
-      const foldersWithCounts = await Promise.all((data || []).map(async (folder: any) => {
-        const {
-          count
-        } = await supabase.from('folder_locations').select('*', {
-          count: 'exact',
-          head: true
-        }).eq('folder_id', folder.id);
-
-        // Get first few locations for preview
-        const {
-          data: folderLocs
-        } = await supabase.from('folder_locations').select('location_id').eq('folder_id', folder.id).limit(4);
-        let categories: string[] = [];
-        let coverImage: string | null = null;
-        if (folderLocs && folderLocs.length > 0) {
-          const locationIds = folderLocs.map((fl: any) => fl.location_id);
-          const {
-            data: locs
-          } = await supabase.from('locations').select('category, image_url').in('id', locationIds);
-          if (locs) {
-            categories = locs.map((l: any) => l.category).filter(Boolean);
-            coverImage = locs[0]?.image_url || null;
-          }
-        }
-        return {
-          ...folder,
-          locations_count: count || 0,
-          location_categories: categories,
-          cover_image_url: folder.cover_image_url || coverImage,
-          cover_image: folder.cover_image_url || coverImage
-        };
-      }));
-      setFolders(foldersWithCounts);
-
-      // For own profile, also fetch folders saved from other users via folder_saves
-      if (isOwnProfile && user?.id) {
-        const {
-          data: savedFolderIds
-        } = await supabase.from('folder_saves').select('folder_id').eq('user_id', user.id);
-        if (savedFolderIds && savedFolderIds.length > 0) {
-          const folderIds = savedFolderIds.map(sf => sf.folder_id);
-          // Filter out folders I own
-          const {
-            data: otherFolders
-          } = await supabase.from('saved_folders').select('*').in('id', folderIds).neq('user_id', user.id);
-          if (otherFolders) {
-            const savedWithCounts = await Promise.all(otherFolders.map(async (folder: any) => {
-              const {
-                count
-              } = await supabase.from('folder_locations').select('*', {
-                count: 'exact',
-                head: true
-              }).eq('folder_id', folder.id);
-              const {
-                data: folderLocs
-              } = await supabase.from('folder_locations').select('location_id').eq('folder_id', folder.id).limit(4);
-              let coverImage: string | null = null;
-              if (folderLocs && folderLocs.length > 0) {
-                const locationIds = folderLocs.map((fl: any) => fl.location_id);
-                const {
-                  data: locs
-                } = await supabase.from('locations').select('image_url').in('id', locationIds);
-                if (locs) {
-                  coverImage = locs[0]?.image_url || null;
-                }
-              }
-
-              // Get creator profile
-              const {
-                data: creatorProfile
-              } = await supabase.from('profiles').select('username, avatar_url').eq('id', folder.user_id).single();
-              return {
-                ...folder,
-                locations_count: count || 0,
-                cover_image_url: folder.cover_image_url || coverImage,
-                creator: creatorProfile
-              };
-            }));
-            setSavedFolders(savedWithCounts);
-          }
-        } else {
-          setSavedFolders([]);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading folders:', error);
-    } finally {
-      setFoldersLoading(false);
-    }
-  };
+  
+  const { trips, isLoading, createTrip, updateTrip, deleteTrip } = useTrips(targetUserId);
+  const { data: foldersData, isLoading: foldersLoading } = useOptimizedFolders(targetUserId, user?.id);
+  
+  const folders = foldersData?.folders || [];
+  const savedFolders = foldersData?.savedFolders || [];
   const handleCreateTrip = async (tripData: any) => {
     await createTrip(tripData);
     setShowCreateModal(false);
   };
+
   const handleEditTrip = (trip: any) => {
     setEditingTrip(trip);
     setEditName(trip.name);
     setEditDescription(trip.description || '');
   };
+
   const handleSaveEdit = async () => {
     if (editingTrip) {
       await updateTrip(editingTrip.id, {
@@ -190,18 +72,18 @@ const TripsGrid: React.FC<TripsGridProps> = ({
 
   const handleFolderSaveStatusChange = () => {
     if (isOwnProfile) {
-      loadFolders();
+      queryClient.invalidateQueries({ queryKey: ['optimized-folders', targetUserId] });
     }
   };
+
   const handleDeleteTrip = async (tripId: string) => {
     if (confirm(t('confirmDelete', 'Are you sure you want to delete this list?'))) {
       await deleteTrip(tripId);
     }
   };
+
   if (isLoading || foldersLoading) {
-    return <div className="px-4 pt-6 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>;
+    return <ListsGridSkeleton />;
   }
 
   // Only show saved folders row on own profile
@@ -412,14 +294,14 @@ const TripsGrid: React.FC<TripsGridProps> = ({
 
 
       {editingFolderId && <FolderEditorPage isOpen={!!editingFolderId} onClose={() => setEditingFolderId(null)} folderId={editingFolderId} onFolderSaved={() => {
-      loadFolders();
-      setEditingFolderId(null);
-    }} />}
+        queryClient.invalidateQueries({ queryKey: ['optimized-folders', targetUserId] });
+        setEditingFolderId(null);
+      }} />}
 
       {showFolderEditor && <FolderEditorPage isOpen={showFolderEditor} onClose={() => setShowFolderEditor(false)} onFolderSaved={() => {
-      loadFolders();
-      setShowFolderEditor(false);
-    }} />}
+        queryClient.invalidateQueries({ queryKey: ['optimized-folders', targetUserId] });
+        setShowFolderEditor(false);
+      }} />}
 
       <Dialog open={!!editingTrip} onOpenChange={open => !open && setEditingTrip(null)}>
         <DialogContent>
