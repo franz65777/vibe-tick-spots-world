@@ -160,16 +160,40 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [internalQuery, setInternalQuery] = useState('');
   
-  // Branding logo visibility - show for a few seconds on mount
+  // Branding logo visibility - show for a few seconds on mount with sliding animation
   const [showLogoInBar, setShowLogoInBar] = useState(showBrandingLogo);
+  const [logoSlideProgress, setLogoSlideProgress] = useState(0); // 0 = left (logo visible), 1 = right (logo gone)
   
   useEffect(() => {
     if (showBrandingLogo) {
       setShowLogoInBar(true);
-      const timer = setTimeout(() => {
-        setShowLogoInBar(false);
-      }, 3000); // Show logo for 3 seconds
-      return () => clearTimeout(timer);
+      setLogoSlideProgress(0);
+      
+      // Start sliding animation after a brief pause
+      const startDelay = setTimeout(() => {
+        // Animate slide from 0 to 1 over ~2.5 seconds
+        const startTime = Date.now();
+        const duration = 2500;
+        
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          // Ease-out cubic for smooth deceleration
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setLogoSlideProgress(eased);
+          
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            // Animation complete, hide logo
+            setShowLogoInBar(false);
+          }
+        };
+        
+        requestAnimationFrame(animate);
+      }, 500); // Brief pause before sliding starts
+      
+      return () => clearTimeout(startDelay);
     }
   }, [showBrandingLogo]);
   
@@ -1007,16 +1031,57 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
           />
-          <div className="relative flex items-center h-12 pointer-events-none">
+          <div className="relative flex items-center h-12 pointer-events-none overflow-hidden">
             {showLogoInBar ? (
-              /* Branding logo - aligned left in bar */
-              <div className="h-full pl-4 flex items-center">
-                <img 
-                  src={spottLogoTransparent} 
-                  alt="SPOTT" 
-                  className="h-12 w-auto"
-                />
-              </div>
+              /* Branding logo - sliding from left to right with fade */
+              <>
+                {/* Background content (search bar elements) - fades in as logo slides away */}
+                <div 
+                  className="absolute inset-0 flex items-center"
+                  style={{ 
+                    opacity: logoSlideProgress,
+                    transition: 'opacity 0.3s ease-out'
+                  }}
+                >
+                  <div className="h-full pl-4 flex items-center flex-1">
+                    <span className="text-lg leading-none">🔎</span>
+                    <span className="ml-3 text-base font-medium text-white dark:text-gray-900 leading-none">
+                      {currentCity || t('searchCities', { ns: 'home' })}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCurrentLocation(e);
+                    }}
+                    disabled={geoLoading}
+                    className="p-2 mr-3 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors disabled:opacity-50 pointer-events-auto"
+                    aria-label={t('currentLocation', { ns: 'common' })}
+                  >
+                    <Navigation2
+                      className={cn(
+                        "w-5 h-5 transition-colors rotate-45",
+                        isCenteredOnUser ? 'text-blue-400 fill-blue-400' : 'text-blue-400'
+                      )}
+                    />
+                  </button>
+                </div>
+                
+                {/* Sliding logo overlay - moves right and fades out */}
+                <div 
+                  className="absolute inset-0 flex items-center pl-4"
+                  style={{ 
+                    transform: `translateX(${logoSlideProgress * 100}%)`,
+                    opacity: 1 - logoSlideProgress,
+                  }}
+                >
+                  <img 
+                    src={spottLogoTransparent} 
+                    alt="SPOTT" 
+                    className="h-12 w-auto"
+                  />
+                </div>
+              </>
             ) : (
               <>
                 {/* Left area - pin + city name */}
