@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { compressImage } from '@/utils/imageUtils';
 import { useScrollHide } from '@/hooks/useScrollHide';
+import { useQueryClient } from '@tanstack/react-query';
 
 const FOLDER_COLORS = [
   'bg-red-500',
@@ -54,6 +55,7 @@ const CreateListPage = () => {
   const { t } = useTranslation('createList');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const folderId = searchParams.get('folderId');
   
@@ -236,6 +238,9 @@ const CreateListPage = () => {
         toast.success(t('listCreated', 'List created'));
       }
 
+      // Invalidate folder queries to update the UI
+      queryClient.invalidateQueries({ queryKey: ['optimized-folders', user.id] });
+      
       navigate('/profile?tab=trips');
     } catch (error) {
       console.error('Error saving folder:', error);
