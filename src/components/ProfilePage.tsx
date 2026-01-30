@@ -191,7 +191,8 @@ const ProfilePage = memo(() => {
         isOpen={modalState.isOpen}
         onClose={closeModal}
         initialTab={modalState.type || 'followers'}
-        onFollowChange={() => refetch()}
+        // Evita refetch che causa "flash" di loading: i contatori vengono aggiornati via cache + realtime
+        onFollowChange={() => {}}
       />
 
       <SavedLocationsList
