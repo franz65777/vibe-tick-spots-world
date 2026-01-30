@@ -748,13 +748,13 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         {/* Search Bar */}
         <div className="px-4 pb-3">
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base z-10">🔍</span>
             <Input
               type="text"
               placeholder={t('search', { ns: 'common' })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10 rounded-full bg-white/60 dark:bg-white/10 border-0 shadow-sm backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-primary/50"
+              className="pl-10 h-10 rounded-full bg-white/80 dark:bg-white/15 border border-white/50 shadow-sm backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-primary/50"
             />
             {searchQuery && (
               <button 
