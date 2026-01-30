@@ -453,14 +453,30 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
   
   return (
     <div className="relative flex flex-col h-full pt-[env(safe-area-inset-top)] pb-0">
-      {/* Subtle gradient base */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-blue-950/20 dark:via-purple-950/15 dark:to-pink-950/20" />
+      {/* Warm off-white background with vertical gradient and vignette */}
+      <div className="absolute inset-0 z-0 bg-[#F7F3EC]">
+        {/* Subtle vertical gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F7F3EC] to-[#F0EBE3]" />
+        {/* Faint vignette effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.04)_100%)]" />
+        {/* Subtle grain/noise overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] mix-blend-multiply pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
-      {/* Frosted glass overlay */}
-      <div className="absolute inset-0 z-[1] bg-[#FAF9F7]/80 dark:bg-background/80 backdrop-blur-xl" />
-      {/* Content wrapper */}
-      <div className="relative z-10 flex flex-col h-full">
+      {/* Dark mode fallback */}
+      <div className="absolute inset-0 z-0 hidden dark:block bg-background" />
+      
+      {/* Glass container card */}
+      <div className="relative z-10 flex flex-col h-full mx-3 my-2 rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/30">
+        {/* Glass effect background */}
+        <div className="absolute inset-0 bg-white/55 dark:bg-background/70 backdrop-blur-[20px] backdrop-saturate-[1.2]" />
+        
+        {/* Content wrapper */}
+        <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
       <Suspense fallback={<div className="h-32" />}>
         <ExploreHeaderBar
@@ -720,6 +736,7 @@ const ExplorePage = memo(({ onClose }: ExplorePageProps) => {
           navigate('/');
         }}
       />
+        </div>
       </div>
     </div>
   );
