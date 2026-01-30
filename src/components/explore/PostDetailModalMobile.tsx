@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MapPin, Star, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -390,17 +391,15 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   if (!isOpen) return null;
 
-  if (loading || posts.length === 0) {
-    return (
-      <div className="fixed inset-0 z-[3000] bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Use Portal to escape stacking context and render above everything
+  const modalContent = loading || posts.length === 0 ? (
+    <div className="fixed inset-0 z-[2147483647] bg-background flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  ) : (
 
-  return (
     <>
-      <div ref={scrollContainerRef} className="fixed inset-0 z-[99999] bg-background overflow-y-auto scrollbar-hide">
+      <div ref={scrollContainerRef} className="fixed inset-0 z-[2147483647] bg-background overflow-y-auto scrollbar-hide">
         {/* Header with iOS safe area */}
         <div 
           className="bg-background sticky top-0 z-50 flex items-center px-4 py-3"
@@ -623,6 +622,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
       )}
     </>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default PostDetailModalMobile;
