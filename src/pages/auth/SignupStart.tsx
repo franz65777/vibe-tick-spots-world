@@ -162,7 +162,7 @@ const SignupStart: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pt-safe pb-safe">
+    <div className="min-h-screen bg-[#F5F1EA] dark:bg-background text-foreground flex flex-col pt-safe pb-safe">
       <header className="p-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-muted-foreground">
           <ArrowLeft className="mr-2" /> {t('auth:back')}

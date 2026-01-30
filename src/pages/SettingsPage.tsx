@@ -317,14 +317,13 @@ const SettingsPage: React.FC = () => {
 
         {/* Logout Button */}
         <div className="p-4 pb-24">
-          <Button
+          <button
             onClick={handleLogout}
-            variant="outline"
-            className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive dark:bg-gray-800 dark:hover:bg-gray-700"
+            className="w-full flex items-center justify-center gap-2 rounded-full py-4 px-6 bg-destructive text-white font-medium shadow-[0_4px_16px_rgba(239,68,68,0.3),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4),0_4px_12px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all duration-200"
           >
-            <LogOut className="w-5 h-5 mr-2" />
+            <LogOut className="w-5 h-5" />
             {t('logout', { ns: 'common' })}
-          </Button>
+          </button>
         </div>
       </div>
 
