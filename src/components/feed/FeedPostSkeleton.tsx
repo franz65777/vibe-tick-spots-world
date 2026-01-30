@@ -6,7 +6,7 @@ import { memo } from 'react';
  */
 const FeedPostSkeleton = memo(() => {
   return (
-    <article className="post-compact bg-background">
+    <article className="post-compact">
       {/* Header skeleton */}
       <div className="post-compact-header flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">

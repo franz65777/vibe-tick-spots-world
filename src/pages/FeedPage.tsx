@@ -596,7 +596,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
         {/* Feed Content */}
         <div ref={scrollContainerRef} data-feed-scroll-container className="flex-1 overflow-y-scroll pb-24 scrollbar-hide">
           {loading ? (
-            <div className="space-y-0 bg-background">
+            <div className="space-y-0">
               <FeedPostSkeleton />
               <FeedPostSkeleton />
               <FeedPostSkeleton />
@@ -614,7 +614,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
               </Button>
             </div>
            ) : (
-            <div className="space-y-0 bg-background">
+            <div className="space-y-0">
               {/* City Stats Card - always at top for "For You" feed */}
               {feedType === 'forYou' && (
                 <Suspense fallback={<div className="mx-4 mb-4 h-48 bg-muted rounded-2xl animate-pulse" />}>
