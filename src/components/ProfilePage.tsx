@@ -75,6 +75,11 @@ const ProfilePage = memo(() => {
     resetHidden();
   }, [resetHidden]);
 
+  // Callback for scroll containers in each tab
+  const scrollContainerRef = useCallback((element: HTMLDivElement | null) => {
+    setScrollContainer(element);
+  }, [setScrollContainer]);
+
   // Handle opening folder from message share or returning from rewards
   useEffect(() => {
     const state = location.state as any;
@@ -137,11 +142,6 @@ const ProfilePage = memo(() => {
     setIsLocationsListOpen(true);
   };
 
-  // Create scroll container callback for each tab
-  const getScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
-    setScrollContainer(element);
-  }, [setScrollContainer]);
-
   // Mostra skeleton solo al primo caricamento - React Query gestisce il resto
   if (loading && !profile) {
     return <ProfileSkeleton />;
@@ -163,10 +163,10 @@ const ProfilePage = memo(() => {
   }
 
   const tabsConfig = [
-    { key: 'posts', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
-    { key: 'trips', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><TripsGrid /></div> },
-    { key: 'badges', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><Achievements userId={user?.id} /></div> },
-    { key: 'tagged', content: <div ref={getScrollContainerRef} className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
+    { key: 'posts', content: <div ref={scrollContainerRef} className="h-full overflow-y-auto pb-20"><PostsGrid userId={user?.id} /></div> },
+    { key: 'trips', content: <div ref={scrollContainerRef} className="h-full overflow-y-auto pb-20"><TripsGrid /></div> },
+    { key: 'badges', content: <div ref={scrollContainerRef} className="h-full overflow-y-auto pb-20"><Achievements userId={user?.id} /></div> },
+    { key: 'tagged', content: <div ref={scrollContainerRef} className="h-full overflow-y-auto pb-20"><TaggedPostsGrid /></div> },
   ];
 
   return (
