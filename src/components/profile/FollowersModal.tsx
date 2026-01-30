@@ -1,4 +1,5 @@
-import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, X, Check, UserPlus } from 'lucide-react';
+import { haptics } from '@/utils/haptics';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -370,60 +371,105 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     }
   };
 
-  // User Grid Card Component - memoize to prevent unnecessary re-renders
+  // User Grid Card Component - compact design with overlay icons
   const UserGridCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
+    const [isAnimating, setIsAnimating] = useState(false);
     const now = new Date();
     const userHasStories = stories.some(s => 
       s.user_id === user.id && 
       new Date(s.expires_at) > now
     );
 
-    // Cache avatar URL to prevent reload
     const avatarUrl = user.avatar_url || undefined;
+
+    const handleActionClick = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      haptics.selection();
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 200);
+      
+      if (isOwnProfile && activeTab === 'followers') {
+        await removeFollower(user.id);
+      } else if (user.isFollowing) {
+        await unfollowUser(user.id);
+      } else {
+        await followUser(user.id);
+      }
+    };
+
+    // Determine icon and color based on state
+    const getActionIcon = () => {
+      if (isOwnProfile && activeTab === 'followers') {
+        return { icon: X, color: 'bg-destructive', hoverColor: 'hover:bg-destructive/90' };
+      }
+      if (user.isFollowing) {
+        return { icon: Check, color: 'bg-emerald-500', hoverColor: 'hover:bg-emerald-600' };
+      }
+      return { icon: UserPlus, color: 'bg-primary', hoverColor: 'hover:bg-primary/90' };
+    };
+
+    const { icon: ActionIcon, color, hoverColor } = getActionIcon();
 
     return (
       <div 
-        className="flex flex-col items-center gap-2 p-3"
+        className="flex flex-col items-center gap-1.5 py-2 px-1"
         style={{ 
-          animationDelay: `${index * 40}ms`,
-          animation: 'fadeIn 0.25s ease-out forwards',
+          animationDelay: `${index * 30}ms`,
+          animation: 'fadeIn 0.2s ease-out forwards',
           opacity: 0,
         }}
       >
-        {/* Avatar */}
-        <button
-          onClick={() => handleAvatarClick(user)}
-          className="relative group"
-        >
-          <div className={cn(
-            "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
-            userHasStories 
-              ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
-              : ""
-          )}>
-            <Avatar className={cn(
-              "w-20 h-20 rounded-[20px]",
-              userHasStories && "border-2 border-background"
+        {/* Avatar with overlay action icon */}
+        <div className="relative">
+          <button
+            onClick={() => handleAvatarClick(user)}
+            className="group"
+          >
+            <div className={cn(
+              "rounded-[22px] p-[2.5px] transition-transform group-hover:scale-105",
+              userHasStories 
+                ? "bg-gradient-to-br from-primary via-primary/80 to-primary/60" 
+                : ""
             )}>
-              <AvatarImage 
-                src={avatarUrl} 
-                className="object-cover rounded-[20px]" 
-                loading="lazy"
-              />
-              <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
-                {getInitials(user.username || 'User')}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+              <Avatar className={cn(
+                "w-[76px] h-[76px] rounded-[20px]",
+                userHasStories && "border-2 border-background"
+              )}>
+                <AvatarImage 
+                  src={avatarUrl} 
+                  className="object-cover rounded-[20px]" 
+                  loading="lazy"
+                />
+                <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-[20px]">
+                  {getInitials(user.username || 'User')}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </button>
           
-          {/* Places badge */}
+          {/* Places badge - bottom center */}
           {(user.savedPlacesCount ?? 0) > 0 && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-primary text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-full shadow-sm">
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-primary text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-full shadow-sm z-10">
               <MapPin className="w-2.5 h-2.5" />
               <span>{user.savedPlacesCount}</span>
             </div>
           )}
-        </button>
+
+          {/* Action icon overlay - bottom right corner */}
+          {currentUser?.id !== user.id && (
+            <button
+              onClick={handleActionClick}
+              className={cn(
+                "absolute -bottom-0.5 -right-0.5 w-[22px] h-[22px] rounded-full flex items-center justify-center",
+                "ring-2 ring-background shadow-sm transition-all duration-150",
+                color, hoverColor,
+                isAnimating && "scale-110"
+              )}
+            >
+              <ActionIcon className="w-3 h-3 text-white" strokeWidth={2.5} />
+            </button>
+          )}
+        </div>
 
         {/* Username */}
         <button
@@ -431,45 +477,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
             onClose();
             navigate(`/profile/${user.id}`);
           }}
-          className="w-full flex justify-center px-1"
+          className="w-full flex justify-center"
         >
-          <p className="font-medium text-foreground text-xs truncate text-center max-w-[88px]">
+          <p className="font-medium text-foreground text-xs truncate text-center max-w-[80px]">
             {user.username || 'User'}
           </p>
         </button>
-
-        {/* Action Button */}
-        {currentUser?.id !== user.id && (
-          <div className="mt-1.5 flex justify-center">
-            {isOwnProfile && activeTab === 'followers' ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => removeFollower(user.id)}
-                className="rounded-full h-7 px-3 text-[10px] font-medium text-destructive hover:text-destructive hover:bg-destructive/10 min-w-[68px]"
-              >
-                {t('remove', { ns: 'common' })}
-              </Button>
-            ) : user.isFollowing ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => unfollowUser(user.id)}
-                className="rounded-full h-7 px-3 text-[10px] font-medium bg-muted/80 hover:bg-muted text-foreground/70 min-w-[68px]"
-              >
-                {t('following', { ns: 'common' })}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => followUser(user.id)}
-                className="rounded-full h-7 px-3 text-[10px] font-medium min-w-[68px]"
-              >
-                {t('follow', { ns: 'common' })}
-              </Button>
-            )}
-          </div>
-        )}
       </div>
     );
   };
@@ -482,7 +495,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     
     return (
       <ScrollArea className="h-full">
-        <div className="pb-20 pt-2">
+        <div className="pb-4 pt-2">
           {isLoading && isActiveTab ? (
             <div className="flex items-center justify-center py-16">
               <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
@@ -501,7 +514,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1 px-2">
+            <div className="grid grid-cols-3 gap-0 px-1">
               {displayUsers.map((user, index) => (
                 <UserGridCard key={user.id} user={user} index={index} />
               ))}
@@ -520,6 +533,15 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Hide bottom navigation when modal is open */
+        [class*="bottom-navigation"],
+        [class*="NewBottomNavigation"],
+        [class*="BusinessBottomNavigation"],
+        nav[class*="fixed bottom"],
+        div[class*="fixed bottom-0"]:not([class*="z-[2000]"]) {
+          display: none !important;
         }
       `}</style>
       
