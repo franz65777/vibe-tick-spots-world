@@ -114,16 +114,16 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                     {t('myLists', 'My Lists')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {folders.map((folder, index) => <div key={`folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow group cursor-pointer shrink-0 w-32 aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
+                  {folders.map((folder, index) => <div key={`folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow group cursor-pointer shrink-0 w-36 aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
                         {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-1.5 pt-6" style={{
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12" style={{
                 background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
               }}>
-                          <h3 className="font-semibold text-[11px] text-white line-clamp-2 leading-tight">
+                          <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                             {folder.name}
                           </h3>
-                          <p className="text-[9px] text-white/75 mt-0.5">
+                          <p className="text-[10px] text-white/75 mt-0.5">
                             {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
                           </p>
                         </div>
@@ -131,11 +131,11 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                         <button onClick={e => {
                 e.stopPropagation();
                 navigate(`/create-list?folderId=${folder.id}`);
-              }} className="absolute top-1 right-1 p-0.5 rounded-full bg-black/40 hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100">
-                          <Edit className="h-2.5 w-2.5 text-white" />
+              }} className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/40 hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100">
+                          <Edit className="h-3 w-3 text-white" />
                         </button>
-                        <div className="absolute bottom-1 right-1 p-0.5 rounded-full bg-black/40">
-                          <img src={folder.is_private ? iconPrivate : iconPublic} alt={folder.is_private ? "Private" : "Public"} className="h-3 w-auto" />
+                        <div className="absolute bottom-2 right-2 p-0.5 rounded-full bg-black/40">
+                          <img src={folder.is_private ? iconPrivate : iconPublic} alt={folder.is_private ? "Private" : "Public"} className="h-3.5 w-auto" />
                         </div>
                       </div>)}
                   </div>
@@ -147,18 +147,18 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                     {t('savedLists', 'Saved Lists')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {savedFolders.map((folder, index) => <div key={`saved-folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer shrink-0 w-32 aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
+                    {savedFolders.map((folder, index) => <div key={`saved-folder-${folder.id}`} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer shrink-0 w-36 aspect-[3/4]" onClick={() => setViewingFolderId(folder.id)}>
                         {folder.cover_image_url ? <img src={folder.cover_image_url} alt={folder.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={folder.id || index} />}
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-1.5 pt-6" style={{
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12" style={{
                 background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
               }}>
-                          <h3 className="font-semibold text-[11px] text-white line-clamp-2 leading-tight">
+                          <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                             {folder.name}
                           </h3>
-                          <p className="text-[9px] text-white/75 mt-0.5">
+                          <p className="text-[10px] text-white/75 mt-0.5">
                             {folder.locations_count || 0} {folder.locations_count === 1 ? t('place') : t('places')}
-                            {folder.creator?.username && <span className="ml-0.5">• @{folder.creator.username}</span>}
+                            {folder.creator?.username && <span className="ml-1">• @{folder.creator.username}</span>}
                           </p>
                         </div>
                       </div>)}
@@ -171,25 +171,25 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                     {t('trips', 'Trips')}
                   </h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {trips.map((trip, index) => <div key={trip.id} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer shrink-0 w-32 aspect-[3/4]" onClick={() => setSelectedTrip(trip)}>
+                    {trips.map((trip, index) => <div key={trip.id} className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer shrink-0 w-36 aspect-[3/4]" onClick={() => setSelectedTrip(trip)}>
                         {trip.cover_image_url ? <img src={trip.cover_image_url} alt={trip.name} className="w-full h-full object-cover" /> : <ColorfulGradientBackground seed={trip.id || `trip-${index}`} />}
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-1.5 pt-6" style={{
+                        <div className="absolute bottom-0 left-0 right-0 p-2 pt-12" style={{
                 background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
               }}>
-                          <h3 className="font-semibold text-[11px] text-white line-clamp-2 leading-tight">
+                          <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
                             {trip.name}
                           </h3>
-                          <p className="text-[9px] text-white/75 mt-0.5">
+                          <p className="text-[10px] text-white/75 mt-0.5">
                             {trip.trip_locations?.length || 0} {(trip.trip_locations?.length || 0) === 1 ? t('place') : t('places')}
                           </p>
                         </div>
                         
-                        <div className="absolute top-1 right-1">
+                        <div className="absolute top-1.5 right-1.5">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 bg-black/40 hover:bg-black/60">
-                                <MoreVertical className="h-2.5 w-2.5 text-white" />
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 bg-black/40 hover:bg-black/60">
+                                <MoreVertical className="h-3 w-3 text-white" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

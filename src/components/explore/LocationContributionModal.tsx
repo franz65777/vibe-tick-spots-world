@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useNearbyPhotos, NearbyPhoto } from '@/hooks/useNearbyPhotos';
 import addPostButton from '@/assets/add-post-button.png';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface LocationContributionModalProps {
   isOpen: boolean;
@@ -127,6 +128,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoScrollRef = useRef<HTMLDivElement>(null);
   const wasOpenRef = useRef(false);
@@ -472,6 +474,9 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
           .upsert(folderInserts, { onConflict: 'folder_id,location_id' });
 
         if (folderError) throw folderError;
+        
+        // Invalidate folder queries to update counts
+        queryClient.invalidateQueries({ queryKey: ['optimized-folders'] });
       }
 
       toast.success(t('contributionSaved', { ns: 'explore', defaultValue: 'Saved!' }));
