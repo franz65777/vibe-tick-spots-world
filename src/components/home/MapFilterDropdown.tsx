@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { normalizeCategoryToBase } from '@/utils/normalizeCategoryToBase';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
+import { haptics } from '@/utils/haptics';
 
 // Custom icons imports
 import filterFriendsIcon from '@/assets/icons/filter-friends.png';
@@ -271,6 +272,7 @@ const MapFilterDropdown = () => {
   );
 
   const handleFilterSelect = (filterId: MapFilter) => {
+    haptics.selection();
     setActiveFilter(filterId);
     setIsFilterExpanded(false);
     setIsFriendsDropdownOpen(false);
@@ -284,6 +286,7 @@ const MapFilterDropdown = () => {
   };
 
   const handleUserSelect = (userId: string) => {
+    haptics.selection();
     if (selectedFollowedUserIds.includes(userId)) {
       setSelectedFollowedUserIds(selectedFollowedUserIds.filter(id => id !== userId));
     } else {
@@ -293,6 +296,7 @@ const MapFilterDropdown = () => {
   };
 
   const handleSelectAll = () => {
+    haptics.selection();
     if (allSelected) {
       setSelectedFollowedUserIds([]);
     } else {
@@ -310,10 +314,12 @@ const MapFilterDropdown = () => {
   };
 
   const handleSaveTagSelect = (tag: SaveTagFilter) => {
+    haptics.selection();
     toggleSaveTag(tag);
   };
 
   const handleMainButtonClick = () => {
+    haptics.selection();
     if (activeFilter === 'following') {
       // Toggle friends dropdown when friends filter is active
       setIsFriendsDropdownOpen(!isFriendsDropdownOpen);

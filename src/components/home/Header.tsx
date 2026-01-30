@@ -7,6 +7,7 @@ import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import ChatIcon from '@/components/icons/ChatIcon';
 import MapFilterDropdown from './MapFilterDropdown';
 import { Place } from '@/types/place';
+import { haptics } from '@/utils/haptics';
 
 interface HeaderProps {
   searchQuery: string;
@@ -77,7 +78,10 @@ const Header = ({
         <div className="flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           {/* Location search bar - clickable to open search */}
           <button 
-            onClick={onOpenSearchOverlay}
+            onClick={() => {
+              haptics.impact('light');
+              onOpenSearchOverlay();
+            }}
             className="flex-1 flex items-center gap-3 h-12 px-4 rounded-full bg-black dark:bg-white/90 backdrop-blur-md border border-border/10 transition-all duration-200 active:scale-[0.98]"
           >
             <span className="text-lg leading-none">📌</span>
@@ -88,7 +92,10 @@ const Header = ({
 
           {/* Close button */}
           <button 
-            onClick={onCloseSelectedPlace}
+            onClick={() => {
+              haptics.impact('medium');
+              onCloseSelectedPlace?.();
+            }}
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-black/80 dark:bg-white/80 backdrop-blur-md border border-border/30 rounded-full text-white dark:text-gray-900 hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 active:scale-95"
             aria-label="Close location"
           >
@@ -112,7 +119,10 @@ const Header = ({
           <div className="flex items-center gap-1 flex-shrink-0">
             {/* Notifications Button */}
             <button 
-              onClick={() => navigate('/notifications')} 
+              onClick={() => {
+                haptics.selection();
+                navigate('/notifications');
+              }} 
               className="relative w-10 h-10 flex items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 rounded-full text-foreground hover:bg-white/90 dark:hover:bg-black/60 transition-all duration-200 active:scale-95"
             >
               <div className="relative">
@@ -129,7 +139,10 @@ const Header = ({
             
             {/* Messages Button */}
             <button 
-              onClick={() => navigate('/messages')} 
+              onClick={() => {
+                haptics.selection();
+                navigate('/messages');
+              }} 
               className="relative w-10 h-10 flex items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border/30 rounded-full text-foreground hover:bg-white/90 dark:hover:bg-black/60 transition-all duration-200 active:scale-95"
               aria-label="Open messages"
             >

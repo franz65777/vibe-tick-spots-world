@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import addPageHero from '@/assets/add-hero-cards.png';
 import { Geolocation } from '@capacitor/geolocation';
 import { getCategoryImage } from '@/utils/categoryIcons';
+import { haptics } from '@/utils/haptics';
 
 interface SelectedLocation {
   id?: string;
@@ -47,6 +48,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
 
   // Handle place selection from external list
   const handlePlaceSelect = useCallback((result: SearchResult) => {
+    haptics.selection();
     if (result.lat && result.lng) {
       onLocationSelected({
         name: result.name,
@@ -88,6 +90,7 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
   // Manage data-modal-open - only reacts to isOpen changes
   useEffect(() => {
     if (isOpen) {
+      haptics.impact('light');
       didSetModalOpenRef.current = true;
       document.body.setAttribute('data-modal-open', 'true');
       window.dispatchEvent(new CustomEvent('ui:overlay-open'));
@@ -170,7 +173,10 @@ const AddPageOverlay = memo(({ isOpen, onClose, onLocationSelected }: AddPageOve
           
           {/* Close button - circular X like pin header */}
           <button 
-            onClick={onClose}
+            onClick={() => {
+              haptics.impact('medium');
+              onClose();
+            }}
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-black/80 dark:bg-white/80 backdrop-blur-md border border-border/30 rounded-full text-white dark:text-gray-900 hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 active:scale-95"
             aria-label="Close"
           >
