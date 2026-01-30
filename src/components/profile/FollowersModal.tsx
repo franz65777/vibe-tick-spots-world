@@ -1,11 +1,11 @@
-import { ArrowLeft, Search, MapPin, X, Check, UserPlus, Clock } from 'lucide-react';
+import { ArrowLeft, Search, X, Check, UserPlus, Clock } from 'lucide-react';
 import { haptics } from '@/utils/haptics';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
@@ -343,6 +343,8 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
   // User Grid Card Component - compact design with overlay icons
   const UserGridCard = ({ user, index }: { user: UserWithFollowStatus; index: number }) => {
     const [isAnimating, setIsAnimating] = useState(false);
+    // Track if animation has already played (one-shot animation)
+    const hasAnimatedRef = useRef(false);
     const now = new Date();
     const userHasStories = stories.some(s => 
       s.user_id === user.id && 
@@ -350,6 +352,17 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
     );
 
     const avatarUrl = user.avatar_url || undefined;
+
+    // Mark as animated after first render
+    useEffect(() => {
+      if (!hasAnimatedRef.current) {
+        // Small delay to ensure animation plays on mount
+        const timer = setTimeout(() => {
+          hasAnimatedRef.current = true;
+        }, 250);
+        return () => clearTimeout(timer);
+      }
+    }, []);
 
     const handleActionClick = async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -399,14 +412,17 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
 
     const { icon: ActionIcon, color, hoverColor } = getActionIcon();
 
+    // Only apply animation styles on first mount, not on re-renders
+    const animationStyle = !hasAnimatedRef.current ? {
+      animationDelay: `${index * 30}ms`,
+      animation: 'fadeIn 0.2s ease-out forwards',
+      opacity: 0,
+    } : {};
+
     return (
       <div 
         className="flex flex-col items-center gap-1.5 py-2 px-1"
-        style={{ 
-          animationDelay: `${index * 30}ms`,
-          animation: 'fadeIn 0.2s ease-out forwards',
-          opacity: 0,
-        }}
+        style={animationStyle}
       >
         {/* Avatar with overlay action icon */}
         <div className="relative">
@@ -436,10 +452,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId, onF
             </div>
           </button>
           
-          {/* Places badge - bottom center */}
+          {/* Places badge - bottom center with glass effect */}
           {(user.savedPlacesCount ?? 0) > 0 && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-primary text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-full shadow-sm z-10">
-              <MapPin className="w-2.5 h-2.5" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/70 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 text-foreground text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm z-10">
+              <span className="leading-none">📌</span>
               <span>{user.savedPlacesCount}</span>
             </div>
           )}
