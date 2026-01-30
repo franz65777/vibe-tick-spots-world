@@ -17,7 +17,7 @@ import { searchNearbyByCategory, type NearbySearchResult, type NearbyPrompt as N
 import noResultsIcon from '@/assets/no-results-pin.png';
 import type { AllowedCategory } from '@/utils/allowedCategories';
 import { useOptimizedPlacesSearch, type SearchResult } from '@/hooks/useOptimizedPlacesSearch';
-import spottLogoColorful from '@/assets/spott-logo-colorful.png';
+import spottLogoTransparent from '@/assets/spott-logo-transparent.png';
 
 interface PopularSpot {
   id: string;
@@ -1009,12 +1009,12 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
           />
           <div className="relative flex items-center h-12 pointer-events-none">
             {showLogoInBar ? (
-              /* Branding logo - centered in bar */
-              <div className="w-full flex items-center justify-center">
+              /* Branding logo - aligned left in bar */
+              <div className="h-full pl-4 flex items-center">
                 <img 
-                  src={spottLogoColorful} 
+                  src={spottLogoTransparent} 
                   alt="SPOTT" 
-                  className="h-8 w-auto animate-pulse"
+                  className="h-7 w-auto"
                 />
               </div>
             ) : (
