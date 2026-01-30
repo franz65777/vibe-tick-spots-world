@@ -10,6 +10,7 @@ import languageIcon from '@/assets/icon-language.png';
 import spottLogo from '@/assets/spott-logo.png';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { haptics } from '@/utils/haptics';
 
 const languages = [
   { code: 'en', label: 'English', phonePlaceholder: '+44 7700 900123' },
@@ -119,14 +120,20 @@ const SignupStart: React.FC = () => {
     const emailValid = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email.trim());
     const phoneValid = /^\+?[0-9\s\-()]{7,15}$/.test(phone.trim());
     const valid = method === 'email' ? emailValid : phoneValid;
-    return valid && !checking && exists === false; // disabilita se esiste o sta controllando
+    return valid && !checking && exists === false;
   }, [method, email, phone, checking, exists]);
+
+  const handleMethodChange = (newMethod: 'email' | 'phone') => {
+    haptics.selection();
+    setMethod(newMethod);
+  };
 
   const sendCode = async () => {
     if (exists) {
       toast.error(existsMessage || (method === 'email' ? t('auth:emailAlreadyInUse') : t('auth:phoneAlreadyInUse')));
       return;
     }
+    haptics.impact('light');
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-otp', {
@@ -148,13 +155,14 @@ const SignupStart: React.FC = () => {
           description: 'Il dominio email non è verificato. Usa questo codice per testare.'
         });
       } else {
-      toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
+        toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
       }
 
       // Store language in session storage for signup flow
       sessionStorage.setItem('signup_language', i18n.language);
       navigate(`/signup/verify?method=${method}&${method}=${encodeURIComponent(method === 'email' ? email.trim() : phone.trim())}`);
     } catch (e: any) {
+      haptics.error();
       toast.error(e?.message || t('auth:cannotSendCode'));
     } finally {
       setLoading(false);
@@ -164,27 +172,35 @@ const SignupStart: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F5F1EA] dark:bg-background text-foreground flex flex-col pt-safe pb-safe">
       <header className="p-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-muted-foreground">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => {
+            haptics.selection();
+            navigate('/');
+          }} 
+          className="text-muted-foreground active:scale-95 transition-transform"
+        >
           <ArrowLeft className="mr-2" /> {t('auth:back')}
         </Button>
         <div className="w-40">
-            <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
-              <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2" aria-label="Language selector">
-                <img src={languageIcon} alt="" className="w-5 h-5 flex-shrink-0" />
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
+          <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
+            <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]" aria-label="Language selector">
+              <img src={languageIcon} alt="" className="w-5 h-5 flex-shrink-0" />
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
             <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
               {languages.map((l) => (
                 <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </header>
 
       <main className="flex-1 px-6 py-8 overflow-y-auto">
         <div className="w-full max-w-md mx-auto space-y-8">
-          <div className="text-center">
+          <div className="text-center animate-in fade-in duration-500">
             <div className="flex items-center justify-center mb-8">
               <img 
                 src={spottLogo} 
@@ -196,82 +212,96 @@ const SignupStart: React.FC = () => {
             <p className="mt-1 text-muted-foreground">{t('auth:joinSpottSubtitle')}</p>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 justify-center snap-x snap-mandatory">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 justify-center snap-x snap-mandatory animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
             <button
               type="button"
-              onClick={() => setMethod('email')}
-              className={`snap-center px-6 py-2 text-sm rounded-full border border-input transition-all ${method === 'email' ? 'bg-accent text-accent-foreground scale-105' : 'bg-background text-foreground'}`}
+              onClick={() => handleMethodChange('email')}
+              className={`snap-center px-6 py-2 text-sm rounded-full border transition-all duration-200 active:scale-95 ${
+                method === 'email' 
+                  ? 'bg-accent text-accent-foreground border-accent shadow-[0_2px_8px_rgba(0,0,0,0.1)] scale-105' 
+                  : 'bg-background text-foreground border-input hover:border-accent/50'
+              }`}
             >
               {t('auth:emailMethod')}
             </button>
             <button
               type="button"
-              onClick={() => setMethod('phone')}
-              className={`snap-center px-6 py-2 text-sm rounded-full border border-input transition-all ${method === 'phone' ? 'bg-accent text-accent-foreground scale-105' : 'bg-background text-foreground'}`}
+              onClick={() => handleMethodChange('phone')}
+              className={`snap-center px-6 py-2 text-sm rounded-full border transition-all duration-200 active:scale-95 ${
+                method === 'phone' 
+                  ? 'bg-accent text-accent-foreground border-accent shadow-[0_2px_8px_rgba(0,0,0,0.1)] scale-105' 
+                  : 'bg-background text-foreground border-input hover:border-accent/50'
+              }`}
             >
               {t('auth:phoneMethod')}
             </button>
           </div>
 
-          {method === 'email' ? (
-            <div>
-              <Label htmlFor="email">{t('auth:email')}</Label>
-              <div className="relative">
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder={t('auth:emailPlaceholder')}
-                  autoComplete="email"
-                  className="pr-10"
-                />
-                <div className="absolute inset-y-0 right-2 flex items-center">
-                  {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-                  {!checking && exists === false && <Check className="w-4 h-4 text-green-600" />}
-                  {!checking && exists === true && <X className="w-4 h-4 text-destructive" />}
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+            {method === 'email' ? (
+              <div>
+                <Label htmlFor="email">{t('auth:email')}</Label>
+                <div className="relative mt-1">
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder={t('auth:emailPlaceholder')}
+                    autoComplete="email"
+                    className="pr-10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_2px_hsl(var(--ring))]"
+                  />
+                  <div className="absolute inset-y-0 right-2 flex items-center">
+                    {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                    {!checking && exists === false && <Check className="w-4 h-4 text-green-600 animate-in zoom-in duration-200" />}
+                    {!checking && exists === true && <X className="w-4 h-4 text-destructive animate-in zoom-in duration-200" />}
+                  </div>
                 </div>
+                {exists === true && (
+                  <div className="mt-2 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-200">
+                    {t('auth:emailAlreadyInUse')} <button type="button" className="underline text-primary ml-1 active:scale-95 transition-transform" onClick={() => navigate('/auth?mode=login')}>{t('auth:signInButton')}</button>
+                  </div>
+                )}
               </div>
-              {exists === true && (
-                <div className="mt-2 text-sm text-destructive">
-                  {t('auth:emailAlreadyInUse')} <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>{t('auth:signInButton')}</button>
+            ) : (
+              <div>
+                <Label htmlFor="phone">{t('auth:phoneNumber')}</Label>
+                <div className="relative mt-1">
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    placeholder={languages.find(l => l.code === i18n.language)?.phonePlaceholder || '+39 333 123 4567'}
+                    autoComplete="tel"
+                    className="pr-10 bg-background text-foreground shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_2px_hsl(var(--ring))]"
+                  />
+                  <div className="absolute inset-y-0 right-2 flex items-center">
+                    {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                    {!checking && exists === false && <Check className="w-4 h-4 text-green-600 animate-in zoom-in duration-200" />}
+                    {!checking && exists === true && <X className="w-4 h-4 text-destructive animate-in zoom-in duration-200" />}
+                  </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="phone">{t('auth:phoneNumber')}</Label>
-              <div className="relative">
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  value={phone} 
-                  onChange={(e) => setPhone(e.target.value)} 
-                  placeholder={languages.find(l => l.code === i18n.language)?.phonePlaceholder || '+39 333 123 4567'}
-                  autoComplete="tel"
-                  className="pr-10 bg-background text-foreground"
-                />
-                <div className="absolute inset-y-0 right-2 flex items-center">
-                  {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-                  {!checking && exists === false && <Check className="w-4 h-4 text-green-600" />}
-                  {!checking && exists === true && <X className="w-4 h-4 text-destructive" />}
-                </div>
+                {exists === true && (
+                  <div className="mt-2 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-200">
+                    {t('auth:phoneAlreadyInUse')} <button type="button" className="underline text-primary ml-1 active:scale-95 transition-transform" onClick={() => navigate('/auth?mode=login')}>{t('auth:signInButton')}</button>
+                  </div>
+                )}
               </div>
-              {exists === true && (
-                <div className="mt-2 text-sm text-destructive">
-                  {t('auth:phoneAlreadyInUse')} <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>{t('auth:signInButton')}</button>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
-          <Button disabled={!canContinue || loading} onClick={sendCode} className="w-full h-12 rounded-full">
+          <Button 
+            disabled={!canContinue || loading} 
+            onClick={sendCode} 
+            className="w-full h-12 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] active:scale-[0.98] transition-all duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300"
+          >
             {loading ? t('auth:sending') : exists ? (method === 'email' ? t('auth:emailAlreadyUsed') : t('auth:phoneAlreadyUsed')) : t('auth:sendCode')}
           </Button>
 
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-muted-foreground animate-in fade-in duration-500 delay-400">
             {t('auth:alreadyHaveAccount')}
-            <Link to="/auth?mode=login" className="ml-1 text-primary underline">{t('auth:signInButton')}</Link>
+            <Link to="/auth?mode=login" className="ml-1 text-primary underline active:scale-95 transition-transform inline-block">{t('auth:signInButton')}</Link>
           </div>
         </div>
       </main>
