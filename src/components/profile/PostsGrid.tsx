@@ -236,7 +236,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   }
 
   return (
-    <div className="px-4">
+    <div className="px-4 overscroll-contain">
       {/* Filter Dropdown + City Chips Row */}
       <div className="sticky top-0 z-20 -mx-4 px-4 mb-4 bg-background">
         <div className="flex items-center gap-3">
@@ -254,19 +254,19 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48 bg-background z-50 rounded-lg">
+            <DropdownMenuContent align="start" className="w-48 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-xl z-50 rounded-xl overflow-hidden">
               <DropdownMenuItem 
                 onClick={() => setPostFilter('photos')}
-                className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
+                className="cursor-pointer focus:bg-accent flex items-center gap-3 px-3 py-2.5"
               >
-                <img src={cameraIcon3d} alt="" className="w-5 h-5 object-contain" />
+                <img src={cameraIcon3d} alt="" className="w-6 h-6 object-contain" loading="eager" />
                 <span className="font-medium">{t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setPostFilter('reviews')}
-                className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
+                className="cursor-pointer focus:bg-accent flex items-center gap-3 px-3 py-2.5"
               >
-                <img src={starIcon3d} alt="" className="w-5 h-5 object-contain" />
+                <img src={starIcon3d} alt="" className="w-6 h-6 object-contain" loading="eager" />
                 <span className="font-medium">{t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -312,6 +312,11 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
             </div>
           )}
         </div>
+
+        {/* Soft rounded divider */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-12 h-1 bg-gray-200/60 dark:bg-gray-700/60 rounded-full" />
+        </div>
       </div>
 
       {displayedPosts.length === 0 ? (
@@ -351,7 +356,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               onDeletePost={handleDeletePost}
             />
             {/* Infinite scroll trigger */}
-            <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+            <div ref={loadMoreRef} className="h-4 flex items-center justify-center">
               {isFetchingNextPage && (
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               )}
