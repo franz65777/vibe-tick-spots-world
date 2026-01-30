@@ -237,7 +237,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   return (
     <div className="px-4 overscroll-contain">
       {/* Filter Dropdown + City Chips Row */}
-      <div className="sticky top-0 z-20 -mx-4 px-4 pb-3 bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-b-2xl">
+      <div className="sticky top-0 z-20 -mx-4 px-4 pb-3 pt-2 bg-[#F7F3EC]/95 dark:bg-background/95 backdrop-blur-lg rounded-b-2xl">
         <div className="flex items-center gap-3">
           {/* Existing Dropdown */}
           <DropdownMenu>
@@ -282,7 +282,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     "px-4 py-2 rounded-full text-sm font-semibold transition-all flex-shrink-0 flex items-center gap-1.5",
                     !selectedCity
                       ? "bg-black text-white"
-                      : "bg-white/60 dark:bg-white/10 text-gray-500 shadow-sm backdrop-blur-sm"
+                      : "bg-white/80 dark:bg-white/15 text-gray-600 shadow-sm backdrop-blur-sm border border-white/50"
                   )}
                 >
                   <Globe className="w-4 h-4" />
@@ -298,7 +298,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       "px-4 py-2 rounded-full text-sm font-semibold transition-all flex-shrink-0 whitespace-nowrap",
                       selectedCity === city
                         ? "bg-black text-white"
-                        : "bg-white/60 dark:bg-white/10 text-gray-500 shadow-sm backdrop-blur-sm"
+                        : "bg-white/80 dark:bg-white/15 text-gray-600 shadow-sm backdrop-blur-sm border border-white/50"
                     )}
                   >
                     {translateCityName(city, i18n.language).toLowerCase()}
