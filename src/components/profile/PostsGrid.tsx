@@ -237,7 +237,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   return (
     <div className="px-4 overscroll-contain">
       {/* Filter Dropdown + City Chips Row */}
-      <div className="sticky top-0 z-20 -mx-4 px-4 pb-3 pt-2 bg-transparent backdrop-blur-lg rounded-b-2xl">
+      <div className="sticky top-0 z-20 -mx-4 px-4 pb-3 pt-2 bg-[#F5F1EA] dark:bg-zinc-900 rounded-b-2xl">
         <div className="flex items-center gap-3">
           {/* Existing Dropdown */}
           <DropdownMenu>
