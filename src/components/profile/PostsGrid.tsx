@@ -2,7 +2,7 @@ import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw, Lo
 import deleteIcon from '@/assets/icon-delete.png';
 import cameraIcon3d from '@/assets/icon-camera-3d.png';
 import starIcon3d from '@/assets/icon-star-3d.png';
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo } from 'react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import LocationPostLibrary from '../explore/LocationPostLibrary';
@@ -80,6 +80,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [reviewOrder, setReviewOrder] = useState<Record<string, number>>({});
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -160,6 +161,35 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const photoPosts = posts.filter((post: any) => post.media_urls && post.media_urls.length > 0);
   const reviewPosts = posts.filter((post: any) => post.rating !== null && post.rating !== undefined);
 
+  // Extract unique cities with counts based on current filter
+  const citiesWithCounts = useMemo(() => {
+    const basePosts = postFilter === 'photos' ? photoPosts : reviewPosts;
+    const cityMap = new Map<string, number>();
+    
+    basePosts.forEach((post: any) => {
+      const city = post.locations?.city;
+      if (city) {
+        cityMap.set(city, (cityMap.get(city) || 0) + 1);
+      }
+    });
+    
+    return Array.from(cityMap.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([city, count]) => ({ city, count }));
+  }, [photoPosts, reviewPosts, postFilter]);
+
+  // Reset city filter when switching between photos/reviews
+  useEffect(() => {
+    setSelectedCity(null);
+  }, [postFilter]);
+
+  // Filter displayed posts by selected city
+  const displayedPosts = useMemo(() => {
+    const basePosts = postFilter === 'photos' ? photoPosts : reviewPosts;
+    if (!selectedCity) return basePosts;
+    return basePosts.filter((post: any) => post.locations?.city === selectedCity);
+  }, [postFilter, photoPosts, reviewPosts, selectedCity]);
+
   const isOwnProfile = user?.id === targetUserId;
 
   console.log('PostsGrid - Current user:', user?.id, 'Target user:', targetUserId, 'Is own profile:', isOwnProfile);
@@ -205,42 +235,79 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
     return <PostsGridSkeleton />;
   }
 
-  const displayedPosts = postFilter === 'photos' ? photoPosts : reviewPosts;
-
   return (
     <div className="px-4">
-      {/* Filter Dropdown */}
-      <div className="sticky top-0 z-20 -mx-4 px-4 mb-4 flex justify-start bg-background">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              className="h-auto p-0 hover:bg-transparent font-semibold text-base gap-1.5 justify-start text-left"
-            >
-              {postFilter === 'photos' 
-                ? t('posts', { ns: 'profile', defaultValue: 'Posts' })
-                : t('reviews', { ns: 'leaderboard', defaultValue: 'Reviews' })
-              }
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48 bg-background z-50 rounded-lg">
-            <DropdownMenuItem 
-              onClick={() => setPostFilter('photos')}
-              className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
-            >
-              <img src={cameraIcon3d} alt="" className="w-5 h-5 object-contain" />
-              <span className="font-medium">{t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => setPostFilter('reviews')}
-              className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
-            >
-              <img src={starIcon3d} alt="" className="w-5 h-5 object-contain" />
-              <span className="font-medium">{t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Filter Dropdown + City Chips Row */}
+      <div className="sticky top-0 z-20 -mx-4 px-4 mb-4 bg-background">
+        <div className="flex items-center gap-3">
+          {/* Existing Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="h-auto p-0 hover:bg-transparent font-semibold text-base gap-1.5 justify-start text-left flex-shrink-0"
+              >
+                {postFilter === 'photos' 
+                  ? t('posts', { ns: 'profile', defaultValue: 'Posts' })
+                  : t('reviews', { ns: 'leaderboard', defaultValue: 'Reviews' })
+                }
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48 bg-background z-50 rounded-lg">
+              <DropdownMenuItem 
+                onClick={() => setPostFilter('photos')}
+                className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
+              >
+                <img src={cameraIcon3d} alt="" className="w-5 h-5 object-contain" />
+                <span className="font-medium">{t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setPostFilter('reviews')}
+                className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
+              >
+                <img src={starIcon3d} alt="" className="w-5 h-5 object-contain" />
+                <span className="font-medium">{t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* City Filter Chips */}
+          {citiesWithCounts.length > 0 && (
+            <div className="flex-1 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-1.5 pb-1">
+                {/* All chip */}
+                <button
+                  onClick={() => setSelectedCity(null)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex-shrink-0",
+                    !selectedCity
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {t('all', { ns: 'common', defaultValue: 'All' })}
+                </button>
+                
+                {/* City chips */}
+                {citiesWithCounts.map(({ city, count }) => (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedCity(city)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex-shrink-0 whitespace-nowrap",
+                      selectedCity === city
+                        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {translateCityName(city, i18n.language)} ({count})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {displayedPosts.length === 0 ? (
