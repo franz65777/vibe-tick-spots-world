@@ -614,7 +614,7 @@ const FeedPage = memo(({ onClose }: FeedPageProps) => {
               </Button>
             </div>
            ) : (
-            <div className="space-y-0">
+            <div className="pt-3">
               {/* City Stats Card - always at top for "For You" feed */}
               {feedType === 'forYou' && (
                 <Suspense fallback={<div className="mx-4 mb-4 h-48 bg-muted rounded-2xl animate-pulse" />}>
