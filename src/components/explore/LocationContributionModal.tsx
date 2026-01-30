@@ -211,9 +211,25 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
               hasLocation = !!existingEntry;
             }
 
+            // If no cover_image_url, try to get first location's image
+            let coverUrl = folder.cover_image_url;
+            if (!coverUrl && (count || 0) > 0) {
+              const { data: firstLocationData } = await supabase
+                .from('folder_locations')
+                .select('location_id, locations(image_url, photos)')
+                .eq('folder_id', folder.id)
+                .limit(1)
+                .maybeSingle();
+              
+              if (firstLocationData?.locations) {
+                const loc = firstLocationData.locations as any;
+                coverUrl = loc.image_url || (loc.photos?.[0]?.url || loc.photos?.[0]?.photo_reference);
+              }
+            }
+
             return { 
               ...folder, 
-              cover_url: folder.cover_image_url,
+              cover_url: coverUrl,
               location_count: count || 0,
               hasLocation,
             };
@@ -604,7 +620,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
               value={descriptionText}
               onChange={(e) => setDescriptionText(e.target.value)}
               placeholder={t('descriptionPlaceholder', { ns: 'explore', defaultValue: 'Write a short description…' })}
-              className="w-full rounded-2xl bg-muted/30 border border-border/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[88px]"
+              className="w-full rounded-2xl bg-background border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none resize-none min-h-[88px] focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
               rows={3}
             />
           </div>
@@ -789,7 +805,7 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
                             {folder.is_private && <Lock className="w-3 h-3" />}
-                            <span>{folder.is_private ? t('private', { defaultValue: 'private' }) : t('public', { defaultValue: 'public' })}</span>
+                            <span>{folder.is_private ? t('private', { ns: 'common' }) : t('public', { ns: 'common' })}</span>
                           </div>
                           <span className="text-sm font-semibold truncate block">{folder.name}</span>
                         </div>
@@ -810,12 +826,12 @@ const LocationContributionModal: React.FC<LocationContributionModalProps> = ({
         </div>
       </div>
 
-      {/* Save Button - Fixed at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border/30 pb-safe">
+      {/* Save Button - Fixed at bottom, pill style like city selector */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-safe">
         <Button
           onClick={handleSave}
           disabled={loading || (!selectedPhotos.length && !descriptionText.trim() && !selectedFolders.size)}
-          className="w-full h-12 text-base font-semibold rounded-xl"
+          className="w-full h-11 text-base font-semibold rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

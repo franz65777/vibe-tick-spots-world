@@ -185,6 +185,8 @@ export const turkishTranslations = {
       allCities: 'Tüm şehirler',
       noLocationsInCity: 'Bu şehirde yer yok'
     },
+    public: 'Herkese Açık',
+    private: 'Gizli',
     explore: {
       noResultsFound: 'Sonuç bulunamadı',
       tryDifferentSearch: 'Farklı bir arama deneyin',
