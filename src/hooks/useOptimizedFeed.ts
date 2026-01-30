@@ -79,9 +79,9 @@ export const useOptimizedFeed = () => {
       return enriched;
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchOnMount: 'always',
+    staleTime: 3 * 60 * 1000, // 3 minutes - show cached immediately
+    gcTime: 10 * 60 * 1000, // 10 minutes in memory
+    refetchOnMount: false, // Use cache if available
     initialData: () => {
       // Carica subito dalla cache solo se recentissima per evitare contatori vecchi
       if (!user?.id) return [];
