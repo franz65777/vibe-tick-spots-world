@@ -596,7 +596,7 @@ const MapSection = ({
           style={{
             bottom: isExpanded 
               ? 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' 
-              : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))'
+              : 'calc(4.5rem + env(safe-area-inset-bottom, 0px))'
           }}>
           {/* List View Toggle - Simple button, Sheet is rendered separately */}
           <button
@@ -604,7 +604,7 @@ const MapSection = ({
               previousOverlayRef.current = 'list';
               setOverlay('list');
             }}
-            className="rounded-full bg-background/80 backdrop-blur-md border border-border/20 shadow-lg hover:bg-background/90 hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
+            className="rounded-full bg-white dark:bg-zinc-900 shadow-[0_8px_32px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.25),0_4px_16px_rgba(0,0,0,0.15)] hover:scale-105 w-11 h-11 transition-all flex items-center justify-center"
           >
             <List className="w-5 h-5 text-foreground" />
           </button>

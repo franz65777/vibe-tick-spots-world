@@ -1008,14 +1008,14 @@ const SearchDrawer: React.FC<SearchDrawerProps> = ({
       style={{
         bottom: isExpanded
           ? 'calc(env(safe-area-inset-bottom, 0px) + 1rem)'
-          : 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
+          : 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
         transition: (isDragging || isInitialRender) ? 'none' : 'all 0.55s cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       {/* Search bar at bottom - keep rendered while dragging to avoid losing pointer capture */}
       {(dragProgress === 0 || isDragging) && (
         <div 
-          className="w-full relative bg-zinc-900 dark:bg-white border border-zinc-800 dark:border-zinc-200 rounded-full shadow-lg cursor-pointer"
+          className="w-full relative bg-zinc-900 dark:bg-white rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.25),0_4px_16px_rgba(0,0,0,0.15)] cursor-pointer"
           onClick={handleSearchBarClick}
         >
           {/* Invisible drag handle area at top */}
