@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -88,33 +88,74 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
     await markAsRead([notificationId]);
   };
 
+  const closeOverlaySync = useCallback(() => {
+    // Force the overlay to unmount BEFORE any route navigation, to avoid it
+    // remaining visually on top due to stacking/portal timing.
+    flushSync(() => onClose());
+  }, [onClose]);
+
+  const navigateWithClose = useCallback(
+    (to: string, options?: any) => {
+      closeOverlaySync();
+      navigate(to, options);
+    },
+    [closeOverlaySync, navigate]
+  );
+
   const handleNotificationClick = (notification: any) => {
     // Mark as read
     if (!notification.is_read) {
       handleMarkAsRead(notification.id);
     }
 
-    // Close overlay first
-    onClose();
+    // Support explicit navigation requests coming from child components
+    if (notification?.__nav?.kind === 'profile' && notification.__nav.userId) {
+      navigateWithClose(`/profile/${notification.__nav.userId}`);
+      return;
+    }
+    if (notification?.__nav?.kind === 'post' && notification.__nav.postId) {
+      navigateWithClose(`/post/${notification.__nav.postId}`, { state: { fromNotifications: true } });
+      return;
+    }
+    if (notification?.__nav?.kind === 'home_open_location' && notification.__nav.locationId) {
+      navigateWithClose('/', {
+        state: {
+          openLocationId: notification.__nav.locationId,
+          fromNotifications: true,
+        },
+      });
+      return;
+    }
 
     // Navigate based on notification type
     switch (notification.type) {
       case 'follow':
         if (notification.data?.user_id) {
-          navigate(`/profile/${notification.data.user_id}`);
+          navigateWithClose(`/profile/${notification.data.user_id}`);
         }
         break;
       case 'like':
       case 'comment':
         if (notification.data?.post_id) {
-          navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
+          navigateWithClose(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
+        }
+        break;
+      case 'location_share':
+        if (notification.data?.location_id) {
+          navigateWithClose('/', {
+            state: {
+              openLocationId: notification.data.location_id,
+              fromNotifications: true,
+            },
+          });
         }
         break;
       case 'story_like':
-        navigate(`/profile`);
+        navigateWithClose(`/profile`);
         break;
       case 'story_reply':
         if (notification.data?.user_id) {
+          closeOverlaySync();
           // Open messages overlay with this user
           window.dispatchEvent(new CustomEvent('open-messages-overlay', { 
             detail: { userId: notification.data.user_id } 
@@ -122,6 +163,7 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
         }
         break;
       default:
+        closeOverlaySync();
         break;
     }
   };
