@@ -186,15 +186,15 @@ const FeedListsCarousel = memo(() => {
   if (isLoading || lists.length === 0) return null;
 
   return (
-    <div className="mx-5 my-1 py-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-xl border border-white/40 dark:border-white/20 shadow-lg shadow-black/5">
+    <div className="py-4">
       {/* Header */}
-      <div className="px-4 mb-3 flex items-center gap-2">
+      <div className="px-5 mb-3 flex items-center gap-2">
         <img src={listIcon} alt="" className="w-5 h-5 object-contain" />
         <h3 className="font-bold text-foreground">{t('listsForYou', { defaultValue: 'lists for you' })}</h3>
       </div>
 
       {/* Horizontal scroll */}
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+      <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
         {lists.map((list) => (
           <button
             key={list.id}
