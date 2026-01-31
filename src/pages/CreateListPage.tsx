@@ -171,11 +171,12 @@ const CreateListPage = () => {
 
     setSaving(true);
     try {
+      const trimmedName = folderName.trim();
       if (isEditMode) {
         const { error: updateError } = await supabase
           .from('saved_folders')
           .update({
-            name: folderName.trim(),
+            name: trimmedName,
             is_private: isPrivate,
             cover_image_url: coverImageUrl || null,
           })
@@ -204,6 +205,34 @@ const CreateListPage = () => {
         }
 
         toast.success(t('listUpdated', 'List updated'));
+
+        // Update React Query cache immediately so profile cards update live without a refresh.
+        // The TripsGrid reads from useOptimizedFolders (queryKey: ['optimized-folders', userId, isOwnProfile]).
+        queryClient.setQueriesData(
+          { queryKey: ['optimized-folders'] },
+          (old: any) => {
+            if (!old) return old;
+
+            const patchFolder = (arr: any[] | undefined) =>
+              (arr || []).map((f) =>
+                f?.id === folderId
+                  ? {
+                      ...f,
+                      name: trimmedName,
+                      is_private: isPrivate,
+                      cover_image_url: coverImageUrl || null,
+                      cover_image: coverImageUrl || null,
+                    }
+                  : f
+              );
+
+            return {
+              ...old,
+              folders: patchFolder(old.folders),
+              savedFolders: patchFolder(old.savedFolders),
+            };
+          }
+        );
       } else {
         const randomColor = FOLDER_COLORS[Math.floor(Math.random() * FOLDER_COLORS.length)];
 
@@ -211,7 +240,7 @@ const CreateListPage = () => {
           .from('saved_folders')
           .insert({
             user_id: user.id,
-            name: folderName.trim(),
+            name: trimmedName,
             color: randomColor,
             icon: 'folder',
             is_private: isPrivate,
@@ -236,10 +265,36 @@ const CreateListPage = () => {
         }
 
         toast.success(t('listCreated', 'List created'));
+
+        // Also pre-apply the new folder to any optimized-folders caches for instant UI.
+        // (Counts will be corrected by the invalidate/refetch below.)
+        if (data?.id) {
+          queryClient.setQueriesData(
+            { queryKey: ['optimized-folders'] },
+            (old: any) => {
+              if (!old) return old;
+              const nextFolder = {
+                id: data.id,
+                name: trimmedName,
+                user_id: user.id,
+                is_private: isPrivate,
+                cover_image_url: coverImageUrl || null,
+                cover_image: coverImageUrl || null,
+                created_at: new Date().toISOString(),
+                locations_count: selectedLocationIds.length,
+              };
+              // Insert at top (the query orders by created_at desc)
+              return {
+                ...old,
+                folders: [nextFolder, ...(old.folders || [])],
+              };
+            }
+          );
+        }
       }
 
-      // Invalidate folder queries to update the UI
-      queryClient.invalidateQueries({ queryKey: ['optimized-folders', user.id] });
+      // Invalidate all variants of optimized-folders to refetch authoritative data.
+      queryClient.invalidateQueries({ queryKey: ['optimized-folders'] });
       
       navigate('/profile?tab=trips');
     } catch (error) {
