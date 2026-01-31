@@ -328,7 +328,7 @@ export const CommentDrawer = ({
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder={t('comments.addPlaceholder', 'Aggiungi un commento...')}
-                  className="rounded-full pr-10 h-11 bg-muted border-0"
+                  className="rounded-full pr-12 h-12 bg-white dark:bg-muted border-0 text-base shadow-sm"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -341,9 +341,9 @@ export const CommentDrawer = ({
                   disabled={!newComment.trim() || submitting}
                   size="icon"
                   variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full"
                 >
-                  <Send className={`h-5 w-5 ${newComment.trim() ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className={`text-xl ${newComment.trim() ? 'opacity-100' : 'opacity-40'}`}>💬</span>
                 </Button>
               </div>
             </div>

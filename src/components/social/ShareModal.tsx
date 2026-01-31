@@ -146,12 +146,12 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
 
               <div className="px-4 py-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
                   <Input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t('search', { ns: 'common', defaultValue: 'Search' })}
-                    className="pl-10 rounded-full bg-muted border-0"
+                    placeholder={t('searchPeople', { ns: 'common', defaultValue: 'Cerca persone...' })}
+                    className="pl-12 rounded-full bg-white dark:bg-muted border-0 h-12 text-base shadow-sm"
                   />
                 </div>
               </div>
