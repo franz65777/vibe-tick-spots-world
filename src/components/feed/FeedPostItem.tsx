@@ -283,7 +283,22 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
     <article
       id={`feed-post-${postId}`}
       data-feed-post-id={postId}
-      className="post-compact bg-white/60 dark:bg-zinc-900/70 backdrop-blur-md mx-5 rounded-xl border border-white/40 dark:border-white/20 shadow-lg shadow-black/5 dark:shadow-black/20 overflow-hidden"
+      className={cn(
+        "post-compact mx-5 rounded-2xl overflow-hidden",
+        // Gradient background caldo invece di bianco piatto
+        "bg-gradient-to-br from-white/80 via-white/60 to-amber-50/40",
+        "dark:from-zinc-900/80 dark:via-zinc-900/60 dark:to-zinc-800/40",
+        "backdrop-blur-md",
+        // Bordo premium
+        "border border-white/50 dark:border-white/15",
+        // Bordo laterale colorato basato su rating
+        rating && rating >= 8 ? "border-l-4 border-l-green-400/50" :
+        rating && rating >= 5 ? "border-l-4 border-l-amber-400/50" :
+        rating && rating > 0 ? "border-l-4 border-l-red-400/50" : "",
+        // Shadow e hover
+        "shadow-lg shadow-black/5 dark:shadow-black/20",
+        "hover:shadow-xl hover:scale-[1.005] transition-all duration-300"
+      )}
     >
       {/* Post Header */}
       <div className="post-compact-header flex items-center justify-between">
@@ -292,7 +307,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             onClick={(e) => onAvatarClick(userId, isBusiness, e)}
             className="shrink-0 relative"
           >
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-11 w-11 ring-2 ring-white/50 dark:ring-white/20">
               <AvatarImage src={avatarUrl || undefined} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                 {username.slice(0, 2).toUpperCase()}
@@ -398,7 +413,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                   const isLoaded = imageLoadedMap[idx];
                   return (
                     <CarouselItem key={idx} className="pl-0">
-                      <div className="aspect-square w-full relative overflow-hidden">
+                      <div className="aspect-square w-full relative overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.08)]">
                         {/* Shimmer placeholder - visible until image loads */}
                         {!isVideo && !isLoaded && (
                           <div className="absolute inset-0 bg-muted shimmer-skeleton" />
@@ -436,7 +451,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');
             const isLoaded = imageLoadedMap[0];
             return (
-              <div className="aspect-square w-full relative overflow-hidden">
+              <div className="aspect-square w-full relative overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.08)]">
                 {/* Shimmer placeholder - visible until image loads */}
                 {!isVideo && !isLoaded && (
                   <div className="absolute inset-0 bg-muted shimmer-skeleton" />
@@ -483,7 +498,11 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       )}
 
       {/* Post Actions */}
-      <div className={cn("post-compact-actions", (isReviewOnly || isPromotion) && !caption ? "space-y-0" : "space-y-1")}>
+      <div className={cn(
+        "post-compact-actions",
+        "bg-gradient-to-t from-white/30 to-transparent dark:from-black/20",
+        (isReviewOnly || isPromotion) && !caption ? "space-y-0" : "space-y-1"
+      )}>
         {/* Caption without username for: review-only OR promotion posts - show above buttons */}
         {(isReviewOnly || isPromotion) && caption && renderCaptionWithoutUsername()}
 
