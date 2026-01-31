@@ -250,7 +250,7 @@ const NewBottomNavigation = () => {
                       undefined
                     }
                     className={cn(
-                      "flex items-center justify-center min-w-[48px] transition-all duration-200 active:scale-95"
+                      "flex items-center justify-center min-w-[48px] transition-transform duration-100 active:scale-90"
                     )}
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}

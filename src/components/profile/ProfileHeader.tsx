@@ -227,17 +227,17 @@ const ProfileHeader = ({
 
           {/* Stats Row - inline like "6 Follower" */}
           <div className="flex gap-3 mt-2">
-            <button className="flex items-center gap-1" onClick={onFollowersClick}>
+            <button className="flex items-center gap-1 active:opacity-70 transition-opacity" onClick={onFollowersClick}>
               <span className="text-sm font-bold text-foreground">{displayStats.followers}</span>
               <span className="text-sm text-muted-foreground">{t('followers', { ns: 'common' })}</span>
             </button>
             
-            <button className="flex items-center gap-1" onClick={onFollowingClick}>
+            <button className="flex items-center gap-1 active:opacity-70 transition-opacity" onClick={onFollowingClick}>
               <span className="text-sm font-bold text-foreground">{displayStats.following}</span>
               <span className="text-sm text-muted-foreground">{t('followingTab', { ns: 'common' })}</span>
             </button>
             
-            <button className="flex items-center gap-1" onClick={onLocationsClick}>
+            <button className="flex items-center gap-1 active:opacity-70 transition-opacity" onClick={onLocationsClick}>
               <span className="text-sm font-bold text-foreground">{displayStats.locations}</span>
               <span className="text-sm text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</span>
             </button>
@@ -258,7 +258,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.all > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'all' } })}
             disabled={categoryCounts.all === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 transition-all duration-150 active:scale-[0.97] active:bg-white/80 dark:active:bg-white/20 ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagAll} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
@@ -271,7 +271,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.been > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'been' } })}
             disabled={categoryCounts.been === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.been === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 transition-all duration-150 active:scale-[0.97] active:bg-white/80 dark:active:bg-white/20 ${categoryCounts.been === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagBeen} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
@@ -284,7 +284,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.toTry > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'to-try' } })}
             disabled={categoryCounts.toTry === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.toTry === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 transition-all duration-150 active:scale-[0.97] active:bg-white/80 dark:active:bg-white/20 ${categoryCounts.toTry === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagToTry} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
@@ -297,7 +297,7 @@ const ProfileHeader = ({
           <button 
             onClick={() => categoryCounts.favourite > 0 && navigate(`/user-places/${user?.id}`, { state: { filterCategory: 'favourite' } })}
             disabled={categoryCounts.favourite === 0}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 ${categoryCounts.favourite === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 transition-all duration-150 active:scale-[0.97] active:bg-white/80 dark:active:bg-white/20 ${categoryCounts.favourite === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
             <img src={saveTagFavourite} alt="" className="w-8 h-8 object-contain -my-1" />
             <div className="flex flex-col items-start">
