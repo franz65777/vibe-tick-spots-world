@@ -1,265 +1,265 @@
 
 
-# Piano: Premium iOS UX Improvements
+# Piano: Continuazione Premium iOS UX + Search Bar Messaggi
 
 ## Panoramica
 
-Dopo aver analizzato l'intera codebase, ho identificato diverse aree dove implementare miglioramenti UX per un'esperienza più simile a un'app iOS premium. Le modifiche si concentrano su **feedback tattile**, **micro-animazioni**, **transizioni fluide** e **polish visivo**.
+Continuo con i miglioramenti iOS premium e aggiorno la search bar nei messaggi per essere consistente con le altre (lente emoji 🔍, sfondo bianco pill, stile rounded-3xl).
 
 ---
 
-## 1. Button Component - Mobile-First Active States
+## 1. Messages Search Bar - Stile Consistente
 
-**File**: `src/components/ui/button.tsx`
+**File**: `src/components/messages/MessagesOverlay.tsx`
 
-Il componente Button attuale non ha active states per il touch. Aggiungiamo effetti di pressione:
-
+Attualmente (linee 742-751 e 767-776):
 ```tsx
-const buttonVariants = cva(
-  // Aggiungere active:scale-[0.97] a tutti i bottoni
-  "... transition-all duration-150 active:scale-[0.97]",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80",
-        destructive: "... active:bg-destructive/80",
-        // ... altri variants con active states
-      }
-    }
-  }
-)
+<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+<Input 
+  className="pl-9 h-9 bg-muted/50 rounded-full" 
+/>
 ```
 
----
-
-## 2. Settings Page - iOS List Style
-
-**File**: `src/pages/SettingsPage.tsx`
-
-Attualmente le impostazioni sono bottoni semplici. Trasformarle in iOS-style grouped rows:
-
-- Aggiungere dividers sottili tra le opzioni
-- Raggruppare le opzioni in "sezioni" con header
-- Active state con sfondo grigio chiaro
-- Chevron più visibile con animazione
+Lo aggiorno per usare lo stile di ExploreHeaderBar con:
+- Emoji 🔍 invece dell'icona Lucide Search
+- Sfondo `bg-white` con `rounded-3xl`
+- Altezza `h-12` invece di `h-9`
+- Border e shadow consistenti
 
 ```tsx
-<div className="divide-y divide-border/50 bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl mx-4 shadow-sm border border-white/40 dark:border-white/10">
-  <button className="w-full flex items-center justify-between p-4 active:bg-muted/50 transition-colors">
-    // ...content
-    <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-  </button>
-</div>
-```
-
----
-
-## 3. Leaderboard Page - Premium Polish
-
-**File**: `src/pages/LeaderboardPage.tsx`
-
-Miglioramenti specifici:
-
-- **Podium Effect**: Top 3 users con stile speciale (oro/argento/bronzo)
-- **Row Active States**: Feedback touch per ogni riga
-- **Rank Badges**: Numeri in cerchi colorati per top 3
-
-```tsx
-// Top 3 special styling
-<div className={cn(
-  "flex items-center gap-3 py-3 transition-all rounded-lg",
-  item.rank === 1 && "bg-gradient-to-r from-yellow-400/10 to-amber-500/10 border-l-4 border-yellow-400",
-  item.rank === 2 && "bg-gradient-to-r from-gray-300/10 to-gray-400/10 border-l-4 border-gray-400",
-  item.rank === 3 && "bg-gradient-to-r from-orange-400/10 to-amber-600/10 border-l-4 border-orange-400",
-  !isSelf && "active:bg-muted/50"
-)}>
-```
-
----
-
-## 4. Notifications Overlay - Enhanced Items
-
-**File**: `src/components/notifications/NotificationsOverlay.tsx` + `MobileNotificationItem.tsx`
-
-Miglioramenti:
-
-- **Swipe Feedback**: Animazione più fluida durante lo swipe-to-delete
-- **Tap Feedback**: Active state più visibile
-- **Grouped Notifications**: Visual stacking per likes raggruppati
-
-```tsx
-// Notification row with better touch feedback
-<div className={cn(
-  "py-3 px-4 transition-all duration-150",
-  "active:bg-muted/60",
-  !notification.is_read && "bg-primary/5"
-)}>
-```
-
----
-
-## 5. Profile Header - Subtle Animations
-
-**File**: `src/components/profile/ProfileHeader.tsx`
-
-Aggiungere micro-animazioni:
-
-- **Stats Counter**: Animazione numero quando cambia
-- **Avatar Ring**: Pulse animation per storie attive
-- **Category Cards**: Subtle bounce al tap
-
-```tsx
-// Category card with tap animation
-<button 
-  onClick={...}
-  className="... active:scale-[0.97] transition-transform"
->
-```
-
----
-
-## 6. Explore Page - Search Polish
-
-**File**: `src/components/ExplorePage.tsx`
-
-Miglioramenti:
-
-- **Search Input Focus**: Animazione di espansione
-- **Recent Searches**: Swipe-to-delete per history items
-- **User Cards**: Tap animation migliorata
-
-```tsx
-// Search input with focus animation
-<input
-  className={cn(
-    "transition-all duration-200",
-    inputFocused && "ring-2 ring-primary/30 shadow-lg"
-  )}
+<span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base pointer-events-none">🔍</span>
+<Input 
+  className="pl-12 pr-12 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm" 
 />
 ```
 
 ---
 
-## 7. Bottom Navigation - Spring Animations
+## 2. Message Bubbles - Premium Gradient
+
+**File**: `src/components/messages/VirtualizedMessageList.tsx`
+
+Aggiornare i bubble dei messaggi propri con un gradient premium invece di `bg-primary` piatto:
+
+```tsx
+// Linea 318 - Da:
+className="bg-primary text-primary-foreground"
+
+// A:
+className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm"
+```
+
+---
+
+## 3. Profile Header - Touch Feedback sulle Category Cards
+
+**File**: `src/components/profile/ProfileHeader.tsx`
+
+Aggiungere active states alle category cards (linee 258-307):
+
+```tsx
+<button 
+  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 
+    transition-all duration-150 active:scale-[0.97] active:bg-white/80 dark:active:bg-white/20
+    ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+>
+```
+
+---
+
+## 4. Profile Header - Stats Buttons Touch Feedback
+
+**File**: `src/components/profile/ProfileHeader.tsx`
+
+Aggiungere feedback tattile ai pulsanti stats (linee 230-244):
+
+```tsx
+<button className="flex items-center gap-1 active:opacity-70 transition-opacity" onClick={onFollowersClick}>
+```
+
+---
+
+## 5. Profile Tabs - Active Scale Effect
+
+**File**: `src/components/profile/ProfileTabs.tsx`
+
+Aggiungere `active:scale-[0.97]` ai tab buttons per feedback touch (linee 29-95):
+
+```tsx
+<button
+  className={cn(
+    "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+    "active:scale-[0.97]", // Nuovo
+    activeTab === 'posts' ? "..." : "..."
+  )}
+>
+```
+
+---
+
+## 6. Bottom Navigation - Enhanced Spring Effect
 
 **File**: `src/components/NewBottomNavigation.tsx`
 
-Già abbastanza buono, ma possiamo aggiungere:
-
-- **Spring Bounce**: Animazione elastica sul tap
-- **Icon Fill**: Icone filled quando attive (non solo colore)
+Aggiungere una transizione più "springy" all'animazione del tap (linea 253):
 
 ```tsx
-// Button with spring animation
+// Da:
+className="... active:scale-95"
+
+// A - più iOS-like:
+className="... active:scale-90 transition-transform duration-100"
+```
+
+---
+
+## 7. Explore User Cards - Touch Feedback
+
+**File**: `src/components/ExplorePage.tsx` 
+
+Le user cards nelle ricerche recenti e suggerimenti devono avere active states. Quando si implementa ExploreResults, aggiungere:
+
+```tsx
+<button className="... active:scale-[0.98] active:bg-muted/50 transition-all">
+```
+
+---
+
+## 8. VirtualizedMessageList - Better Own Bubble Styling
+
+**File**: `src/components/messages/VirtualizedMessageList.tsx`
+
+Migliorare i message bubbles propri con gradient in tutti i tipi di messaggio (linee 118, 318):
+
+```tsx
+// Audio message
+className={`rounded-2xl px-3 py-2.5 relative ${
+  isOwn 
+    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' 
+    : 'bg-card text-card-foreground border border-border'
+}`}
+
+// Text message
+className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${
+  isOwn 
+    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' 
+    : 'bg-card text-card-foreground border border-border'
+}`}
+```
+
+---
+
+## Riepilogo Modifiche
+
+| File | Modifica | Priorità |
+|------|----------|----------|
+| `MessagesOverlay.tsx` | Search bar con 🔍 emoji, bianco pill, rounded-3xl | **Alta** |
+| `VirtualizedMessageList.tsx` | Gradient premium sui bubble propri | Media |
+| `ProfileHeader.tsx` | Active states su category cards + stats | Media |
+| `ProfileTabs.tsx` | Active scale sui tab | Bassa |
+| `NewBottomNavigation.tsx` | Spring effect migliorato | Bassa |
+
+---
+
+## Dettagli Implementazione
+
+### MessagesOverlay.tsx - Search Bar (Linee 742-776)
+
+**Search View (linee 742-751)**:
+```tsx
+<div className="relative flex-1">
+  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base pointer-events-none">🔍</span>
+  <Input 
+    type="text" 
+    placeholder={t('searchPlaceholder', { ns: 'messages' })} 
+    value={searchQuery} 
+    onChange={e => handleSearch(e.target.value)} 
+    className="pl-12 pr-4 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm" 
+    autoFocus 
+  />
+</div>
+```
+
+**Threads View (linee 767-776)**:
+```tsx
+<div className="relative flex-1">
+  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base pointer-events-none">🔍</span>
+  <Input 
+    type="text" 
+    placeholder={t('searchPlaceholder', { ns: 'messages' })} 
+    value={searchQuery} 
+    onChange={e => handleSearch(e.target.value)} 
+    onFocus={() => setView('search')} 
+    className="pl-12 pr-4 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm" 
+  />
+</div>
+```
+
+### VirtualizedMessageList.tsx - Premium Bubbles
+
+**Linea 118 (Audio message)**:
+```tsx
+className={`rounded-2xl px-3 py-2.5 relative ${
+  isOwn 
+    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' 
+    : 'bg-card text-card-foreground border border-border'
+}`}
+```
+
+**Linea 318 (Text message)**:
+```tsx
+className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${
+  isOwn 
+    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' 
+    : 'bg-card text-card-foreground border border-border'
+}`}
+```
+
+### ProfileHeader.tsx - Category Cards Active States
+
+**Linee 261, 274, 287, 300** - Aggiungere a tutte le category card buttons:
+```tsx
+className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/10 shadow-sm backdrop-blur-sm shrink-0 
+  transition-all duration-150 active:scale-[0.97] active:bg-white/80 dark:active:bg-white/20
+  ${categoryCounts.all === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+```
+
+### ProfileHeader.tsx - Stats Buttons
+
+**Linee 230, 235, 240** - Aggiungere active feedback:
+```tsx
+<button className="flex items-center gap-1 active:opacity-70 transition-opacity" onClick={...}>
+```
+
+### ProfileTabs.tsx - Tab Active States
+
+**Linee 29, 44, 58, 69, 84** - Aggiungere a tutti i tab:
+```tsx
 className={cn(
-  "... active:scale-90 transition-all duration-150",
-  isActive && "animate-bounce-gentle"
+  "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+  "active:scale-[0.97]",
+  activeTab === 'posts' ? "..." : "..."
+)}
+```
+
+### NewBottomNavigation.tsx - Spring Effect
+
+**Linea 253**:
+```tsx
+className={cn(
+  "flex items-center justify-center min-w-[48px] transition-transform duration-100 active:scale-90"
 )}
 ```
 
 ---
 
-## 8. Global CSS - New Premium Animations
+## Ordine di Implementazione
 
-**File**: `src/index.css`
+1. **MessagesOverlay.tsx** - Search bar update (richiesta esplicita)
+2. **VirtualizedMessageList.tsx** - Premium message bubbles
+3. **ProfileHeader.tsx** - Touch feedback
+4. **ProfileTabs.tsx** - Tab active states
+5. **NewBottomNavigation.tsx** - Spring effect migliorato
 
-Aggiungere nuove animazioni riutilizzabili:
-
-```css
-/* iOS-style spring animation for buttons */
-@keyframes tap-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(0.95); }
-}
-
-.animate-tap-bounce {
-  animation: tap-bounce 150ms ease-out;
-}
-
-/* Subtle glow pulse for important elements */
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-  50% { box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.15); }
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 2s ease-in-out infinite;
-}
-
-/* List item press effect */
-.list-item-press {
-  transition: background-color 150ms ease;
-}
-
-.list-item-press:active {
-  background-color: hsl(var(--muted) / 0.6);
-}
-```
-
----
-
-## 9. Messages Modal - Premium Chat Bubbles
-
-**File**: `src/components/MessagesModal.tsx`
-
-Miglioramenti:
-
-- **Message Bubbles**: Gradienti più premium
-- **Typing Indicator**: Dots animation
-- **Send Animation**: Fly-out effect quando si invia
-
-```tsx
-// Premium message bubble
-<div className={cn(
-  "rounded-2xl px-4 py-3",
-  isOwn 
-    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white" 
-    : "bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm border border-white/30"
-)}>
-```
-
----
-
-## 10. Profile Tabs - Enhanced Indicator
-
-**File**: `src/components/profile/ProfileTabs.tsx`
-
-Aggiungere:
-
-- **Sliding Indicator**: Barra che si muove tra i tab
-- **Scale Animation**: Tab attivo leggermente più grande
-
-Già implementato abbastanza bene, ma possiamo aggiungere una transizione più fluida.
-
----
-
-## Riepilogo Tecnico
-
-| File | Miglioramento | Priorità |
-|------|---------------|----------|
-| `button.tsx` | Active states globali | Alta |
-| `SettingsPage.tsx` | iOS grouped list style | Alta |
-| `LeaderboardPage.tsx` | Podium + active states | Media |
-| `NotificationsOverlay.tsx` | Touch feedback | Media |
-| `ProfileHeader.tsx` | Micro-animations | Bassa |
-| `ExplorePage.tsx` | Search polish | Media |
-| `NewBottomNavigation.tsx` | Spring animations | Bassa |
-| `index.css` | Nuove animazioni | Alta |
-| `MessagesModal.tsx` | Premium bubbles | Media |
-| `ProfileTabs.tsx` | Sliding indicator | Bassa |
-
----
-
-## Ordine di Implementazione Consigliato
-
-1. **index.css** - Aggiungere le nuove animazioni CSS
-2. **button.tsx** - Active states per tutti i bottoni
-3. **SettingsPage.tsx** - iOS-style grouped list
-4. **LeaderboardPage.tsx** - Podium styling + row feedback
-5. **NotificationsOverlay.tsx** + **MobileNotificationItem.tsx** - Touch polish
-6. **ExplorePage.tsx** - Search improvements
-7. **MessagesModal.tsx** - Premium chat design
-8. **Altri componenti** - Micro-polish
-
-Queste modifiche trasformeranno l'app da "buona" a "premium iOS-quality" senza stravolgere il design esistente.
+Queste modifiche completano il polish premium iOS-style dell'app, rendendo tutte le interazioni touch più responsive e consistenti.
 
