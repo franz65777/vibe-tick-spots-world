@@ -1,141 +1,114 @@
 
-# Piano: Review Cards Cliccabili + Redesign Feed Cards
+# Piano: Miglioramento Design Review Cards
 
-## Problema 1: Review Cards Non Cliccabili
+## Panoramica
+Miglioro le review cards nel profilo rendendo il bottone elimina uguale a quello dei post foto e riposizionandolo in modo che non copra il contenuto della card. Aggiungo anche alcuni miglioramenti visivi generali.
 
-### Analisi
-Nel file `PostsGrid.tsx` (linee 396-398), il codice attuale **impedisce il click** sulle recensioni senza foto:
+## Modifiche Proposte
 
-```tsx
-// Attuale - PROBLEMATICO
-onClick={hasMedia ? () => handlePostClick(post.id) : undefined}
-className={cn(..., hasMedia && "cursor-pointer")}
-```
+### 1. Bottone Elimina - Stile Unificato
+Attualmente il bottone elimina nelle review cards usa uno stile diverso (rosso, circolare, piccolo) rispetto ai post foto. Lo allineo allo stile dei post nella griglia:
 
-Le recensioni senza media (`hasMedia = false`) non hanno `onClick` e non sono cliccabili.
+**Stile attuale (review cards):**
+- `w-6 h-6 bg-red-500/90 rounded-full`
+- Posizione: `absolute top-3 left-[72px]` (copre la card)
 
-### Soluzione
-Rendere **tutte** le review cards cliccabili, con o senza foto:
+**Nuovo stile (uguale ai post):**
+- `w-7 h-9 bg-muted-foreground/70 hover:bg-muted-foreground/90 rounded-xl`
+- Icona più grande: `w-4 h-5`
+- Appare solo al hover: `opacity-0 group-hover:opacity-100`
 
-```tsx
-// Nuovo - TUTTE CLICCABILI
-onClick={() => handlePostClick(post.id)}
-className={cn(..., "cursor-pointer")} // Sempre cursor pointer
-```
+### 2. Posizionamento Bottone Elimina
+Sposto il bottone in una posizione che non copra il contenuto principale:
 
----
+**Opzione scelta: Angolo in basso a sinistra della thumbnail**
+- Posizione: `absolute bottom-0 left-0`
+- Si sovrappone leggermente alla thumbnail ma non al testo
+- Visibile solo al hover della card
 
-## Problema 2: Feed Cards Poco Attraenti
-
-### Analisi del Design Attuale
-Le feed cards (`FeedPostItem.tsx`) hanno:
-- Header semplice con avatar + username + location
-- Immagine quadrata 1:1
-- Action bar sotto
-- Caption con username inline
-- Timestamp piccolo in basso
-
-### Proposte di Miglioramento Visivo
-
-#### 1. Overlay Gradiente sull'Immagine
-Aggiungere un gradiente scuro nella parte bassa dell'immagine per far risaltare eventuali indicatori (rating, counter foto).
-
-#### 2. Indicatore Contatore Foto
-Quando ci sono più foto, mostrare un counter stilizzato (es. "1/3") nell'angolo in alto a destra con effetto glassmorphism.
-
-#### 3. Rating Badge sull'Immagine
-Se il post ha un rating, mostrarlo come badge overlay nell'angolo dell'immagine (simile a Instagram Reels) invece che solo nell'header.
-
-#### 4. Location Card Integrata
-Per i post con location, mostrare una "mini card" elegante sopra la foto con:
-- Icona categoria colorata
-- Nome location troncato
-- Città in piccolo
-
-#### 5. Engagement Preview Visivo
-Mostrare micro-avatar degli utenti che hanno messo like direttamente sotto l'immagine, prima delle action buttons.
-
-#### 6. Bordi Arrotondati Premium
-Aumentare il rounding dell'immagine (rounded-xl) e aggiungere un leggero shadow interno per profondità.
-
----
+### 3. Miglioramenti Visivi Card
+- Aumentare leggermente il padding per respiro
+- Migliorare la transizione hover
+- Aggiungere un leggero effetto di elevazione
 
 ## Dettagli Tecnici
 
 ### File da Modificare
+- `src/components/profile/PostsGrid.tsx` (linee 614-627)
 
-1. **`src/components/profile/PostsGrid.tsx`** (linee 391-398)
-   - Rimuovere condizione `hasMedia` dal click handler
-   - Aggiungere sempre `cursor-pointer`
+### Codice Attuale (linee 614-627)
+```tsx
+{isOwnProfile && (
+  <button
+    onClick={(e) => handleDeletePost(post.id, e)}
+    disabled={deleting}
+    className="absolute top-3 left-[72px] w-6 h-6 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+    title="Delete review"
+  >
+    {deleting ? (
+      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+    ) : (
+      <img src={deleteIcon} alt="" className="w-3 h-3" />
+    )}
+  </button>
+)}
+```
 
-2. **`src/components/feed/FeedPostItem.tsx`** (linee 358-458)
-   - Aggiungere overlay gradiente sul media container
-   - Aggiungere photo counter badge (se multiple foto)
-   - Aggiungere rating badge overlay (se presente rating)
-   - Migliorare visual polish generale
-
-### Implementazione Review Cards Fix
+### Nuovo Codice
+Il bottone sarà spostato all'interno del container della thumbnail (linee 400-440) con lo stesso stile dei post nella griglia:
 
 ```tsx
-// PostsGrid.tsx - Linee 388-398
-<div
-  key={post.id}
-  className={cn(
-    "relative bg-gradient-to-br from-white to-gray-50/80 ...",
-    "cursor-pointer" // SEMPRE cliccabile
-  )}
-  onClick={() => handlePostClick(post.id)} // SEMPRE attivo
+<button
+  onClick={(e) => {
+    if (post.locations) {
+      e.stopPropagation();
+      // ... location click logic
+    }
+  }}
+  className="shrink-0 relative group/thumb"
 >
-```
-
-### Implementazione Feed Cards Redesign
-
-```tsx
-// FeedPostItem.tsx - Media container con overlay e badges
-<div className="post-compact-media relative">
-  {/* Gradient overlay bottom */}
-  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent z-10 pointer-events-none rounded-b-xl" />
-  
-  {/* Photo counter badge (top right) */}
-  {hasMultipleMedia && (
-    <div className="absolute top-3 right-3 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1">
-      <Images className="w-3.5 h-3.5 text-white" />
-      <span className="text-xs font-semibold text-white">{mediaUrls.length}</span>
-    </div>
+  <Avatar className="h-14 w-14 rounded-2xl ...">
+    ...
+  </Avatar>
+  {/* Delete button - positioned on thumbnail */}
+  {isOwnProfile && (
+    <button
+      onClick={(e) => handleDeletePost(post.id, e)}
+      disabled={deleting}
+      className="absolute -bottom-1 -left-1 w-7 h-9 bg-muted-foreground/70 hover:bg-muted-foreground/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+      title="Delete review"
+    >
+      {deleting ? (
+        <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+      ) : (
+        <img src={deleteIcon} alt="" className="w-4 h-5" />
+      )}
+    </button>
   )}
-  
-  {/* Rating badge overlay (bottom left, if rating exists) */}
-  {rating && rating > 0 && (
-    <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow-lg">
-      <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating))} />
-      <span className={cn("text-sm font-bold", getRatingColor(rating))}>{rating}</span>
-    </div>
-  )}
-  
-  {/* Existing image/carousel code */}
-  ...
-</div>
+</button>
 ```
 
-### Visual Polish Aggiuntivo
+### Struttura Finale Card
 
-```tsx
-// Immagine con bordi più morbidi
-<img className="w-full h-full object-cover rounded-xl" />
-
-// Container media con shadow interna
-<div className="aspect-square w-full relative overflow-hidden rounded-xl shadow-inner">
+```text
++-----------------------------------------------+
+|  [Thumb]   Location Name              [9.2]  |
+|  [+Del]    City                       [x2]   |
+|            "Caption text..."                  |
+|                                       [📷📷]  |
+|------------------------------------------------|
+|  ♥ 1   💬 0   Restaurant      8 NOVEMBER 2025 |
++-----------------------------------------------+
 ```
 
----
+Il bottone elimina sarà:
+- Sovrapposto in basso a sinistra sulla thumbnail
+- Stile grigio semi-trasparente con rounded-xl
+- Visibile solo al hover della card (non al hover della thumbnail)
+- Icona bianca come nei post foto
 
-## Riepilogo Modifiche
-
-| File | Modifica | Linee |
-|------|----------|-------|
-| `PostsGrid.tsx` | Review cards sempre cliccabili | 391-398 |
-| `FeedPostItem.tsx` | Gradient overlay + photo counter | 358-365 |
-| `FeedPostItem.tsx` | Rating badge overlay | 365-375 |
-| `FeedPostItem.tsx` | Visual polish (rounded, shadow) | 370-450 |
-
-Queste modifiche renderanno le review cards funzionali e le feed cards molto più moderne e visivamente accattivanti.
+## Riepilogo
+- ✅ Bottone elimina con stile unificato ai post foto
+- ✅ Posizionamento che non copre il contenuto testuale
+- ✅ Icona più grande e visibile
+- ✅ Transizione hover fluida
