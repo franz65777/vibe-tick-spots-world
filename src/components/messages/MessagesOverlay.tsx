@@ -739,14 +739,14 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
                 </div>
               ) : view === 'search' ? (
                 <>
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base pointer-events-none">🔍</span>
                     <Input 
                       type="text" 
                       placeholder={t('searchPlaceholder', { ns: 'messages' })} 
                       value={searchQuery} 
                       onChange={e => handleSearch(e.target.value)} 
-                      className="pl-9 h-9 bg-muted/50 rounded-full" 
+                      className="pl-12 pr-4 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm" 
                       autoFocus 
                     />
                   </div>
@@ -764,15 +764,15 @@ const MessagesOverlay = memo(({ isOpen, onClose }: MessagesOverlayProps) => {
                 </>
               ) : view === 'threads' ? (
                 <div className="flex-1 flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-base pointer-events-none">🔍</span>
                     <Input 
                       type="text" 
                       placeholder={t('searchPlaceholder', { ns: 'messages' })} 
                       value={searchQuery} 
                       onChange={e => handleSearch(e.target.value)} 
                       onFocus={() => setView('search')} 
-                      className="pl-9 h-9 bg-muted/50 rounded-full" 
+                      className="pl-12 pr-4 h-12 bg-white dark:bg-background border border-border/40 dark:border-input focus:ring-2 focus:ring-primary focus:border-transparent rounded-3xl shadow-sm" 
                     />
                   </div>
                 </div>

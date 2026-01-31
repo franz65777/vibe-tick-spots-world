@@ -115,7 +115,7 @@ const MessageBubble = memo(({
   if (message.message_type === 'audio' && message.shared_content?.audio_url) {
     return (
       <div className="w-full" {...messageInteractionProps}>
-        <div className={`rounded-2xl px-3 py-2.5 relative ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`}>
+        <div className={`rounded-2xl px-3 py-2.5 relative ${isOwn ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' : 'bg-card text-card-foreground border border-border'}`}>
           <div className="flex items-center gap-2">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isOwn ? 'bg-primary-foreground/20' : 'bg-primary/10'}`}>
               <svg className={`w-5 h-5 ${isOwn ? 'text-primary-foreground' : 'text-primary'}`} fill="currentColor" viewBox="0 0 20 20">
@@ -315,7 +315,7 @@ const MessageBubble = memo(({
     <div className={`w-full ${isOwn ? 'flex flex-col items-end' : 'flex flex-col items-start'}`} {...messageInteractionProps}>
       {renderReplyContext()}
       <div 
-        className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground border border-border'}`}
+        className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${isOwn ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' : 'bg-card text-card-foreground border border-border'}`}
         style={{ wordBreak: 'normal', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}
       >
         <p className="text-sm whitespace-normal break-words">{message.content}</p>

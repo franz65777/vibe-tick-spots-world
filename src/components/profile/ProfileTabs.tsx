@@ -29,7 +29,7 @@ const ProfileTabs = ({
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
-            "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+            "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.97]",
             activeTab === 'posts'
               ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25"
               : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
@@ -42,7 +42,7 @@ const ProfileTabs = ({
           <button
             onClick={() => onTabChange('trips')}
             className={cn(
-              "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+              "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.97]",
               activeTab === 'trips'
                 ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25"
                 : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
@@ -56,7 +56,7 @@ const ProfileTabs = ({
           <button
             onClick={() => onTabChange('marketing')}
             className={cn(
-              "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+              "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.97]",
               activeTab === 'marketing'
                 ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25"
                 : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
@@ -69,7 +69,7 @@ const ProfileTabs = ({
         <button
           onClick={() => onTabChange('badges')}
           className={cn(
-            "relative flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+            "relative flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.97]",
             activeTab === 'badges'
               ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25"
               : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
@@ -84,7 +84,7 @@ const ProfileTabs = ({
         <button
           onClick={() => onTabChange('tagged')}
           className={cn(
-            "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5",
+            "flex-1 py-1.5 px-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.97]",
             activeTab === 'tagged'
               ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25"
               : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"
