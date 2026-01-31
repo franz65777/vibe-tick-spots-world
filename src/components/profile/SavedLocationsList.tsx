@@ -668,7 +668,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
       </div>
 
       {/* Content */}
-      <div ref={contentRef} className="flex-1 overflow-y-auto">
+      <div ref={contentRef} className="flex-1 overflow-y-auto pb-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-muted-foreground">{t('loading', { ns: 'common' })}...</div>

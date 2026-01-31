@@ -250,7 +250,7 @@ const SigninStart = () => {
               htmlFor="remember"
               className="text-sm text-muted-foreground cursor-pointer"
             >
-              {t('auth:rememberMe', { defaultValue: 'Remember me' })}
+              {t('auth:rememberMe')}
             </label>
           </div>
 
@@ -267,7 +267,7 @@ const SigninStart = () => {
             <>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground">{t('auth:or', { defaultValue: 'or' })}</span>
+                <span className="text-xs text-muted-foreground">{t('auth:or')}</span>
                 <div className="flex-1 h-px bg-border" />
               </div>
               
