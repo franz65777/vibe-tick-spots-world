@@ -11,6 +11,22 @@ export interface LocationStats {
 const statsCache = new Map<string, { stats: Map<string, LocationStats>; timestamp: number }>();
 const STATS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
+// Export global cache for useLocationStats to check before making queries
+// This allows PinDetailCard to use already-loaded stats from the list view
+export const globalStatsCache = new Map<string, { stats: LocationStats; timestamp: number }>();
+
+/**
+ * Get cached stats for a single location (used by useLocationStats)
+ * Returns null if not found or expired
+ */
+export const getCachedStats = (locationId: string): LocationStats | null => {
+  const cached = globalStatsCache.get(locationId);
+  if (cached && Date.now() - cached.timestamp < STATS_CACHE_DURATION) {
+    return cached.stats;
+  }
+  return null;
+};
+
 /**
  * Batch-loads stats (saves count, average rating) for multiple locations at once.
  * 
@@ -144,6 +160,12 @@ export const useBatchedLocationStats = (places: Place[]) => {
             : null;
 
           newStatsMap.set(key, { totalSaves, averageRating });
+          
+          // Also populate global cache for individual lookups (PinDetailCard)
+          globalStatsCache.set(place.id, { stats: { totalSaves, averageRating }, timestamp: Date.now() });
+          if (place.google_place_id) {
+            globalStatsCache.set(place.google_place_id, { stats: { totalSaves, averageRating }, timestamp: Date.now() });
+          }
         });
 
         // Cache at module level
