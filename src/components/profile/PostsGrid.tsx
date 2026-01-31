@@ -273,17 +273,17 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-xl z-50 rounded-xl overflow-hidden">
+            <DropdownMenuContent align="start" className="w-48 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-white/20 dark:border-zinc-800/50 shadow-2xl z-50 rounded-2xl overflow-hidden p-1">
               <DropdownMenuItem 
                 onClick={() => setPostFilter('photos')}
-                className="cursor-pointer focus:bg-accent flex items-center gap-3 px-3 py-2.5"
+                className="cursor-pointer focus:bg-accent rounded-xl flex items-center gap-3 px-3 py-3"
               >
                 <img src={cameraIcon3d} alt="" className="w-6 h-6 object-contain" loading="eager" />
                 <span className="font-medium">{t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setPostFilter('reviews')}
-                className="cursor-pointer focus:bg-accent flex items-center gap-3 px-3 py-2.5"
+                className="cursor-pointer focus:bg-accent rounded-xl flex items-center gap-3 px-3 py-3"
               >
                 <img src={starIcon3d} alt="" className="w-6 h-6 object-contain" loading="eager" />
                 <span className="font-medium">{t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}</span>
