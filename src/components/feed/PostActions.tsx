@@ -201,7 +201,9 @@ export const PostActions = ({
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    haptics.impact('light');
+    try {
+      haptics.impact('light');
+    } catch {}
     try {
       await toggleLike();
     } catch (error) {
@@ -218,7 +220,9 @@ export const PostActions = ({
 
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    haptics.impact('light');
+    try {
+      haptics.impact('light');
+    } catch {}
     if (!locationId || !user) {
       toast.error(t('noLocationAssociated', { ns: 'common', defaultValue: 'No location associated with this post' }));
       return;
@@ -226,7 +230,9 @@ export const PostActions = ({
     
     if (isLocationSaved) {
       // Show remove confirmation instead of unsaving directly
-      haptics.warning();
+      try {
+        haptics.warning();
+      } catch {}
       setShowRemoveConfirm(true);
     } else {
       // Calculate dropdown position based on button position
@@ -294,6 +300,7 @@ export const PostActions = ({
         });
       
       haptics.success();
+      
       setIsLocationSaved(true);
       setCurrentSaveTag(tag);
       // Emit global event
@@ -302,7 +309,9 @@ export const PostActions = ({
       }));
       toast.success(t('locationSaved', { ns: 'common' }));
     } catch (error) {
-      haptics.error();
+      try {
+        haptics.error();
+      } catch {}
       console.error('Error saving location:', error);
       toast.error(t('failedToSave', { ns: 'common' }));
     }
