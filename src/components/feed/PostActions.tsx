@@ -201,11 +201,13 @@ export const PostActions = ({
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('[DEBUG] PostActions like click', { postId, hasUser: !!user });
     try {
       haptics.impact('light');
     } catch {}
     try {
       await toggleLike();
+      console.log('[DEBUG] PostActions like toggled');
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -318,9 +320,15 @@ export const PostActions = ({
   };
 
   return (
-    <div className="flex items-center gap-1.5 mt-1 pt-0 relative">
+    <div
+      className="flex items-center gap-1.5 mt-1 pt-0 relative"
+      onClickCapture={(e) =>
+        console.log('[DEBUG] PostActions click capture:', (e.target as HTMLElement).tagName)
+      }
+    >
       {/* Like button */}
       <button
+        type="button"
         onClick={handleLikeClick}
         className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all font-medium ${
           isLiked
@@ -333,6 +341,7 @@ export const PostActions = ({
       
       {/* Clickable like count */}
       <button
+        type="button"
         onClick={handleLikeCountClick}
         className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
         disabled={displayLikesCount === 0}
@@ -342,6 +351,7 @@ export const PostActions = ({
 
       {/* Comment button */}
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onCommentClick();
@@ -354,6 +364,7 @@ export const PostActions = ({
 
       {/* Share button */}
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onShareClick();
@@ -368,6 +379,7 @@ export const PostActions = ({
       <div className="relative ml-auto" ref={dropdownRef}>
         <button
           ref={buttonRef}
+          type="button"
           onClick={handlePinClick}
           className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all font-medium ${
             isLocationSaved
@@ -382,6 +394,7 @@ export const PostActions = ({
         {/* Remove confirmation button */}
         {showRemoveConfirm && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               handleUnsaveLocation();
@@ -406,6 +419,7 @@ export const PostActions = ({
             {SAVE_TAG_OPTIONS.map((option) => (
               <button
                 key={option.value}
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSaveWithCategory(option.value);
