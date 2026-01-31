@@ -605,15 +605,16 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
           />
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        {/* Horizontal Scrollable Filters */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="flex-1 min-w-[120px] bg-background rounded-full border-border">
+            <SelectTrigger className="min-w-[140px] max-w-[180px] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border-white/30 shadow-sm shrink-0">
               <SelectValue placeholder={t('allCities', { ns: 'profile' })} />
             </SelectTrigger>
-            <SelectContent className="bg-background border-border z-[9999]">
-              <SelectItem value="all">{t('allCities', { ns: 'profile' })}</SelectItem>
+            <SelectContent className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-white/20 z-[9999] rounded-2xl shadow-2xl p-1">
+              <SelectItem value="all" className="rounded-xl">{t('allCities', { ns: 'profile' })}</SelectItem>
               {cities.map(city => (
-                <SelectItem key={city.original} value={city.original}>
+                <SelectItem key={city.original} value={city.original} className="rounded-xl">
                   {city.translated} ({savedPlaces[city.original]?.length || 0})
                 </SelectItem>
               ))}
@@ -621,7 +622,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
           </Select>
 
           <Select value={selectedSaveTag} onValueChange={setSelectedSaveTag}>
-            <SelectTrigger className="flex-1 min-w-[140px] bg-background rounded-full border-border">
+            <SelectTrigger className="min-w-[120px] max-w-[160px] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border-white/30 shadow-sm shrink-0">
               <SelectValue>
                 {selectedSaveTag === 'all' 
                   ? t('all', { ns: 'common', defaultValue: 'All' })
@@ -640,13 +641,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
                 }
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-background border-border z-[9999]">
-              <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
+            <SelectContent className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-white/20 z-[9999] rounded-2xl shadow-2xl p-1">
+              <SelectItem value="all" className="rounded-xl">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
               {SAVE_TAG_OPTIONS.map((option) => {
                 const translationKey = option.labelKey;
                 const iconSrc = TAG_ICONS[option.value];
                 return (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={option.value} className="rounded-xl">
                     <div className="flex items-center gap-2">
                       {iconSrc && <img src={iconSrc} alt="" className="w-4 h-4 object-contain" />}
                       {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
@@ -656,13 +657,14 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
               })}
             </SelectContent>
           </Select>
-        </div>
 
-        {/* Category Filter Icons */}
-        <SimpleCategoryFilter 
-          selectedCategory={selectedCategory}
-          onCategorySelect={setSelectedCategory}
-        />
+          {/* Category Filter moved inline */}
+          <SimpleCategoryFilter 
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
+            inline
+          />
+        </div>
       </div>
 
       {/* Content */}
@@ -749,15 +751,6 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
                                   coordinates={p.coordinates}
                                 />
                               </div>
-                              {stats.averageRating && (
-                                <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-full shrink-0", getRatingFillColor(stats.averageRating) + "/10")}>
-                                  {(() => {
-                                    const CategoryIconComp = p.category ? getCategoryIcon(p.category) : Star;
-                                    return <CategoryIconComp className={cn("w-2.5 h-2.5", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
-                                  })()}
-                                  <span className={cn("text-xs font-semibold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>

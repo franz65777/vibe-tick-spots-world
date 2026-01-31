@@ -471,34 +471,34 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   ) : (
 
     <>
-      <div className="fixed inset-0 z-[2147483647] relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+      <div className="fixed inset-0 z-[2147483647] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
         {/* Unified frosted glass background (same structure as FeedPage) */}
         <FrostedGlassBackground className="fixed" />
 
         {/* Content wrapper */}
-        <div ref={scrollContainerRef} className="relative z-10 h-full overflow-y-auto scrollbar-hide">
+        <div ref={scrollContainerRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide">
           {/* Header */}
-          <div className="bg-background/40 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
-          {(locationId || userId || showBackButton) && (
-            <button
-              onClick={onClose}
-              className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              <span className="font-semibold">
-                {backLabel || (locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' }))}
-              </span>
-            </button>
-          )}
-        </div>
+          <div className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
+            {(locationId || userId || showBackButton) && (
+              <button
+                onClick={onClose}
+                className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span className="font-semibold">
+                  {backLabel || (locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' }))}
+                </span>
+              </button>
+            )}
+          </div>
 
-        {posts.map((post, index) => {
-          const hasMultipleMedia = post.media_urls.length > 1;
-          
-          return (
-            <article key={post.id} data-post-id={post.id} className="post-compact pb-2 relative z-10">
+          {posts.map((post, index) => {
+            const hasMultipleMedia = post.media_urls.length > 1;
+            
+            return (
+              <article key={post.id} data-post-id={post.id} className="post-compact pb-2">
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
