@@ -428,9 +428,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
-    <div className="fixed inset-0 z-[2147483647] relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+    <div className="fixed inset-0 z-[2147483647] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       {/* Unified frosted glass background (same structure as FeedPage) */}
-      <FrostedGlassBackground className="fixed" />
+      <FrostedGlassBackground className="fixed pointer-events-none" />
 
       {/* Content wrapper */}
       <div className="relative z-10 h-full flex flex-col overflow-hidden">
@@ -473,7 +473,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     <>
       <div className="fixed inset-0 z-[2147483647] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
         {/* Unified frosted glass background (same structure as FeedPage) */}
-        <FrostedGlassBackground className="fixed" />
+        <FrostedGlassBackground className="fixed pointer-events-none" />
 
         {/* Content wrapper */}
         <div ref={scrollContainerRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide">
