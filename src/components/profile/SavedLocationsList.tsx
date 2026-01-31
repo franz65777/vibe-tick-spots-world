@@ -551,9 +551,11 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
         onFolderSelect={handleFolderSelect}
       />
       
-      <div ref={containerRef} className="fixed inset-0 z-[9999] flex flex-col">
-        <FrostedGlassBackground />
-        <div className="relative z-10 flex flex-col flex-1">
+      <div ref={containerRef} className="fixed inset-0 z-[9999] flex flex-col relative">
+        {/* Background must not intercept scroll/taps */}
+        <FrostedGlassBackground className="pointer-events-none" />
+        {/* min-h-0 is required for nested flex overflow scrolling */}
+        <div className="relative z-10 flex flex-col flex-1 min-h-0">
         
         <style>{`
           [class*="bottom-navigation"],
@@ -668,7 +670,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
       </div>
 
       {/* Content */}
-      <div ref={contentRef} className="flex-1 overflow-y-auto pb-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
+      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto pb-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-muted-foreground">{t('loading', { ns: 'common' })}...</div>
