@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimeEvent } from './useCentralizedRealtime';
+import { getCachedStats } from './useBatchedLocationStats';
 
 interface LocationStats {
   totalSaves: number;
@@ -10,12 +11,19 @@ interface LocationStats {
 /**
  * Hook for location statistics (saves and ratings)
  * 
- * OPTIMIZED: Uses centralized realtime instead of individual channels
- * Reduces connections from 4 per location to 0 (uses shared channel + polling)
+ * OPTIMIZED: 
+ * 1. Uses centralized realtime instead of individual channels
+ * 2. Checks global cache from batch loading before making queries
+ *    This means PinDetailCard opens instantly when coming from the list!
  */
 export const useLocationStats = (locationId: string | null, googlePlaceId: string | null) => {
-  const [stats, setStats] = useState<LocationStats>({ totalSaves: 0, averageRating: null });
-  const [loading, setLoading] = useState(false);
+  // Check global cache FIRST (populated by useBatchedLocationStats)
+  const cachedStats = locationId ? getCachedStats(locationId) : null;
+  const cachedFromGoogle = googlePlaceId && !cachedStats ? getCachedStats(googlePlaceId) : null;
+  const initialStats = cachedStats || cachedFromGoogle || { totalSaves: 0, averageRating: null };
+  
+  const [stats, setStats] = useState<LocationStats>(initialStats);
+  const [loading, setLoading] = useState(!cachedStats && !cachedFromGoogle);
   
   // Keep IDs in refs for stable callbacks
   const locationIdRef = useRef(locationId);
@@ -153,7 +161,19 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
       return;
     }
 
-    fetchStats();
+    // Check cache again on ID change - if we have cached data, use it immediately
+    const cached = locationId ? getCachedStats(locationId) : null;
+    const cachedGoogle = googlePlaceId && !cached ? getCachedStats(googlePlaceId) : null;
+    
+    if (cached || cachedGoogle) {
+      setStats(cached || cachedGoogle!);
+      setLoading(false);
+      // Still fetch in background to ensure freshness, but don't block
+      fetchStats();
+    } else {
+      // No cache - need to fetch
+      fetchStats();
+    }
 
     // Poll every 60s as fallback
     const intervalId = setInterval(fetchStats, 60000);
