@@ -19,7 +19,7 @@ interface UseOpeningHoursParams {
 
 // In-memory cache for opening hours to avoid repeated edge function calls
 const openingHoursCache = new Map<string, { data: OpeningHoursData; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours - extended to reduce Google API costs
 
 function getCacheKey(params: UseOpeningHoursParams): string {
   const { coordinates, placeName, locationId, googlePlaceId } = params;
@@ -134,10 +134,12 @@ export const useOpeningHours = (
         error: null
       };
       setData(newData);
+      // Also populate in-memory cache
+      openingHoursCache.set(cacheKey, { data: newData, timestamp: Date.now() });
       return;
     }
 
-    // Check in-memory cache
+    // Check in-memory cache (now 24 hours)
     const cached = openingHoursCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       setData(cached.data);
@@ -152,6 +154,58 @@ export const useOpeningHours = (
 
     const fetchOpeningHours = async () => {
       try {
+        // =====================================================================
+        // CRITICAL FIX: Check database BEFORE calling edge function!
+        // This avoids calling Google API when data is already cached in DB
+        // =====================================================================
+        
+        // Try to find cached data in database by locationId or googlePlaceId
+        let dbCachedHours: any = null;
+        
+        if (locationId) {
+          const { data: locData } = await supabase
+            .from('locations')
+            .select('opening_hours_data')
+            .eq('id', locationId)
+            .single();
+          
+          if (locData?.opening_hours_data) {
+            dbCachedHours = locData.opening_hours_data;
+            console.log(`✅ Opening hours DB cache hit for locationId: ${locationId}`);
+          }
+        }
+        
+        if (!dbCachedHours && googlePlaceId) {
+          const { data: locByGoogle } = await supabase
+            .from('locations')
+            .select('opening_hours_data')
+            .eq('google_place_id', googlePlaceId)
+            .not('opening_hours_data', 'is', null)
+            .limit(1)
+            .maybeSingle();
+          
+          if (locByGoogle?.opening_hours_data) {
+            dbCachedHours = locByGoogle.opening_hours_data;
+            console.log(`✅ Opening hours DB cache hit for google_place_id: ${googlePlaceId}`);
+          }
+        }
+        
+        // If found in DB, use it and skip edge function call entirely!
+        if (dbCachedHours) {
+          const parsed = parseOpeningHoursData(dbCachedHours);
+          const newData: OpeningHoursData = {
+            isOpen: parsed.isOpen,
+            todayHours: parsed.todayHours,
+            dayIndex,
+            loading: false,
+            error: null
+          };
+          openingHoursCache.set(cacheKey, { data: newData, timestamp: Date.now() });
+          setData(newData);
+          return; // NO EDGE FUNCTION CALL = NO GOOGLE API COST!
+        }
+        
+        // Only call edge function if no cached data found in DB
         const { data: result, error } = await supabase.functions.invoke('get-place-hours', {
           body: {
             lat: coordinates.lat,

@@ -402,24 +402,34 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               });
             });
 
-            // 3) saved_places - NUOVO FIX: Pre-fetch photos from locations table
+            // 3) saved_places - FIX: Pre-fetch BOTH photos AND opening_hours_data from locations table
             const savedPlaceGoogleIds = (savedPlaces || [])
               .map((sp: any) => sp.place_id)
               .filter((id: string) => id && !googlePlaceIdsInLocations.has(id));
             
             const photosMapForSavedPlaces = new Map<string, string[]>();
+            const hoursMapForSavedPlaces = new Map<string, any>();
+            
             if (savedPlaceGoogleIds.length > 0) {
-              const { data: locationsWithPhotos } = await supabase
+              const { data: locationsWithCache } = await supabase
                 .from('locations')
-                .select('google_place_id, photos')
-                .in('google_place_id', savedPlaceGoogleIds)
-                .not('photos', 'is', null);
+                .select('google_place_id, photos, opening_hours_data')
+                .in('google_place_id', savedPlaceGoogleIds);
               
-              locationsWithPhotos?.forEach((loc: any) => {
-                if (loc.google_place_id && loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
-                  photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+              locationsWithCache?.forEach((loc: any) => {
+                if (loc.google_place_id) {
+                  if (loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
+                    photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+                  }
+                  if (loc.opening_hours_data) {
+                    hoursMapForSavedPlaces.set(loc.google_place_id, loc.opening_hours_data);
+                  }
                 }
               });
+              
+              if (photosMapForSavedPlaces.size > 0 || hoursMapForSavedPlaces.size > 0) {
+                console.log(`✅ Following: Pre-loaded ${photosMapForSavedPlaces.size} photos, ${hoursMapForSavedPlaces.size} hours from DB`);
+              }
             }
             
             (savedPlaces || []).forEach((sp: any) => {
@@ -432,7 +442,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 address: undefined,
                 city: sp.city || undefined,
                 google_place_id: sp.place_id,
-                photos: photosMapForSavedPlaces.get(sp.place_id), // Pre-load photos from cache!
+                photos: photosMapForSavedPlaces.get(sp.place_id),
+                opening_hours_data: hoursMapForSavedPlaces.get(sp.place_id), // Pre-load hours!
                 coordinates: { lat: Number(coords.lat) || 0, lng: Number(coords.lng) || 0 },
                 isFollowing: true,
                 user_id: sp.user_id,
@@ -1058,25 +1069,30 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             });
 
           // From saved_places that are NOT already in locations table AND not at same coordinates
-          // NUOVO FIX: Pre-fetch photos from locations table for saved_places google_place_ids
+          // FIX: Pre-fetch BOTH photos AND opening_hours_data from locations table
           const savedPlaceGoogleIds = Array.from(savedPlacesMap.keys()).filter(id => !googlePlaceIdsFromLocations.has(id));
           const photosMapForSavedPlaces = new Map<string, string[]>();
+          const hoursMapForSavedPlaces = new Map<string, any>();
           
           if (savedPlaceGoogleIds.length > 0) {
-            const { data: locationsWithPhotos } = await supabase
+            const { data: locationsWithCache } = await supabase
               .from('locations')
-              .select('google_place_id, photos')
-              .in('google_place_id', savedPlaceGoogleIds)
-              .not('photos', 'is', null);
+              .select('google_place_id, photos, opening_hours_data')
+              .in('google_place_id', savedPlaceGoogleIds);
             
-            locationsWithPhotos?.forEach((loc: any) => {
-              if (loc.google_place_id && loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
-                photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+            locationsWithCache?.forEach((loc: any) => {
+              if (loc.google_place_id) {
+                if (loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
+                  photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+                }
+                if (loc.opening_hours_data) {
+                  hoursMapForSavedPlaces.set(loc.google_place_id, loc.opening_hours_data);
+                }
               }
             });
             
-            if (photosMapForSavedPlaces.size > 0) {
-              console.log(`✅ Pre-loaded photos for ${photosMapForSavedPlaces.size} saved_places from cache`);
+            if (photosMapForSavedPlaces.size > 0 || hoursMapForSavedPlaces.size > 0) {
+              console.log(`✅ Popular: Pre-loaded ${photosMapForSavedPlaces.size} photos, ${hoursMapForSavedPlaces.size} opening_hours from DB`);
             }
           }
           
@@ -1104,7 +1120,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               address: undefined,
               city: resolvedCity,
               google_place_id: googlePlaceId,
-              photos: photosMapForSavedPlaces.get(googlePlaceId), // Pre-load photos from cache!
+              photos: photosMapForSavedPlaces.get(googlePlaceId),
+              opening_hours_data: hoursMapForSavedPlaces.get(googlePlaceId), // Pre-load hours from cache!
               coordinates: { lat, lng },
               user_id: sp.user_id,
               created_at: sp.created_at,
@@ -1319,27 +1336,33 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             }
           });
 
-          // 3.5 Pre-fetch photos from locations table for saved_places (NUOVO: evita chiamate Google API)
+          // 3.5 FIX: Pre-fetch BOTH photos AND opening_hours_data from locations table
           const savedPlaceGoogleIds = (savedPlaces || [])
             .map((sp: any) => sp.place_id)
             .filter((id: string) => id && !googlePlaceIdsInLocations.has(id));
           
           const photosMapForSavedPlaces = new Map<string, string[]>();
+          const hoursMapForSavedPlaces = new Map<string, any>();
+          
           if (savedPlaceGoogleIds.length > 0) {
-            const { data: locationsWithPhotos } = await supabase
+            const { data: locationsWithCache } = await supabase
               .from('locations')
-              .select('google_place_id, photos')
-              .in('google_place_id', savedPlaceGoogleIds)
-              .not('photos', 'is', null);
+              .select('google_place_id, photos, opening_hours_data')
+              .in('google_place_id', savedPlaceGoogleIds);
             
-            locationsWithPhotos?.forEach((loc: any) => {
-              if (loc.google_place_id && loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
-                photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+            locationsWithCache?.forEach((loc: any) => {
+              if (loc.google_place_id) {
+                if (loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
+                  photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
+                }
+                if (loc.opening_hours_data) {
+                  hoursMapForSavedPlaces.set(loc.google_place_id, loc.opening_hours_data);
+                }
               }
             });
             
-            if (photosMapForSavedPlaces.size > 0) {
-              console.log(`✅ Saved filter: Pre-loaded photos for ${photosMapForSavedPlaces.size} saved_places from cache`);
+            if (photosMapForSavedPlaces.size > 0 || hoursMapForSavedPlaces.size > 0) {
+              console.log(`✅ Saved filter: Pre-loaded ${photosMapForSavedPlaces.size} photos, ${hoursMapForSavedPlaces.size} opening_hours from DB`);
             }
           }
 
@@ -1373,8 +1396,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
             const key = sp.place_id;
             if (key && !locationMap.has(key)) {
-              // Use pre-fetched photos if available
+              // Use pre-fetched photos and hours if available
               const cachedPhotos = photosMapForSavedPlaces.get(sp.place_id);
+              const cachedHours = hoursMapForSavedPlaces.get(sp.place_id);
               
               locationMap.set(key, {
                 id: sp.place_id,
@@ -1384,6 +1408,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
                 city: resolveCityDisplay(sp.city) || 'Unknown',
                 google_place_id: sp.place_id,
                 photos: cachedPhotos,
+                opening_hours_data: cachedHours, // Pre-load hours from cache!
                 coordinates: { lat, lng },
                 isSaved: true,
                 user_id: sp.user_id,
