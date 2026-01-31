@@ -384,76 +384,65 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               const isExpanded = expandedCaptions.has(post.id);
               const hasMedia = post.media_urls && post.media_urls.length > 0;
               const shouldTruncate = post.caption && post.caption.length > 100;
+              const hasCaption = post.caption && post.caption.trim().length > 0;
               
               return (
                 <div
                   key={post.id}
                   className={cn(
                     "relative bg-gradient-to-br from-white to-gray-50/80 dark:from-zinc-900 dark:to-zinc-800/80",
-                    "border border-white/60 dark:border-zinc-700/50 rounded-2xl p-4",
+                    "border border-white/60 dark:border-zinc-700/50 rounded-2xl",
+                    hasCaption ? "p-3" : "p-2.5",
                     "shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]",
                     "transition-all duration-200 active:scale-[0.99] animate-fade-in group cursor-pointer"
                   )}
                   onClick={() => handlePostClick(post.id)}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="shrink-0 relative">
-                      <button
-                        onClick={(e) => {
-                          if (post.locations) {
-                            e.stopPropagation();
-                            setSelectedLocation({
-                              id: post.locations.id,
-                              name: post.locations.name,
-                              category: post.locations.category || 'restaurant',
-                              city: post.locations.city,
-                              coordinates: {
-                                lat: post.locations.latitude,
-                                lng: post.locations.longitude,
-                              },
-                              address: post.locations.address,
-                            });
-                          }
-                        }}
-                      >
-                        <Avatar className="h-14 w-14 rounded-2xl overflow-hidden shadow-md ring-2 ring-white/80 dark:ring-zinc-700/50">
-                          {getLocationThumbnail(post.locations) ? (
-                            <AvatarImage 
-                              src={getLocationThumbnail(post.locations)!}
-                              alt={post.locations?.name || 'Location'}
-                              className="object-cover w-full h-full"
-                            />
-                          ) : (
-                            <AvatarImage 
-                              src={getCategoryImage(post.locations?.category || 'restaurant')}
-                              alt={post.locations?.category || 'restaurant'}
-                              className="object-contain p-1"
-                            />
-                          )}
-                          <AvatarFallback className="bg-primary/10 rounded-xl">
-                            {(() => {
-                              const CategoryIcon = getCategoryIcon(post.locations?.category || 'restaurant');
-                              return <CategoryIcon className="w-5 h-5 text-primary" />;
-                            })()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </button>
-                      {/* Delete button - unified style with photo posts */}
-                      {isOwnProfile && (
-                        <button
-                          onClick={(e) => handleDeletePost(post.id, e)}
-                          disabled={deleting}
-                          className="absolute -bottom-1 -left-1 w-7 h-9 bg-muted-foreground/70 hover:bg-muted-foreground/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                          title="Delete review"
-                        >
-                          {deleting ? (
-                            <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <img src={deleteIcon} alt="" className="w-4 h-5" />
-                          )}
-                        </button>
-                      )}
-                    </div>
+                  <div className={cn("flex gap-3", hasCaption ? "items-start" : "items-center")}>
+                    <button
+                      onClick={(e) => {
+                        if (post.locations) {
+                          e.stopPropagation();
+                          setSelectedLocation({
+                            id: post.locations.id,
+                            name: post.locations.name,
+                            category: post.locations.category || 'restaurant',
+                            city: post.locations.city,
+                            coordinates: {
+                              lat: post.locations.latitude,
+                              lng: post.locations.longitude,
+                            },
+                            address: post.locations.address,
+                          });
+                        }
+                      }}
+                      className="shrink-0"
+                    >
+                      <Avatar className={cn(
+                        "rounded-2xl overflow-hidden shadow-md ring-2 ring-white/80 dark:ring-zinc-700/50",
+                        hasCaption ? "h-16 w-16" : "h-12 w-12"
+                      )}>
+                        {getLocationThumbnail(post.locations) ? (
+                          <AvatarImage 
+                            src={getLocationThumbnail(post.locations)!}
+                            alt={post.locations?.name || 'Location'}
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <AvatarImage 
+                            src={getCategoryImage(post.locations?.category || 'restaurant')}
+                            alt={post.locations?.category || 'restaurant'}
+                            className="object-contain p-1"
+                          />
+                        )}
+                        <AvatarFallback className="bg-primary/10 rounded-xl">
+                          {(() => {
+                            const CategoryIcon = getCategoryIcon(post.locations?.category || 'restaurant');
+                            return <CategoryIcon className="w-5 h-5 text-primary" />;
+                          })()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2 mb-0 pr-12">
@@ -550,84 +539,110 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                             )}
                           </p>
                           {isExpanded && shouldTruncate && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedCaptions(prev => {
-                                  const newSet = new Set(prev);
-                                  newSet.delete(post.id);
-                                  return newSet;
-                                });
-                              }}
-                              className="text-xs text-primary hover:opacity-70 mt-1 font-medium"
-                            >
-                              {t('less', { ns: 'common' })}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Media Preview Stack (if has photos) */}
-                  {hasMedia && (
-                    <div 
-                      className="absolute right-3 bottom-14 flex items-end cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePostClick(post.id);
-                      }}
-                    >
-                      {post.media_urls.slice(0, 2).map((url, idx) => (
-                        <div 
-                          key={idx}
-                          className={cn(
-                            "w-10 h-10 rounded-xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-md",
-                            idx > 0 && "-ml-4"
-                          )}
-                          style={{ zIndex: 2 - idx }}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedCaptions(prev => {
+                              const newSet = new Set(prev);
+                              newSet.delete(post.id);
+                              return newSet;
+                            });
+                          }}
+                          className="text-xs text-primary hover:opacity-70 mt-1 font-medium"
                         >
-                          <img 
-                            src={url} 
-                            alt="" 
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                      ))}
-                      {post.media_urls.length > 2 && (
-                        <div className="w-10 h-10 -ml-4 rounded-xl bg-black/60 backdrop-blur-sm border-2 border-white dark:border-zinc-800 shadow-md flex items-center justify-center z-0">
-                          <span className="text-xs font-bold text-white">+{post.media_urls.length - 2}</span>
-                        </div>
+                          {t('less', { ns: 'common' })}
+                        </button>
                       )}
                     </div>
                   )}
-
-                  {/* Engagement Bar */}
-                  <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/30">
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
-                      <Heart className="w-3.5 h-3.5" />
-                      {post.likes_count || 0}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      {post.comments_count || 0}
-                    </span>
-                    
-                    {/* Category Tag */}
-                    {post.locations?.category && (
-                      <span className="px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-medium text-primary capitalize">
-                        {translateCategory(post.locations.category, t)}
-                      </span>
-                    )}
-                    
-                    {/* Relative Date */}
-                    <span className="ml-auto text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium">
-                      {formatPostDate(post.created_at, t)}
-                    </span>
-                  </div>
-
                 </div>
+              </div>
+
+              {/* Media Preview Stack (if has photos) */}
+              {hasMedia && (
+                <div 
+                  className={cn(
+                    "absolute flex items-end cursor-pointer",
+                    hasCaption ? "right-3 bottom-12" : "right-2.5 bottom-10"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePostClick(post.id);
+                  }}
+                >
+                  {post.media_urls.slice(0, 2).map((url, idx) => (
+                    <div 
+                      key={idx}
+                      className={cn(
+                        "rounded-xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-md",
+                        hasCaption ? "w-10 h-10" : "w-8 h-8",
+                        idx > 0 && "-ml-3"
+                      )}
+                      style={{ zIndex: 2 - idx }}
+                    >
+                      <img 
+                        src={url} 
+                        alt="" 
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
+                  {post.media_urls.length > 2 && (
+                    <div className={cn(
+                      "-ml-3 rounded-xl bg-black/60 backdrop-blur-sm border-2 border-white dark:border-zinc-800 shadow-md flex items-center justify-center z-0",
+                      hasCaption ? "w-10 h-10" : "w-8 h-8"
+                    )}>
+                      <span className="text-xs font-bold text-white">+{post.media_urls.length - 2}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Engagement Bar */}
+              <div className={cn(
+                "flex items-center gap-2 border-t border-border/30",
+                hasCaption ? "mt-2.5 pt-2.5" : "mt-2 pt-2"
+              )}>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                  <Heart className="w-3 h-3" />
+                  {post.likes_count || 0}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                  <MessageCircle className="w-3 h-3" />
+                  {post.comments_count || 0}
+                </span>
+                
+                {/* Category Tag */}
+                {post.locations?.category && (
+                  <span className="px-1.5 py-0.5 bg-primary/10 rounded-full text-[10px] font-medium text-primary capitalize">
+                    {translateCategory(post.locations.category, t)}
+                  </span>
+                )}
+                
+                {/* Relative Date */}
+                <span className="ml-auto text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium">
+                  {formatPostDate(post.created_at, t)}
+                </span>
+              </div>
+
+              {/* Delete button - bottom right, unified style */}
+              {isOwnProfile && (
+                <button
+                  onClick={(e) => handleDeletePost(post.id, e)}
+                  disabled={deleting}
+                  className="absolute bottom-2 right-2 w-7 h-8 bg-muted-foreground/70 hover:bg-muted-foreground/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                  title="Delete review"
+                >
+                  {deleting ? (
+                    <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <img src={deleteIcon} alt="" className="w-4 h-5" />
+                  )}
+                </button>
+              )}
+
+            </div>
               );
             })}
           </div>
