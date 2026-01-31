@@ -395,13 +395,19 @@ const MapSection = ({
     const buffer = 20;
     return `min(${baseHeight + filterOffset + itemsHeight + buffer}px, 85vh)`;
   }, [places.length, activeFilter]);
+  // LAZY address enrichment - delay 500ms after drawer opens, limit to 5 concurrent
+  // This removes geocoding from the critical rendering path
   useEffect(() => {
-    const enrichMissingAddresses = async () => {
-      const placesNeedingAddress = places.filter(
-        place => !place.address && place.coordinates?.lat && place.coordinates?.lng && !enrichedAddresses[place.id]
-      );
-
-      for (const place of placesNeedingAddress) {
+    if (!isListViewOpen || places.length === 0) return;
+    
+    // Delay enrichment - render drawer FIRST for instant feedback
+    const timer = setTimeout(() => {
+      const placesNeedingAddress = places
+        .filter(place => !place.address && place.coordinates?.lat && place.coordinates?.lng && !enrichedAddresses[place.id])
+        .slice(0, 5); // Max 5 at a time to prevent blocking
+      
+      // Non-blocking, parallel enrichment with error silencing
+      placesNeedingAddress.forEach(async (place) => {
         try {
           const formattedAddress = await formatDetailedAddress({
             city: place.city,
@@ -410,21 +416,16 @@ const MapSection = ({
           });
           
           if (formattedAddress && formattedAddress !== 'Indirizzo non disponibile') {
-            setEnrichedAddresses(prev => ({
-              ...prev,
-              [place.id]: formattedAddress
-            }));
+            setEnrichedAddresses(prev => ({ ...prev, [place.id]: formattedAddress }));
           }
-        } catch (error) {
-          console.error('Failed to enrich address for', place.id, error);
+        } catch {
+          // Silently skip - don't block UI for geocoding failures
         }
-      }
-    };
-
-    if (isListViewOpen && places.length > 0) {
-      enrichMissingAddresses();
-    }
-  }, [isListViewOpen, places, enrichedAddresses]);
+      });
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isListViewOpen, places.length]);
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     // If a place is open, close it

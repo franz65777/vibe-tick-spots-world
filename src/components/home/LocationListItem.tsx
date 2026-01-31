@@ -116,8 +116,8 @@ export const LocationListItem = memo(({ place, enrichedAddress, onClick, stats, 
           </div>
         ) : (
           <>
-            {/* Rating badge */}
-            {stats?.averageRating && stats.averageRating > 0 && (
+            {/* Rating badge - explicit type check to avoid falsy 0 issues */}
+            {typeof stats?.averageRating === 'number' && stats.averageRating > 0 && (
               <div className={cn(
                 "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium",
                 getRatingFillColor(stats.averageRating) + "/15"
@@ -129,8 +129,8 @@ export const LocationListItem = memo(({ place, enrichedAddress, onClick, stats, 
               </div>
             )}
             
-            {/* Saves count */}
-            {stats?.totalSaves && stats.totalSaves > 0 && (
+            {/* Saves count - explicit type check */}
+            {typeof stats?.totalSaves === 'number' && stats.totalSaves > 0 && (
               <div className="flex items-center gap-0.5 text-muted-foreground/50">
                 <Bookmark className="w-3 h-3" />
                 <span className="text-[11px]">{stats.totalSaves}</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Place } from '@/types/place';
 
@@ -7,15 +7,22 @@ export interface LocationStats {
   averageRating: number | null;
 }
 
+// Module-level cache to persist stats across remounts (2 min TTL)
+const statsCache = new Map<string, { stats: Map<string, LocationStats>; timestamp: number }>();
+const STATS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 /**
  * Batch-loads stats (saves count, average rating) for multiple locations at once.
  * 
  * OPTIMIZATION: Reduces N*6 individual queries to just 3-4 batch queries.
  * Critical for list drawer performance.
+ * 
+ * Uses module-level cache to avoid refetching on component remounts.
  */
 export const useBatchedLocationStats = (places: Place[]) => {
   const [statsMap, setStatsMap] = useState<Map<string, LocationStats>>(new Map());
   const [loading, setLoading] = useState(false);
+  const fetchedRef = useRef(false);
 
   // Memoize location IDs to prevent unnecessary refetches
   const locationIdsKey = useMemo(() => 
@@ -28,6 +35,18 @@ export const useBatchedLocationStats = (places: Place[]) => {
       setStatsMap(new Map());
       return;
     }
+
+    // Check module-level cache first
+    const cached = statsCache.get(locationIdsKey);
+    if (cached && Date.now() - cached.timestamp < STATS_CACHE_DURATION) {
+      setStatsMap(cached.stats);
+      setLoading(false);
+      return;
+    }
+
+    // Prevent duplicate fetches
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
     const fetchBatchedStats = async () => {
       setLoading(true);
@@ -127,6 +146,8 @@ export const useBatchedLocationStats = (places: Place[]) => {
           newStatsMap.set(key, { totalSaves, averageRating });
         });
 
+        // Cache at module level
+        statsCache.set(locationIdsKey, { stats: newStatsMap, timestamp: Date.now() });
         setStatsMap(newStatsMap);
       } catch (error) {
         console.error('Error fetching batched stats:', error);
@@ -141,6 +162,11 @@ export const useBatchedLocationStats = (places: Place[]) => {
     };
 
     fetchBatchedStats();
+  }, [locationIdsKey, places]);
+
+  // Reset fetch guard when key changes
+  useEffect(() => {
+    fetchedRef.current = false;
   }, [locationIdsKey]);
 
   return { statsMap, loading };
