@@ -135,9 +135,8 @@ const TripsGrid: React.FC<TripsGridProps> = ({ userId: propUserId }) => {
                         <button onClick={e => {
                 e.stopPropagation();
                 navigate(`/create-list?folderId=${folder.id}`);
-              }} className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 dark:bg-black/70 backdrop-blur-md shadow-lg border border-white/20 hover:bg-white dark:hover:bg-black/90 hover:scale-105 active:scale-95 transition-all duration-200">
-                          <Edit className="h-3 w-3 text-foreground" />
-                          <span className="text-[10px] font-semibold text-foreground">{t('edit', 'Edit')}</span>
+              }} className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-sm shadow-md hover:bg-white dark:hover:bg-black/80 hover:scale-110 active:scale-95 transition-all duration-200">
+                          <Edit className="h-3.5 w-3.5 text-foreground/80" />
                         </button>
                         <div className="absolute bottom-2 right-2 p-0.5 rounded-full bg-black/40">
                           <img src={folder.is_private ? iconPrivate : iconPublic} alt={folder.is_private ? "Private" : "Public"} className="h-3.5 w-auto" />
