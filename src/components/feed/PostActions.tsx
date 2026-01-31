@@ -344,29 +344,31 @@ export const PostActions = ({
         {displayLikesCount}
       </button>
 
-      {/* Comment button */}
+      {/* Comment button - pill style with background */}
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          haptics.impact('light');
           onCommentClick();
         }}
-        className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-muted/40 active:bg-muted/70 text-muted-foreground active:text-foreground transition-all font-medium"
       >
-        <ChatIcon size={22} />
+        <ChatIcon size={20} />
         <span className="text-sm font-semibold">{displayCommentsCount}</span>
       </button>
 
-      {/* Share button */}
+      {/* Share button - pill style with background */}
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          haptics.impact('light');
           onShareClick();
         }}
-        className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-muted/40 active:bg-muted/70 text-muted-foreground active:text-foreground transition-all font-medium"
       >
-        <Share2 className="w-5 h-5" />
+        <Share2 className="w-4.5 h-4.5" />
         <span className="text-sm font-semibold">{displaySharesCount}</span>
       </button>
 
