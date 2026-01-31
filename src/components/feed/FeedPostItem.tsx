@@ -2,7 +2,7 @@ import { memo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { MapPin, Star, Percent, Calendar, Sparkles, Megaphone, Heart } from 'lucide-react';
+import { MapPin, Star, Percent, Calendar, Sparkles, Megaphone, Heart, Images } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PostActions } from './PostActions';
 import { getCategoryIcon } from '@/utils/categoryIcons';
@@ -342,8 +342,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
               <span className="font-medium text-xs">{getPromotionLabel()}</span>
             </div>
           )}
-          {/* Rating */}
-          {rating && rating > 0 && (
+          {/* Rating shown only when no media (text-only reviews) */}
+          {rating && rating > 0 && mediaUrls.length === 0 && (
             <div className="flex items-center gap-1">
               {(() => {
                 const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
@@ -367,6 +367,29 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
               />
             </div>
           )}
+          
+          {/* Photo counter badge (top right) - glassmorphism style */}
+          {hasMultipleMedia && (
+            <div className="absolute top-3 right-3 z-10 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+              <Images className="w-3.5 h-3.5 text-white" />
+              <span className="text-xs font-semibold text-white">{mediaUrls.length}</span>
+            </div>
+          )}
+          
+          {/* Rating badge overlay (bottom left) - premium glassmorphism */}
+          {rating && rating > 0 && (
+            <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-md px-2.5 py-1.5 rounded-full shadow-lg border border-white/20">
+              {(() => {
+                const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
+                return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating), getRatingColor(rating))} />;
+              })()}
+              <span className={cn("text-sm font-bold", getRatingColor(rating))}>{rating}</span>
+            </div>
+          )}
+          
+          {/* Bottom gradient overlay for visual depth */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent z-[5] pointer-events-none" />
+          
           {hasMultipleMedia ? (
             <Carousel className="w-full" gutter={false}>
               <CarouselContent className="-ml-0">
@@ -375,7 +398,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                   const isLoaded = imageLoadedMap[idx];
                   return (
                     <CarouselItem key={idx} className="pl-0">
-                      <div className="aspect-square w-full relative">
+                      <div className="aspect-square w-full relative overflow-hidden">
                         {/* Shimmer placeholder - visible until image loads */}
                         {!isVideo && !isLoaded && (
                           <div className="absolute inset-0 bg-muted shimmer-skeleton" />
@@ -413,7 +436,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');
             const isLoaded = imageLoadedMap[0];
             return (
-              <div className="aspect-square w-full relative">
+              <div className="aspect-square w-full relative overflow-hidden">
                 {/* Shimmer placeholder - visible until image loads */}
                 {!isVideo && !isLoaded && (
                   <div className="absolute inset-0 bg-muted shimmer-skeleton" />
@@ -444,12 +467,14 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
               </div>
             );
           })()}
+          
+          {/* Carousel dots indicator */}
           {hasMultipleMedia && (
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
               {mediaUrls.map((_: any, idx: number) => (
                 <div 
                   key={idx} 
-                  className="w-1.5 h-1.5 rounded-full bg-white/80"
+                  className="w-1.5 h-1.5 rounded-full bg-white/90 shadow-sm"
                 />
               ))}
             </div>
