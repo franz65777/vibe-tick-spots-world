@@ -165,155 +165,174 @@ const SettingsPage: React.FC = () => {
 
         {/* Settings content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-0">
-            {/* Edit Profile Setting */}
-            <button
-              onClick={() => setEditProfileModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <img src={editProfileIcon} alt="" className="w-12 h-10 object-contain" />
-                <div className="text-left">
-                  <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t('editProfileDesc', { ns: 'settings' })}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {/* Privacy Setting */}
-            <button
-              onClick={() => setPrivacyModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <img src={privacyIcon} alt="" className="w-10 h-10 object-contain" />
-                <div className="text-left">
-                  <div className="font-medium">{t('privacy', { ns: 'settings', defaultValue: 'Privacy' })}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t('privacyDesc', { ns: 'settings', defaultValue: 'Control who can see your content' })}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {/* Language Setting */}
-            <button
-              onClick={() => setLanguageModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <img src={languageIcon} alt="" className="w-12 h-12 object-contain" />
-                <div className="text-left">
-                  <div className="font-medium">{t('language', { ns: 'settings' })}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {languages.find(l => l.code === language)?.label || 'English'}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {/* Business Account Setting */}
-            <button
-              onClick={() => {
-                if (hasValidBusinessAccount) {
-                  setBusinessManagementOpen(true);
-                } else {
-                  setBusinessModalOpen(true);
-                }
-              }}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <img src={businessIcon} alt="" className="w-12 h-12 object-contain" />
-                <div className="text-left">
-                  <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {hasValidBusinessAccount 
-                      ? 'Gestisci il tuo account business' 
-                      : t('requestBusinessAccount', { ns: 'settings' })}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {/* Muted Locations Setting */}
-            <button
-              onClick={() => setMutedLocationsModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3" style={{ paddingLeft: '7px', paddingRight: '15px' }}>
-                <img src={notificationsIcon} alt="" className="w-7 h-7 object-contain" />
-                <div className="text-left pl-[13px]">
-                  <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t('manageMutedLocations', { ns: 'settings' })}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {/* Close Friends Setting */}
-            <button
-              onClick={() => setCloseFriendsModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <img src={closeFriendsIcon} alt="" className="w-12 h-12 object-contain" />
-                <div className="text-left">
-                  <div className="font-medium">{t('closeFriends', { ns: 'settings' })}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t('manageCloseFriends', { ns: 'settings' })}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {/* Admin Panel - Only visible to admins */}
-            {isAdmin && (
+          {/* iOS-style grouped settings */}
+          <div className="mx-4 mb-4">
+            <div className="divide-y divide-border/30 bg-card/60 dark:bg-card/40 backdrop-blur-sm rounded-2xl shadow-sm border border-border/30 dark:border-white/10 overflow-hidden">
+              {/* Edit Profile Setting */}
               <button
-                onClick={() => setAdminModalOpen(true)}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                onClick={() => setEditProfileModalOpen(true)}
+                className="group w-full flex items-center justify-between p-4 ios-row"
               >
                 <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-muted-foreground" />
+                  <img src={editProfileIcon} alt="" className="w-12 h-10 object-contain" />
                   <div className="text-left">
-                    <div className="font-medium">{t('adminPanel', { ns: 'settings' })}</div>
+                    <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
                     <div className="text-sm text-muted-foreground">
-                      {t('manageBusinessRequests', { ns: 'settings' })}
+                      {t('editProfileDesc', { ns: 'settings' })}
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
               </button>
-            )}
 
-            {/* Admin Analytics - Only visible to fratrinky */}
-            {isFratrinky && (
+              {/* Privacy Setting */}
               <button
-                onClick={() => setAdminAnalyticsModalOpen(true)}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                onClick={() => setPrivacyModalOpen(true)}
+                className="group w-full flex items-center justify-between p-4 ios-row"
               >
                 <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-muted-foreground" />
+                  <img src={privacyIcon} alt="" className="w-10 h-10 object-contain" />
                   <div className="text-left">
-                    <div className="font-medium">Admin Analytics</div>
+                    <div className="font-medium">{t('privacy', { ns: 'settings', defaultValue: 'Privacy' })}</div>
                     <div className="text-sm text-muted-foreground">
-                      View retention metrics and data management
+                      {t('privacyDesc', { ns: 'settings', defaultValue: 'Control who can see your content' })}
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
               </button>
-            )}
+
+              {/* Language Setting */}
+              <button
+                onClick={() => setLanguageModalOpen(true)}
+                className="group w-full flex items-center justify-between p-4 ios-row"
+              >
+                <div className="flex items-center gap-3">
+                  <img src={languageIcon} alt="" className="w-12 h-12 object-contain" />
+                  <div className="text-left">
+                    <div className="font-medium">{t('language', { ns: 'settings' })}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {languages.find(l => l.code === language)?.label || 'English'}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+              </button>
+            </div>
           </div>
+
+          {/* Second group - Account & Social */}
+          <div className="mx-4 mb-4">
+            <div className="divide-y divide-border/30 bg-card/60 dark:bg-card/40 backdrop-blur-sm rounded-2xl shadow-sm border border-border/30 dark:border-white/10 overflow-hidden">
+              {/* Business Account Setting */}
+              <button
+                onClick={() => {
+                  if (hasValidBusinessAccount) {
+                    setBusinessManagementOpen(true);
+                  } else {
+                    setBusinessModalOpen(true);
+                  }
+                }}
+                className="group w-full flex items-center justify-between p-4 ios-row"
+              >
+                <div className="flex items-center gap-3">
+                  <img src={businessIcon} alt="" className="w-12 h-12 object-contain" />
+                  <div className="text-left">
+                    <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {hasValidBusinessAccount 
+                        ? 'Gestisci il tuo account business' 
+                        : t('requestBusinessAccount', { ns: 'settings' })}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+              </button>
+
+              {/* Muted Locations Setting */}
+              <button
+                onClick={() => setMutedLocationsModalOpen(true)}
+                className="group w-full flex items-center justify-between p-4 ios-row"
+              >
+                <div className="flex items-center gap-3" style={{ paddingLeft: '7px', paddingRight: '15px' }}>
+                  <img src={notificationsIcon} alt="" className="w-7 h-7 object-contain" />
+                  <div className="text-left pl-[13px]">
+                    <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('manageMutedLocations', { ns: 'settings' })}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+              </button>
+
+              {/* Close Friends Setting */}
+              <button
+                onClick={() => setCloseFriendsModalOpen(true)}
+                className="group w-full flex items-center justify-between p-4 ios-row"
+              >
+                <div className="flex items-center gap-3">
+                  <img src={closeFriendsIcon} alt="" className="w-12 h-12 object-contain" />
+                  <div className="text-left">
+                    <div className="font-medium">{t('closeFriends', { ns: 'settings' })}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('manageCloseFriends', { ns: 'settings' })}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Admin group - Only visible to admins */}
+          {(isAdmin || isFratrinky) && (
+            <div className="mx-4 mb-4">
+              <div className="divide-y divide-border/30 bg-card/60 dark:bg-card/40 backdrop-blur-sm rounded-2xl shadow-sm border border-border/30 dark:border-white/10 overflow-hidden">
+                {/* Admin Panel - Only visible to admins */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setAdminModalOpen(true)}
+                    className="group w-full flex items-center justify-between p-4 ios-row"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">{t('adminPanel', { ns: 'settings' })}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {t('manageBusinessRequests', { ns: 'settings' })}
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+                  </button>
+                )}
+
+                {/* Admin Analytics - Only visible to fratrinky */}
+                {isFratrinky && (
+                  <button
+                    onClick={() => setAdminAnalyticsModalOpen(true)}
+                    className="group w-full flex items-center justify-between p-4 ios-row"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">Admin Analytics</div>
+                        <div className="text-sm text-muted-foreground">
+                          View retention metrics and data management
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Logout Button */}

@@ -163,40 +163,65 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
           <div className="space-y-2 pt-4 pb-20">
             {users.map((item) => {
               const isSelf = currentUser?.id === item.id;
-              const rowClasses = `flex items-center gap-3 py-3 transition-colors rounded-lg ${isSelf ? 'cursor-default' : 'cursor-pointer hover:bg-muted/30'}`;
+              const isTop3 = item.rank <= 3;
+              
+              // Podium styling for top 3
+              const podiumStyles = item.rank === 1 
+                ? "bg-gradient-to-r from-yellow-400/15 to-amber-500/10 border-l-4 border-l-yellow-400"
+                : item.rank === 2 
+                ? "bg-gradient-to-r from-gray-300/15 to-gray-400/10 border-l-4 border-l-gray-400"
+                : item.rank === 3 
+                ? "bg-gradient-to-r from-orange-400/15 to-amber-600/10 border-l-4 border-l-orange-400"
+                : "";
+              
               const handleClick = () => { if (!isSelf) navigate(`/profile/${item.id}`); };
+              
               return (
                 <div
                   key={item.id}
                   onClick={handleClick}
                   aria-disabled={isSelf}
                   role={isSelf ? 'listitem' : 'button'}
-                  className={rowClasses}
+                  className={`flex items-center gap-3 py-3 px-2 transition-all duration-150 rounded-xl ${podiumStyles} ${isSelf ? 'cursor-default' : 'cursor-pointer active:bg-muted/50 active:scale-[0.98]'}`}
                 >
-                  {/* Rank */}
+                  {/* Rank Badge */}
                   <div className="w-8 text-center flex-shrink-0">
-                    <span className="text-base font-semibold text-muted-foreground">
-                      {item.rank}
-                    </span>
+                    {isTop3 ? (
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md ${
+                        item.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-amber-500' :
+                        item.rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
+                        'bg-gradient-to-br from-orange-400 to-amber-600'
+                      }`}>
+                        {item.rank}
+                      </div>
+                    ) : (
+                      <span className="text-base font-semibold text-muted-foreground">
+                        {item.rank}
+                      </span>
+                    )}
                   </div>
 
                   {/* Avatar + Username aligned left */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar className="w-12 h-12 flex-shrink-0">
+                    <Avatar className={`flex-shrink-0 ${isTop3 ? 'w-14 h-14 ring-2 ring-offset-2 ring-offset-background' : 'w-12 h-12'} ${
+                      item.rank === 1 ? 'ring-yellow-400' :
+                      item.rank === 2 ? 'ring-gray-400' :
+                      item.rank === 3 ? 'ring-orange-400' : ''
+                    }`}>
                       <AvatarImage src={item.avatar_url} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                         {item.username.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
 
-                    <p className="font-semibold text-foreground truncate text-left">
+                    <p className={`font-semibold text-foreground truncate text-left ${isTop3 ? 'text-base' : ''}`}>
                       @{item.username}
                     </p>
                   </div>
 
                   {/* Score */}
                   <div className="text-right flex-shrink-0">
-                    <span className="text-xl font-bold text-foreground">{item.score}</span>
+                    <span className={`font-bold text-foreground ${isTop3 ? 'text-2xl' : 'text-xl'}`}>{item.score}</span>
                   </div>
                 </div>
               );

@@ -1172,8 +1172,8 @@ const MobileNotificationItem = ({
               currentTarget.dataset.swipeHasMoved = 'false';
               if (!swipedOpen) setTranslateX(0);
             }}
-            className={`relative z-10 w-full ${swipedOpen ? '' : 'cursor-pointer active:bg-accent/50'} transition-colors ${
-              !notification.is_read ? 'bg-accent/20' : 'bg-transparent'
+            className={`relative z-10 w-full transition-all duration-150 ${swipedOpen ? '' : 'cursor-pointer active:bg-muted/60 active:scale-[0.99]'} ${
+              !notification.is_read ? 'bg-primary/5' : 'bg-transparent'
             }`}
             style={{ touchAction: 'pan-y', transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
           >
