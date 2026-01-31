@@ -127,7 +127,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[2147483647]" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[2147483647] bg-background/40 backdrop-blur-xl rounded-t-3xl flex flex-col max-h-[70vh] outline-none pb-safe">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[2147483647] bg-[#F5F1EA]/90 dark:bg-background/90 backdrop-blur-xl rounded-t-3xl flex flex-col max-h-[70vh] outline-none pb-safe">
           <style>{`
             [data-vaul-drawer-wrapper] { z-index: 2147483647 !important; }
             body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
