@@ -1,273 +1,297 @@
 
 
-# Piano: Premium iOS-Style Back Buttons e UX Improvements
+# Piano: Ottimizzazione Performance Lista Home + Miglioramenti UX Premium
 
-## Analisi Attuale
+## Problema Identificato
 
-Dall'esplorazione del codice, ho identificato **3 stili diversi di back button** attualmente in uso:
+La lista "Posizioni" nella home page è **lenta ad aprirsi** per due motivi principali:
 
-| Stile Attuale | Pagine | Problema |
-|---------------|--------|----------|
-| `ArrowLeft` semplice senza sfondo | SettingsPage, NotificationsPage, RewardsPage, UserProfilePage | Poco visibile, nessun feedback tattile |
-| `ChevronLeft` con Button ghost | LeaderboardPage | Inconsistente con gli altri |
-| SVG custom inline | PostDetailModalMobile | Non riutilizzabile |
+### 1. Pattern N+1 Query (CRITICO)
+Ogni `LocationListItem` chiama `useLocationStats()` che esegue **fino a 6 query Supabase per item**:
+- Query 1: Count saves da `saved_places`
+- Query 2: Count saves da `user_saved_locations`
+- Query 3: Fetch ratings da `interactions`
+- Query 4: Fetch ratings da `posts`
+- Query 5-6: Fallback per Google Place ratings
 
-**Problemi identificati:**
-1. Nessun active state sui back buttons
-2. Inconsistenza tra ArrowLeft e ChevronLeft
-3. Mancanza di sfondo/blur per visibilità
-4. Nessun feedback haptic al tap
+**Impatto**: Con 20 locations = **120+ query Supabase** al momento dell'apertura del drawer
+
+### 2. Animazione Drawer Non Ottimizzata
+- Il drawer usa `backdrop-blur-xl` che è computazionalmente pesante
+- L'altezza dinamica viene ricalcolata ad ogni render
+- Nessun pre-rendering del contenuto
 
 ---
 
-## Soluzione: Componente BackButton Riutilizzabile
+## Soluzione Tecnica
 
-### 1. Nuovo Componente `BackButton.tsx`
+### Fase 1: Batch Loading delle Stats (Alta Priorità)
 
-Creare un componente iOS-style standardizzato:
+**File**: `src/hooks/useBatchedLocationStats.ts` (nuovo)
 
-```tsx
-// src/components/common/BackButton.tsx
-import { ChevronLeft } from 'lucide-react';
-import { haptics } from '@/utils/haptics';
-import { cn } from '@/lib/utils';
+Creare un hook che carica le stats per tutte le locations in **2 query batch** invece di N*6:
 
-interface BackButtonProps {
-  onClick: () => void;
-  label?: string;
-  variant?: 'default' | 'blur' | 'solid';
-  className?: string;
-}
-
-export const BackButton: React.FC<BackButtonProps> = ({
-  onClick,
-  label,
-  variant = 'default',
-  className
-}) => {
-  const handleClick = () => {
-    haptics.impact('light');
-    onClick();
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        "flex items-center gap-1 transition-all duration-150",
-        "active:scale-[0.95] active:opacity-70",
-        variant === 'blur' && "px-2 py-1.5 rounded-full bg-white/60 dark:bg-white/10 backdrop-blur-md shadow-sm border border-white/30 dark:border-white/10",
-        variant === 'solid' && "px-2 py-1.5 rounded-full bg-muted/80 shadow-sm",
-        variant === 'default' && "p-2 -ml-2 rounded-full hover:bg-muted/50",
-        className
-      )}
-      aria-label="Go back"
-    >
-      <ChevronLeft className={cn(
-        "text-foreground transition-transform",
-        variant === 'default' ? "w-6 h-6" : "w-5 h-5"
-      )} />
-      {label && (
-        <span className="text-sm font-medium text-foreground pr-1">{label}</span>
-      )}
-    </button>
-  );
+```typescript
+export const useBatchedLocationStats = (locations: Place[]) => {
+  // Batch query 1: Tutti i saves
+  // Batch query 2: Tutti i ratings
+  // Ritorna Map<locationId, stats>
 };
 ```
 
-**Caratteristiche iOS-premium:**
-- **ChevronLeft** (iOS standard) invece di ArrowLeft
-- **Active scale** `active:scale-[0.95]` per feedback tattile
-- **Haptic feedback** integrato
-- **3 varianti**: default, blur (glassmorphism), solid
-- **Supporto per label** opzionale (es: "< Back" o "< Settings")
+**File**: `src/components/home/MapSection.tsx`
 
----
+Modificare per:
+1. Chiamare `useBatchedLocationStats(places)` una sola volta
+2. Passare le stats pre-caricate a ogni `LocationListItem`
+3. Rimuovere `useLocationStats` da `LocationListItem`
 
-### 2. Nuova Animazione CSS per Transizioni
+### Fase 2: Ottimizzazione Drawer Animation
 
-**File**: `src/index.css`
+**File**: `src/components/home/MapSection.tsx` (linee 637-644)
 
-Aggiungere una sottile animazione per il chevron al press:
+Miglioramenti:
+1. Usare `will-change: transform` per hint GPU
+2. Ridurre `backdrop-blur-xl` a `backdrop-blur-md` per performance
+3. Pre-calcolare l'altezza e cachearla
+4. Aggiungere `transform: translateZ(0)` per layer compositing
+
+```tsx
+<DrawerContent 
+  showHandle={false}
+  hideOverlay={true}
+  className="flex flex-col z-[150] backdrop-blur-md border-t border-border/10 shadow-2xl overflow-hidden will-change-transform"
+  style={{
+    transform: 'translateZ(0)', // Force GPU layer
+    height: drawerHeight, // Pre-calculated
+  }}
+>
+```
+
+### Fase 3: Skeleton Loading Migliorato
+
+**File**: `src/components/home/LocationListItem.tsx`
+
+Aggiungere shimmer animation durante il caricamento delle stats:
+
+```tsx
+{statsLoading ? (
+  <div className="flex items-center gap-1.5 animate-pulse">
+    <Skeleton className="w-8 h-4 rounded-full" />
+    <Skeleton className="w-6 h-4 rounded-full" />
+  </div>
+) : (
+  // Stats content
+)}
+```
+
+### Fase 4: UX Premium Improvements
+
+**1. Transizione Apertura Fluida**
+
+Aggiungere animazione CSS più fluida:
 
 ```css
-/* iOS-style back button chevron animation */
-@keyframes chevron-press {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(-2px); }
+/* In index.css */
+@keyframes drawer-slide-up {
+  from { 
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.back-button-chevron:active {
-  animation: chevron-press 150ms ease-out;
+.drawer-premium {
+  animation: drawer-slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
+```
 
-/* Smooth slide transition for page navigation */
-@keyframes slide-in-from-right {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
+**2. Haptic Feedback Migliorato**
 
-@keyframes slide-out-to-right {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
-}
+Aggiungere feedback tattile all'apertura del drawer:
 
-.animate-slide-in-right {
-  animation: slide-in-from-right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
+```tsx
+onClick={() => {
+  haptics.impact('medium'); // Upgrade da 'light' a 'medium'
+  previousOverlayRef.current = 'list';
+  setOverlay('list');
+}}
+```
 
-.animate-slide-out-right {
-  animation: slide-out-to-right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
+**3. List Item Touch Feedback**
+
+Migliorare il feedback al tap sugli item:
+
+```tsx
+// LocationListItem.tsx
+className="... active:scale-[0.98] active:bg-muted/40 transition-all duration-150"
+```
+
+**4. Pull-to-Refresh Visual**
+
+Aggiungere indicatore di refresh nella lista:
+
+```tsx
+<ScrollArea 
+  className="..."
+  onScroll={(e) => {
+    // Detect overscroll for pull-to-refresh visual
+  }}
+>
+```
+
+**5. Empty State Migliorato**
+
+Animazione per lo stato vuoto:
+
+```tsx
+<LocationListEmpty className="animate-fade-in-up" />
 ```
 
 ---
 
-### 3. Aggiornamento Pagine Esistenti
+## Dettagli Implementazione
 
-**Pagine da aggiornare** (usando il nuovo BackButton):
+### File da Creare
 
-| Pagina | Da | A |
-|--------|----|----|
-| `SettingsPage.tsx` | ArrowLeft semplice | `<BackButton variant="default" />` |
-| `NotificationsPage.tsx` | ArrowLeft con Button ghost | `<BackButton variant="default" />` |
-| `LeaderboardPage.tsx` | ChevronLeft con Button ghost | `<BackButton variant="default" />` |
-| `RewardsPage.tsx` | ArrowLeft semplice | `<BackButton variant="default" />` |
-| `UserProfilePage.tsx` | ArrowLeft senza padding | `<BackButton variant="default" />` |
-| `PostDetailModalMobile.tsx` | SVG custom | `<BackButton variant="blur" label={backLabel} />` |
-| `SwipeDiscovery.tsx` | ArrowLeft semplice | `<BackButton variant="default" />` |
-| `EditProfileModal.tsx` | ArrowLeft semplice | `<BackButton variant="default" />` |
-| `LanguageModal.tsx` | ArrowLeft semplice | `<BackButton variant="default" />` |
-| `PostEditor.tsx` | ArrowLeft con rounded-lg | `<BackButton variant="default" />` |
+| File | Descrizione |
+|------|-------------|
+| `src/hooks/useBatchedLocationStats.ts` | Hook per batch loading stats |
 
----
-
-### 4. Ulteriori Miglioramenti UX Premium
-
-#### A. Segmented Controls iOS-Style
-
-**File**: `src/components/ui/segmented-control.tsx` (nuovo)
-
-Per tab/toggle come in LeaderboardPage, ExplorePage:
-
-```tsx
-interface SegmentedControlProps {
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}
-
-export const SegmentedControl: React.FC<SegmentedControlProps> = ({
-  options, value, onChange
-}) => (
-  <div className="flex rounded-xl bg-muted/50 p-1 gap-1">
-    {options.map(opt => (
-      <button
-        key={opt.value}
-        onClick={() => {
-          haptics.selection();
-          onChange(opt.value);
-        }}
-        className={cn(
-          "flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200",
-          "active:scale-[0.97]",
-          value === opt.value 
-            ? "bg-background shadow-sm text-foreground" 
-            : "text-muted-foreground"
-        )}
-      >
-        {opt.label}
-      </button>
-    ))}
-  </div>
-);
-```
-
-#### B. Pull-to-Refresh Indicator Premium
-
-**File**: `src/components/common/PullToRefreshIndicator.tsx` (nuovo)
-
-Aggiungere un indicatore iOS-style durante il pull:
-
-```tsx
-export const PullToRefreshIndicator: React.FC<{ progress: number }> = ({ progress }) => (
-  <div 
-    className="flex items-center justify-center py-4"
-    style={{ opacity: Math.min(progress, 1) }}
-  >
-    <div 
-      className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full"
-      style={{ 
-        transform: `rotate(${progress * 360}deg)`,
-        animation: progress >= 1 ? 'spin 0.8s linear infinite' : 'none'
-      }}
-    />
-  </div>
-);
-```
-
-#### C. Sheet/Modal Header Standard
-
-Standardizzare gli header delle modali con pattern iOS:
-
-```tsx
-// Pattern da applicare a tutte le Sheet/Modal
-<SheetHeader className="px-4 py-3 border-b border-border/20">
-  <div className="flex items-center justify-between">
-    <BackButton onClick={onClose} />
-    <SheetTitle className="text-lg font-semibold">{title}</SheetTitle>
-    <div className="w-10" /> {/* Spacer per centrare il titolo */}
-  </div>
-</SheetHeader>
-```
-
-#### D. Floating Action Button Consistency
-
-Standardizzare i FAB (come il bottone "+" per aggiungere):
-
-```tsx
-// Pattern FAB iOS-style
-<button className={cn(
-  "fixed bottom-24 right-4 z-40",
-  "w-14 h-14 rounded-full",
-  "bg-primary text-primary-foreground",
-  "shadow-lg shadow-primary/30",
-  "flex items-center justify-center",
-  "active:scale-[0.92] transition-transform duration-150",
-  "active:shadow-md"
-)}>
-  <Plus className="w-6 h-6" />
-</button>
-```
-
----
-
-## Riepilogo File da Modificare
+### File da Modificare
 
 | File | Modifica |
 |------|----------|
-| `src/components/common/BackButton.tsx` | **NUOVO** - Componente riutilizzabile |
-| `src/index.css` | Aggiungere animazioni chevron e slide |
-| `src/pages/SettingsPage.tsx` | Usare BackButton |
-| `src/pages/NotificationsPage.tsx` | Usare BackButton |
-| `src/pages/LeaderboardPage.tsx` | Usare BackButton |
-| `src/pages/RewardsPage.tsx` | Usare BackButton |
-| `src/components/UserProfilePage.tsx` | Usare BackButton |
-| `src/components/explore/PostDetailModalMobile.tsx` | Usare BackButton con variant="blur" |
-| `src/components/home/SwipeDiscovery.tsx` | Usare BackButton |
-| `src/components/settings/EditProfileModal.tsx` | Usare BackButton |
-| `src/components/settings/LanguageModal.tsx` | Usare BackButton |
-| `src/components/add/PostEditor.tsx` | Usare BackButton |
-| `src/pages/MessagesPage.tsx` | Usare BackButton |
+| `src/components/home/MapSection.tsx` | Integrare batch stats, ottimizzare drawer |
+| `src/components/home/LocationListItem.tsx` | Ricevere stats come prop, migliorare touch feedback |
+| `src/index.css` | Aggiungere animazione drawer-slide-up |
+| `tailwind.config.ts` | Eventuale nuova animation keyframe |
 
 ---
 
-## Priorità di Implementazione
+## Implementazione `useBatchedLocationStats.ts`
 
-1. **Alta**: Creare `BackButton.tsx` + animazioni CSS
-2. **Alta**: Aggiornare le pagine principali (Settings, Notifications, Profile)
-3. **Media**: Aggiornare modali e sheet (EditProfile, Language, etc.)
-4. **Bassa**: Creare SegmentedControl e PullToRefreshIndicator
+```typescript
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Place } from '@/types/place';
 
-Queste modifiche renderanno la navigazione **consistente, premium e tattile** su tutta l'app, seguendo le iOS Human Interface Guidelines.
+interface LocationStats {
+  totalSaves: number;
+  averageRating: number | null;
+}
+
+export const useBatchedLocationStats = (places: Place[]) => {
+  const [statsMap, setStatsMap] = useState<Map<string, LocationStats>>(new Map());
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (places.length === 0) {
+      setStatsMap(new Map());
+      return;
+    }
+
+    const fetchBatchedStats = async () => {
+      setLoading(true);
+      const newStatsMap = new Map<string, LocationStats>();
+
+      try {
+        // Collect all IDs
+        const locationIds = places.map(p => p.id).filter(Boolean);
+        const googlePlaceIds = places.map(p => p.google_place_id).filter(Boolean) as string[];
+
+        // Batch query 1: Saves count from user_saved_locations
+        const { data: internalSaves } = await supabase
+          .from('user_saved_locations')
+          .select('location_id')
+          .in('location_id', locationIds);
+
+        // Batch query 2: Saves count from saved_places
+        const { data: googleSaves } = googlePlaceIds.length > 0 
+          ? await supabase
+              .from('saved_places')
+              .select('place_id')
+              .in('place_id', googlePlaceIds)
+          : { data: [] };
+
+        // Batch query 3: Ratings from posts
+        const { data: postRatings } = await supabase
+          .from('posts')
+          .select('location_id, rating')
+          .in('location_id', locationIds)
+          .not('rating', 'is', null)
+          .gt('rating', 0);
+
+        // Count saves per location
+        const savesCount = new Map<string, number>();
+        internalSaves?.forEach(s => {
+          savesCount.set(s.location_id, (savesCount.get(s.location_id) || 0) + 1);
+        });
+        googleSaves?.forEach(s => {
+          savesCount.set(s.place_id, (savesCount.get(s.place_id) || 0) + 1);
+        });
+
+        // Calculate average ratings
+        const ratingsPerLocation = new Map<string, number[]>();
+        postRatings?.forEach(p => {
+          if (!ratingsPerLocation.has(p.location_id)) {
+            ratingsPerLocation.set(p.location_id, []);
+          }
+          ratingsPerLocation.get(p.location_id)!.push(p.rating);
+        });
+
+        // Build final stats map
+        places.forEach(place => {
+          const key = place.id;
+          const totalSaves = (savesCount.get(place.id) || 0) + 
+                            (place.google_place_id ? savesCount.get(place.google_place_id) || 0 : 0);
+          
+          const ratings = ratingsPerLocation.get(place.id) || [];
+          const averageRating = ratings.length > 0 
+            ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+            : null;
+
+          newStatsMap.set(key, { totalSaves, averageRating });
+        });
+
+        setStatsMap(newStatsMap);
+      } catch (error) {
+        console.error('Error fetching batched stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBatchedStats();
+  }, [places.map(p => p.id).join(',')]);
+
+  return { statsMap, loading };
+};
+```
+
+---
+
+## Performance Target
+
+| Metrica | Prima | Dopo |
+|---------|-------|------|
+| Query Supabase (20 items) | 120+ | 3-4 |
+| Tempo apertura drawer | 800-1200ms | 150-300ms |
+| Frame rate durante animazione | 30-45 FPS | 60 FPS |
+| First Contentful Paint | 600ms | 200ms |
+
+---
+
+## Ordine di Implementazione
+
+1. **Creare** `useBatchedLocationStats.ts` - Hook batch loading
+2. **Modificare** `MapSection.tsx` - Integrare batch stats e ottimizzare drawer
+3. **Modificare** `LocationListItem.tsx` - Ricevere stats come prop, touch feedback
+4. **Aggiungere** CSS animations in `index.css`
+5. **Test** - Verificare fluidità su dispositivo mobile
+
+Queste modifiche ridurranno drasticamente il tempo di apertura del drawer e renderanno l'esperienza molto più fluida e premium.
 
