@@ -284,7 +284,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       id={`feed-post-${postId}`}
       data-feed-post-id={postId}
       className={cn(
-        "post-compact mx-5 rounded-2xl overflow-hidden",
+        "post-compact mx-5 rounded-2xl overflow-hidden relative",
         // Gradient background caldo invece di bianco piatto
         "bg-gradient-to-br from-white/80 via-white/60 to-amber-50/40",
         "dark:from-zinc-900/80 dark:via-zinc-900/60 dark:to-zinc-800/40",
@@ -295,9 +295,10 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
         rating && rating >= 8 ? "border-l-4 border-l-green-400/50" :
         rating && rating >= 5 ? "border-l-4 border-l-amber-400/50" :
         rating && rating > 0 ? "border-l-4 border-l-red-400/50" : "",
-        // Shadow e hover
+        // Shadow 
         "shadow-lg shadow-black/5 dark:shadow-black/20",
-        "hover:shadow-xl hover:scale-[1.005] transition-all duration-300"
+        // Mobile-friendly: active press state invece di hover
+        "active:scale-[0.98] active:shadow-md transition-all duration-150"
       )}
     >
       {/* Post Header */}
@@ -341,10 +342,10 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             {!isPromotionFeed && locationName && locationId && location && location.latitude != null && location.longitude != null && (
               <button
                 onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
+                className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-primary/10 active:bg-primary/20 rounded-full text-xs text-primary font-medium transition-colors"
               >
                 <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate">{locationName}</span>
+                <span className="truncate max-w-[140px]">{locationName}</span>
               </button>
             )}
           </div>
@@ -377,8 +378,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           {showHeartAnimation && (
             <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
               <Heart 
-                className="w-24 h-24 fill-white text-white animate-ping opacity-90" 
-                style={{ animationDuration: '0.8s' }}
+                className="w-20 h-20 fill-white text-white drop-shadow-lg animate-heart-pop" 
               />
             </div>
           )}
@@ -391,9 +391,15 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             </div>
           )}
           
-          {/* Rating badge overlay (bottom left) - premium glassmorphism */}
+          {/* Rating badge overlay (bottom left) - premium glassmorphism with glow for high ratings */}
           {rating && rating > 0 && (
-            <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-md px-2.5 py-1.5 rounded-full shadow-lg border border-white/20">
+            <div className={cn(
+              "absolute bottom-3 left-3 z-10 flex items-center gap-1.5",
+              "bg-white/90 dark:bg-black/70 backdrop-blur-md",
+              "px-2.5 py-1.5 rounded-full shadow-lg border border-white/20",
+              // Glow effect for high ratings
+              rating >= 8 && "shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+            )}>
               {(() => {
                 const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
                 return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating), getRatingColor(rating))} />;
