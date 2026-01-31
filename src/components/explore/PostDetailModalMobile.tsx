@@ -428,12 +428,15 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
-    <div className="fixed inset-0 z-[2147483647] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+    <div 
+      className="fixed inset-0 z-[2147483647] isolate h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
+      onClickCapture={(e) => console.log('[DEBUG] Modal click:', (e.target as HTMLElement).tagName, (e.target as HTMLElement).className.slice(0, 50))}
+    >
       {/* Unified frosted glass background (same structure as FeedPage) */}
-      <FrostedGlassBackground className="fixed pointer-events-none" />
+      <FrostedGlassBackground className="fixed inset-0 pointer-events-none" />
 
       {/* Content wrapper */}
-      <div className="relative z-10 h-full flex flex-col overflow-hidden">
+      <div className="relative z-10 h-full flex flex-col overflow-hidden pointer-events-auto">
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           {/* Skeleton Header */}
           <div className="bg-background/40 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
@@ -471,12 +474,15 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   ) : (
 
     <>
-      <div className="fixed inset-0 z-[2147483647] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+      <div 
+        className="fixed inset-0 z-[2147483647] isolate h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
+        onClickCapture={(e) => console.log('[DEBUG] Modal click:', (e.target as HTMLElement).tagName, (e.target as HTMLElement).className.slice(0, 50))}
+      >
         {/* Unified frosted glass background (same structure as FeedPage) */}
-        <FrostedGlassBackground className="fixed pointer-events-none" />
+        <FrostedGlassBackground className="fixed inset-0 pointer-events-none" />
 
         {/* Content wrapper */}
-        <div ref={scrollContainerRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide">
+        <div ref={scrollContainerRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide pointer-events-auto">
           {/* Header */}
           <div className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
             {(locationId || userId || showBackButton) && (
@@ -640,16 +646,22 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                 {/* Caption - moved above actions */}
                 {post.caption && renderCaption(post)}
 
-                <PostActions
-                  postId={post.id}
-                  likesCount={post.likes_count || 0}
-                  commentsCount={post.comments_count || 0}
-                  sharesCount={post.shares_count || 0}
-                  locationId={post.location_id}
-                  locationName={post.locations?.name}
-                  onCommentClick={handleCommentClick}
-                  onShareClick={() => setShareOpen(true)}
-                />
+                {/* Explicit pointer-events-auto + z-20 to ensure buttons are clickable */}
+                <div 
+                  className="relative z-20 pointer-events-auto"
+                  onPointerDownCapture={(e) => console.log('[DEBUG] Actions pointerdown:', (e.target as HTMLElement).tagName)}
+                >
+                  <PostActions
+                    postId={post.id}
+                    likesCount={post.likes_count || 0}
+                    commentsCount={post.comments_count || 0}
+                    sharesCount={post.shares_count || 0}
+                    locationId={post.location_id}
+                    locationName={post.locations?.name}
+                    onCommentClick={handleCommentClick}
+                    onShareClick={() => setShareOpen(true)}
+                  />
+                </div>
 
                 {/* Timestamp (same style as feed) */}
                 <p className="text-xs text-muted-foreground text-left mt-0">
