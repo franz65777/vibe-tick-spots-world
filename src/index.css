@@ -666,5 +666,28 @@
   .animate-slide-out-right {
     animation: slide-out-to-right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
+
+  /* Premium drawer slide-up animation for list drawer */
+  @keyframes drawer-slide-up {
+    from { 
+      transform: translateY(100%);
+      opacity: 0.7;
+    }
+    to { 
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .drawer-premium {
+    animation: drawer-slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* GPU-accelerated drawer for 60 FPS */
+  .drawer-gpu-accelerated {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
 }
 

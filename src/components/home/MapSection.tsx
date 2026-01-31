@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import LeafletMapSetup from '@/components/LeafletMapSetup';
 import MapCategoryFilters from './MapCategoryFilters';
 import SearchDrawer from './SearchDrawer';
@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { LocationShareModal } from '../explore/LocationShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
 import { useMapFilter } from '@/contexts/MapFilterContext';
+import { useBatchedLocationStats } from '@/hooks/useBatchedLocationStats';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { List } from 'lucide-react';
@@ -383,7 +384,17 @@ const MapSection = ({
     latestActivity: location.latestActivity
   }));
 
-  // Enrich missing addresses using reverse geocoding
+  // Batch load stats for all places - eliminates N+1 queries (120+ → 4)
+  const { statsMap, loading: statsLoading } = useBatchedLocationStats(places);
+
+  // Pre-calculate drawer height once for stability
+  const drawerHeight = useMemo(() => {
+    const baseHeight = 95;
+    const filterOffset = activeFilter === 'following' ? 70 : 0;
+    const itemsHeight = Math.max(1, places.length) * 80;
+    const buffer = 20;
+    return `min(${baseHeight + filterOffset + itemsHeight + buffer}px, 85vh)`;
+  }, [places.length, activeFilter]);
   useEffect(() => {
     const enrichMissingAddresses = async () => {
       const placesNeedingAddress = places.filter(
@@ -637,10 +648,9 @@ const MapSection = ({
           <DrawerContent 
             showHandle={false}
             hideOverlay={true}
-            className="flex flex-col z-[150] backdrop-blur-xl border-t border-border/10 shadow-2xl overflow-hidden"
+            className="flex flex-col z-[150] backdrop-blur-md border-t border-border/10 shadow-2xl overflow-hidden drawer-gpu-accelerated drawer-premium"
             style={{
-              // Tuned for tight fit; add a small extra only for 'following' to avoid first card clipping.
-              height: `min(${95 + (activeFilter === 'following' ? 70 : 0) + Math.max(1, places.length) * 80 + 20}px, 85vh)`
+              height: drawerHeight
             }}
           >
             <DrawerHeader className="px-6 pt-4 pb-2 flex-shrink-0 sticky top-0 z-10 backdrop-blur-xl rounded-t-[20px]">
@@ -770,6 +780,8 @@ const MapSection = ({
                       key={place.id}
                       place={place}
                       enrichedAddress={enrichedAddresses[place.id]}
+                      stats={statsMap.get(place.id)}
+                      statsLoading={statsLoading}
                       onClick={() => {
                         // Mark to restore list when closing the pin card
                         openedFromListRef.current = true;
