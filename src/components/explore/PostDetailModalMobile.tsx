@@ -428,23 +428,23 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
-    <div className="fixed inset-0 z-[2147483647] overflow-y-auto scrollbar-hide">
-      {/* Frosted glass background like feed page */}
-      <FrostedGlassBackground />
+    <div className="fixed inset-0 z-[2147483647] relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+      {/* Unified frosted glass background (same structure as FeedPage) */}
+      <FrostedGlassBackground className="fixed" />
+
+      {/* Content wrapper */}
+      <div className="relative z-10 h-full flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
+          {/* Skeleton Header */}
+          <div className="bg-background/40 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-muted rounded shimmer-skeleton" />
+              <div className="h-5 w-20 bg-muted rounded shimmer-skeleton" />
+            </div>
+          </div>
       
-      {/* Skeleton Header with iOS safe area */}
-      <div 
-        className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-muted rounded shimmer-skeleton" />
-          <div className="h-5 w-20 bg-muted rounded shimmer-skeleton" />
-        </div>
-      </div>
-      
-      {/* Skeleton Post */}
-      <article className="post-compact pb-2">
+          {/* Skeleton Post */}
+          <article className="post-compact pb-2">
         <div className="post-compact-header flex items-center gap-3 px-4 py-3">
           <div className="h-10 w-10 rounded-full bg-muted shimmer-skeleton" />
           <div className="flex-1 space-y-2">
@@ -464,22 +464,21 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
             <div className="h-3 w-3/4 bg-muted rounded shimmer-skeleton" />
           </div>
         </div>
-      </article>
+          </article>
+        </div>
+      </div>
     </div>
   ) : (
 
     <>
-      <div ref={scrollContainerRef} className="fixed inset-0 z-[2147483647] overflow-y-auto scrollbar-hide">
-        {/* Frosted glass background like feed page */}
-        <FrostedGlassBackground />
-        
-        {/* Header with iOS safe area */}
-        <div 
-          className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3 relative z-10"
-          style={{
-            paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
-          }}
-        >
+      <div className="fixed inset-0 z-[2147483647] relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+        {/* Unified frosted glass background (same structure as FeedPage) */}
+        <FrostedGlassBackground className="fixed" />
+
+        {/* Content wrapper */}
+        <div ref={scrollContainerRef} className="relative z-10 h-full overflow-y-auto scrollbar-hide">
+          {/* Header */}
+          <div className="bg-background/40 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
           {(locationId || userId || showBackButton) && (
             <button
               onClick={onClose}
@@ -661,8 +660,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           );
         })}
 
-        {/* Bottom padding for safe scrolling */}
-        <div className="h-20" />
+          {/* Bottom padding for safe scrolling */}
+          <div className="h-20" />
+        </div>
       </div>
 
       {/* Comment Drawer */}
