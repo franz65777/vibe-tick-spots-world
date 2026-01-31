@@ -183,9 +183,9 @@ export const CommentDrawer = ({
       dismissible={true}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[9998]" onClick={onClose} />
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[2147483647]" onClick={onClose} />
         <Drawer.Content 
-          className="fixed inset-x-0 bottom-0 z-[9999] bg-background rounded-t-3xl flex flex-col outline-none shadow-2xl"
+          className="fixed inset-x-0 bottom-0 z-[2147483647] bg-background rounded-t-3xl flex flex-col outline-none shadow-2xl"
           style={{
             height: isKeyboardOpen 
               ? `calc(${viewportHeight}px - env(safe-area-inset-top, 0px))` 
