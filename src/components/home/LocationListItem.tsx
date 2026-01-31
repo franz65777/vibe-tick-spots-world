@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { ChevronRight, MapPin, Bookmark, Star } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { useLocationStats } from '@/hooks/useLocationStats';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +11,7 @@ import saveTagFavourite from '@/assets/save-tag-favourite.png';
 import { Place } from '@/types/place';
 import { formatSearchResultAddress } from '@/utils/addressFormatter';
 import { haptics } from '@/utils/haptics';
+import { LocationStats } from '@/hooks/useBatchedLocationStats';
 
 // Map tag values to imported icons
 const TAG_ICONS: Record<string, string> = {
@@ -24,11 +24,13 @@ interface LocationListItemProps {
   place: Place;
   enrichedAddress?: string;
   onClick: () => void;
+  /** Pre-loaded stats from batch hook - eliminates N+1 queries */
+  stats?: LocationStats;
+  statsLoading?: boolean;
 }
 
 // Memoized for performance - prevents re-render when parent state changes
-export const LocationListItem = memo(({ place, enrichedAddress, onClick }: LocationListItemProps) => {
-  const { stats } = useLocationStats(place.id, place.google_place_id);
+export const LocationListItem = memo(({ place, enrichedAddress, onClick, stats, statsLoading }: LocationListItemProps) => {
   const { t } = useTranslation();
   
   const saveTag = (place as any).saveTag;
@@ -46,10 +48,10 @@ export const LocationListItem = memo(({ place, enrichedAddress, onClick }: Locat
   return (
     <div
       onClick={() => {
-        haptics.impact('light');
+        haptics.impact('medium');
         onClick();
       }}
-      className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-white/30 dark:border-slate-600/30 cursor-pointer transition-all duration-200 hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-sm active:scale-[0.98]"
+      className="group flex items-center gap-2.5 p-2.5 rounded-xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-white/30 dark:border-slate-600/30 cursor-pointer transition-all duration-150 hover:bg-white/70 dark:hover:bg-slate-700/60 hover:shadow-sm active:scale-[0.98] active:bg-muted/40 will-change-transform"
     >
       {/* Thumbnail / Category Icon */}
       <div className="relative flex-shrink-0 w-[52px] h-[52px] rounded-lg bg-muted/60 flex items-center justify-center overflow-hidden">
@@ -106,25 +108,35 @@ export const LocationListItem = memo(({ place, enrichedAddress, onClick }: Locat
 
       {/* Right side - Stats & Chevron */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        {/* Rating badge */}
-        {stats.averageRating && stats.averageRating > 0 && (
-          <div className={cn(
-            "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium",
-            getRatingFillColor(stats.averageRating) + "/15"
-          )}>
-            <Star className={cn("w-2.5 h-2.5 fill-current", getRatingColor(stats.averageRating))} />
-            <span className={getRatingColor(stats.averageRating)}>
-              {stats.averageRating.toFixed(1)}
-            </span>
+        {statsLoading ? (
+          /* Skeleton for stats while loading */
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="w-8 h-4 rounded-full" />
+            <Skeleton className="w-6 h-4 rounded-full" />
           </div>
-        )}
-        
-        {/* Saves count */}
-        {stats.totalSaves > 0 && (
-          <div className="flex items-center gap-0.5 text-muted-foreground/50">
-            <Bookmark className="w-3 h-3" />
-            <span className="text-[11px]">{stats.totalSaves}</span>
-          </div>
+        ) : (
+          <>
+            {/* Rating badge */}
+            {stats?.averageRating && stats.averageRating > 0 && (
+              <div className={cn(
+                "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-medium",
+                getRatingFillColor(stats.averageRating) + "/15"
+              )}>
+                <Star className={cn("w-2.5 h-2.5 fill-current", getRatingColor(stats.averageRating))} />
+                <span className={getRatingColor(stats.averageRating)}>
+                  {stats.averageRating.toFixed(1)}
+                </span>
+              </div>
+            )}
+            
+            {/* Saves count */}
+            {stats?.totalSaves && stats.totalSaves > 0 && (
+              <div className="flex items-center gap-0.5 text-muted-foreground/50">
+                <Bookmark className="w-3 h-3" />
+                <span className="text-[11px]">{stats.totalSaves}</span>
+              </div>
+            )}
+          </>
         )}
         
         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors" />
