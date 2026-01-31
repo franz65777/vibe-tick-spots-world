@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw, Loader2, Globe } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Star, ChevronDown, MapPin, RefreshCw, Loader2, Globe, Images } from 'lucide-react';
 import deleteIcon from '@/assets/icon-delete.png';
 import cameraIcon3d from '@/assets/icon-camera-3d.png';
 import starIcon3d from '@/assets/icon-star-3d.png';
@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { getCategoryIcon, getCategoryImage } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { translateCityName } from '@/utils/cityTranslations';
+import { translateCategory } from '@/utils/translateCategory';
+import { formatPostDate } from '@/utils/dateFormatter';
 import VirtualizedPostGrid from './VirtualizedPostGrid';
 import PostsGridSkeleton from './PostsGridSkeleton';
 import {
@@ -552,17 +554,75 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     </div>
                   </div>
 
+                  {/* Media Preview Stack (if has photos) */}
+                  {hasMedia && (
+                    <div 
+                      className="absolute right-3 bottom-14 flex items-end cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePostClick(post.id);
+                      }}
+                    >
+                      {post.media_urls.slice(0, 2).map((url, idx) => (
+                        <div 
+                          key={idx}
+                          className={cn(
+                            "w-10 h-10 rounded-xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-md",
+                            idx > 0 && "-ml-4"
+                          )}
+                          style={{ zIndex: 2 - idx }}
+                        >
+                          <img 
+                            src={url} 
+                            alt="" 
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                      {post.media_urls.length > 2 && (
+                        <div className="w-10 h-10 -ml-4 rounded-xl bg-black/60 backdrop-blur-sm border-2 border-white dark:border-zinc-800 shadow-md flex items-center justify-center z-0">
+                          <span className="text-xs font-bold text-white">+{post.media_urls.length - 2}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Engagement Bar */}
+                  <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/30">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                      <Heart className="w-3.5 h-3.5" />
+                      {post.likes_count || 0}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      {post.comments_count || 0}
+                    </span>
+                    
+                    {/* Category Tag */}
+                    {post.locations?.category && (
+                      <span className="px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-medium text-primary capitalize">
+                        {translateCategory(post.locations.category, t)}
+                      </span>
+                    )}
+                    
+                    {/* Relative Date */}
+                    <span className="ml-auto text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium">
+                      {formatPostDate(post.created_at, t)}
+                    </span>
+                  </div>
+
                   {isOwnProfile && (
                     <button
                       onClick={(e) => handleDeletePost(post.id, e)}
                       disabled={deleting}
-                      className="absolute bottom-3 right-3 w-7 h-7 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                      className="absolute top-3 left-[72px] w-6 h-6 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
                       title="Delete review"
                     >
                       {deleting ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        <img src={deleteIcon} alt="" className="w-3.5 h-3.5" />
+                        <img src={deleteIcon} alt="" className="w-3 h-3" />
                       )}
                     </button>
                   )}
