@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
 
 interface PostDetailModalMobileProps {
   postId: string;
@@ -427,10 +428,13 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
-    <div className="fixed inset-0 z-[2147483647] bg-background overflow-y-auto scrollbar-hide">
+    <div className="fixed inset-0 z-[2147483647] overflow-y-auto scrollbar-hide">
+      {/* Frosted glass background like feed page */}
+      <FrostedGlassBackground />
+      
       {/* Skeleton Header with iOS safe area */}
       <div 
-        className="bg-background sticky top-0 z-50 flex items-center px-4 py-3"
+        className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3"
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
       >
         <div className="flex items-center gap-2">
@@ -465,10 +469,13 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   ) : (
 
     <>
-      <div ref={scrollContainerRef} className="fixed inset-0 z-[2147483647] bg-background overflow-y-auto scrollbar-hide">
+      <div ref={scrollContainerRef} className="fixed inset-0 z-[2147483647] overflow-y-auto scrollbar-hide">
+        {/* Frosted glass background like feed page */}
+        <FrostedGlassBackground />
+        
         {/* Header with iOS safe area */}
         <div 
-          className="bg-background sticky top-0 z-50 flex items-center px-4 py-3"
+          className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3 relative z-10"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
           }}
@@ -492,7 +499,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           const hasMultipleMedia = post.media_urls.length > 1;
           
           return (
-            <article key={post.id} data-post-id={post.id} className="post-compact pb-2">
+            <article key={post.id} data-post-id={post.id} className="post-compact pb-2 relative z-10">
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
