@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, Search, X, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -542,7 +543,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
     );
   }
 
-  return (
+  // Use Portal to escape stacking context and render above everything (same pattern as PostDetailModalMobile)
+  return createPortal(
     <>
       <SavedFoldersDrawer 
         isOpen={isFoldersDrawerOpen}
@@ -551,11 +553,14 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
         onFolderSelect={handleFolderSelect}
       />
       
-      <div ref={containerRef} className="fixed inset-0 z-[9999] flex flex-col relative">
+      <div 
+        ref={containerRef} 
+        className="fixed inset-0 z-[2147483647] isolate h-[100dvh] flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
+      >
         {/* Background must not intercept scroll/taps */}
-        <FrostedGlassBackground className="pointer-events-none" />
-        {/* min-h-0 is required for nested flex overflow scrolling */}
-        <div className="relative z-10 flex flex-col flex-1 min-h-0">
+        <FrostedGlassBackground className="fixed inset-0 pointer-events-none" />
+        {/* Content wrapper with proper overflow */}
+        <div className="relative z-10 flex flex-col h-full min-h-0">
         
         <style>{`
           [class*="bottom-navigation"],
@@ -567,7 +572,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
         `}</style>
       
       {/* Header */}
-      <div className="sticky top-0 z-40 mt-2.5">
+      {/* Header - no margin-top to ensure full-screen overlay */}
+      <div className="sticky top-0 z-40 bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl">
         <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
@@ -777,9 +783,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
           </div>
         )}
       </div>
+        </div>
       </div>
-    </div>
-    </>
+    </>,
+    document.body
   );
 };
 
