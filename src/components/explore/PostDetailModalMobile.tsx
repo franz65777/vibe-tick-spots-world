@@ -429,7 +429,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
     <div 
-      className="fixed inset-0 z-[2147483646] isolate relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
+      className="fixed inset-0 z-[2147483646] isolate h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
     >
       {/* Background layer - z-0 so drawers can appear above */}
       <FrostedGlassBackground className="absolute inset-0 z-0 pointer-events-none" />
@@ -474,7 +474,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
     <>
       <div 
-        className="fixed inset-0 z-[2147483646] isolate relative h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
+        className="fixed inset-0 z-[2147483646] isolate h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
       >
         {/* Background layer - z-0 so drawers can appear above */}
         <FrostedGlassBackground className="absolute inset-0 z-0 pointer-events-none" />
