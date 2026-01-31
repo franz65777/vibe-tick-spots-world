@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MediaSelector } from './MediaSelector';
@@ -170,12 +171,7 @@ export const PostEditor = memo(({
     <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={handleBack}
-          className="p-2 hover:bg-muted rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <BackButton onClick={handleBack} />
         <h1 className="text-lg font-semibold">{t('newPost', { ns: 'add' })}</h1>
       </div>
 

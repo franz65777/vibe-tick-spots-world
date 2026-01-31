@@ -637,5 +637,34 @@
   .ios-row:active {
     background-color: hsl(var(--muted) / 0.5);
   }
+
+  /* iOS-style back button chevron animation */
+  @keyframes chevron-press {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-2px); }
+  }
+
+  .back-button-chevron:active {
+    animation: chevron-press 150ms ease-out;
+  }
+
+  /* Smooth slide transition for page navigation */
+  @keyframes slide-in-from-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slide-out-to-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-from-right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .animate-slide-out-right {
+    animation: slide-out-to-right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
 }
 

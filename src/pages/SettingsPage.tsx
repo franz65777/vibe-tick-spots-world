@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ArrowLeft, Shield } from 'lucide-react';
+import { ChevronRight, Shield } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 import editProfileIcon from '@/assets/settings-edit-profile.png';
 import logoutIcon from '@/assets/icon-logout.png';
@@ -154,12 +155,7 @@ const SettingsPage: React.FC = () => {
           className="flex items-center gap-3 px-4 pb-4"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
         >
-          <button
-            onClick={handleBack}
-            className="p-2 hover:bg-muted rounded-full transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <BackButton onClick={handleBack} />
           <h1 className="text-2xl font-bold">{t('title', { ns: 'settings' })}</h1>
         </div>
 

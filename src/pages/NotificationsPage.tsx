@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bell } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationData } from '@/hooks/useNotificationData';
 import VirtualizedNotificationsList from '@/components/notifications/VirtualizedNotificationsList';
@@ -128,15 +128,7 @@ const NotificationsPage = () => {
       >
         <div className="py-3 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => navigate('/')}
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+            <BackButton onClick={() => navigate('/')} />
             <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
           </div>
         </div>
