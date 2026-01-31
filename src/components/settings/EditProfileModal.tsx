@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft } from 'lucide-react';
+import { Upload } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import deleteIcon from '@/assets/icon-delete-new.png';
 import editProfileIcon from '@/assets/settings-edit-profile.png';
 import { Button } from '@/components/ui/button';
@@ -278,12 +279,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
         <div className="relative z-10 h-full flex flex-col">
           <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => onOpenChange(false)}
-                className="p-2 hover:bg-muted/50 rounded-full transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+              <BackButton onClick={() => onOpenChange(false)} />
               <SheetTitle className="text-lg font-semibold flex items-center gap-3">
                 <img src={editProfileIcon} alt="" className="w-10 h-8 object-contain" />
                 {t('editProfile', { ns: 'settings' })}

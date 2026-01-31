@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, Ban, Lock } from 'lucide-react';
+import { MessageCircle, Bell, BellOff, MoreHorizontal, Ban, Lock } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import saveTagAll from '@/assets/save-tag-all.png';
 import saveTagBeen from '@/assets/save-tag-been.png';
 import saveTagToTry from '@/assets/save-tag-to-try.png';
@@ -271,9 +272,7 @@ const UserProfilePage = () => {
           {/* Header - Instagram Style */}
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-3 flex-1">
-              <button onClick={handleBack} className="p-0 hover:opacity-70 transition-opacity">
-                <ArrowLeft className="w-6 h-6" />
-              </button>
+              <BackButton onClick={handleBack} />
               <h1 className="text-lg font-semibold">{displayUsername}</h1>
             </div>
             {!isOwnProfile && (

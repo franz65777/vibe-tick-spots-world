@@ -1,4 +1,5 @@
-import { ArrowLeft, Coins, Gift, Percent, Tag, Star, Lock, CheckCircle } from 'lucide-react';
+import { Coins, Gift, Percent, Tag, Star, Lock, CheckCircle } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSuperUser } from '@/hooks/useSuperUser';
@@ -102,13 +103,7 @@ const RewardsPage = () => {
       >
         <div className="px-4 py-3">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate('/profile?tab=badges')}
-              className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
-              aria-label={t('back', { ns: 'common', defaultValue: 'Back' })}
-            >
-              <ArrowLeft className="w-5 h-5 text-foreground" />
-            </button>
+            <BackButton onClick={() => navigate('/profile?tab=badges')} />
             <h1 className="text-lg font-semibold tracking-tight text-foreground">{t('rewards', { ns: 'profile' })}</h1>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { BackButton } from '@/components/common/BackButton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,14 +58,7 @@ const LeaderboardPage = ({ onClose }: LeaderboardPageProps) => {
         >
           <div className="px-4">
             <div className="flex items-center gap-3 mb-4">
-              <Button
-                onClick={onClose || (() => navigate('/explore', { state: { searchMode: 'users' } }))}
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
+              <BackButton onClick={onClose || (() => navigate('/explore', { state: { searchMode: 'users' } }))} />
               <h1 className="text-2xl font-bold text-foreground">{t('leaderboard', { ns: 'common' })}</h1>
               <img src={leaderboardTrophy} alt="" className="w-10 h-10" />
             </div>

@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Check, ArrowLeft } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { BackButton } from '@/components/common/BackButton';
 import { useTranslation } from 'react-i18next';
 import languageIcon from '@/assets/settings-language.png';
 import FrostedGlassBackground from '@/components/common/FrostedGlassBackground';
@@ -44,12 +45,7 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
         <div className="relative z-10 h-full flex flex-col">
           <SheetHeader className="pt-[calc(env(safe-area-inset-top)+12px)] p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => onOpenChange(false)}
-                className="p-2 hover:bg-muted/50 rounded-full transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+              <BackButton onClick={() => onOpenChange(false)} />
               <SheetTitle className="flex items-center gap-2">
                 <img src={languageIcon} alt="" className="w-6 h-6 object-contain" />
                 {t('language', { ns: 'settings' })}
