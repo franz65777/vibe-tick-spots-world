@@ -429,17 +429,16 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   // Use Portal to escape stacking context and render above everything
   const modalContent = loading || posts.length === 0 ? (
     <div 
-      className="fixed inset-0 z-[2147483647] isolate h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
-      onClickCapture={(e) => console.log('[DEBUG] Modal click:', (e.target as HTMLElement).tagName, (e.target as HTMLElement).className.slice(0, 50))}
+      className="fixed inset-0 z-[2147483646] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
     >
-      {/* Unified frosted glass background (same structure as FeedPage) */}
-      <FrostedGlassBackground className="fixed inset-0 pointer-events-none" />
+      {/* Background layer - z-0 so drawers can appear above */}
+      <FrostedGlassBackground className="absolute inset-0 z-0 pointer-events-none" />
 
-      {/* Content wrapper */}
+      {/* Content wrapper - z-10 */}
       <div className="relative z-10 h-full flex flex-col overflow-hidden pointer-events-auto">
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           {/* Skeleton Header */}
-          <div className="bg-background/40 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
+          <div className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-20 flex items-center px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-muted rounded shimmer-skeleton" />
               <div className="h-5 w-20 bg-muted rounded shimmer-skeleton" />
@@ -475,13 +474,12 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
     <>
       <div 
-        className="fixed inset-0 z-[2147483647] isolate h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
-        onClickCapture={(e) => console.log('[DEBUG] Modal click:', (e.target as HTMLElement).tagName, (e.target as HTMLElement).className.slice(0, 50))}
+        className="fixed inset-0 z-[2147483646] h-screen flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
       >
-        {/* Unified frosted glass background (same structure as FeedPage) */}
-        <FrostedGlassBackground className="fixed inset-0 pointer-events-none" />
+        {/* Background layer - z-0 so drawers can appear above */}
+        <FrostedGlassBackground className="absolute inset-0 z-0 pointer-events-none" />
 
-        {/* Content wrapper */}
+        {/* Content wrapper - z-10 */}
         <div ref={scrollContainerRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide pointer-events-auto">
           {/* Header */}
           <div className="bg-[#F5F1EA]/80 dark:bg-background/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 py-3">
@@ -647,10 +645,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                 {post.caption && renderCaption(post)}
 
                 {/* Explicit pointer-events-auto + z-20 to ensure buttons are clickable */}
-                <div 
-                  className="relative z-20 pointer-events-auto"
-                  onPointerDownCapture={(e) => console.log('[DEBUG] Actions pointerdown:', (e.target as HTMLElement).tagName)}
-                >
+                <div className="relative z-20 pointer-events-auto">
                   <PostActions
                     postId={post.id}
                     likesCount={post.likes_count || 0}

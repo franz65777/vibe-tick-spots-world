@@ -201,13 +201,11 @@ export const PostActions = ({
 
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('[DEBUG] PostActions like click', { postId, hasUser: !!user });
     try {
       haptics.impact('light');
     } catch {}
     try {
       await toggleLike();
-      console.log('[DEBUG] PostActions like toggled');
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -322,9 +320,6 @@ export const PostActions = ({
   return (
     <div
       className="flex items-center gap-1.5 mt-1 pt-0 relative"
-      onClickCapture={(e) =>
-        console.log('[DEBUG] PostActions click capture:', (e.target as HTMLElement).tagName)
-      }
     >
       {/* Like button */}
       <button
