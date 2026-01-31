@@ -91,7 +91,12 @@ export const authTranslations = {
       passwordUpdated: 'Password updated successfully!',
       passwordUpdateError: 'Failed to update password',
       backToLogin: 'Back to Login',
-      createNewAccount: 'Create new account'
+      createNewAccount: 'Create new account',
+      rememberMe: 'Remember me',
+      or: 'or',
+      signInWith: 'Sign in with {{method}}',
+      biometricFailed: 'Biometric authentication failed',
+      signInWithBiometric: 'Sign in with biometrics'
     },
     terms: {
       title: 'Terms of Service',
@@ -236,7 +241,12 @@ export const authTranslations = {
       passwordUpdated: 'Password aggiornata con successo!',
       passwordUpdateError: 'Aggiornamento password fallito',
       backToLogin: 'Torna al Login',
-      createNewAccount: 'Crea nuovo account'
+      createNewAccount: 'Crea nuovo account',
+      rememberMe: 'Ricordami',
+      or: 'oppure',
+      signInWith: 'Accedi con {{method}}',
+      biometricFailed: 'Autenticazione biometrica fallita',
+      signInWithBiometric: 'Accedi con biometria'
     },
     terms: {
       title: 'Termini di Servizio',
@@ -366,7 +376,12 @@ export const authTranslations = {
       passwordUpdated: '¡Contraseña actualizada!',
       passwordUpdateError: 'Error al actualizar contraseña',
       backToLogin: 'Volver al Login',
-      createNewAccount: 'Crear cuenta nueva'
+      createNewAccount: 'Crear cuenta nueva',
+      rememberMe: 'Recuérdame',
+      or: 'o',
+      signInWith: 'Iniciar sesión con {{method}}',
+      biometricFailed: 'Autenticación biométrica fallida',
+      signInWithBiometric: 'Iniciar sesión con biometría'
     },
     terms: {
       title: 'Términos de Servicio',
@@ -496,7 +511,12 @@ export const authTranslations = {
       passwordUpdated: 'Mot de passe mis à jour !',
       passwordUpdateError: 'Échec de la mise à jour',
       backToLogin: 'Retour à la Connexion',
-      createNewAccount: 'Créer un nouveau compte'
+      createNewAccount: 'Créer un nouveau compte',
+      rememberMe: 'Se souvenir de moi',
+      or: 'ou',
+      signInWith: 'Se connecter avec {{method}}',
+      biometricFailed: 'Échec de l\'authentification biométrique',
+      signInWithBiometric: 'Se connecter avec biométrie'
     },
     terms: {
       title: 'Conditions d\'Utilisation',
@@ -626,7 +646,12 @@ export const authTranslations = {
       passwordUpdated: 'Passwort aktualisiert!',
       passwordUpdateError: 'Fehler beim Aktualisieren',
       backToLogin: 'Zurück zur Anmeldung',
-      createNewAccount: 'Neues Konto erstellen'
+      createNewAccount: 'Neues Konto erstellen',
+      rememberMe: 'Angemeldet bleiben',
+      or: 'oder',
+      signInWith: 'Anmelden mit {{method}}',
+      biometricFailed: 'Biometrische Authentifizierung fehlgeschlagen',
+      signInWithBiometric: 'Mit Biometrie anmelden'
     },
     terms: {
       title: 'Nutzungsbedingungen',
@@ -756,7 +781,12 @@ export const authTranslations = {
       passwordUpdated: 'Senha atualizada!',
       passwordUpdateError: 'Erro ao atualizar senha',
       backToLogin: 'Voltar ao Login',
-      createNewAccount: 'Criar nova conta'
+      createNewAccount: 'Criar nova conta',
+      rememberMe: 'Lembrar-me',
+      or: 'ou',
+      signInWith: 'Entrar com {{method}}',
+      biometricFailed: 'Falha na autenticação biométrica',
+      signInWithBiometric: 'Entrar com biometria'
     },
     terms: {
       title: 'Termos de Serviço',
@@ -901,7 +931,12 @@ export const authTranslations = {
       passwordUpdated: 'Şifre güncellendi!',
       passwordUpdateError: 'Şifre güncellenirken hata oluştu',
       backToLogin: 'Girişe Dön',
-      createNewAccount: 'Yeni hesap oluştur'
+      createNewAccount: 'Yeni hesap oluştur',
+      rememberMe: 'Beni hatırla',
+      or: 'veya',
+      signInWith: '{{method}} ile giriş yap',
+      biometricFailed: 'Biyometrik kimlik doğrulama başarısız',
+      signInWithBiometric: 'Biyometri ile giriş yap'
     },
     terms: {
       title: 'Hizmet Şartları',
@@ -1046,7 +1081,12 @@ export const authTranslations = {
       passwordUpdated: '密码更新成功！',
       passwordUpdateError: '更新密码失败',
       backToLogin: '返回登录',
-      createNewAccount: '创建新账户'
+      createNewAccount: '创建新账户',
+      rememberMe: '记住我',
+      or: '或',
+      signInWith: '使用{{method}}登录',
+      biometricFailed: '生物识别验证失败',
+      signInWithBiometric: '使用生物识别登录'
     },
     terms: {
       title: '服务条款',

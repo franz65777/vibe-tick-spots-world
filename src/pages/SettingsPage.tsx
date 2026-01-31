@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ArrowLeft, Shield, LogOut } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Shield } from 'lucide-react';
 import { SwipeBackWrapper } from '@/components/common/SwipeBackWrapper';
 import editProfileIcon from '@/assets/settings-edit-profile.png';
+import logoutIcon from '@/assets/icon-logout.png';
 import languageIcon from '@/assets/settings-language.png';
 import businessIcon from '@/assets/settings-business.png';
 import notificationsIcon from '@/assets/icon-notification-bell.png';
@@ -319,9 +320,9 @@ const SettingsPage: React.FC = () => {
         <div className="p-4 pb-24 flex justify-center">
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center gap-2 rounded-full py-3.5 px-8 bg-destructive text-white font-medium shadow-[0_4px_16px_rgba(239,68,68,0.3),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4),0_4px_12px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all duration-200"
+            className="flex items-center justify-center gap-3 rounded-full py-3.5 px-12 bg-destructive text-white font-medium shadow-[0_4px_16px_rgba(239,68,68,0.3),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4),0_4px_12px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all duration-200"
           >
-            <LogOut className="w-4 h-4" />
+            <img src={logoutIcon} alt="" className="w-5 h-5 object-contain" />
             {t('logout', { ns: 'common' })}
           </button>
         </div>
