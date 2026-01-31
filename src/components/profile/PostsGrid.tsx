@@ -392,10 +392,9 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     "relative bg-gradient-to-br from-white to-gray-50/80 dark:from-zinc-900 dark:to-zinc-800/80",
                     "border border-white/60 dark:border-zinc-700/50 rounded-2xl p-4",
                     "shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]",
-                    "transition-all duration-200 active:scale-[0.99] animate-fade-in group",
-                    hasMedia && "cursor-pointer"
+                    "transition-all duration-200 active:scale-[0.99] animate-fade-in group cursor-pointer"
                   )}
-                  onClick={hasMedia ? () => handlePostClick(post.id) : undefined}
+                  onClick={() => handlePostClick(post.id)}
                 >
                   <div className="flex items-start gap-3">
                     <button
