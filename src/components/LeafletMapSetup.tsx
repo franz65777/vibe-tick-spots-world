@@ -99,8 +99,14 @@ const LeafletMapSetup = ({
   const placeIds = useMemo(() => places.map(p => p.id).filter(Boolean), [places]);
   const { campaignMap, campaignLocationIds } = useCampaignLocations(placeIds);
   
-  // Stable key that changes when places list changes - used to trigger temp marker cleanup
-  const placesKey = useMemo(() => places.map(p => p.id).join('|'), [places]);
+  // Lightweight key that changes when places list changes - optimized for 30k+ users
+  // Uses length + sample of IDs instead of full join to reduce string comparison overhead
+  const placesKey = useMemo(() => {
+    if (places.length === 0) return '0';
+    const sample = places.slice(0, 5).map(p => p.id).join(',');
+    const lastId = places[places.length - 1]?.id || '';
+    return `${places.length}:${sample}:${lastId}`;
+  }, [places]);
 
   // Detect dark mode
   useEffect(() => {
@@ -804,6 +810,21 @@ const LeafletMapSetup = ({
     };
 
     renderMarkers();
+
+    // CRITICAL FIX: Cleanup temp marker AFTER regular markers are created
+    // This MUST happen in the SAME effect to avoid race conditions between effects
+    if (selectedPlace && tempMarkerRef.current) {
+      const regularMarkerExists = markersRef.current.has(selectedPlace.id);
+      
+      if (regularMarkerExists) {
+        try {
+          map.removeLayer(tempMarkerRef.current);
+          console.log('🗑️ [Marker Effect] Removed temp marker - regular marker created for:', selectedPlace.id);
+        } catch (e) {}
+        tempMarkerRef.current = null;
+        tempMarkerSavedRef.current = false;
+      }
+    }
   }, [places, isDarkMode, onPinClick, trackEvent, shares, user, hideOtherPins, selectedPlace?.id, currentZoom, campaignMap]);
 
   // Keep selected marker visible outside clusters
@@ -874,18 +895,9 @@ const LeafletMapSetup = ({
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 
-    // CRITICAL FIX: If a real marker exists for the selected place, immediately remove temp marker
-    // This handles the race condition where places[] updates after selectedPlace.id changes
-    if (selectedMarker && tempMarkerRef.current) {
-      try {
-        map.removeLayer(tempMarkerRef.current);
-        console.log('🗑️ Removed temp marker - real marker now exists for:', selectedId);
-      } catch (e) {}
-      tempMarkerRef.current = null;
-      tempMarkerSavedRef.current = false;
-    }
-
     // Only clean up temp marker if selectedPlace is null AND it wasn't saved
+    // NOTE: Main temp marker cleanup is now in the marker rendering effect (line ~806)
+    // to avoid race conditions between effects
     if (!selectedPlace && tempMarkerRef.current && !tempMarkerSavedRef.current) {
       try {
         map.removeLayer(tempMarkerRef.current);
@@ -907,24 +919,8 @@ const LeafletMapSetup = ({
       selectedMarkerOriginalClusterRef.current = false;
     }
 
-    // CLEANUP: Remove stale temp marker if it was saved AND a regular marker now exists
-    if (tempMarkerRef.current && tempMarkerSavedRef.current && selectedPlace) {
-      const hasRegularMarker = markersRef.current.has(selectedPlace.id) || 
-        (selectedPlace.coordinates && Array.from(markersRef.current.entries()).some(([_, marker]) => {
-          const pos = marker.getLatLng();
-          return Math.abs(pos.lat - selectedPlace.coordinates!.lat) < 0.0001 &&
-                 Math.abs(pos.lng - selectedPlace.coordinates!.lng) < 0.0001;
-        }));
-      
-      if (hasRegularMarker) {
-        try {
-          map.removeLayer(tempMarkerRef.current);
-          console.log('🗑️ Removed stale temp marker after save - regular marker exists');
-        } catch (e) {}
-        tempMarkerRef.current = null;
-        tempMarkerSavedRef.current = false;
-      }
-    }
+    // NOTE: Removed O(n) coordinate scan fallback - now handled in marker rendering effect
+    // The marker rendering effect (line ~806) handles cleanup when regular marker is created
 
     // If selected place exists but has no marker (new/temporary location OR location from list not in current places array), create a temporary marker
     // This handles: 1) temporary unsaved locations, 2) locations selected from folders/lists that aren't in current map bounds
