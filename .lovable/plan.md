@@ -1,206 +1,155 @@
 
+# Piano: UI Fix per Feed Post - Truncation, Icon Size e Likes Drawer Premium
 
-# Piano: Fix Notifiche Persistenti + UI Premium per Tasti Notifiche
-
-## 🐛 Problema 1: Notifiche che Spariscono dopo 30 Giorni
-
-### Root Cause Identificata
-Il database ha un **default di `expires_at = now() + 30 days`** per TUTTE le notifiche. Questo significa che:
-- Notifiche `like`, `comment`, `follow`, `follow_request`, `follow_accepted` → **Scadono dopo 30 giorni** (ma dovrebbero rimanere per sempre)
-- Notifiche `location_share` → **Scadono dopo 30 giorni** (corretto che scadano, ma dovrebbe essere 24h, non 30 giorni)
-
-### Soluzione
-
-#### A. Modificare Default Database (Schema SQL)
-Creare una migration che:
-1. **Rimuove il default generico** di 30 giorni
-2. **Imposta expires_at = NULL per notifiche permanenti** oppure una data molto lontana (es. 100 anni)
-3. **Mantiene 24h per `location_share`** nel codice frontend
-
-```sql
--- Cambia default a 100 anni (praticamente mai)
-ALTER TABLE notifications 
-ALTER COLUMN expires_at SET DEFAULT (now() + interval '100 years');
-
--- Update notifiche esistenti (escluse location_share) per non farle scadere
-UPDATE notifications 
-SET expires_at = now() + interval '100 years'
-WHERE type NOT IN ('location_share', 'business_post', 'business_review', 'location_save', 'business_mention')
-  AND expires_at < now() + interval '90 days';
-```
-
-#### B. Impostare `expires_at` Corretto per `location_share`
-Nel file `src/pages/ShareLocationPage.tsx`, aggiungere esplicitamente `expires_at: 24h` alle notifiche:
-
-```typescript
-const notifications = closeFriends.map(friendId => ({
-  user_id: friendId,
-  type: 'location_share',
-  // ... altri campi ...
-  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 ore
-}));
-```
-
----
-
-## 🎨 Problema 2: Tasto "Arrivo" non Premium
+## Problema 1: Nome Location Troncato Troppo Presto
 
 ### Stato Attuale
 ```typescript
-className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
+// FeedPostItem.tsx - linea 348
+<span className="truncate max-w-[140px]">{locationName}</span>
 ```
 
-Il tasto è:
-- Troppo piccolo (`h-7`)
-- Colore piatto senza gradiente
-- Manca feedback tattile iOS
-- Non ha icona
-
-### Soluzione: Premium iOS-Style Button
-
-```typescript
-className="px-4 h-8 text-[13px] font-semibold rounded-full 
-  bg-gradient-to-r from-blue-500 to-blue-600 
-  hover:from-blue-600 hover:to-blue-700 
-  active:scale-[0.97] 
-  shadow-sm 
-  text-white"
-```
-
-Miglioramenti:
-- `rounded-full` per stile iOS più moderno (pill shape)
-- `h-8` leggermente più alto per touch target migliore
-- Gradiente blu premium
-- `active:scale-[0.97]` per feedback tattile
-- `shadow-sm` per profondità
-- Possibilità di aggiungere un'icona 🚗 o NavigationIcon
-
----
-
-## 🎨 Problema 3: Icona "Invita Amico" Sproporzionata
-
-### Stato Attuale
-Nel file `NotificationsOverlay.tsx` (linee 248-255):
-```tsx
-<button className="w-10 h-10 rounded-full bg-primary/10 ...">
-  <img src={addFriendIcon} className="w-5 h-5" />
-</button>
-```
-
-L'icona `add-friend.png` (1024x1024px) viene scalata a `w-5 h-5` (20x20px) ma visivamente sembra grande perché:
-1. Il contenitore è `w-10 h-10` (40x40px)
-2. L'immagine occupa metà del contenitore
-3. L'icona stessa ha molto "peso visivo" (grande silhouette blu)
+Il limite di 140px taglia "National Gallery of Irel..." quando c'e' spazio disponibile.
 
 ### Soluzione
+Aumentare il limite a 200px per sfruttare lo spazio orizzontale:
 
-Opzione A: **Ridurre dimensione icona e contenitore**
-```tsx
-<button className="w-9 h-9 rounded-full bg-primary/10 ...">
-  <img src={addFriendIcon} className="w-4.5 h-4.5 opacity-90" />
-</button>
+```typescript
+<span className="truncate max-w-[200px]">{locationName}</span>
 ```
 
-Opzione B: **Usare icona Lucide invece dell'immagine** (più coerente con il design system)
-```tsx
-import { UserPlus } from 'lucide-react';
-
-<button className="w-9 h-9 rounded-full bg-primary/10 ...">
-  <UserPlus className="w-5 h-5 text-primary" />
-</button>
-```
-
-**Raccomandazione**: Opzione B per coerenza con il resto dell'app.
+**File**: `src/components/feed/FeedPostItem.tsx` (linea 348)
 
 ---
 
-## 📋 Riepilogo Modifiche
+## Problema 2: Icone Like/Share/Comment di Dimensioni Diverse
+
+### Stato Attuale (PostActions.tsx)
+| Bottone | Icona | Dimensione |
+|---------|-------|------------|
+| Like | Heart | `w-5 h-5` (20px) |
+| Comment | ChatIcon | `size={20}` (20px) |
+| Share | Share2 | `w-4.5 h-4.5` (18px) - PIU' PICCOLA! |
+
+L'icona Share e' piu' piccola delle altre.
+
+### Soluzione
+Uniformare tutte le icone a 20px:
+
+```typescript
+// Comment button - gia' corretto
+<ChatIcon size={20} />
+
+// Share button - da correggere
+<Share2 className="w-5 h-5" />  // Era w-4.5 h-4.5
+```
+
+**File**: `src/components/feed/PostActions.tsx` (linea 371)
+
+---
+
+## Problema 3: LikersDrawer Non Premium (vs CommentDrawer)
+
+### Confronto Attuale
+
+| Caratteristica | CommentDrawer | LikersDrawer |
+|----------------|---------------|--------------|
+| Background | `bg-[#F5F1EA]/90 backdrop-blur-xl` | `bg-background` (solido) |
+| Overlay | `bg-black/40` | Nessuno custom |
+| Rounded | `rounded-t-3xl` | `rounded-t-[20px]` |
+| z-index | `z-[2147483647]` (max) | `z-[4000]` |
+| Search | Emoji 🔍 nel placeholder | Icona Lucide Search |
+| Input style | `rounded-full h-12 bg-white` | `pl-9 bg-muted/50 border-0` |
+| Handle | Custom centered | Component default |
+| Header | Centered, no border | Con bordi |
+
+### Soluzione: Redesign Completo LikersDrawer
+
+Allineare LikersDrawer allo stile premium di CommentDrawer:
+
+```tsx
+// LikersDrawer.tsx - Nuovo design
+<Drawer.Root 
+  open={isOpen} 
+  onOpenChange={(open) => {
+    if (!open) onClose();
+  }}
+  modal={true}
+  dismissible={true}
+>
+  <Drawer.Portal>
+    <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[2147483647]" onClick={onClose} />
+    <Drawer.Content 
+      className="fixed inset-x-0 bottom-0 z-[2147483647] bg-[#F5F1EA]/90 dark:bg-background/90 backdrop-blur-xl rounded-t-3xl flex flex-col outline-none shadow-2xl"
+      style={{
+        height: '85vh',
+        maxHeight: '85vh',
+      }}
+    >
+      {/* Handle bar - centered come CommentDrawer */}
+      <div className="flex justify-center pt-3 pb-2">
+        <div className="w-10 h-1.5 bg-muted-foreground/30 rounded-full" />
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-center px-4 py-3 shrink-0">
+        <h3 className="font-semibold text-base">
+          {t('likes', { ns: 'common', defaultValue: 'Likes' })}
+        </h3>
+      </div>
+
+      {/* Search bar - stile premium con emoji */}
+      <div className="px-4 pb-3">
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base">🔍</span>
+          <Input
+            placeholder={t('search', { ns: 'common', defaultValue: 'Cerca' })}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 rounded-full bg-white dark:bg-muted border-0 text-base shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* Lista utenti con ScrollArea */}
+      <ScrollArea className="flex-1 px-4">
+        ...
+      </ScrollArea>
+    </Drawer.Content>
+  </Drawer.Portal>
+</Drawer.Root>
+```
+
+**File**: `src/components/social/LikersDrawer.tsx`
+
+### Modifiche Dettagliate
+
+1. **Cambiare import Drawer**: Da `@/components/ui/drawer` a `vaul` direttamente (come CommentDrawer)
+2. **Overlay z-index**: `z-[2147483647]` (massimo, come CommentDrawer)
+3. **Background glassmorphism**: `bg-[#F5F1EA]/90 dark:bg-background/90 backdrop-blur-xl`
+4. **Rounded corners**: `rounded-t-3xl` (piu' arrotondato)
+5. **Handle bar**: Custom centered `w-10 h-1.5`
+6. **Search input**: Emoji 🔍 + `rounded-full h-12 bg-white`
+7. **Altezza fissa**: `85vh` come CommentDrawer
+8. **Avatar utenti**: Gia' ok (`w-12 h-12`)
+9. **Follow button**: Gia' ok, ma aggiungere `rounded-full` per coerenza pill-style
+
+---
+
+## Riepilogo File da Modificare
 
 | File | Modifica | Impatto |
 |------|----------|---------|
-| Migration SQL | Default `expires_at` a 100 anni | 🔴 Critico |
-| `src/pages/ShareLocationPage.tsx` | Aggiungere `expires_at: 24h` per location_share | 🔴 Critico |
-| `src/components/notifications/MobileNotificationItem.tsx` | Premium styling tasto "Arrivo" | 🟢 UI |
-| `src/components/notifications/NotificationsOverlay.tsx` | Ridimensionare icona invita amico | 🟢 UI |
+| `src/components/feed/FeedPostItem.tsx` | `max-w-[140px]` → `max-w-[200px]` | UI |
+| `src/components/feed/PostActions.tsx` | `w-4.5 h-4.5` → `w-5 h-5` per Share | UI |
+| `src/components/social/LikersDrawer.tsx` | Redesign completo stile CommentDrawer | UI |
 
 ---
 
-## Dettagli Implementazione
+## Impatto Visivo Finale
 
-### 1. Migration SQL
-
-```sql
--- 1. Cambia default a 100 anni (notifiche permanenti)
-ALTER TABLE notifications 
-ALTER COLUMN expires_at SET DEFAULT (now() + interval '100 years');
-
--- 2. Aggiorna notifiche esistenti non-location_share
-UPDATE notifications 
-SET expires_at = now() + interval '100 years'
-WHERE type NOT IN ('location_share', 'business_post', 'business_review', 'location_save', 'business_mention');
-```
-
-### 2. ShareLocationPage.tsx - Notifiche 24h
-
-```typescript
-// Linea 601-614 e 623-636
-const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 ore
-
-const notifications = closeFriends.map(friendId => ({
-  user_id: friendId,
-  type: 'location_share',
-  title: t('sharedLocation'),
-  message: t('userAtLocation', { username, location: selectedLocation.name }),
-  data: { ... },
-  expires_at: expiresAt // NUOVO!
-}));
-```
-
-### 3. MobileNotificationItem.tsx - Tasto Premium
-
-```typescript
-// Linea 1197-1213
-<Button
-  onClick={...}
-  disabled={isLoading || !isLocationShareActive}
-  size="sm"
-  className="px-4 h-8 text-[13px] font-semibold rounded-full 
-    bg-gradient-to-r from-blue-500 to-blue-600 
-    hover:from-blue-600 hover:to-blue-700 
-    active:scale-[0.97] 
-    shadow-sm 
-    text-white 
-    transition-all duration-150
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500"
->
-  {t('onMyWay', { ns: 'notifications' })}
-</Button>
-```
-
-### 4. NotificationsOverlay.tsx - Icona Bilanciata
-
-```tsx
-// Linea 248-256 - Usa UserPlus da Lucide
-import { UserPlus } from 'lucide-react';
-
-<button
-  onClick={() => setIsInviteOpen(true)}
-  className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center 
-    hover:bg-primary/20 active:scale-[0.95] transition-all duration-150"
-  aria-label={t('inviteFriend', { ns: 'invite', defaultValue: 'Invite a Friend' })}
->
-  <UserPlus className="w-5 h-5 text-primary" />
-</button>
-```
-
----
-
-## Comportamento Finale
-
-| Tipo Notifica | Durata | Prima | Dopo |
-|---------------|--------|-------|------|
-| `like`, `comment`, `follow` | Permanente | 30 giorni | ♾️ 100 anni |
-| `follow_request`, `follow_accepted` | Permanente | 30 giorni | ♾️ 100 anni |
-| `location_share` | 24 ore | 30 giorni | ✅ 24 ore |
-| Business notifiche | Non mostrate | Filtrate | Invariato |
-
+| Elemento | Prima | Dopo |
+|----------|-------|------|
+| Location name | "National Gallery of Irel..." | "National Gallery of Ireland..." |
+| Share icon | 18px (piu' piccola) | 20px (uguale a like/comment) |
+| Likes drawer | Sfondo solido, basic | Glassmorphism premium, emoji search |
