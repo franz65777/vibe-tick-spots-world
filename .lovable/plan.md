@@ -1,110 +1,201 @@
 
-Obiettivo: eliminare definitivamente la duplicazione “pin temporaneo + pin reale” quando salvi una location nuova dalla ricerca Home (duplica subito). Dalla diff che hai incollato, la cleanup c’è, ma non scatta nel momento giusto: viene eseguita solo quando cambia `selectedPlace`/tema, mentre il marker “reale” arriva tipicamente dopo, quando `places` viene aggiornato dal DB. Quindi il controllo `hasRegularMarker` fallisce la prima volta e poi l’effetto non si riesegue quando il marker reale appare.
+# Verifica Fix Duplicazione Pin + Ottimizzazioni per 30k+ Utenti
 
----
+## Status Attuale del Fix
 
-## 1) Diagnosi (perché “non è cambiato nulla”)
-Nel file `LeafletMapSetup.tsx`:
-- La rimozione del temp marker è dentro l’`useEffect` “Hide other markers…” che dipende da `[selectedPlace, isDarkMode]`.
-- Quando salvi:
-  1) l’evento `location-save-changed` setta `tempMarkerSavedRef.current = true`
-  2) `MapSection` aggiorna `selectedPlace.id` (da temp → UUID)
-  3) `useMapLocations` refetcha e aggiorna `places` con la location reale
-- Problema: lo step (2) avviene spesso prima dello step (3). Quindi nel cleanup:
-  - `markersRef.current.has(selectedPlace.id)` è ancora `false` perché il marker reale non è stato creato (places non aggiornato).
-  - L’effetto non si riattiva quando poi arriva `places`, quindi il temp marker resta e vedi duplicazione.
+### Analisi dell'implementazione corrente
 
-Questa è una race condition di dipendenze: la cleanup deve rieseguire anche quando arrivano i nuovi `places` (o quando il marker reale diventa disponibile).
+Il fix implementato ha la logica corretta, ma c'e' un potenziale problema di timing:
 
----
-
-## 2) Fix principale (LeafletMapSetup): far scattare la cleanup quando arriva il marker reale
-### 2.1 Agganciare l’effetto anche ai cambiamenti di `places`
-Modifica l’`useEffect` che gestisce selezione/visibilità markers (quello che contiene:
-- restore marker cluster
-- creazione temp marker
-- hide/show altri marker
-- cleanup temp marker
-
-perché si riesegua quando la lista `places` cambia.
-
-Approccio consigliato (per evitare dipendenze “pesanti”):
-- creare un `placesKey` stabile (stringa) basata sugli id + categoria (o almeno sugli id) e usarla nei deps dell’effetto.
-  - esempio: `const placesKey = useMemo(() => places.map(p => p.id).join('|'), [places]);`
-  - poi: `useEffect(..., [selectedPlace, isDarkMode, placesKey]);`
-
-Così, quando il salvataggio fa entrare la nuova location in `places`, l’effetto riesegue e può rimuovere il temp marker.
-
-### 2.2 Cleanup più robusta: se esiste `selectedMarker`, rimuovi sempre il temp marker
-Oggi la cleanup cerca un “regular marker” con `markersRef.current.has(selectedPlace.id)` o matching per coordinate. È corretto, ma fragile per timing.
-
-Più robusto:
-- appena `selectedMarker` diventa non-null (cioè il marker reale esiste per `selectedPlace.id`), rimuovi `tempMarkerRef.current` immediatamente.
-- Questo elimina la duplicazione al primo momento utile, senza dover scandire tutta `markersRef`.
-
-In pratica nel blocco dove già calcoli:
-```ts
-const selectedId = selectedPlace?.id;
-const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
+**Linee 877-886** - Cleanup quando `selectedMarker` esiste:
+```typescript
+if (selectedMarker && tempMarkerRef.current) {
+  map.removeLayer(tempMarkerRef.current);
+  tempMarkerRef.current = null;
+  tempMarkerSavedRef.current = false;
+}
 ```
-aggiungi una regola:
-- se `selectedMarker` esiste e `tempMarkerRef.current` esiste → rimuovi temp marker e resetta i ref (`tempMarkerRef.current = null; tempMarkerSavedRef.current = false;`).
 
-Nota: questo non “rompe” le location temporanee non salvate, perché in quel caso `selectedMarker` non esisterà mai (non c’è nel DB/places).
+**Linee 911-927** - Cleanup fallback con coordinate:
+```typescript
+if (tempMarkerRef.current && tempMarkerSavedRef.current && selectedPlace) {
+  const hasRegularMarker = markersRef.current.has(selectedPlace.id) || 
+    (selectedPlace.coordinates && Array.from(markersRef.current.entries()).some(...)
+```
 
----
+### Problema identificato
 
-## 3) Fix secondario: evitare reset/creazioni incoerenti del temp marker
-Dopo aver reso l’effetto sensibile a `places`, bisogna assicurarsi che:
-- `needsTempMarker` NON ricrei un nuovo temp marker mentre quello precedente è ancora presente
-- e soprattutto che quando `selectedMarker` appare, il temp venga rimosso prima di qualsiasi altra operazione visiva.
+La sequenza temporale dopo il salvataggio e':
+1. `PinDetailCard` emette `location-save-changed` con nuovo ID
+2. `MapSection` aggiorna `selectedPlace.id` (da temp -> UUID)
+3. `useMapLocations` riceve notifica realtime e refetcha `places[]`
+4. L'effetto dei marker in `LeafletMapSetup` riesegue
 
-Ordine raccomandato dentro l’effetto:
-1) cleanup “selected marker restore” (se necessario)
-2) cleanup temp marker quando `selectedMarker` esiste (nuova regola robusta)
-3) cleanup “stale temp marker after save” (può rimanere come fallback, ma diventa meno importante)
-4) creazione temp marker (`needsTempMarker`)
-5) gestione selectedMarker (rimozione da cluster e addToMap)
-6) hide/show altri marker + cluster CSS
+**Il problema**: L'effetto linea 568 (che crea i marker) e' SEPARATO dall'effetto linea 867 (che gestisce temp marker). Quando `places[]` si aggiorna:
+- L'effetto linea 568 crea il nuovo marker (aggiunge a `markersRef`)
+- L'effetto linea 867 ha `placesKey` nelle dipendenze, quindi riesegue
+- Ma `selectedMarker = markersRef.current.get(selectedId)` potrebbe NON trovare il marker perche' viene cercato PRIMA che l'effetto 568 abbia finito di creare il marker
 
----
-
-## 4) Verifica/Debug (per essere certi)
-Aggiungere log mirati (temporanei) in `LeafletMapSetup`:
-- Quando ricevi `location-save-changed`: stampare `selectedPlace.id`, `oldLocationId/newLocationId`, `tempMarkerSavedRef`
-- Quando l’effetto rerun su `placesKey`: stampare `placesKey` changes e se `selectedMarker` esiste
-- Quando rimuovi temp marker: log “Removed temp marker because selectedMarker exists” + ids
-
-Questo serve a confermare che ora l’effetto si riattiva quando il marker reale entra in `places`.
+Questo e' un problema di ordine di esecuzione degli useEffect.
 
 ---
 
-## 5) Test end-to-end (riproduzione esatta del tuo caso)
-1) Home → apri search → seleziona un luogo NON ancora salvato (temp)
-2) Si apre PinDetailCard e appare temp marker
-3) Premi Salva (con tag/categoria se presente)
-4) Atteso:
-   - il temp marker resta solo per un istante (max fino al refresh `places`)
-   - appena arriva il marker reale (UUID), il temp marker sparisce
-   - rimane un solo pin visibile, senza label doppie
-5) Ripetere 3-4 volte con luoghi diversi per validare che non è “intermittente”.
+## Correzione Necessaria
+
+### Approccio 1: Spostare la cleanup temp marker DENTRO l'effetto che crea i marker
+
+Invece di avere due effetti separati, la cleanup del temp marker dovrebbe avvenire NELLO STESSO effetto che crea i marker regolari (linee 568-807).
+
+Modificare l'effetto dei marker (linea 568) per includere la cleanup del temp marker DOPO la creazione dei marker:
+
+```typescript
+// Alla fine dell'effetto renderMarkers (dopo linea 803)
+// CLEANUP: Se abbiamo appena creato un marker regolare per il selectedPlace, rimuovi temp marker
+if (selectedPlace && tempMarkerRef.current && markersRef.current.has(selectedPlace.id)) {
+  try {
+    map.removeLayer(tempMarkerRef.current);
+    console.log('🗑️ Removed temp marker - regular marker created for:', selectedPlace.id);
+  } catch (e) {}
+  tempMarkerRef.current = null;
+  tempMarkerSavedRef.current = false;
+}
+```
+
+Questo garantisce che la cleanup avvenga DOPO che il marker regolare e' stato creato.
 
 ---
 
-## File coinvolti
-- `src/components/LeafletMapSetup.tsx`
-  - aggiunta `placesKey` e dipendenza dell’effetto
-  - cleanup immediata del temp marker quando `selectedMarker` esiste
-  - mantenere la cleanup “hasRegularMarker” come fallback, ma non dipenderci più come unica via
+## Ottimizzazioni per 30k+ Utenti
 
-(Nessuna modifica necessaria a `MapSection.tsx`/`PinDetailCard.tsx` per la duplicazione in sé: lì l’ID/category sync è ok; il problema è principalmente di timing nel map renderer.)
+### 1. Problema: `placesKey` puo' essere molto lungo
+
+**Attuale (linea 103)**:
+```typescript
+const placesKey = useMemo(() => places.map(p => p.id).join('|'), [places]);
+```
+
+Con molti luoghi, questa stringa diventa enorme e la comparazione costosa.
+
+**Soluzione**: Usare un hash o conteggio:
+```typescript
+const placesKey = useMemo(() => {
+  // Usa solo il conteggio e alcuni ID chiave per rilevare cambiamenti
+  const ids = places.slice(0, 10).map(p => p.id).join('|');
+  return `${places.length}:${ids}`;
+}, [places]);
+```
+
+### 2. Problema: `Array.from(markersRef.current.entries()).some(...)` e' O(n)
+
+**Attuale (linee 913-917)**:
+```typescript
+Array.from(markersRef.current.entries()).some(([_, marker]) => {
+  const pos = marker.getLatLng();
+  return Math.abs(pos.lat - selectedPlace.coordinates!.lat) < 0.0001 ...
+});
+```
+
+Questo itera tutti i marker per ogni check - costoso con 30k+ luoghi.
+
+**Soluzione**: Eliminare questo fallback - il check per ID (linea 912) dovrebbe essere sufficiente dopo il fix principale.
+
+### 3. Problema: Cleanup duplicata in due effetti
+
+La cleanup del temp marker e' in DUE posti:
+- Effetto linea 867 (dipendenze: `[selectedPlace, isDarkMode, placesKey]`)
+- Effetto linea 816 (listener `location-save-changed`)
+
+Questo crea ridondanza e potenziali race conditions.
+
+**Soluzione**: Consolidare la cleanup in UN solo posto (nell'effetto che crea i marker).
 
 ---
 
-## Rischi/Edge cases e mitigazioni
-- Prestazioni: rieseguire l’effetto su ogni update di `places` può essere costoso se dipendi da `places` direttamente.
-  - Mitigazione: usare `placesKey` stringa leggera (ids) invece di `places` come dipendenza.
-- Caso “selectedPlace from folder/list fuori bounds”: `placesKey` cambia spesso? di solito no, perché `places` è filtrato per bounds.
-  - La nuova cleanup non rompe nulla perché si attiva solo quando `selectedMarker` esiste.
+## Piano di Implementazione
+
+### File: `src/components/LeafletMapSetup.tsx`
+
+| Modifica | Linee | Descrizione |
+|----------|-------|-------------|
+| 1. Spostare cleanup in effetto marker | ~803 | Aggiungere cleanup temp marker DOPO renderMarkers() |
+| 2. Ottimizzare placesKey | 103 | Usare hash leggero invece di join completo |
+| 3. Rimuovere Array.from fallback | 911-927 | Eliminare scan O(n) costoso |
+| 4. Semplificare effetto 867 | 867-1021 | Rimuovere logica duplicata di cleanup |
+
+### Dettaglio Modifica 1 (Critica - Fix definitivo)
+
+Nell'effetto che inizia a linea 568, DOPO `renderMarkers()` (linea 806):
+
+```typescript
+renderMarkers();
+
+// CRITICAL: Cleanup temp marker after regular markers are created
+// This must happen HERE (same effect) to avoid race conditions
+if (selectedPlace && tempMarkerRef.current) {
+  // Check if a regular marker now exists for the selected place
+  const regularMarkerExists = markersRef.current.has(selectedPlace.id);
+  
+  if (regularMarkerExists) {
+    try {
+      map.removeLayer(tempMarkerRef.current);
+      console.log('🗑️ [Marker Effect] Removed temp marker - regular marker exists for:', selectedPlace.id);
+    } catch (e) {}
+    tempMarkerRef.current = null;
+    tempMarkerSavedRef.current = false;
+  }
+}
+```
+
+### Dettaglio Modifica 2 (Performance)
+
+Cambiare linea 103:
+```typescript
+// BEFORE
+const placesKey = useMemo(() => places.map(p => p.id).join('|'), [places]);
+
+// AFTER - lightweight hash
+const placesKey = useMemo(() => {
+  if (places.length === 0) return '0';
+  // Use length + first 5 IDs + last ID for change detection
+  const sample = places.slice(0, 5).map(p => p.id).join(',');
+  const lastId = places[places.length - 1]?.id || '';
+  return `${places.length}:${sample}:${lastId}`;
+}, [places]);
+```
+
+### Dettaglio Modifica 3 (Performance)
+
+Rimuovere il blocco linee 911-927 (scan O(n) delle coordinate) - non piu' necessario dopo Modifica 1.
+
+### Dettaglio Modifica 4 (Cleanup)
+
+L'effetto linea 867 puo' essere semplificato rimuovendo la logica di cleanup del temp marker che ora e' gestita nell'effetto dei marker:
+
+- Rimuovere linee 877-886 (cleanup when selectedMarker exists) - ora in effetto marker
+- Rimuovere linee 911-927 (hasRegularMarker fallback) - ora in effetto marker
+- Mantenere solo: restore selected marker to cluster, needsTempMarker creation, hide/show altri marker
 
 ---
+
+## Test di Verifica
+
+1. Cercare un luogo dalla Home (es. "Reply 1988")
+2. Aprire la card e verificare che appaia UN solo pin temporaneo
+3. Cliccare Salva con un tag
+4. Verificare nella console:
+   - `🗑️ [Marker Effect] Removed temp marker - regular marker exists for: <UUID>`
+5. Verificare visivamente che rimanga UN solo pin
+6. Ripetere 5 volte con luoghi diversi
+
+---
+
+## Riepilogo Benefici
+
+| Miglioramento | Prima | Dopo |
+|---------------|-------|------|
+| Cleanup temp marker | Race condition tra effetti | Garantita nello stesso effetto |
+| placesKey comparazione | O(n) join di tutti gli ID | O(1) hash leggero |
+| Ricerca marker per coordinate | O(n) scan | Eliminata (solo check ID) |
+| Logica duplicata | 2 effetti con overlap | 1 effetto consolidato |
+
+Queste modifiche garantiscono sia la correttezza del fix sia performance ottimali per 30k+ utenti concorrenti.
