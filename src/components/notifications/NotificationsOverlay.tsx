@@ -1,14 +1,14 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell } from 'lucide-react';
+import { ArrowLeft, Bell, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationData } from '@/hooks/useNotificationData';
 import VirtualizedNotificationsList from '@/components/notifications/VirtualizedNotificationsList';
 import { useTranslation } from 'react-i18next';
 import InviteFriendOverlay from './InviteFriendOverlay';
-import addFriendIcon from '@/assets/icons/add-friend.png';
+
 import NotificationsSkeleton from '@/components/common/skeletons/NotificationsSkeleton';
 
 interface NotificationsOverlayProps {
@@ -248,10 +248,10 @@ const NotificationsOverlay = memo(({ isOpen, onClose }: NotificationsOverlayProp
           {/* Invite Friend Button */}
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+            className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 active:scale-[0.95] transition-all duration-150"
             aria-label={t('inviteFriend', { ns: 'invite', defaultValue: 'Invite a Friend' })}
           >
-            <img src={addFriendIcon} alt="" className="w-5 h-5" />
+            <UserPlus className="w-5 h-5 text-primary" />
           </button>
         </div>
       </header>

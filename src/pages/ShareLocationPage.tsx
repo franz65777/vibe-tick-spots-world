@@ -596,6 +596,9 @@ const ShareLocationPage = () => {
       const avatarUrl = userProfile?.avatar_url || null;
 
       // Send notifications for close_friends and specific_users shares
+      // location_share notifications expire after 24 hours
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      
       if (shareType === 'close_friends' && closeFriends.length > 0) {
         // Create notifications for all close friends
         const notifications = closeFriends.map(friendId => ({
@@ -610,7 +613,8 @@ const ShareLocationPage = () => {
             shared_by_user_id: user.id,
             shared_by_username: username,
             shared_by_avatar: avatarUrl
-          }
+          },
+          expires_at: expiresAt
         }));
 
         const { error: notifError } = await supabase
@@ -632,7 +636,8 @@ const ShareLocationPage = () => {
             shared_by_user_id: user.id,
             shared_by_username: username,
             shared_by_avatar: avatarUrl
-          }
+          },
+          expires_at: expiresAt
         }));
 
         const { error: notifError } = await supabase

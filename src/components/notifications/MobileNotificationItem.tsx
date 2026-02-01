@@ -1193,7 +1193,7 @@ const MobileNotificationItem = ({
 
               {/* Right Side - Follow Button, Follow Request Actions, Post Thumbnail, Comment Actions, or On My Way Button */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                {notification.type === 'location_share' ? (
+              {notification.type === 'location_share' ? (
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1206,8 +1206,7 @@ const MobileNotificationItem = ({
                     onTouchEnd={(e) => e.stopPropagation()}
                     disabled={isLoading || !isLocationShareActive}
                     size="sm"
-                    variant="default"
-                    className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 h-8 text-[13px] font-semibold rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 active:scale-[0.97] shadow-sm text-white transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500"
                   >
                     {t('onMyWay', { ns: 'notifications' })}
                   </Button>
