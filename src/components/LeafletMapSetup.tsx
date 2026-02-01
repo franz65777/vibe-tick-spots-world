@@ -871,8 +871,9 @@ const LeafletMapSetup = ({
   const selectedMarkerOriginalClusterRef = useRef<boolean>(false);
   const tempMarkerRef = useRef<L.Marker | null>(null);
   const tempMarkerSavedRef = useRef<boolean>(false);
+  const tempMarkerCoordKeyRef = useRef<string | null>(null); // Track temp marker position for cleanup
   
-  // Listen for location save events to update temp marker
+  // Listen for location save events - LIVE marker promotion to prevent duplication
   useEffect(() => {
     const handleSaveChange = (e: CustomEvent<{ 
       locationId: string; 
@@ -881,29 +882,52 @@ const LeafletMapSetup = ({
       newLocationId?: string;
       oldLocationId?: string;
       coordinates?: { lat: number; lng: number };
+      category?: string;
     }>) => {
       const map = mapRef.current;
-      if (!map || !tempMarkerRef.current || !selectedPlace) return;
+      const clusterGroup = markerClusterGroupRef.current;
+      if (!map || !clusterGroup) return;
       
-      const { locationId, isSaved, newLocationId, oldLocationId, coordinates } = e.detail;
+      const { locationId, isSaved, newLocationId, oldLocationId, coordinates, category } = e.detail;
       
       // Check if this save event is for our temp location using multiple matching strategies
-      const isForTempLocation = 
+      const isForTempLocation = selectedPlace && tempMarkerRef.current && (
         selectedPlace.id === locationId ||
         selectedPlace.id === oldLocationId ||
         selectedPlace.id === newLocationId ||
         selectedPlace.isTemporary ||
         (coordinates && selectedPlace.coordinates &&
          Math.abs(selectedPlace.coordinates.lat - coordinates.lat) < 0.0001 &&
-         Math.abs(selectedPlace.coordinates.lng - coordinates.lng) < 0.0001);
+         Math.abs(selectedPlace.coordinates.lng - coordinates.lng) < 0.0001)
+      );
       
-      if (isForTempLocation && isSaved) {
+      if (isForTempLocation && isSaved && newLocationId) {
         tempMarkerSavedRef.current = true;
         
-        // Update the temp marker icon to show it's saved
-        const newIcon = createLeafletCustomMarker({
-          category: selectedPlace.category || 'attraction',
-          name: selectedPlace.name,
+        // Determine coordinates for the new marker
+        const coords = coordinates || selectedPlace?.coordinates;
+        if (!coords?.lat || !coords?.lng) return;
+        
+        const targetId = newLocationId;
+        const key = coordKey(coords.lat, coords.lng);
+        
+        // Check if a regular marker already exists for this ID
+        if (markersRef.current.has(targetId)) {
+          // Regular marker already created by places effect - just remove temp
+          if (tempMarkerRef.current) {
+            try { map.removeLayer(tempMarkerRef.current); } catch {}
+            console.log('🗑️ [Live Promotion] Removed temp marker - regular marker already exists:', targetId);
+          }
+          tempMarkerRef.current = null;
+          tempMarkerSavedRef.current = false;
+          tempMarkerCoordKeyRef.current = null;
+          return;
+        }
+        
+        // Create promoted marker immediately (don't wait for places refetch)
+        const promotedIcon = createLeafletCustomMarker({
+          category: category || selectedPlace?.category || 'attraction',
+          name: selectedPlace?.name,
           isSaved: true,
           isRecommended: false,
           recommendationScore: 0,
@@ -914,7 +938,75 @@ const LeafletMapSetup = ({
           isSelected: true,
         });
         
-        tempMarkerRef.current.setIcon(newIcon);
+        const promotedMarker = L.marker([coords.lat, coords.lng], {
+          icon: promotedIcon,
+          zIndexOffset: 5000,
+        });
+        
+        promotedMarker.on('click', () => {
+          // Use the same click handler as regular markers
+          const el = promotedMarker.getElement();
+          if (el) {
+            el.style.animation = 'bounce 0.7s ease-in-out';
+            setTimeout(() => (el.style.animation = ''), 700);
+          }
+          // Trigger pin click if callback exists
+          if (onPinClick && selectedPlace) {
+            onPinClick({ ...selectedPlace, id: targetId, isSaved: true });
+          }
+        });
+        
+        clusterGroup.addLayer(promotedMarker);
+        markersRef.current.set(targetId, promotedMarker);
+        markerConfigsRef.current.set(targetId, `promoted|${targetId}`);
+        
+        // Update coordinate indexes
+        markerCoordKeyByIdRef.current.set(targetId, key);
+        markerIdByCoordKeyRef.current.set(key, targetId);
+        
+        // Remove old marker if it exists with a different ID
+        if (oldLocationId && oldLocationId !== targetId && markersRef.current.has(oldLocationId)) {
+          const oldMarker = markersRef.current.get(oldLocationId);
+          if (oldMarker) {
+            try { clusterGroup.removeLayer(oldMarker); } catch {}
+            markersRef.current.delete(oldLocationId);
+            markerConfigsRef.current.delete(oldLocationId);
+            const oldKey = markerCoordKeyByIdRef.current.get(oldLocationId);
+            if (oldKey) {
+              markerCoordKeyByIdRef.current.delete(oldLocationId);
+              if (markerIdByCoordKeyRef.current.get(oldKey) === oldLocationId) {
+                markerIdByCoordKeyRef.current.delete(oldKey);
+              }
+            }
+          }
+        }
+        
+        // Now remove the temp marker
+        if (tempMarkerRef.current) {
+          try { map.removeLayer(tempMarkerRef.current); } catch {}
+          console.log('🗑️ [Live Promotion] Promoted temp marker to regular:', targetId);
+        }
+        tempMarkerRef.current = null;
+        tempMarkerSavedRef.current = false;
+        tempMarkerCoordKeyRef.current = null;
+      } else if (isForTempLocation && isSaved && !newLocationId) {
+        // Save without new ID - just update icon
+        tempMarkerSavedRef.current = true;
+        if (tempMarkerRef.current && selectedPlace) {
+          const newIcon = createLeafletCustomMarker({
+            category: selectedPlace.category || 'attraction',
+            name: selectedPlace.name,
+            isSaved: true,
+            isRecommended: false,
+            recommendationScore: 0,
+            friendAvatars: [],
+            isDarkMode,
+            hasCampaign: false,
+            sharedByUsers: undefined,
+            isSelected: true,
+          });
+          tempMarkerRef.current.setIcon(newIcon);
+        }
       }
     };
     
@@ -922,7 +1014,7 @@ const LeafletMapSetup = ({
     return () => {
       window.removeEventListener('location-save-changed', handleSaveChange as EventListener);
     };
-  }, [selectedPlace, isDarkMode]);
+  }, [selectedPlace, isDarkMode, onPinClick, coordKey]);
   
   // Hide other markers and clusters when a place is selected
   useEffect(() => {
@@ -934,16 +1026,23 @@ const LeafletMapSetup = ({
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 
-    // Only clean up temp marker if selectedPlace is null AND it wasn't saved
-    // NOTE: Main temp marker cleanup is now in the marker rendering effect (line ~806)
-    // to avoid race conditions between effects
-    if (!selectedPlace && tempMarkerRef.current && !tempMarkerSavedRef.current) {
-      try {
-        map.removeLayer(tempMarkerRef.current);
-      } catch (e) {
-        // Ignore errors during cleanup
+    // Clean up temp marker when selectedPlace is null
+    // Two cases: 1) not saved = always remove, 2) saved = remove if regular marker exists at same coords
+    if (!selectedPlace && tempMarkerRef.current) {
+      const shouldRemove = !tempMarkerSavedRef.current || 
+        (tempMarkerCoordKeyRef.current && markerIdByCoordKeyRef.current.has(tempMarkerCoordKeyRef.current));
+      
+      if (shouldRemove) {
+        try {
+          map.removeLayer(tempMarkerRef.current);
+          console.log('🗑️ [Cleanup] Removed temp marker on card close');
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+        tempMarkerRef.current = null;
+        tempMarkerSavedRef.current = false;
+        tempMarkerCoordKeyRef.current = null;
       }
-      tempMarkerRef.current = null;
     }
 
     // Restore previous selected marker to cluster if exists
@@ -971,6 +1070,7 @@ const LeafletMapSetup = ({
       
     if (needsTempMarker) {
       tempMarkerSavedRef.current = false; // Reset saved state for new temp markers
+      tempMarkerCoordKeyRef.current = coordKey(selectedPlace.coordinates.lat, selectedPlace.coordinates.lng); // Store coord key for cleanup
       
       const icon = createLeafletCustomMarker({
         category: selectedPlace.category || 'attraction',

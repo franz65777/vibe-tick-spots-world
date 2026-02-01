@@ -144,18 +144,20 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         category: place.category
       } : null;
       
-      await locationInteractionService.saveLocation(place.id, locationData, tag);
-      setCurrentSaveTag(tag);
-      // Refetch engagement to update state
-      await refetch();
-      // Emit global event
-      window.dispatchEvent(new CustomEvent('location-save-changed', {
-        detail: { locationId: place.id, isSaved: true, saveTag: tag }
-      }));
-      if (place.google_place_id) {
+      const resolvedId = await locationInteractionService.saveLocation(place.id, locationData, tag);
+      if (resolvedId) {
+        setCurrentSaveTag(tag);
+        // Refetch engagement to update state
+        await refetch();
+        // Emit global event with resolved ID
         window.dispatchEvent(new CustomEvent('location-save-changed', {
-          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+          detail: { locationId: resolvedId, isSaved: true, saveTag: tag, newLocationId: resolvedId, oldLocationId: place.id }
         }));
+        if (place.google_place_id) {
+          window.dispatchEvent(new CustomEvent('location-save-changed', {
+            detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag, newLocationId: resolvedId, oldLocationId: place.id }
+          }));
+        }
       }
     } catch (error) {
       console.error('Error saving location:', error);

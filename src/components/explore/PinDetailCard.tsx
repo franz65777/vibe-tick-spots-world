@@ -819,85 +819,24 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
     // Capture original ID before any changes for event propagation
     const originalPlaceId = place.id;
     try {
-      let locationId = place.id;
-      let locationData = {
+      // Build complete location data for the service
+      const locationData = {
         google_place_id: place.google_place_id,
         name: place.name,
         address: place.address,
         latitude: place.coordinates?.lat || 0,
         longitude: place.coordinates?.lng || 0,
         category: place.category,
-        types: place.types || []
+        types: place.types || [],
+        city: place.city
       };
 
-      // Check if this is a temporary/external location that needs to be created first
-      // This includes isTemporary flag OR external IDs (photon-, nominatim-, overpass-, ChIJ, etc.)
-      const needsCreation = place.isTemporary || 
-        (typeof place.id === 'string' && (
-          place.id.startsWith('photon-') ||
-          place.id.startsWith('nominatim-') ||
-          place.id.startsWith('overpass-') ||
-          place.id.startsWith('ChIJ') ||
-          !isValidUUID(place.id)
-        ));
-
-      if (needsCreation) {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (!currentUser) {
-          toast.error(t('auth_required'));
-          return;
-        }
-
-        // First check if location already exists by coordinates
-        const { data: existingLocation } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('name', place.name)
-          .gte('latitude', (place.coordinates?.lat || 0) - 0.0001)
-          .lte('latitude', (place.coordinates?.lat || 0) + 0.0001)
-          .gte('longitude', (place.coordinates?.lng || 0) - 0.0001)
-          .lte('longitude', (place.coordinates?.lng || 0) + 0.0001)
-          .maybeSingle();
-
-        if (existingLocation) {
-          locationId = existingLocation.id;
-        } else {
-          const { data: newLocation, error: createError } = await supabase
-            .from('locations')
-            .insert({
-              name: place.name,
-              address: place.address,
-              latitude: place.coordinates?.lat,
-              longitude: place.coordinates?.lng,
-              category: place.category || 'restaurant',
-              city: place.city,
-              created_by: currentUser.id,
-              pioneer_user_id: currentUser.id,
-            })
-            .select('id, category, google_place_id')
-            .single();
-
-          if (createError || !newLocation) {
-            console.error('Error creating location:', createError);
-            toast.error(t('save_failed'));
-            return;
-          }
-
-          locationId = newLocation.id;
-          locationData = {
-            ...locationData,
-            google_place_id: newLocation.google_place_id,
-          };
-          
-          // Update the place object with real ID and confirmed category from DB
-          place.id = newLocation.id;
-          place.category = newLocation.category || place.category;
-        }
-        place.isTemporary = false;
-      }
-
-      const ok = await locationInteractionService.saveLocation(locationId, locationData, tag);
-      if (!ok) {
+      // Use location ID or google_place_id - the service handles creation/resolution
+      const locationIdForService = place.google_place_id || place.id;
+      
+      // Service returns the resolved internal UUID or false on failure
+      const resolvedId = await locationInteractionService.saveLocation(locationIdForService, locationData, tag);
+      if (!resolvedId) {
         toast.error(t('save_failed'));
         return;
       }
@@ -906,25 +845,26 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
       setCurrentSaveTag(tag);
       toast.success(t('locationSaved'));
       
-      // Dispatch global event with both old and new IDs for proper synchronization
+      // Dispatch global event with the RESOLVED internal ID from the service
       window.dispatchEvent(new CustomEvent('location-save-changed', {
         detail: { 
-          locationId: locationId, 
+          locationId: resolvedId, 
           isSaved: true, 
           saveTag: tag,
-          newLocationId: locationId,
+          newLocationId: resolvedId, // This is now the actual internal UUID
           oldLocationId: originalPlaceId,
           coordinates: place.coordinates,
           category: place.category
         }
       }));
+      // Also emit for google_place_id if present
       if (place.google_place_id) {
         window.dispatchEvent(new CustomEvent('location-save-changed', {
           detail: { 
             locationId: place.google_place_id, 
             isSaved: true, 
             saveTag: tag,
-            newLocationId: locationId,
+            newLocationId: resolvedId,
             oldLocationId: originalPlaceId,
             coordinates: place.coordinates,
             category: place.category

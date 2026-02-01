@@ -133,7 +133,8 @@ export const usePlaceEngagement = () => {
         }
       } else {
         // Save using the service (handles location creation if needed)
-        const success = await locationInteractionService.saveLocation(place.id, {
+        // Service now returns the resolved internal UUID or false on failure
+        const resolvedId = await locationInteractionService.saveLocation(place.id, {
           google_place_id: place.google_place_id,
           name: place.name,
           address: place.address,
@@ -143,11 +144,11 @@ export const usePlaceEngagement = () => {
           types: []
         });
 
-        if (success) {
-          setSavedPlaces(prev => new Set([...prev, place.id]));
-          // Emit global event
+        if (resolvedId) {
+          setSavedPlaces(prev => new Set([...prev, resolvedId]));
+          // Emit global event with resolved ID
           window.dispatchEvent(new CustomEvent('location-save-changed', { 
-            detail: { locationId: place.id, isSaved: true } 
+            detail: { locationId: resolvedId, isSaved: true, newLocationId: resolvedId, oldLocationId: place.id }
           }));
         }
       }

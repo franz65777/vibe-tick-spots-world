@@ -34,7 +34,7 @@ async function validateLocationWithGoogle(name: string, latitude: number, longit
 
 class LocationInteractionService {
   // Save a location for the user - with validation for closed locations
-  async saveLocation(locationId: string, locationData?: any, saveTag: string = 'to_try'): Promise<boolean> {
+  async saveLocation(locationId: string, locationData?: any, saveTag: string = 'to_try'): Promise<string | false> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
@@ -195,7 +195,7 @@ class LocationInteractionService {
         console.error('Error tracking save interaction:', trackError);
       }
 
-      return true;
+      return internalLocationId; // Return the resolved internal UUID
     } catch (error) {
       console.error('Save location error:', error);
       return false;
