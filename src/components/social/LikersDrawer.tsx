@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Drawer } from 'vaul';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import UserListSkeleton from '@/components/common/skeletons/UserListSkeleton';
 import { invalidateFollowList } from '@/hooks/useFollowList';
@@ -189,92 +190,114 @@ export const LikersDrawer: React.FC<LikersDrawerProps> = ({ isOpen, onClose, pos
   };
 
   return (
-    <Drawer
+    <Drawer.Root
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
+      modal={true}
+      dismissible={true}
     >
-      <DrawerContent showHandle={false} className="h-[82vh] max-h-[90vh] z-[4000]" overlayClassName="z-[3999]">
-        <DrawerHeader className="border-b-0 pb-2">
-          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-2" />
-          <DrawerTitle className="text-center">
-            {t('likes', { ns: 'common', defaultValue: 'Likes' })}
-          </DrawerTitle>
-        </DrawerHeader>
-        
-        {/* Search bar */}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t('search', { ns: 'common', defaultValue: 'Search' })}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-muted/50 border-0"
-            />
+      <Drawer.Portal>
+        <Drawer.Overlay 
+          className="fixed inset-0 bg-black/40 z-[2147483647]" 
+          onClick={onClose} 
+        />
+        <Drawer.Content
+          className="fixed inset-x-0 bottom-0 z-[2147483647] bg-[#F5F1EA]/90 dark:bg-background/90 backdrop-blur-xl rounded-t-3xl flex flex-col outline-none shadow-2xl"
+          style={{
+            height: '85vh',
+            maxHeight: '85vh',
+          }}
+        >
+          {/* Handle bar - centered */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-10 h-1.5 bg-muted-foreground/30 rounded-full" />
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-6">
-          {loading ? (
-            <UserListSkeleton count={6} />
-          ) : filteredLikers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? t('noResults', { ns: 'common', defaultValue: 'No results' }) : t('noLikesYet', { ns: 'common', defaultValue: 'No likes yet' })}
+          {/* Header */}
+          <div className="flex items-center justify-center px-4 py-3 shrink-0">
+            <h3 className="font-semibold text-base">
+              {t('likes', { ns: 'common', defaultValue: 'Likes' })}
+            </h3>
+          </div>
+
+          {/* Search bar - premium style with emoji */}
+          <div className="px-4 pb-3">
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base z-10">🔍</span>
+              <Input
+                placeholder={t('search', { ns: 'common', defaultValue: 'Cerca' })}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 h-12 rounded-full bg-white dark:bg-muted border-0 text-base shadow-sm"
+              />
             </div>
-          ) : (
-            <div className="space-y-0">
-              {filteredLikers.map((liker) => (
-                <div 
-                  key={liker.user_id}
-                  className="flex items-center justify-between py-3"
-                >
-                  <button
-                    onClick={() => handleUserClick(liker.user_id)}
-                    className="flex items-center gap-3 flex-1 text-left"
+          </div>
+
+          {/* User list with ScrollArea */}
+          <ScrollArea className="flex-1 px-4">
+            {loading ? (
+              <UserListSkeleton count={6} />
+            ) : filteredLikers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery 
+                  ? t('noResults', { ns: 'common', defaultValue: 'No results' }) 
+                  : t('noLikesYet', { ns: 'common', defaultValue: 'No likes yet' })}
+              </div>
+            ) : (
+              <div className="space-y-0 pb-6">
+                {filteredLikers.map((liker) => (
+                  <div 
+                    key={liker.user_id}
+                    className="flex items-center justify-between py-3"
                   >
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={liker.avatar_url || undefined} />
-                      <AvatarFallback className="bg-muted text-muted-foreground text-lg">
-                        {liker.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-sm">{liker.username}</span>
-                      {liker.full_name && (
-                        <span className="text-sm text-muted-foreground">{liker.full_name}</span>
-                      )}
-                    </div>
-                  </button>
-                  
-                  {user?.id && liker.user_id !== user.id && (
-                    <Button
-                      variant={liker.is_followed ? "secondary" : "default"}
-                      size="sm"
-                      onClick={() => handleFollowToggle(liker.user_id)}
-                      disabled={followLoading === liker.user_id}
-                      className={`rounded-lg px-6 ${
-                        liker.is_followed 
-                          ? 'bg-muted hover:bg-muted/80' 
-                          : 'bg-primary hover:bg-primary/90'
-                      }`}
+                    <button
+                      onClick={() => handleUserClick(liker.user_id)}
+                      className="flex items-center gap-3 flex-1 text-left active:opacity-70 transition-opacity"
                     >
-                      {followLoading === liker.user_id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : liker.is_followed ? (
-                        t('following', { ns: 'common', defaultValue: 'Following' })
-                      ) : (
-                        t('follow', { ns: 'common', defaultValue: 'Follow' })
-                      )}
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </DrawerContent>
-    </Drawer>
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={liker.avatar_url || undefined} />
+                        <AvatarFallback className="bg-muted text-muted-foreground text-lg">
+                          {liker.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">{liker.username}</span>
+                        {liker.full_name && (
+                          <span className="text-sm text-muted-foreground">{liker.full_name}</span>
+                        )}
+                      </div>
+                    </button>
+                    
+                    {user?.id && liker.user_id !== user.id && (
+                      <Button
+                        variant={liker.is_followed ? "secondary" : "default"}
+                        size="sm"
+                        onClick={() => handleFollowToggle(liker.user_id)}
+                        disabled={followLoading === liker.user_id}
+                        className={`rounded-full px-6 h-9 text-sm font-semibold active:scale-[0.97] transition-all ${
+                          liker.is_followed 
+                            ? 'bg-muted hover:bg-muted/80' 
+                            : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                        }`}
+                      >
+                        {followLoading === liker.user_id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : liker.is_followed ? (
+                          t('following', { ns: 'common', defaultValue: 'Following' })
+                        ) : (
+                          t('follow', { ns: 'common', defaultValue: 'Follow' })
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 };

@@ -368,7 +368,7 @@ export const PostActions = ({
         }}
         className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-muted/40 active:bg-muted/70 text-muted-foreground active:text-foreground transition-all font-medium"
       >
-        <Share2 className="w-4.5 h-4.5" />
+        <Share2 className="w-5 h-5" />
         <span className="text-sm font-semibold">{displaySharesCount}</span>
       </button>
 
