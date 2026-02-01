@@ -98,6 +98,9 @@ const LeafletMapSetup = ({
   // Use cached campaign locations hook instead of inline fetching
   const placeIds = useMemo(() => places.map(p => p.id).filter(Boolean), [places]);
   const { campaignMap, campaignLocationIds } = useCampaignLocations(placeIds);
+  
+  // Stable key that changes when places list changes - used to trigger temp marker cleanup
+  const placesKey = useMemo(() => places.map(p => p.id).join('|'), [places]);
 
   // Detect dark mode
   useEffect(() => {
@@ -871,6 +874,17 @@ const LeafletMapSetup = ({
     const selectedId = selectedPlace?.id;
     const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 
+    // CRITICAL FIX: If a real marker exists for the selected place, immediately remove temp marker
+    // This handles the race condition where places[] updates after selectedPlace.id changes
+    if (selectedMarker && tempMarkerRef.current) {
+      try {
+        map.removeLayer(tempMarkerRef.current);
+        console.log('🗑️ Removed temp marker - real marker now exists for:', selectedId);
+      } catch (e) {}
+      tempMarkerRef.current = null;
+      tempMarkerSavedRef.current = false;
+    }
+
     // Only clean up temp marker if selectedPlace is null AND it wasn't saved
     if (!selectedPlace && tempMarkerRef.current && !tempMarkerSavedRef.current) {
       try {
@@ -1004,7 +1018,7 @@ const LeafletMapSetup = ({
     } else {
       mapContainer.classList.remove('hide-clusters');
     }
-  }, [selectedPlace, isDarkMode]);
+  }, [selectedPlace, isDarkMode, placesKey]); // placesKey triggers re-run when real marker arrives
 
   // Inject CSS for hiding clusters
   useEffect(() => {
