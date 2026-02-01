@@ -244,10 +244,10 @@ const MapSection = ({
     }
   }, [initialSelectedPlace]);
 
-  // Sync selectedPlace ID when location is saved (ID changes from temporary to UUID)
+  // Sync selectedPlace ID and category when location is saved (ID changes from temporary to UUID)
   useEffect(() => {
-    const handleSaveChanged = (event: CustomEvent) => {
-      const { isSaved, newLocationId, oldLocationId, coordinates } = event.detail;
+    const handleSaveChanged = async (event: CustomEvent) => {
+      const { isSaved, newLocationId, oldLocationId, coordinates, category: savedCategory } = event.detail;
       
       // If we have a selected place and this save event is for it
       if (selectedPlace && isSaved && newLocationId) {
@@ -260,12 +260,25 @@ const MapSection = ({
            Math.abs(selectedPlace.coordinates.lng - coordinates.lng) < 0.0001);
         
         if (isMatchingPlace && selectedPlace.id !== newLocationId) {
-          console.log('🔄 Syncing selectedPlace ID:', oldLocationId, '->', newLocationId);
+          console.log('🔄 Syncing selectedPlace ID and category:', oldLocationId, '->', newLocationId);
+          
+          // Fetch the actual category from DB to ensure icon consistency
+          let categoryFromDb = savedCategory;
+          if (!categoryFromDb) {
+            const { data: updatedLoc } = await supabase
+              .from('locations')
+              .select('category')
+              .eq('id', newLocationId)
+              .maybeSingle();
+            categoryFromDb = updatedLoc?.category;
+          }
+          
           setSelectedPlace(prev => prev ? {
             ...prev,
             id: newLocationId,
             isTemporary: false,
-            isSaved: true
+            isSaved: true,
+            category: categoryFromDb || prev.category
           } : null);
         }
       }

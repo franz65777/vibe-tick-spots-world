@@ -893,6 +893,25 @@ const LeafletMapSetup = ({
       selectedMarkerOriginalClusterRef.current = false;
     }
 
+    // CLEANUP: Remove stale temp marker if it was saved AND a regular marker now exists
+    if (tempMarkerRef.current && tempMarkerSavedRef.current && selectedPlace) {
+      const hasRegularMarker = markersRef.current.has(selectedPlace.id) || 
+        (selectedPlace.coordinates && Array.from(markersRef.current.entries()).some(([_, marker]) => {
+          const pos = marker.getLatLng();
+          return Math.abs(pos.lat - selectedPlace.coordinates!.lat) < 0.0001 &&
+                 Math.abs(pos.lng - selectedPlace.coordinates!.lng) < 0.0001;
+        }));
+      
+      if (hasRegularMarker) {
+        try {
+          map.removeLayer(tempMarkerRef.current);
+          console.log('🗑️ Removed stale temp marker after save - regular marker exists');
+        } catch (e) {}
+        tempMarkerRef.current = null;
+        tempMarkerSavedRef.current = false;
+      }
+    }
+
     // If selected place exists but has no marker (new/temporary location OR location from list not in current places array), create a temporary marker
     // This handles: 1) temporary unsaved locations, 2) locations selected from folders/lists that aren't in current map bounds
     const needsTempMarker = selectedPlace && 
