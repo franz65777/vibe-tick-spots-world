@@ -874,7 +874,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
               created_by: currentUser.id,
               pioneer_user_id: currentUser.id,
             })
-            .select()
+            .select('id, category, google_place_id')
             .single();
 
           if (createError || !newLocation) {
@@ -889,8 +889,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             google_place_id: newLocation.google_place_id,
           };
           
-          // Update the place object with real ID
+          // Update the place object with real ID and confirmed category from DB
           place.id = newLocation.id;
+          place.category = newLocation.category || place.category;
         }
         place.isTemporary = false;
       }
@@ -913,7 +914,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           saveTag: tag,
           newLocationId: locationId,
           oldLocationId: originalPlaceId,
-          coordinates: place.coordinates
+          coordinates: place.coordinates,
+          category: place.category
         }
       }));
       if (place.google_place_id) {
@@ -924,7 +926,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
             saveTag: tag,
             newLocationId: locationId,
             oldLocationId: originalPlaceId,
-            coordinates: place.coordinates
+            coordinates: place.coordinates,
+            category: place.category
           }
         }));
       }
