@@ -1,273 +1,206 @@
 
 
-# Piano: Fix Critico Costi Google Places API
+# Piano: Fix Notifiche Persistenti + UI Premium per Tasti Notifiche
 
-## Problema Rilevato
+## 🐛 Problema 1: Notifiche che Spariscono dopo 30 Giorni
 
-I costi Google Places API sono saliti a **$101 a gennaio 2026** nonostante nessuna nuova location salvata:
-- **1093 chiamate Place Photos** → $45.24
-- **2203 chiamate Place Details (opening_hours)** → $37.26
-- **1110 chiamate Find Place** → $18.77
+### Root Cause Identificata
+Il database ha un **default di `expires_at = now() + 30 days`** per TUTTE le notifiche. Questo significa che:
+- Notifiche `like`, `comment`, `follow`, `follow_request`, `follow_accepted` → **Scadono dopo 30 giorni** (ma dovrebbero rimanere per sempre)
+- Notifiche `location_share` → **Scadono dopo 30 giorni** (corretto che scadano, ma dovrebbe essere 24h, non 30 giorni)
 
-**Root Cause**: La stessa location ha fino a **15 chiamate API al mese** perché:
-1. Il frontend in-memory cache dura solo **5 minuti**
-2. Dopo 5 minuti, ogni apertura della card chiama la edge function
-3. Le locations da `saved_places` non includono `opening_hours_data` nel Place object
+### Soluzione
 
-## Analisi Tecnica
+#### A. Modificare Default Database (Schema SQL)
+Creare una migration che:
+1. **Rimuove il default generico** di 30 giorni
+2. **Imposta expires_at = NULL per notifiche permanenti** oppure una data molto lontana (es. 100 anni)
+3. **Mantiene 24h per `location_share`** nel codice frontend
 
-### Flusso Attuale (Problematico)
+```sql
+-- Cambia default a 100 anni (praticamente mai)
+ALTER TABLE notifications 
+ALTER COLUMN expires_at SET DEFAULT (now() + interval '100 years');
 
-```text
-User clicca pin
-      │
-      ▼
-PinDetailCard monta
-      │
-      ▼
-useOpeningHours({cachedOpeningHours: place.opening_hours_data})
-      │
-      ├─ IF cachedOpeningHours esiste → USA CACHE ✅
-      │
-      └─ IF cachedOpeningHours è null/undefined
-            │
-            ├─ Controlla openingHoursCache (memoria, 5min) 
-            │     └─ Spesso scaduta dopo 5 minuti
-            │
-            └─ Chiama edge function get-place-hours
-                  │
-                  ├─ Edge function controlla DB cache ✅
-                  │
-                  └─ MA viene tracciata come chiamata API! ❌
+-- Update notifiche esistenti (escluse location_share) per non farle scadere
+UPDATE notifications 
+SET expires_at = now() + interval '100 years'
+WHERE type NOT IN ('location_share', 'business_post', 'business_review', 'location_save', 'business_mention')
+  AND expires_at < now() + interval '90 days';
 ```
 
-### Problemi Specifici
-
-| Problema | File | Impatto |
-|----------|------|---------|
-| `saved_places` non include `opening_hours_data` | `useMapLocations.ts` | Alto |
-| In-memory cache dura solo 5 minuti | `useOpeningHours.ts` | Alto |
-| Non pre-fetch `opening_hours_data` per saved_places | `useMapLocations.ts` | Alto |
-| `useLocationPhotos` ha lo stesso problema | `useLocationPhotos.ts` | Medio |
-
----
-
-## Soluzione
-
-### Fase 1: Pre-fetch Opening Hours per Saved Places
-
-**File**: `src/hooks/useMapLocations.ts`
-
-Attualmente viene pre-caricato `photos` per `saved_places` dalla tabella `locations`:
-```typescript
-// Linea 1065-1077 (già esiste per photos)
-const { data: locationsWithPhotos } = await supabase
-  .from('locations')
-  .select('google_place_id, photos')
-  .in('google_place_id', savedPlaceGoogleIds)
-  .not('photos', 'is', null);
-```
-
-**Modifica**: Aggiungere anche `opening_hours_data`:
-```typescript
-const { data: locationsWithCache } = await supabase
-  .from('locations')
-  .select('google_place_id, photos, opening_hours_data')
-  .in('google_place_id', savedPlaceGoogleIds);
-
-// Mappare opening_hours_data oltre a photos
-const hoursMapForSavedPlaces = new Map<string, any>();
-locationsWithCache?.forEach((loc: any) => {
-  if (loc.google_place_id && loc.opening_hours_data) {
-    hoursMapForSavedPlaces.set(loc.google_place_id, loc.opening_hours_data);
-  }
-});
-```
-
-Questo va applicato in **4 punti**:
-1. Caso `'popular'` (linee 1061-1081)
-2. Caso `'mysaves'` (linee 1322-1344)
-3. Caso `'following'` (se non già presente)
-4. Caso `'shared'` (se applicabile)
-
-### Fase 2: Estendere Cache Frontend a 24 Ore
-
-**File**: `src/hooks/useOpeningHours.ts`
-
-Modificare:
-```typescript
-// PRIMA (linea 22)
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// DOPO
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-```
-
-**File**: `src/hooks/useLocationPhotos.ts`
-
-Aggiungere cache in-memory simile (attualmente non presente):
-```typescript
-// Aggiungere in-memory cache module-level
-const photosCache = new Map<string, { photos: string[]; timestamp: number }>();
-const PHOTOS_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-
-// Nel fetchPhotos, controllare cache prima di chiamare edge function
-```
-
-### Fase 3: Query Database Prima di Edge Function
-
-**File**: `src/hooks/useOpeningHours.ts`
-
-Prima di chiamare la edge function, controllare se i dati esistono già nel database:
+#### B. Impostare `expires_at` Corretto per `location_share`
+Nel file `src/pages/ShareLocationPage.tsx`, aggiungere esplicitamente `expires_at: 24h` alle notifiche:
 
 ```typescript
-// Dopo il check in-memory cache (linea 145), aggiungere:
-// Check database cache BEFORE calling edge function
-if (locationId) {
-  try {
-    const { data: dbCached } = await supabase
-      .from('locations')
-      .select('opening_hours_data, opening_hours_source')
-      .eq('id', locationId)
-      .single();
-    
-    if (dbCached?.opening_hours_data) {
-      const parsed = parseOpeningHoursData(dbCached.opening_hours_data);
-      const newData: OpeningHoursData = {
-        isOpen: parsed.isOpen,
-        todayHours: parsed.todayHours,
-        dayIndex,
-        loading: false,
-        error: null
-      };
-      openingHoursCache.set(cacheKey, { data: newData, timestamp: Date.now() });
-      setData(newData);
-      return; // NO edge function call!
-    }
-  } catch (e) {
-    console.warn('Failed to check DB cache for hours:', e);
-  }
-}
-```
-
-### Fase 4: Stessa Logica per Photos
-
-**File**: `src/hooks/useLocationPhotos.ts`
-
-Prima di chiamare la edge function, controllare il database:
-```typescript
-// Nel fetchPhotos, dopo i check esistenti (linee 50-81):
-// Check database by google_place_id if not already checked
-if (googlePlaceId && !forceRefresh) {
-  const { data: dbCached } = await supabase
-    .from('locations')
-    .select('photos')
-    .eq('google_place_id', googlePlaceId)
-    .not('photos', 'is', null)
-    .limit(1)
-    .maybeSingle();
-
-  if (dbCached?.photos && Array.isArray(dbCached.photos) && dbCached.photos.length > 0) {
-    console.log(`✅ Photos DB cache hit for google_place_id: ${googlePlaceId}`);
-    setPhotos(dbCached.photos as string[]);
-    setSource('cache');
-    // Populate in-memory cache
-    photosCache.set(cacheKey, { photos: dbCached.photos, timestamp: Date.now() });
-    setLoading(false);
-    return;
-  }
-}
+const notifications = closeFriends.map(friendId => ({
+  user_id: friendId,
+  type: 'location_share',
+  // ... altri campi ...
+  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 ore
+}));
 ```
 
 ---
 
-## Riepilogo File da Modificare
+## 🎨 Problema 2: Tasto "Arrivo" non Premium
 
-| File | Modifica | Priorità |
-|------|----------|----------|
-| `src/hooks/useMapLocations.ts` | Pre-fetch `opening_hours_data` per saved_places | 🔴 Critica |
-| `src/hooks/useOpeningHours.ts` | Cache 24h + check DB prima di edge function | 🔴 Critica |
-| `src/hooks/useLocationPhotos.ts` | Aggiungere in-memory cache 24h + check DB | 🟡 Alta |
+### Stato Attuale
+```typescript
+className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
+```
+
+Il tasto è:
+- Troppo piccolo (`h-7`)
+- Colore piatto senza gradiente
+- Manca feedback tattile iOS
+- Non ha icona
+
+### Soluzione: Premium iOS-Style Button
+
+```typescript
+className="px-4 h-8 text-[13px] font-semibold rounded-full 
+  bg-gradient-to-r from-blue-500 to-blue-600 
+  hover:from-blue-600 hover:to-blue-700 
+  active:scale-[0.97] 
+  shadow-sm 
+  text-white"
+```
+
+Miglioramenti:
+- `rounded-full` per stile iOS più moderno (pill shape)
+- `h-8` leggermente più alto per touch target migliore
+- Gradiente blu premium
+- `active:scale-[0.97]` per feedback tattile
+- `shadow-sm` per profondità
+- Possibilità di aggiungere un'icona 🚗 o NavigationIcon
 
 ---
 
-## Impatto Previsto
+## 🎨 Problema 3: Icona "Invita Amico" Sproporzionata
 
-| Metrica | Prima | Dopo |
-|---------|-------|------|
-| Chiamate API/mese per location | 10-15 | 1 (solo prima apertura) |
-| Costo mensile stimato | $100+ | <$10 |
-| Chiamate edge function | Ogni 5 min | Solo se dati non in DB |
+### Stato Attuale
+Nel file `NotificationsOverlay.tsx` (linee 248-255):
+```tsx
+<button className="w-10 h-10 rounded-full bg-primary/10 ...">
+  <img src={addFriendIcon} className="w-5 h-5" />
+</button>
+```
+
+L'icona `add-friend.png` (1024x1024px) viene scalata a `w-5 h-5` (20x20px) ma visivamente sembra grande perché:
+1. Il contenitore è `w-10 h-10` (40x40px)
+2. L'immagine occupa metà del contenitore
+3. L'icona stessa ha molto "peso visivo" (grande silhouette blu)
+
+### Soluzione
+
+Opzione A: **Ridurre dimensione icona e contenitore**
+```tsx
+<button className="w-9 h-9 rounded-full bg-primary/10 ...">
+  <img src={addFriendIcon} className="w-4.5 h-4.5 opacity-90" />
+</button>
+```
+
+Opzione B: **Usare icona Lucide invece dell'immagine** (più coerente con il design system)
+```tsx
+import { UserPlus } from 'lucide-react';
+
+<button className="w-9 h-9 rounded-full bg-primary/10 ...">
+  <UserPlus className="w-5 h-5 text-primary" />
+</button>
+```
+
+**Raccomandazione**: Opzione B per coerenza con il resto dell'app.
 
 ---
 
-## Note Tecniche
+## 📋 Riepilogo Modifiche
 
-### Pre-fetch Opening Hours - Dettaglio
+| File | Modifica | Impatto |
+|------|----------|---------|
+| Migration SQL | Default `expires_at` a 100 anni | 🔴 Critico |
+| `src/pages/ShareLocationPage.tsx` | Aggiungere `expires_at: 24h` per location_share | 🔴 Critico |
+| `src/components/notifications/MobileNotificationItem.tsx` | Premium styling tasto "Arrivo" | 🟢 UI |
+| `src/components/notifications/NotificationsOverlay.tsx` | Ridimensionare icona invita amico | 🟢 UI |
 
-Nel caso `'popular'` di `useMapLocations.ts`, aggiungere subito dopo il pre-fetch photos (linea 1077):
+---
 
-```typescript
-// Pre-fetch opening_hours_data together with photos
-const { data: locationsWithCache } = await supabase
-  .from('locations')
-  .select('google_place_id, photos, opening_hours_data')
-  .in('google_place_id', savedPlaceGoogleIds);
+## Dettagli Implementazione
 
-const photosMapForSavedPlaces = new Map<string, string[]>();
-const hoursMapForSavedPlaces = new Map<string, any>();
+### 1. Migration SQL
 
-locationsWithCache?.forEach((loc: any) => {
-  if (loc.google_place_id) {
-    if (loc.photos && Array.isArray(loc.photos) && loc.photos.length > 0) {
-      photosMapForSavedPlaces.set(loc.google_place_id, loc.photos as string[]);
-    }
-    if (loc.opening_hours_data) {
-      hoursMapForSavedPlaces.set(loc.google_place_id, loc.opening_hours_data);
-    }
-  }
-});
+```sql
+-- 1. Cambia default a 100 anni (notifiche permanenti)
+ALTER TABLE notifications 
+ALTER COLUMN expires_at SET DEFAULT (now() + interval '100 years');
 
-if (photosMapForSavedPlaces.size > 0 || hoursMapForSavedPlaces.size > 0) {
-  console.log(`✅ Pre-loaded cache for ${photosMapForSavedPlaces.size} photos, ${hoursMapForSavedPlaces.size} opening_hours from DB`);
-}
+-- 2. Aggiorna notifiche esistenti non-location_share
+UPDATE notifications 
+SET expires_at = now() + interval '100 years'
+WHERE type NOT IN ('location_share', 'business_post', 'business_review', 'location_save', 'business_mention');
 ```
 
-Poi nel building del MapLocation per saved_places (linea 1100-1112):
+### 2. ShareLocationPage.tsx - Notifiche 24h
 
 ```typescript
-fromSavedPlaces.push({
-  id: googlePlaceId,
-  name: sp.place_name || 'Unknown',
-  // ... existing fields ...
-  photos: photosMapForSavedPlaces.get(googlePlaceId),
-  opening_hours_data: hoursMapForSavedPlaces.get(googlePlaceId), // NUOVO!
-  // ...
-});
+// Linea 601-614 e 623-636
+const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 ore
+
+const notifications = closeFriends.map(friendId => ({
+  user_id: friendId,
+  type: 'location_share',
+  title: t('sharedLocation'),
+  message: t('userAtLocation', { username, location: selectedLocation.name }),
+  data: { ... },
+  expires_at: expiresAt // NUOVO!
+}));
 ```
 
-### Hook Cache Upgrade - Dettaglio
-
-In `useOpeningHours.ts`, la nuova struttura sarà:
+### 3. MobileNotificationItem.tsx - Tasto Premium
 
 ```typescript
-useEffect(() => {
-  // 1. Check cachedOpeningHours prop (instant)
-  if (cachedOpeningHours) { ... return; }
-  
-  // 2. Check in-memory cache (24h)
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) { ... return; }
-  
-  // 3. NEW: Check database directly (no edge function!)
-  if (locationId || googlePlaceId) {
-    const dbCached = await checkDatabaseCache();
-    if (dbCached) { ... return; }
-  }
-  
-  // 4. ONLY if all caches miss, call edge function
-  await supabase.functions.invoke('get-place-hours', ...);
-}, [...]);
+// Linea 1197-1213
+<Button
+  onClick={...}
+  disabled={isLoading || !isLocationShareActive}
+  size="sm"
+  className="px-4 h-8 text-[13px] font-semibold rounded-full 
+    bg-gradient-to-r from-blue-500 to-blue-600 
+    hover:from-blue-600 hover:to-blue-700 
+    active:scale-[0.97] 
+    shadow-sm 
+    text-white 
+    transition-all duration-150
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500"
+>
+  {t('onMyWay', { ns: 'notifications' })}
+</Button>
 ```
 
-Questa architettura garantisce che le chiamate API Google vengano fatte **solo una volta per location**, mai ripetute.
+### 4. NotificationsOverlay.tsx - Icona Bilanciata
+
+```tsx
+// Linea 248-256 - Usa UserPlus da Lucide
+import { UserPlus } from 'lucide-react';
+
+<button
+  onClick={() => setIsInviteOpen(true)}
+  className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center 
+    hover:bg-primary/20 active:scale-[0.95] transition-all duration-150"
+  aria-label={t('inviteFriend', { ns: 'invite', defaultValue: 'Invite a Friend' })}
+>
+  <UserPlus className="w-5 h-5 text-primary" />
+</button>
+```
+
+---
+
+## Comportamento Finale
+
+| Tipo Notifica | Durata | Prima | Dopo |
+|---------------|--------|-------|------|
+| `like`, `comment`, `follow` | Permanente | 30 giorni | ♾️ 100 anni |
+| `follow_request`, `follow_accepted` | Permanente | 30 giorni | ♾️ 100 anni |
+| `location_share` | 24 ore | 30 giorni | ✅ 24 ore |
+| Business notifiche | Non mostrate | Filtrate | Invariato |
 
