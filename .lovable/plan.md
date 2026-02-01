@@ -1,216 +1,110 @@
 
-# Piano: Fix Duplicazione Pin e Categoria Temporanea Errata
+Obiettivo: eliminare definitivamente la duplicazione “pin temporaneo + pin reale” quando salvi una location nuova dalla ricerca Home (duplica subito). Dalla diff che hai incollato, la cleanup c’è, ma non scatta nel momento giusto: viene eseguita solo quando cambia `selectedPlace`/tema, mentre il marker “reale” arriva tipicamente dopo, quando `places` viene aggiornato dal DB. Quindi il controllo `hasRegularMarker` fallisce la prima volta e poi l’effetto non si riesegue quando il marker reale appare.
 
-## Analisi del Problema
+---
 
-### Root Cause 1: Duplicazione Pin
-Quando si salva una location temporanea (dalla ricerca Home):
-1. Viene creato un `tempMarkerRef` quando si apre la card
-2. Al salvataggio, l'evento `location-save-changed` aggiorna l'icona del tempMarker ma non lo rimuove
-3. Il realtime di `useMapLocations` riceve la notifica e ricarica le locations dal DB
-4. Un nuovo marker viene creato dalla lista `places[]` aggiornata
-5. **Entrambi i marker rimangono visibili** → duplicazione
+## 1) Diagnosi (perché “non è cambiato nulla”)
+Nel file `LeafletMapSetup.tsx`:
+- La rimozione del temp marker è dentro l’`useEffect` “Hide other markers…” che dipende da `[selectedPlace, isDarkMode]`.
+- Quando salvi:
+  1) l’evento `location-save-changed` setta `tempMarkerSavedRef.current = true`
+  2) `MapSection` aggiorna `selectedPlace.id` (da temp → UUID)
+  3) `useMapLocations` refetcha e aggiorna `places` con la location reale
+- Problema: lo step (2) avviene spesso prima dello step (3). Quindi nel cleanup:
+  - `markersRef.current.has(selectedPlace.id)` è ancora `false` perché il marker reale non è stato creato (places non aggiornato).
+  - L’effetto non si riattiva quando poi arriva `places`, quindi il temp marker resta e vedi duplicazione.
 
-### Root Cause 2: Categoria Diversa sul Pin Temporaneo
-1. La ricerca Photon/Nominatim restituisce categorie generiche (es. "pub" → mappato a "bar")
-2. Il `tempMarker` viene creato con questa categoria
-3. Quando l'utente salva, potrebbe scegliere una categoria diversa
-4. Al reload dal DB, la categoria reale potrebbe essere diversa da quella temporanea
+Questa è una race condition di dipendenze: la cleanup deve rieseguire anche quando arrivano i nuovi `places` (o quando il marker reale diventa disponibile).
 
-## Soluzione
+---
 
-### Modifica 1: Rimuovere tempMarker quando esiste un marker regolare
+## 2) Fix principale (LeafletMapSetup): far scattare la cleanup quando arriva il marker reale
+### 2.1 Agganciare l’effetto anche ai cambiamenti di `places`
+Modifica l’`useEffect` che gestisce selezione/visibilità markers (quello che contiene:
+- restore marker cluster
+- creazione temp marker
+- hide/show altri marker
+- cleanup temp marker
 
-Nel file `src/components/LeafletMapSetup.tsx`, dopo il salvataggio, quando il marker regolare viene creato dalla lista `places[]`, il `tempMarker` deve essere rimosso per evitare duplicati.
+perché si riesegua quando la lista `places` cambia.
 
-Aggiungere logica nell'effect che gestisce la creazione/rimozione dei marker per verificare se:
-- Esiste un `tempMarker` 
-- E' stato salvato (`tempMarkerSavedRef.current === true`)
-- Esiste ora un marker regolare per la stessa posizione o ID
+Approccio consigliato (per evitare dipendenze “pesanti”):
+- creare un `placesKey` stabile (stringa) basata sugli id + categoria (o almeno sugli id) e usarla nei deps dell’effetto.
+  - esempio: `const placesKey = useMemo(() => places.map(p => p.id).join('|'), [places]);`
+  - poi: `useEffect(..., [selectedPlace, isDarkMode, placesKey]);`
 
-Se tutte le condizioni sono vere, rimuovere il `tempMarker`.
+Così, quando il salvataggio fa entrare la nuova location in `places`, l’effetto riesegue e può rimuovere il temp marker.
 
-```typescript
-// Linee ~896-940 di LeafletMapSetup.tsx
-// Dopo la creazione del temp marker e prima della gestione del selectedMarker
+### 2.2 Cleanup più robusta: se esiste `selectedMarker`, rimuovi sempre il temp marker
+Oggi la cleanup cerca un “regular marker” con `markersRef.current.has(selectedPlace.id)` o matching per coordinate. È corretto, ma fragile per timing.
 
-// NUOVO: Se tempMarker è stato salvato E ora esiste un marker regolare per lo stesso place, rimuovi tempMarker
-if (tempMarkerRef.current && tempMarkerSavedRef.current && selectedPlace) {
-  // Cerca un marker nella lista places che corrisponde alla posizione/ID del selectedPlace
-  const hasRegularMarker = markersRef.current.has(selectedPlace.id) || 
-    (selectedPlace.coordinates && Array.from(markersRef.current.entries()).some(([id, marker]) => {
-      const markerLatLng = marker.getLatLng();
-      return Math.abs(markerLatLng.lat - selectedPlace.coordinates.lat) < 0.0001 &&
-             Math.abs(markerLatLng.lng - selectedPlace.coordinates.lng) < 0.0001;
-    }));
-  
-  if (hasRegularMarker) {
-    try {
-      map.removeLayer(tempMarkerRef.current);
-      console.log('🗑️ Removed temp marker - regular marker now exists');
-    } catch (e) {}
-    tempMarkerRef.current = null;
-    tempMarkerSavedRef.current = false;
-  }
-}
+Più robusto:
+- appena `selectedMarker` diventa non-null (cioè il marker reale esiste per `selectedPlace.id`), rimuovi `tempMarkerRef.current` immediatamente.
+- Questo elimina la duplicazione al primo momento utile, senza dover scandire tutta `markersRef`.
+
+In pratica nel blocco dove già calcoli:
+```ts
+const selectedId = selectedPlace?.id;
+const selectedMarker = selectedId ? markersRef.current.get(selectedId) : null;
 ```
+aggiungi una regola:
+- se `selectedMarker` esiste e `tempMarkerRef.current` esiste → rimuovi temp marker e resetta i ref (`tempMarkerRef.current = null; tempMarkerSavedRef.current = false;`).
 
-### Modifica 2: Sincronizzare categoria e ID nel selectedPlace
+Nota: questo non “rompe” le location temporanee non salvate, perché in quel caso `selectedMarker` non esisterà mai (non c’è nel DB/places).
 
-Nel handler `location-save-changed` (linee ~812-861), quando il save ha successo:
-1. Aggiornare anche la categoria del `selectedPlace` se cambiata
-2. Propagare l'evento al componente padre per sincronizzare lo state
+---
 
-Attualmente l'evento viene gestito ma non aggiorna la categoria. Dobbiamo modificare anche `MapSection.tsx` per aggiornare la categoria del selectedPlace quando riceve l'evento.
+## 3) Fix secondario: evitare reset/creazioni incoerenti del temp marker
+Dopo aver reso l’effetto sensibile a `places`, bisogna assicurarsi che:
+- `needsTempMarker` NON ricrei un nuovo temp marker mentre quello precedente è ancora presente
+- e soprattutto che quando `selectedMarker` appare, il temp venga rimosso prima di qualsiasi altra operazione visiva.
 
-```typescript
-// In MapSection.tsx - nel listener location-save-changed (linee ~247-276)
-// Aggiungere recupero categoria dal DB se necessario
+Ordine raccomandato dentro l’effetto:
+1) cleanup “selected marker restore” (se necessario)
+2) cleanup temp marker quando `selectedMarker` esiste (nuova regola robusta)
+3) cleanup “stale temp marker after save” (può rimanere come fallback, ma diventa meno importante)
+4) creazione temp marker (`needsTempMarker`)
+5) gestione selectedMarker (rimozione da cluster e addToMap)
+6) hide/show altri marker + cluster CSS
 
-if (isMatchingPlace && selectedPlace.id !== newLocationId) {
-  console.log('🔄 Syncing selectedPlace ID:', oldLocationId, '->', newLocationId);
-  
-  // Fetch aggiornato della location per ottenere la categoria corretta
-  const { data: updatedLocation } = await supabase
-    .from('locations')
-    .select('id, category')
-    .eq('id', newLocationId)
-    .maybeSingle();
-  
-  setSelectedPlace(prev => prev ? {
-    ...prev,
-    id: newLocationId,
-    isTemporary: false,
-    isSaved: true,
-    category: updatedLocation?.category || prev.category // Usa categoria dal DB
-  } : null);
-}
-```
+---
 
-### Modifica 3: Passare categoria corretta durante il salvataggio
+## 4) Verifica/Debug (per essere certi)
+Aggiungere log mirati (temporanei) in `LeafletMapSetup`:
+- Quando ricevi `location-save-changed`: stampare `selectedPlace.id`, `oldLocationId/newLocationId`, `tempMarkerSavedRef`
+- Quando l’effetto rerun su `placesKey`: stampare `placesKey` changes e se `selectedMarker` esiste
+- Quando rimuovi temp marker: log “Removed temp marker because selectedMarker exists” + ids
 
-In `PinDetailCard.tsx`, quando viene creata la location (linee ~865-876), la categoria viene presa da `place.category` che potrebbe essere quella temporanea dalla ricerca.
+Questo serve a confermare che ora l’effetto si riattiva quando il marker reale entra in `places`.
 
-Il problema è che la categoria viene impostata dal risultato della ricerca, non dall'utente. Questo è accettabile, ma dobbiamo assicurarci che dopo il salvataggio, il `selectedPlace` venga aggiornato con la categoria effettivamente salvata.
+---
 
-Dopo la creazione, aggiornare `place.category`:
+## 5) Test end-to-end (riproduzione esatta del tuo caso)
+1) Home → apri search → seleziona un luogo NON ancora salvato (temp)
+2) Si apre PinDetailCard e appare temp marker
+3) Premi Salva (con tag/categoria se presente)
+4) Atteso:
+   - il temp marker resta solo per un istante (max fino al refresh `places`)
+   - appena arriva il marker reale (UUID), il temp marker sparisce
+   - rimane un solo pin visibile, senza label doppie
+5) Ripetere 3-4 volte con luoghi diversi per validare che non è “intermittente”.
 
-```typescript
-// In PinDetailCard.tsx, dopo la creazione della location (linea ~893)
-// Update the place object with real ID AND category from DB
-place.id = newLocation.id;
-if (newLocation.category) {
-  place.category = newLocation.category;
-}
-```
+---
 
-Ma questo richiede che l'insert restituisca anche la categoria. Modifichiamo la select:
+## File coinvolti
+- `src/components/LeafletMapSetup.tsx`
+  - aggiunta `placesKey` e dipendenza dell’effetto
+  - cleanup immediata del temp marker quando `selectedMarker` esiste
+  - mantenere la cleanup “hasRegularMarker” come fallback, ma non dipenderci più come unica via
 
-```typescript
-// Linea 865-878
-const { data: newLocation, error: createError } = await supabase
-  .from('locations')
-  .insert({
-    name: place.name,
-    address: place.address,
-    latitude: place.coordinates?.lat,
-    longitude: place.coordinates?.lng,
-    category: place.category || 'restaurant',
-    city: place.city,
-    created_by: currentUser.id,
-    pioneer_user_id: currentUser.id,
-  })
-  .select('id, category') // Aggiungi category
-  .single();
+(Nessuna modifica necessaria a `MapSection.tsx`/`PinDetailCard.tsx` per la duplicazione in sé: lì l’ID/category sync è ok; il problema è principalmente di timing nel map renderer.)
 
-// ... dopo il check di errore
-locationId = newLocation.id;
-// Aggiorna anche la categoria nel place object
-place.category = newLocation.category || place.category;
-```
+---
 
-## Riepilogo File da Modificare
+## Rischi/Edge cases e mitigazioni
+- Prestazioni: rieseguire l’effetto su ogni update di `places` può essere costoso se dipendi da `places` direttamente.
+  - Mitigazione: usare `placesKey` stringa leggera (ids) invece di `places` come dipendenza.
+- Caso “selectedPlace from folder/list fuori bounds”: `placesKey` cambia spesso? di solito no, perché `places` è filtrato per bounds.
+  - La nuova cleanup non rompe nulla perché si attiva solo quando `selectedMarker` esiste.
 
-| File | Modifica | Scopo |
-|------|----------|-------|
-| `src/components/LeafletMapSetup.tsx` | Rimuovere tempMarker quando esiste marker regolare dopo save | Fix duplicazione pin |
-| `src/components/home/MapSection.tsx` | Sincronizzare categoria nel selectedPlace dopo save | Fix categoria errata |
-| `src/components/explore/PinDetailCard.tsx` | Restituire categoria dall'insert e aggiornarla in place | Fix categoria persistente |
-
-## Dettagli Implementazione
-
-### 1. LeafletMapSetup.tsx - Rimozione tempMarker
-
-Nell'effect che gestisce i marker (linee ~864-988), aggiungere prima del blocco `needsTempMarker`:
-
-```typescript
-// NUOVO: Rimuovi tempMarker se è stato salvato e ora esiste un marker regolare
-if (tempMarkerRef.current && tempMarkerSavedRef.current) {
-  // Check se esiste un marker regolare per il selectedPlace
-  const selectedId = selectedPlace?.id;
-  const hasRegularMarker = selectedId && markersRef.current.has(selectedId);
-  
-  // Oppure check per coordinate (fallback)
-  const hasMarkerByCoords = selectedPlace?.coordinates && 
-    Array.from(markersRef.current.entries()).some(([_, marker]) => {
-      const pos = marker.getLatLng();
-      return Math.abs(pos.lat - selectedPlace.coordinates.lat) < 0.0001 &&
-             Math.abs(pos.lng - selectedPlace.coordinates.lng) < 0.0001;
-    });
-  
-  if (hasRegularMarker || hasMarkerByCoords) {
-    try {
-      map.removeLayer(tempMarkerRef.current);
-      console.log('🗑️ Removed stale temp marker after save');
-    } catch (e) {}
-    tempMarkerRef.current = null;
-    tempMarkerSavedRef.current = false;
-  }
-}
-```
-
-### 2. MapSection.tsx - Sync categoria
-
-Modificare il listener `location-save-changed` per fetchare la categoria aggiornata:
-
-```typescript
-const handleSaveChanged = async (event: CustomEvent<{...}>) => {
-  // ... existing matching logic ...
-  
-  if (isMatchingPlace && selectedPlace.id !== newLocationId) {
-    // Fetch categoria aggiornata dal DB
-    const { data: updatedLoc } = await supabase
-      .from('locations')
-      .select('category')
-      .eq('id', newLocationId)
-      .maybeSingle();
-    
-    setSelectedPlace(prev => prev ? {
-      ...prev,
-      id: newLocationId,
-      isTemporary: false,
-      isSaved: true,
-      category: updatedLoc?.category || prev.category
-    } : null);
-  }
-};
-```
-
-### 3. PinDetailCard.tsx - Categoria nell'insert
-
-Aggiungere `category` alla select dell'insert:
-
-```typescript
-.select('id, category')
-
-// E dopo:
-place.category = newLocation.category || place.category;
-```
-
-## Test di Verifica
-
-1. Cercare un luogo dalla ricerca Home (es. "Reply 1988 A Coruña")
-2. Aprire la card del luogo
-3. Cliccare Salva con un tag
-4. Verificare che **non ci siano pin duplicati**
-5. Verificare che l'icona categoria sia **coerente** con quella salvata
+---
