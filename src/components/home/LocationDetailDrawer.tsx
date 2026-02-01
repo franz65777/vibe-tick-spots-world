@@ -472,21 +472,21 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     }
   };
 
-  // Check if location is saved - using direct query to user_saved_locations
+  // Check if location is saved - using service method that handles ID resolution
   useEffect(() => {
-    if (!user?.id || !location?.id || !isOpen) return;
+    if (!user?.id || !isOpen) return;
     const checkSaved = async () => {
       try {
-        const { data } = await supabase
-          .from('user_saved_locations')
-          .select('save_tag')
-          .eq('user_id', user.id)
-          .eq('location_id', location.id)
-          .maybeSingle();
+        // Use locationInteractionService which handles google_place_id resolution
+        const locationIdOrGoogle = location?.id || (location as any)?.google_place_id;
+        if (!locationIdOrGoogle) return;
         
-        setIsSaved(!!data);
-        if (data?.save_tag) {
-          setCurrentSaveTag(data.save_tag as SaveTag);
+        const saved = await locationInteractionService.isLocationSaved(locationIdOrGoogle);
+        setIsSaved(saved);
+        
+        if (saved) {
+          const tag = await locationInteractionService.getCurrentSaveTag(locationIdOrGoogle);
+          setCurrentSaveTag(tag as SaveTag);
         } else {
           setCurrentSaveTag('been');
         }
@@ -495,7 +495,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       }
     };
     checkSaved();
-  }, [user?.id, location?.id, isOpen]);
+  }, [user?.id, location?.id, (location as any)?.google_place_id, isOpen]);
 
   const handleSave = async (tag: SaveTag) => {
     if (!user?.id || !location) return;
@@ -505,57 +505,43 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     const originalLocationId = location.id;
     
     try {
-      let locationIdToSave = location.id;
       const coordsSource: any = resolvedCoordinates || location.coordinates || {};
       const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
       const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
       
-      // If location doesn't exist in database, create it first
-      if (!locationIdToSave) {
-        const { data: newLocation, error: createError } = await supabase
-          .from('locations')
-          .insert({
-            name: location.name,
-            address: location.address || fullAddress,
-            city: location.city,
-            latitude: lat || null,
-            longitude: lng || null,
-            category: location.category || 'restaurant',
-            google_place_id: (location as any).google_place_id || null,
-            created_by: user.id,
-          })
-          .select('id')
-          .single();
-
-        if (createError) throw createError;
-        locationIdToSave = newLocation.id;
-        location.id = newLocation.id; // Update location object with new ID
-      }
-
-      const saved = await locationInteractionService.saveLocation(locationIdToSave, {
+      // Build location data for the service - it handles creation/dedup internally
+      const locationData = {
         google_place_id: (location as any).google_place_id,
         name: location.name,
-        address: location.address,
+        address: location.address || fullAddress,
         latitude: lat || 0,
         longitude: lng || 0,
         category: location.category,
+        city: location.city,
         types: []
-      }, tag);
+      };
       
-      if (saved) {
+      // Use google_place_id if available, otherwise use ID - service resolves internally
+      const locationIdForService = (location as any).google_place_id || location.id;
+
+      // Service returns the resolved internal UUID or false on failure
+      const resolvedId = await locationInteractionService.saveLocation(locationIdForService, locationData, tag);
+      
+      if (resolvedId) {
         setIsSaved(true);
         setCurrentSaveTag(tag);
         toast.success(t('locationSaved', { ns: 'common' }));
         
-        // Emit global event for map synchronization
+        // Emit global event with the RESOLVED internal ID from the service
         window.dispatchEvent(new CustomEvent('location-save-changed', {
           detail: { 
-            locationId: locationIdToSave, 
+            locationId: resolvedId, 
             isSaved: true, 
             saveTag: tag,
-            newLocationId: locationIdToSave,
+            newLocationId: resolvedId, // This is now the actual internal UUID
             oldLocationId: originalLocationId,
-            coordinates: lat && lng ? { lat, lng } : undefined
+            coordinates: lat && lng ? { lat, lng } : undefined,
+            category: location.category
           }
         }));
         
@@ -566,9 +552,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
               locationId: (location as any).google_place_id, 
               isSaved: true, 
               saveTag: tag,
-              newLocationId: locationIdToSave,
+              newLocationId: resolvedId,
               oldLocationId: originalLocationId,
-              coordinates: lat && lng ? { lat, lng } : undefined
+              coordinates: lat && lng ? { lat, lng } : undefined,
+              category: location.category
             }
           }));
         }
