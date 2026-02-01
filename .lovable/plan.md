@@ -1,155 +1,216 @@
 
-# Piano: UI Fix per Feed Post - Truncation, Icon Size e Likes Drawer Premium
+# Piano: Fix Duplicazione Pin e Categoria Temporanea Errata
 
-## Problema 1: Nome Location Troncato Troppo Presto
+## Analisi del Problema
 
-### Stato Attuale
-```typescript
-// FeedPostItem.tsx - linea 348
-<span className="truncate max-w-[140px]">{locationName}</span>
-```
+### Root Cause 1: Duplicazione Pin
+Quando si salva una location temporanea (dalla ricerca Home):
+1. Viene creato un `tempMarkerRef` quando si apre la card
+2. Al salvataggio, l'evento `location-save-changed` aggiorna l'icona del tempMarker ma non lo rimuove
+3. Il realtime di `useMapLocations` riceve la notifica e ricarica le locations dal DB
+4. Un nuovo marker viene creato dalla lista `places[]` aggiornata
+5. **Entrambi i marker rimangono visibili** → duplicazione
 
-Il limite di 140px taglia "National Gallery of Irel..." quando c'e' spazio disponibile.
+### Root Cause 2: Categoria Diversa sul Pin Temporaneo
+1. La ricerca Photon/Nominatim restituisce categorie generiche (es. "pub" → mappato a "bar")
+2. Il `tempMarker` viene creato con questa categoria
+3. Quando l'utente salva, potrebbe scegliere una categoria diversa
+4. Al reload dal DB, la categoria reale potrebbe essere diversa da quella temporanea
 
-### Soluzione
-Aumentare il limite a 200px per sfruttare lo spazio orizzontale:
+## Soluzione
 
-```typescript
-<span className="truncate max-w-[200px]">{locationName}</span>
-```
+### Modifica 1: Rimuovere tempMarker quando esiste un marker regolare
 
-**File**: `src/components/feed/FeedPostItem.tsx` (linea 348)
+Nel file `src/components/LeafletMapSetup.tsx`, dopo il salvataggio, quando il marker regolare viene creato dalla lista `places[]`, il `tempMarker` deve essere rimosso per evitare duplicati.
 
----
+Aggiungere logica nell'effect che gestisce la creazione/rimozione dei marker per verificare se:
+- Esiste un `tempMarker` 
+- E' stato salvato (`tempMarkerSavedRef.current === true`)
+- Esiste ora un marker regolare per la stessa posizione o ID
 
-## Problema 2: Icone Like/Share/Comment di Dimensioni Diverse
-
-### Stato Attuale (PostActions.tsx)
-| Bottone | Icona | Dimensione |
-|---------|-------|------------|
-| Like | Heart | `w-5 h-5` (20px) |
-| Comment | ChatIcon | `size={20}` (20px) |
-| Share | Share2 | `w-4.5 h-4.5` (18px) - PIU' PICCOLA! |
-
-L'icona Share e' piu' piccola delle altre.
-
-### Soluzione
-Uniformare tutte le icone a 20px:
+Se tutte le condizioni sono vere, rimuovere il `tempMarker`.
 
 ```typescript
-// Comment button - gia' corretto
-<ChatIcon size={20} />
+// Linee ~896-940 di LeafletMapSetup.tsx
+// Dopo la creazione del temp marker e prima della gestione del selectedMarker
 
-// Share button - da correggere
-<Share2 className="w-5 h-5" />  // Era w-4.5 h-4.5
+// NUOVO: Se tempMarker è stato salvato E ora esiste un marker regolare per lo stesso place, rimuovi tempMarker
+if (tempMarkerRef.current && tempMarkerSavedRef.current && selectedPlace) {
+  // Cerca un marker nella lista places che corrisponde alla posizione/ID del selectedPlace
+  const hasRegularMarker = markersRef.current.has(selectedPlace.id) || 
+    (selectedPlace.coordinates && Array.from(markersRef.current.entries()).some(([id, marker]) => {
+      const markerLatLng = marker.getLatLng();
+      return Math.abs(markerLatLng.lat - selectedPlace.coordinates.lat) < 0.0001 &&
+             Math.abs(markerLatLng.lng - selectedPlace.coordinates.lng) < 0.0001;
+    }));
+  
+  if (hasRegularMarker) {
+    try {
+      map.removeLayer(tempMarkerRef.current);
+      console.log('🗑️ Removed temp marker - regular marker now exists');
+    } catch (e) {}
+    tempMarkerRef.current = null;
+    tempMarkerSavedRef.current = false;
+  }
+}
 ```
 
-**File**: `src/components/feed/PostActions.tsx` (linea 371)
+### Modifica 2: Sincronizzare categoria e ID nel selectedPlace
 
----
+Nel handler `location-save-changed` (linee ~812-861), quando il save ha successo:
+1. Aggiornare anche la categoria del `selectedPlace` se cambiata
+2. Propagare l'evento al componente padre per sincronizzare lo state
 
-## Problema 3: LikersDrawer Non Premium (vs CommentDrawer)
+Attualmente l'evento viene gestito ma non aggiorna la categoria. Dobbiamo modificare anche `MapSection.tsx` per aggiornare la categoria del selectedPlace quando riceve l'evento.
 
-### Confronto Attuale
+```typescript
+// In MapSection.tsx - nel listener location-save-changed (linee ~247-276)
+// Aggiungere recupero categoria dal DB se necessario
 
-| Caratteristica | CommentDrawer | LikersDrawer |
-|----------------|---------------|--------------|
-| Background | `bg-[#F5F1EA]/90 backdrop-blur-xl` | `bg-background` (solido) |
-| Overlay | `bg-black/40` | Nessuno custom |
-| Rounded | `rounded-t-3xl` | `rounded-t-[20px]` |
-| z-index | `z-[2147483647]` (max) | `z-[4000]` |
-| Search | Emoji 🔍 nel placeholder | Icona Lucide Search |
-| Input style | `rounded-full h-12 bg-white` | `pl-9 bg-muted/50 border-0` |
-| Handle | Custom centered | Component default |
-| Header | Centered, no border | Con bordi |
-
-### Soluzione: Redesign Completo LikersDrawer
-
-Allineare LikersDrawer allo stile premium di CommentDrawer:
-
-```tsx
-// LikersDrawer.tsx - Nuovo design
-<Drawer.Root 
-  open={isOpen} 
-  onOpenChange={(open) => {
-    if (!open) onClose();
-  }}
-  modal={true}
-  dismissible={true}
->
-  <Drawer.Portal>
-    <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[2147483647]" onClick={onClose} />
-    <Drawer.Content 
-      className="fixed inset-x-0 bottom-0 z-[2147483647] bg-[#F5F1EA]/90 dark:bg-background/90 backdrop-blur-xl rounded-t-3xl flex flex-col outline-none shadow-2xl"
-      style={{
-        height: '85vh',
-        maxHeight: '85vh',
-      }}
-    >
-      {/* Handle bar - centered come CommentDrawer */}
-      <div className="flex justify-center pt-3 pb-2">
-        <div className="w-10 h-1.5 bg-muted-foreground/30 rounded-full" />
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center justify-center px-4 py-3 shrink-0">
-        <h3 className="font-semibold text-base">
-          {t('likes', { ns: 'common', defaultValue: 'Likes' })}
-        </h3>
-      </div>
-
-      {/* Search bar - stile premium con emoji */}
-      <div className="px-4 pb-3">
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base">🔍</span>
-          <Input
-            placeholder={t('search', { ns: 'common', defaultValue: 'Cerca' })}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 rounded-full bg-white dark:bg-muted border-0 text-base shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* Lista utenti con ScrollArea */}
-      <ScrollArea className="flex-1 px-4">
-        ...
-      </ScrollArea>
-    </Drawer.Content>
-  </Drawer.Portal>
-</Drawer.Root>
+if (isMatchingPlace && selectedPlace.id !== newLocationId) {
+  console.log('🔄 Syncing selectedPlace ID:', oldLocationId, '->', newLocationId);
+  
+  // Fetch aggiornato della location per ottenere la categoria corretta
+  const { data: updatedLocation } = await supabase
+    .from('locations')
+    .select('id, category')
+    .eq('id', newLocationId)
+    .maybeSingle();
+  
+  setSelectedPlace(prev => prev ? {
+    ...prev,
+    id: newLocationId,
+    isTemporary: false,
+    isSaved: true,
+    category: updatedLocation?.category || prev.category // Usa categoria dal DB
+  } : null);
+}
 ```
 
-**File**: `src/components/social/LikersDrawer.tsx`
+### Modifica 3: Passare categoria corretta durante il salvataggio
 
-### Modifiche Dettagliate
+In `PinDetailCard.tsx`, quando viene creata la location (linee ~865-876), la categoria viene presa da `place.category` che potrebbe essere quella temporanea dalla ricerca.
 
-1. **Cambiare import Drawer**: Da `@/components/ui/drawer` a `vaul` direttamente (come CommentDrawer)
-2. **Overlay z-index**: `z-[2147483647]` (massimo, come CommentDrawer)
-3. **Background glassmorphism**: `bg-[#F5F1EA]/90 dark:bg-background/90 backdrop-blur-xl`
-4. **Rounded corners**: `rounded-t-3xl` (piu' arrotondato)
-5. **Handle bar**: Custom centered `w-10 h-1.5`
-6. **Search input**: Emoji 🔍 + `rounded-full h-12 bg-white`
-7. **Altezza fissa**: `85vh` come CommentDrawer
-8. **Avatar utenti**: Gia' ok (`w-12 h-12`)
-9. **Follow button**: Gia' ok, ma aggiungere `rounded-full` per coerenza pill-style
+Il problema è che la categoria viene impostata dal risultato della ricerca, non dall'utente. Questo è accettabile, ma dobbiamo assicurarci che dopo il salvataggio, il `selectedPlace` venga aggiornato con la categoria effettivamente salvata.
 
----
+Dopo la creazione, aggiornare `place.category`:
+
+```typescript
+// In PinDetailCard.tsx, dopo la creazione della location (linea ~893)
+// Update the place object with real ID AND category from DB
+place.id = newLocation.id;
+if (newLocation.category) {
+  place.category = newLocation.category;
+}
+```
+
+Ma questo richiede che l'insert restituisca anche la categoria. Modifichiamo la select:
+
+```typescript
+// Linea 865-878
+const { data: newLocation, error: createError } = await supabase
+  .from('locations')
+  .insert({
+    name: place.name,
+    address: place.address,
+    latitude: place.coordinates?.lat,
+    longitude: place.coordinates?.lng,
+    category: place.category || 'restaurant',
+    city: place.city,
+    created_by: currentUser.id,
+    pioneer_user_id: currentUser.id,
+  })
+  .select('id, category') // Aggiungi category
+  .single();
+
+// ... dopo il check di errore
+locationId = newLocation.id;
+// Aggiorna anche la categoria nel place object
+place.category = newLocation.category || place.category;
+```
 
 ## Riepilogo File da Modificare
 
-| File | Modifica | Impatto |
-|------|----------|---------|
-| `src/components/feed/FeedPostItem.tsx` | `max-w-[140px]` → `max-w-[200px]` | UI |
-| `src/components/feed/PostActions.tsx` | `w-4.5 h-4.5` → `w-5 h-5` per Share | UI |
-| `src/components/social/LikersDrawer.tsx` | Redesign completo stile CommentDrawer | UI |
+| File | Modifica | Scopo |
+|------|----------|-------|
+| `src/components/LeafletMapSetup.tsx` | Rimuovere tempMarker quando esiste marker regolare dopo save | Fix duplicazione pin |
+| `src/components/home/MapSection.tsx` | Sincronizzare categoria nel selectedPlace dopo save | Fix categoria errata |
+| `src/components/explore/PinDetailCard.tsx` | Restituire categoria dall'insert e aggiornarla in place | Fix categoria persistente |
 
----
+## Dettagli Implementazione
 
-## Impatto Visivo Finale
+### 1. LeafletMapSetup.tsx - Rimozione tempMarker
 
-| Elemento | Prima | Dopo |
-|----------|-------|------|
-| Location name | "National Gallery of Irel..." | "National Gallery of Ireland..." |
-| Share icon | 18px (piu' piccola) | 20px (uguale a like/comment) |
-| Likes drawer | Sfondo solido, basic | Glassmorphism premium, emoji search |
+Nell'effect che gestisce i marker (linee ~864-988), aggiungere prima del blocco `needsTempMarker`:
+
+```typescript
+// NUOVO: Rimuovi tempMarker se è stato salvato e ora esiste un marker regolare
+if (tempMarkerRef.current && tempMarkerSavedRef.current) {
+  // Check se esiste un marker regolare per il selectedPlace
+  const selectedId = selectedPlace?.id;
+  const hasRegularMarker = selectedId && markersRef.current.has(selectedId);
+  
+  // Oppure check per coordinate (fallback)
+  const hasMarkerByCoords = selectedPlace?.coordinates && 
+    Array.from(markersRef.current.entries()).some(([_, marker]) => {
+      const pos = marker.getLatLng();
+      return Math.abs(pos.lat - selectedPlace.coordinates.lat) < 0.0001 &&
+             Math.abs(pos.lng - selectedPlace.coordinates.lng) < 0.0001;
+    });
+  
+  if (hasRegularMarker || hasMarkerByCoords) {
+    try {
+      map.removeLayer(tempMarkerRef.current);
+      console.log('🗑️ Removed stale temp marker after save');
+    } catch (e) {}
+    tempMarkerRef.current = null;
+    tempMarkerSavedRef.current = false;
+  }
+}
+```
+
+### 2. MapSection.tsx - Sync categoria
+
+Modificare il listener `location-save-changed` per fetchare la categoria aggiornata:
+
+```typescript
+const handleSaveChanged = async (event: CustomEvent<{...}>) => {
+  // ... existing matching logic ...
+  
+  if (isMatchingPlace && selectedPlace.id !== newLocationId) {
+    // Fetch categoria aggiornata dal DB
+    const { data: updatedLoc } = await supabase
+      .from('locations')
+      .select('category')
+      .eq('id', newLocationId)
+      .maybeSingle();
+    
+    setSelectedPlace(prev => prev ? {
+      ...prev,
+      id: newLocationId,
+      isTemporary: false,
+      isSaved: true,
+      category: updatedLoc?.category || prev.category
+    } : null);
+  }
+};
+```
+
+### 3. PinDetailCard.tsx - Categoria nell'insert
+
+Aggiungere `category` alla select dell'insert:
+
+```typescript
+.select('id, category')
+
+// E dopo:
+place.category = newLocation.category || place.category;
+```
+
+## Test di Verifica
+
+1. Cercare un luogo dalla ricerca Home (es. "Reply 1988 A Coruña")
+2. Aprire la card del luogo
+3. Cliccare Salva con un tag
+4. Verificare che **non ci siano pin duplicati**
+5. Verificare che l'icona categoria sia **coerente** con quella salvata
