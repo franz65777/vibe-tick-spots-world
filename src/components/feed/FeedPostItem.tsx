@@ -345,7 +345,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                 className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-primary/10 active:bg-primary/20 rounded-full text-xs text-primary font-medium transition-colors"
               >
                 <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate max-w-[140px]">{locationName}</span>
+                <span className="truncate max-w-[200px]">{locationName}</span>
               </button>
             )}
           </div>
