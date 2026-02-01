@@ -75,6 +75,9 @@ const LeafletMapSetup = ({
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  // O(1) coordinate index for markers (avoids scanning markersRef for coord matches)
+  const markerCoordKeyByIdRef = useRef<Map<string, string>>(new Map());
+  const markerIdByCoordKeyRef = useRef<Map<string, string>>(new Map());
   const markerConfigsRef = useRef<Map<string, string>>(new Map()); // For incremental update change detection
   const currentLocationMarkerRef = useRef<L.Marker | null>(null);
   const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -571,6 +574,11 @@ const LeafletMapSetup = ({
     return latDiff < minDistance && lngDiff < (minDistance * 2.5);
   };
 
+  const coordKey = useCallback((lat: number, lng: number) => {
+    // 5 decimals ~= 1.1m precision, good compromise between accuracy & key churn
+    return `${lat.toFixed(5)},${lng.toFixed(5)}`;
+  }, []);
+
   // Places markers with campaign detection and smart visibility
   useEffect(() => {
     const map = mapRef.current;
@@ -661,6 +669,14 @@ const LeafletMapSetup = ({
         clusterGroup.removeLayer(marker);
         markersRef.current.delete(id);
         markerConfigsRef.current.delete(id); // Clean up config cache
+
+         // coordinate index cleanup
+         const oldKey = markerCoordKeyByIdRef.current.get(id);
+         if (oldKey) {
+           markerCoordKeyByIdRef.current.delete(id);
+           const indexedId = markerIdByCoordKeyRef.current.get(oldKey);
+           if (indexedId === id) markerIdByCoordKeyRef.current.delete(oldKey);
+         }
       }
     });
 
@@ -769,6 +785,16 @@ const LeafletMapSetup = ({
             // Ensure selected pin (and its bubble) is always above other markers/clusters
             existingMarker.setZIndexOffset(isSelected ? 5000 : 0);
             markerConfigsRef.current.set(place.id, markerConfigKey);
+
+            // coordinate index update
+            const newKey = coordKey(place.coordinates.lat, place.coordinates.lng);
+            const oldKey = markerCoordKeyByIdRef.current.get(place.id);
+            if (oldKey && oldKey !== newKey) {
+              const indexedId = markerIdByCoordKeyRef.current.get(oldKey);
+              if (indexedId === place.id) markerIdByCoordKeyRef.current.delete(oldKey);
+            }
+            markerCoordKeyByIdRef.current.set(place.id, newKey);
+            markerIdByCoordKeyRef.current.set(newKey, place.id);
           } else {
             // Create new marker
             const marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
@@ -805,6 +831,11 @@ const LeafletMapSetup = ({
             clusterGroup.addLayer(marker);
             markersRef.current.set(place.id, marker);
             markerConfigsRef.current.set(place.id, markerConfigKey);
+
+            // coordinate index insert
+            const key = coordKey(place.coordinates.lat, place.coordinates.lng);
+            markerCoordKeyByIdRef.current.set(place.id, key);
+            markerIdByCoordKeyRef.current.set(key, place.id);
           }
         });
     };
@@ -814,12 +845,20 @@ const LeafletMapSetup = ({
     // CRITICAL FIX: Cleanup temp marker AFTER regular markers are created
     // This MUST happen in the SAME effect to avoid race conditions between effects
     if (selectedPlace && tempMarkerRef.current) {
-      const regularMarkerExists = markersRef.current.has(selectedPlace.id);
-      
-      if (regularMarkerExists) {
+      // Primary: ID-based (fast)
+      const regularMarkerExistsById = markersRef.current.has(selectedPlace.id);
+
+      // Fallback: coordinate-based BUT still O(1) via index (handles cases where selectedPlace.id stays temp)
+      const regularMarkerExistsByCoords = !!(
+        selectedPlace.coordinates?.lat &&
+        selectedPlace.coordinates?.lng &&
+        markerIdByCoordKeyRef.current.has(coordKey(selectedPlace.coordinates.lat, selectedPlace.coordinates.lng))
+      );
+
+      if (regularMarkerExistsById || regularMarkerExistsByCoords) {
         try {
           map.removeLayer(tempMarkerRef.current);
-          console.log('🗑️ [Marker Effect] Removed temp marker - regular marker created for:', selectedPlace.id);
+          console.log('🗑️ [Marker Effect] Removed temp marker - regular marker exists for:', selectedPlace.id);
         } catch (e) {}
         tempMarkerRef.current = null;
         tempMarkerSavedRef.current = false;
